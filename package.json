@@ -140,6 +140,6 @@
     "esbuild": "0.28.1"
   },
   "dependencies": {
-    "motion": "^13.2.0"
+    "motion": "^13.4.0"
   }
 }
