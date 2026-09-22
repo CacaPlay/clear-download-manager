@@ -117,13 +117,13 @@ pub(crate) async fn queue_http_download(
 }
 
 #[tauri::command]
-pub(crate) fn accept_browser_download_capture(
+pub(crate) async fn accept_browser_download_capture(
     request_id: String,
     capture: Value,
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<Value, String> {
-    crate::downloads::accept_browser_download_capture(request_id, capture, app, state)
+    crate::downloads::accept_browser_download_capture(request_id, capture, app, state).await
 }
 
 #[tauri::command]
@@ -158,6 +158,15 @@ pub(crate) fn job_storage_preview(
     state: State<'_, LocalState>,
 ) -> Result<JobStoragePreview, String> {
     crate::downloads::job_storage_preview(id, state)
+}
+
+#[tauri::command]
+pub(crate) fn rename_completed_download(
+    id: i64,
+    new_name: String,
+    state: State<'_, LocalState>,
+) -> Result<String, String> {
+    crate::downloads::rename_completed_download(id, new_name, state)
 }
 
 #[tauri::command]

@@ -92,7 +92,7 @@ if (packageJson.version !== version) fail(`package.json debe usar ${version}`);
 if (tauri.version !== version) fail(`tauri.conf.json debe usar ${version}`);
 if (!cargo.includes(`version = "${version}"`)) fail(`Cargo.toml debe usar ${version}`);
 if (!cargo.includes('features = ["blocking", "json", "gzip", "rustls-tls"]')) fail('reqwest debe habilitar json y gzip para las respuestas HTTP de Spotify y search_video_suggestions');
-if (packageJson.devDependencies?.['@tauri-apps/cli'] !== '2.11.4') fail('La CLI de Tauri debe permanecer fijada en 2.11.4');
+if (packageJson.devDependencies?.['@tauri-apps/cli'] !== '2.11.5') fail('La CLI de Tauri debe permanecer fijada en 2.11.5');
 
 const windowConfig = tauri.app?.windows?.find((item) => item.label === 'main') || tauri.app?.windows?.[0] || {};
 if (windowConfig.maximized !== false || windowConfig.center !== true) fail('La app debe abrir centrada y no maximizada');

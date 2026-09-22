@@ -304,6 +304,8 @@ async function processExtensionBridgeRequests() {
       if (response?.status === 'accepted') {
         await loadSnapshot();
         if (foreground) showToast('Descarga capturada desde el navegador.', 'success');
+      } else if (response?.status === 'review_opened') {
+        if (foreground) showToast('Elige la carpeta y confirma la descarga en la ventana HTTP.', 'success');
       } else if (response?.error && foreground) showToast(friendlyError(response.error), 'error');
       if (foreground) render();
       return;

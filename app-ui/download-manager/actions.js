@@ -8,6 +8,14 @@ function closeRowMenu() {
   runtimeState.rowMenuAnchor = null;
 }
 
+function dismissRowMenu(rerenderNow) {
+  closeRowMenu();
+  // The row menu lives in a detached fixed layer. Clearing state alone leaves
+  // that layer painted until the next full refresh, which is why it used to
+  // remain visible after Copy/Cut and speed actions.
+  if (typeof rerenderNow === 'function') rerenderNow();
+}
+
 function priorityTarget(job) {
   if (job?.kind === 'playlist' && Number(job.playlistBatchId || 0) > 0) {
     return { kind: 'playlist', batchId: Number(job.playlistBatchId) };
@@ -68,16 +76,30 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
       try {
         if (action === 'reveal') {
           if (!job?.destination) { context.onToast?.('Esta tarea no tiene un archivo local disponible.', 'error'); return; }
+          dismissRowMenu(rerenderNow);
           await context.invoke?.('reveal_local_file', { path: job.destination });
         } else {
           const nextStatus = action === 'pause' ? 'paused' : 'running';
-          closeRowMenu();
+          dismissRowMenu(rerenderNow);
           context.onOptimisticJobStatus?.(id, nextStatus);
           await context.invoke?.('set_job_status', { id, status: nextStatus });
           await context.onRefresh?.({ liveOnly: true, changedJobIds: new Set([String(id)]) });
         }
       } catch (error) {
         if (action !== 'reveal') context.onOptimisticJobStatus?.(id, null);
+        context.onToast?.(String(error), 'error');
+      }
+    }));
+    root.querySelectorAll('[data-dm-file-action]').forEach((button) => button.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      const path = button.dataset.dmFilePath || '';
+      const cut = button.dataset.dmFileAction === 'cut';
+      if (!path) return;
+      try {
+        dismissRowMenu(rerenderNow);
+        await context.invoke?.('set_file_clipboard', { path, cut });
+        context.onToast?.(cut ? 'Archivo listo para cortar y pegar.' : 'Archivo copiado al portapapeles.', 'success');
+      } catch (error) {
         context.onToast?.(String(error), 'error');
       }
     }));
@@ -89,7 +111,7 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
       const jobId = playlistJobId(batchId);
       const nextStatus = action === 'pause' ? 'paused' : action === 'retry' ? 'queued' : 'running';
       try {
-        closeRowMenu();
+        dismissRowMenu(rerenderNow);
         context.onOptimisticJobStatus?.(jobId, nextStatus, { resetProgress: action === 'retry' });
         if (action === 'retry') await context.invoke?.('retry_failed_playlist_items', { batchId });
         else await context.invoke?.('set_playlist_batch_paused', { batchId, paused: action === 'pause' });
@@ -104,7 +126,7 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
       event.stopPropagation();
       const path = button.dataset.dmRevealPath || '';
       if (!path) return;
-      try { await context.invoke?.('reveal_local_file', { path }); }
+      try { dismissRowMenu(rerenderNow); await context.invoke?.('reveal_local_file', { path }); }
       catch (error) { context.onToast?.(String(error), 'error'); }
     }));
     root.querySelectorAll('[data-dm-open-download-directory]').forEach((button) => button.addEventListener('click', async (event) => {
@@ -116,7 +138,7 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
       event.stopPropagation();
       const path = button.dataset.dmOpenPath || '';
       if (!path) return;
-      try { await context.invoke?.('open_local_file', { path }); }
+      try { dismissRowMenu(rerenderNow); await context.invoke?.('open_local_file', { path }); }
       catch (error) { context.onToast?.(String(error), 'error'); }
     }));
     root.querySelectorAll('[data-dm-cancel-job]').forEach((button) => button.addEventListener('click', () => { runtimeState.modal = 'cancel'; runtimeState.modalJobId = Number(button.dataset.dmCancelJob); rerenderNow(); }));

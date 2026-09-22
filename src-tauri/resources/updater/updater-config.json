@@ -2,7 +2,7 @@
   "enabled": true,
   "channel": "stable",
   "provider": "github-releases",
-  "endpoint": "https://github.com/CacaPlay/clear-download-manager-releases/releases/latest/download/latest.json",
-  "repository": "CacaPlay/clear-download-manager-releases",
+  "endpoint": "https://github.com/CacaPlay/clear-download-manager/releases/latest/download/latest.json",
+  "repository": "CacaPlay/clear-download-manager",
   "configured_at": "2026-09-14T20:39:14.6448114Z"
 }

@@ -3,11 +3,61 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LOCALE_CATALOGS } from '../../app-ui/modules/i18n/index.js';
 import { RUNTIME_TRANSLATION_TERMS } from '../../app-ui/modules/i18n/runtime.js';
+import { translate as translateExtension } from '../../extension/i18n.js';
+import { updateDialog } from '../../app-ui/download-manager/view/dialogs.js';
+import { translateRuntimeText } from '../../app-ui/modules/i18n/runtime.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const es = LOCALE_CATALOGS.es;
 const en = LOCALE_CATALOGS.en;
 const errors = [];
+const runtimeTranslations = [
+  ['Descargando la actualización firmada…', 'Downloading the signed update…'],
+  ['Descargando la actualización firmada (43%).', 'Downloading the signed update (43%).'],
+  ['Verificando e instalando la actualización firmada.', 'Verifying and installing the signed update.'],
+  ['Progreso de descarga', 'Download progress'],
+  ['Instalando actualización', 'Installing update'],
+  ['FFmpeg, FFprobe, Deno y aria2c se actualizan junto con la aplicación firmada.', 'FFmpeg, FFprobe, Deno, and aria2c are updated with the signed application.'],
+  ['Con la aplicación firmada', 'With the signed app']
+];
+for (const [source, expected] of runtimeTranslations) {
+  const actual = translateRuntimeText(source, 'en');
+  if (actual !== expected) errors.push(`runtime en: "${source}" -> "${actual}" (expected "${expected}")`);
+}
+const progressDialog = updateDialog({
+  availableUpdate: { version: '0.95.4', notes: 'Update notes' },
+  updaterInstallBusy: true,
+  updaterProgress: { phase: 'download', downloadedBytes: 43 * 1024 * 1024, contentLength: 100 * 1024 * 1024, percent: 43 }
+});
+for (const marker of ['role="progressbar"', 'aria-valuenow="43"', '43%', '43.0 MB / 100 MB']) {
+  if (!progressDialog.includes(marker)) errors.push(`update dialog lacks visual progress marker: ${marker}`);
+}
+if (!progressDialog.includes('data-dm-modal-close disabled')) errors.push('update dialog must not offer dismissal while installation is busy');
+const extensionTranslations = [
+  ['Pausada', 'Paused'],
+  ['Error', 'Error'],
+  ['3 activas · 15 completadas', '3 active · 15 completed'],
+  ['1 activa · 1 completada', '1 active · 1 completed'],
+  ['Ver más (15)', 'Show more (15)'],
+  ['Ver menos', 'Show less']
+];
+for (const [source, expected] of extensionTranslations) {
+  const actual = translateExtension('en', source);
+  if (actual !== expected) errors.push(`extension en: "${source}" -> "${actual}" (expected "${expected}")`);
+}
+const extensionHtmlPath = path.join(root, 'extension/sidepanel.html');
+const extensionHtml = fs.readFileSync(extensionHtmlPath, 'utf8');
+const extensionStaticCopy = [
+  ...[...extensionHtml.matchAll(/>([^<>]+)</g)].map((match) => match[1].trim()),
+  ...[...extensionHtml.matchAll(/(?:title|aria-label|placeholder)="([^"]+)"/g)].map((match) => match[1].trim())
+].filter(Boolean);
+const spanishCopySignal = /[áéíóúñ¿¡]|\b(?:aquí|descarga|descargas|contenido|actualizar|seleccionar|selecciona|abrir|cerrar|carpeta|activo|activa|enviar|acciones|pestaña|comprobando|conexión|calidad|idioma|apariencia|colores|personalizada|tema|oscuro|claro|sincronizado|historial|reintentar|vaciar|salir|enlaces|más|menos|espera|disponible|preferencias|captura)\b/i;
+for (const source of extensionStaticCopy) {
+  if (source === 'Español') continue;
+  if (spanishCopySignal.test(source) && translateExtension('en', source) === source) {
+    errors.push(`extension static copy lacks English localization: "${source}"`);
+  }
+}
 const esKeys = Object.keys(es).sort();
 const enKeys = Object.keys(en).sort();
 if (JSON.stringify(esKeys) !== JSON.stringify(enKeys)) {
@@ -57,6 +107,8 @@ const knownUserFacingTerms = [
   'Reintentar análisis', 'Selecciona un formato y calidad compatibles.', 'Selecciona una calidad disponible.',
   'Detalles avanzados', 'Abrir carpeta de descargas', 'Eliminar del historial', 'Pausar playlist',
   'Reanudar playlist', 'Motor y diagnóstico', 'Archivos relacionados', 'Registro del trabajo',
+  'Descargando la actualización firmada…', 'Verificando e instalando la actualización firmada.',
+  'Progreso de descarga', 'Instalando actualización', 'Con la aplicación firmada',
   'Calidad oficial de YouTube', 'No hay una pista de subtítulos seleccionable para este contenido.',
   'El archivo no pudo reproducirse', 'Actualización instalada. Windows cerrará la aplicación para finalizar.',
   'Comprobando la versión publicada…', 'Descargando y verificando la actualización firmada…',

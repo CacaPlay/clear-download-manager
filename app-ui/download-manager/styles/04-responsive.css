@@ -151,6 +151,12 @@
   contain:layout paint;
   backface-visibility:hidden;
 }
+.dm-download-item[draggable="true"],
+.dm-download-item[draggable="true"] *{
+  user-select:none!important;
+}
+.dm-download-item[draggable="true"]{cursor:grab}
+.dm-download-item[draggable="true"]:active{cursor:grabbing}
 .dm-download-item:hover,.dm-command-row:hover{
   transform:none!important;
   background:var(--dm-row-hover)!important;

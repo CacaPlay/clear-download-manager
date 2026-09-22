@@ -145,6 +145,10 @@ if (-not $SkipMediaRuntime) {
   Invoke-Native "npm.cmd" @("run", "verify:binaries")
 }
 
+# Keep the aggregate notices in the bundled resources aligned with the exact
+# runtime license files that ship in this Windows package.
+Invoke-Native "npm.cmd" @("run", "prepare:third-party-notices")
+
 # The native host is shipped inside the Tauri resources and must be rebuilt
 # from the checked-in source for every Windows package. A stale host binary
 # can still answer ping while silently routing the published extension to an

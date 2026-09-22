@@ -113,8 +113,10 @@
 /* 0.24.1 · updater feedback stays visible while the signed package is processed. */
 .dm-update-progress{display:grid;gap:.42rem;padding:.62rem;border:1px solid color-mix(in srgb,var(--dm-accent) 34%,var(--dm-border-soft));border-radius:.58rem;background:color-mix(in srgb,var(--dm-accent) 7%,var(--dm-surface))}
 .dm-update-progress-track{height:.42rem;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--dm-accent) 13%,var(--dm-surface-2))}
-.dm-update-progress-track i{display:block;width:32%;height:100%;border-radius:inherit;background:var(--dm-accent);animation:dm-update-travel 1.05s ease-in-out infinite}
-.dm-update-progress span{color:var(--dm-muted);font-size:.58rem;line-height:1.45}
+.dm-update-progress-track i{display:block;height:100%;border-radius:inherit;background:var(--dm-accent)}
+.dm-update-progress-track.is-indeterminate i{width:28%!important;animation:dm-update-travel 1.05s ease-in-out infinite}
+.dm-update-progress span,.dm-update-progress small{color:var(--dm-muted);font-size:.72rem;line-height:1.45}
+.dm-update-progress small{font-variant-numeric:tabular-nums}
 @keyframes dm-update-travel{0%{transform:translateX(-115%)}100%{transform:translateX(330%)}}
 .dm-zen-nav>footer .dm-update-entry{position:relative;width:2.8rem;max-width:2.8rem;display:flex;align-items:center;justify-content:flex-start;gap:.45rem;overflow:hidden;padding:0 .7rem;color:var(--dm-accent);border:1px solid color-mix(in srgb,var(--dm-accent) 35%,var(--dm-border-soft));background:color-mix(in srgb,var(--dm-accent) 9%,var(--dm-surface));transition:max-width .2s ease,width .2s ease,background .2s ease}
 .dm-zen-nav>footer .dm-update-entry span{opacity:0;white-space:nowrap;font-size:.72rem;font-weight:760;transition:opacity .15s ease}
@@ -1070,7 +1072,15 @@
 .dm-host .dm-file-asset[data-file-asset="audio"] .dm-file-asset-neutral,
 .dm-host .dm-file-asset[data-file-asset="audio"] .dm-file-asset-accent { display: none !important; }
 .dm-host .dm-file-asset[data-file-asset="audio"] .dm-file-asset-flat { display: block !important; }
-.dm-host[data-dm-theme="light"] .dm-file-asset-neutral { filter: brightness(.66) saturate(.7); }
+.dm-host .dm-file-asset-neutral { filter: grayscale(1) brightness(1.16) saturate(.25) !important; opacity: .88; }
+.dm-host[data-dm-theme="light"] .dm-file-asset-neutral {
+  filter: grayscale(1) brightness(.64) saturate(.2) !important;
+  opacity: 1;
+}
+.dm-host .dm-job-file > .dm-file-asset[data-file-asset="generic"],
+.dm-host .dm-file-glyph > .dm-file-asset[data-file-asset="generic"] { inset: 6% !important; }
+.dm-host [data-dm-drag-path].is-drag-candidate { cursor: grabbing !important; }
+.dm-host [data-dm-drag-path].is-native-dragging { opacity: .72 !important; }
 .dm-host .dm-job-file > .dm-file-asset,
 .dm-host .dm-file-glyph > .dm-file-asset {
   position: absolute !important;
@@ -1556,10 +1566,9 @@
   .dm-host .dm-clipboard-preview-visual { width: 100%; height: 88px; }
 }
 
-/* Beta 0.95.0 · selection toolbar remains usable at the desktop minimum.
-   The helper actions and the selection actions use two intentional bands once
-   the compact window cannot fit both groups side by side. */
-@media (min-width: 821px) and (max-width: 1220px) {
+/* Below the supported desktop minimum, keep the legacy compact fallback.
+   At the 1123px minimum, selection actions must fit beside the input shortcuts. */
+@media (min-width: 821px) and (max-width: 1122px) {
   .dm-host .dm-zen-secondary-row:has(.dm-selection-tools) {
     flex-wrap: wrap !important;
     row-gap: .42rem !important;
@@ -1707,6 +1716,9 @@
   font-weight: 700;
 }
 .dm-host .dm-news-actions button:first-child { color: var(--dm-accent-ink); border-color: color-mix(in srgb, var(--dm-accent) 40%, var(--dm-border)); background: var(--dm-accent); }
+.dm-host .dm-news-actions button.dm-news-dismiss,
+.dm-host .dm-news-actions button.dm-news-dismiss:first-child { width:2.2rem; min-width:2.2rem; min-height:2.2rem; justify-self:end; padding:0; color:var(--dm-muted); border-color:var(--dm-border-soft); background:var(--dm-surface-2); font-size:1.15rem; line-height:1; }
+.dm-host .dm-news-actions button.dm-news-dismiss:hover { color:var(--dm-text); border-color:var(--dm-border); background:var(--dm-surface); }
 .dm-host .dm-news-actions button:disabled { opacity: .5; cursor: wait; }
 .dm-host .dm-news-footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .45rem; padding-top: .55rem; border-top: 1px solid var(--dm-border-soft); }
 .dm-host .dm-news-footer button { display: inline-flex; align-items: center; gap: .38rem; }

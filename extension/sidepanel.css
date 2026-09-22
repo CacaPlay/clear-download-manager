@@ -26,6 +26,7 @@ select:focus,input:focus,textarea:focus,button:focus-visible{border-color:var(--
 .brand-mark{display:grid;place-items:center;width:45px;height:45px;border:0;border-radius:0;color:var(--icon-text);background:transparent;font-size:22px;font-weight:850;box-shadow:none;padding:0}
 .brand-mark img{display:block;width:45px;height:45px;object-fit:contain;transition:opacity .16s ease}
 .brand-copy{min-width:0}.brand-copy strong,.brand-copy small{display:block}.brand-copy strong{font-size:20px;line-height:1.1}.brand-copy small{margin-top:5px;color:var(--muted);font-size:14px}
+.locale-control{display:flex;align-items:center}.locale-control select{min-height:32px;padding:4px 7px;font-size:12px}.appearance-panel .locale-control{display:grid;grid-template-columns:1fr minmax(120px,1fr);align-items:center;gap:10px;margin-top:9px;color:var(--muted);font-size:12px}.appearance-panel .locale-control select{min-height:42px;padding:8px 11px;font-size:15px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .status{margin-left:auto;max-width:132px;color:var(--warning);font-size:13px;line-height:1.25;text-align:right}.status[data-state="connected"]{color:var(--success)}
 main{padding:12px 0 24px}
 .quick-bar{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr) auto;gap:9px;align-items:end;padding:0 16px 10px}.quick-field{display:grid;gap:6px;min-width:0}.quick-field>span{color:var(--muted);font-size:12px}.quick-field select{width:100%;min-width:0}.quiet-button{background:transparent}
@@ -329,7 +330,7 @@ html,body{overflow-x:hidden}
   .manual-link-thumb{width:64px;height:40px}
 }
 
-/* 0.45.12: quick controls align from the same top edge even when the
+/* 0.95.3: quick controls align from the same top edge even when the
    quality hint adds a second line below its select. */
 .quick-field{align-self:start;align-content:start}
 .quick-bar{align-items:start}

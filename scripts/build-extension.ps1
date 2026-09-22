@@ -1,4 +1,8 @@
-param([string]$Version = '')
+param(
+  [string]$Version = '',
+  [string]$OutputDirectory = '',
+  [string]$OutputZip = ''
+)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
@@ -7,8 +11,26 @@ if ([string]::IsNullOrWhiteSpace($Version)) { $Version = [string]$Manifest.versi
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Versión de extensión inválida: $Version" }
 
 $Source = Join-Path $Root 'extension'
-$Destination = Join-Path $Root 'extension-dist'
-$Zip = Join-Path $Root ("Clear-Download-Manager-Chrome-Extension-{0}.zip" -f $Version)
+$HasCustomOutput = -not [string]::IsNullOrWhiteSpace($OutputDirectory) -or -not [string]::IsNullOrWhiteSpace($OutputZip)
+if ($HasCustomOutput -and ([string]::IsNullOrWhiteSpace($OutputDirectory) -or [string]::IsNullOrWhiteSpace($OutputZip))) {
+  throw 'OutputDirectory y OutputZip deben indicarse juntos para preservar la salida existente.'
+}
+if ($HasCustomOutput) {
+  $Destination = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) { [System.IO.Path]::GetFullPath($OutputDirectory) } else { [System.IO.Path]::GetFullPath((Join-Path $Root $OutputDirectory)) }
+  $Zip = if ([System.IO.Path]::IsPathRooted($OutputZip)) { [System.IO.Path]::GetFullPath($OutputZip) } else { [System.IO.Path]::GetFullPath((Join-Path $Root $OutputZip)) }
+  $RootPrefix = [System.IO.Path]::GetFullPath($Root).TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+  foreach ($OutputPath in @($Destination, $Zip)) {
+    if (-not $OutputPath.StartsWith($RootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+      throw "La salida personalizada debe quedar dentro del repositorio: $OutputPath"
+    }
+  }
+  if ($Destination -eq [System.IO.Path]::GetFullPath($Source)) { throw 'No se puede usar extension/ como directorio de salida.' }
+  if (Test-Path -LiteralPath $Destination) { throw "La salida ya existe y no se sobrescribirá: $Destination" }
+  if (Test-Path -LiteralPath $Zip) { throw "El ZIP ya existe y no se sobrescribirá: $Zip" }
+} else {
+  $Destination = Join-Path $Root 'extension-dist'
+  $Zip = Join-Path $Root ("Clear-Download-Manager-Chrome-Extension-{0}.zip" -f $Version)
+}
 $RuntimeFiles = @(
   'manifest.json',
   'app-compat.json',
@@ -16,6 +38,7 @@ $RuntimeFiles = @(
   'sidepanel.html',
   'sidepanel.css',
   'sidepanel.js',
+  'i18n.js',
   'thumbnail-service.js',
   'content\detector.js',
   'sdk\cacatools-native-client.js',
@@ -32,8 +55,10 @@ $RuntimeFiles = @(
 $RuntimeFiles += @(Get-ChildItem (Join-Path $Source 'assets') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName.Substring($Source.Length + 1) })
 $RuntimeFiles += @(Get-ChildItem (Join-Path $Source 'icons\brand') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName.Substring($Source.Length + 1) })
 
-if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Recurse -Force }
-if (Test-Path -LiteralPath $Zip) { Remove-Item -LiteralPath $Zip -Force }
+if (-not $HasCustomOutput) {
+  if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Recurse -Force }
+  if (Test-Path -LiteralPath $Zip) { Remove-Item -LiteralPath $Zip -Force }
+}
 New-Item -ItemType Directory -Path $Destination -Force | Out-Null
 foreach ($RelativePath in $RuntimeFiles) {
   $InputPath = Join-Path $Source $RelativePath

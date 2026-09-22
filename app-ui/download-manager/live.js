@@ -2,6 +2,8 @@ import { formatSpeed, isVisuallySelected, jobsForSection, normalizeJobs, section
 import { applyOptimisticJobStatuses, createVirtualizationDescriptor, runtimeState, VIRTUAL_DEFAULT_VIEWPORT_HEIGHT, virtualListRange } from './state.js';
 import { bindDownloadManagerThumbnailFallbacks } from './thumbnails.js';
 import { downloadAreaMarkup, downloadRowMarkup, downloadRowState, downloadVisualState } from './view/unified.js?v=0.45.1-runtime-20260903';
+import { loadLocale, resolveLocale } from '../modules/i18n/index.js';
+import { localizeDom } from '../modules/i18n/runtime.js';
 
 const STATUS_TRANSITION_CLEANUP_MS = 330;
 const PROGRESS_CADENCE_MIN_MS = 180;
@@ -569,6 +571,11 @@ export function patchDownloadManagerLiveCore(context = {}, rerenderFn = null) {
   if (nextScroll) nextScroll.scrollTop = oldScroll;
   bindVirtualListScroll(patchedArea);
   bindDownloadManagerThumbnailFallbacks(patchedArea);
+  // Live patches update only the changing text nodes and therefore bypass the
+  // full-render localization pass. Re-run the small, exact-term translator on
+  // the patched area so status/stage labels follow the active locale instantly.
+  const configuredLocale = typeof context.locale === 'function' ? context.locale() : context.locale;
+  localizeDom(patchedArea, resolveLocale(configuredLocale || loadLocale()));
   if (nextScroll && nextScroll.dataset.dmLiveScrollBound !== '1') {
     nextScroll.dataset.dmLiveScrollBound = '1';
     // Do not dismiss on DOM `scroll`: restoring scrollTop after a live patch

@@ -20,14 +20,14 @@
 Choose the option that works best for you.
 
 <p align="center">
-  <a href="https://github.com/CacaPlay/clear-download-manager-releases/releases/download/v0.95.1-build4/Clear.Download.Manager_0.95.1_x64-setup.exe#gh-light-mode-only"><img src="docs/assets/download-buttons/windows-light.png#gh-light-mode-only" width="354" alt="Get the app: Windows Installer"></a><a href="https://github.com/CacaPlay/clear-download-manager-releases/releases/download/v0.95.1-build4/Clear.Download.Manager_0.95.1_x64-setup.exe#gh-dark-mode-only"><img src="docs/assets/download-buttons/windows-dark.png#gh-dark-mode-only" width="354" alt="Get the app: Windows Installer"></a>&nbsp;&nbsp;
+  <a href="https://github.com/CacaPlay/clear-download-manager/releases/latest/download/Clear.Download.Manager_0.95.4_x64-setup.exe#gh-light-mode-only"><img src="docs/assets/download-buttons/windows-light.png#gh-light-mode-only" width="354" alt="Get the app: Windows Installer"></a><a href="https://github.com/CacaPlay/clear-download-manager/releases/latest/download/Clear.Download.Manager_0.95.4_x64-setup.exe#gh-dark-mode-only"><img src="docs/assets/download-buttons/windows-dark.png#gh-dark-mode-only" width="354" alt="Get the app: Windows Installer"></a>&nbsp;&nbsp;
   <a href="https://apps.microsoft.com/detail/9NSTJ7JXM843#gh-light-mode-only"><img src="docs/assets/download-buttons/microsoft-store-light.png#gh-light-mode-only" width="354" alt="Official store: Microsoft Store"></a><a href="https://apps.microsoft.com/detail/9NSTJ7JXM843#gh-dark-mode-only"><img src="docs/assets/download-buttons/microsoft-store-dark.png#gh-dark-mode-only" width="354" alt="Official store: Microsoft Store"></a>
 </p>
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/aonppfnabjnicjjeoofkfjofolfibggp#gh-light-mode-only"><img src="docs/assets/download-buttons/chrome-web-store-light.png#gh-light-mode-only" width="354" alt="Browser extension: Chrome Web Store"></a><a href="https://chromewebstore.google.com/detail/aonppfnabjnicjjeoofkfjofolfibggp#gh-dark-mode-only"><img src="docs/assets/download-buttons/chrome-web-store-dark.png#gh-dark-mode-only" width="354" alt="Browser extension: Chrome Web Store"></a>
 </p>
 
-You can also open the [complete Windows release](https://github.com/CacaPlay/clear-download-manager-releases/releases/latest) for hashes, signature and updater metadata.
+You can also open the [complete Windows release](https://github.com/CacaPlay/clear-download-manager/releases/latest) for hashes, signature and updater metadata.
 
 ### What do I need?
 - **Install the app:** use the Windows installer or Microsoft Store.
@@ -52,12 +52,11 @@ You can also open the [complete Windows release](https://github.com/CacaPlay/cle
 The app keeps the queue, history and insertion order locally on this device.
 
 ## Verify the installer
-The CDM 0.95.1 installer is `Clear.Download.Manager_0.95.1_x64-setup.exe`.
+The current CDM installer is `Clear.Download.Manager_0.95.4_x64-setup.exe`.
 ```powershell
-Get-FileHash .\Clear.Download.Manager_0.95.1_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\Clear.Download.Manager_0.95.4_x64-setup.exe -Algorithm SHA256
 ```
-Expected SHA-256: `de1dc46dd89ec3404e6a091d214ea538e8a72a83fd6da95559b57f19e8645b6c`
-The [releases repository](https://github.com/CacaPlay/clear-download-manager-releases/releases/latest) contains the complete `SHA256SUMS.txt` manifest.
+Compare the result with the installer entry in `SHA256SUMS.txt` attached to the [latest release](https://github.com/CacaPlay/clear-download-manager/releases/latest).
 
 ## Requirements
 Published builds require a compatible Windows x64 installation. WebView2, Node.js and Rust/MSVC are required only for development.

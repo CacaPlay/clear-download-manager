@@ -1,7 +1,7 @@
 import { jobsForSection, normalizeJobs, normalizePreferences, resolveTheme, sectionForLayout, selectedJob } from './core/model.js';
 import { APPEARANCE_REVISION, DEFAULT_PROGRESS_ACTIVE_COLOR, DEFAULT_PROGRESS_COMPLETED_COLOR } from './core/constants.js';
 import { renderZenSidebar } from './view/zen-sidebar.js?v=0.95.0-verify-20260911-r5';
-import { bulkDeleteDialog, cancelDialog, clipboardPreviewDialog, deleteDialog, extensionDialog, feedbackDialog, newsDetailsDialog, newsImageDialog, recoveryDialog, scheduleDialog, torrentDialog, updateDialog, videoSearchDialog } from './view/dialogs.js';
+import { bulkDeleteDialog, cancelDialog, clipboardPreviewDialog, deleteDialog, extensionDialog, feedbackDialog, newsDetailsDialog, newsImageDialog, recoveryDialog, renameDialog, scheduleDialog, torrentDialog, updateDialog, videoSearchDialog } from './view/dialogs.js';
 import { applyOptimisticJobStatuses, createVirtualizationDescriptor, runtimeState } from './state.js';
 import { patchDownloadManagerLiveCore, scheduleVirtualListUpdate } from './live.js';
 import { bindDownloadManagerEvents } from './events.js?v=0.95.0-verify-20260911-r5';
@@ -78,6 +78,7 @@ function renderModal(jobs, context = {}) {
   if (runtimeState.modal === 'schedule') return scheduleDialog(job);
   if (runtimeState.modal === 'recovery') return recoveryDialog(runtimeState, job);
   if (runtimeState.modal === 'update') return updateDialog(context);
+  if (runtimeState.modal === 'rename') return renameDialog(job);
   if (runtimeState.modal === 'news-details') return newsDetailsDialog({ ...context, newsId: runtimeState.modalNewsId, t: context.translate });
   if (runtimeState.modal === 'news-image') return newsImageDialog({ ...context, newsImage: runtimeState.modalNewsImage });
   if (runtimeState.modal === 'extension') return extensionDialog();
@@ -171,16 +172,19 @@ function captureScrollableState() {
   const downloads = document.querySelector('.dm-download-scroll');
   if (settings) runtimeState.settingsScrollTop = settings.scrollTop;
   if (downloads) {
-    runtimeState.downloadScrollTop = downloads.scrollTop;
+    const preservedTop = runtimeState.pendingDownloadScrollTop ?? downloads.scrollTop;
+    runtimeState.pendingDownloadScrollTop = preservedTop;
+    runtimeState.downloadScrollTop = preservedTop;
     const key = downloads.dataset.dmVirtualKey;
     if (key) {
       const state = runtimeState.virtualLists.get(key);
-      if (state) state.scrollTop = downloads.scrollTop;
+      if (state) state.scrollTop = preservedTop;
     }
   }
 }
 
 function restoreScrollableState() {
+  const preservedDownloadTop = runtimeState.pendingDownloadScrollTop ?? runtimeState.downloadScrollTop;
   window.requestAnimationFrame(() => {
     const settings = document.querySelector('.dm-settings-popover');
     const downloads = document.querySelector('.dm-download-scroll');
@@ -188,9 +192,12 @@ function restoreScrollableState() {
     if (downloads) {
       const key = downloads.dataset.dmVirtualKey;
       const state = key ? runtimeState.virtualLists.get(key) : null;
-      downloads.scrollTop = state ? state.scrollTop : runtimeState.downloadScrollTop;
+      downloads.scrollTop = preservedDownloadTop;
+      runtimeState.downloadScrollTop = preservedDownloadTop;
+      if (state) state.scrollTop = preservedDownloadTop;
       if (state) scheduleVirtualListUpdate(downloads);
     }
+    if (runtimeState.pendingDownloadScrollTop === preservedDownloadTop) runtimeState.pendingDownloadScrollTop = null;
   });
 }
 

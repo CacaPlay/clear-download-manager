@@ -4,6 +4,8 @@ import { applyBrandIconVariant, iconVariantForColor } from '../modules/appearanc
 import { loadLocale, resolveLocale } from '../modules/i18n/index.js';
 import { localizeDom } from '../modules/i18n/runtime.js';
 
+document.addEventListener('contextmenu', (event) => event.preventDefault(), true);
+
 const shell = document.querySelector('.player-shell');
 const video = document.querySelector('.player-video');
 const audio = document.querySelector('.player-audio');
@@ -822,6 +824,10 @@ function setState(title, message, state = 'waiting', allowSystemFallback = false
   fallbackButton.hidden = !allowSystemFallback;
   stateCard.querySelector('strong').textContent = title;
   stateCard.querySelector('p').textContent = message;
+  // Translate immediately rather than waiting for MutationObserver's next
+  // microtask; this keeps transient loading/error states consistent with the
+  // rest of the player when the locale is English.
+  localizeDom(stateCard, resolveLocale(loadLocale()));
   setControlsEnabled(state === 'ready');
   updateQualityLabel();
   if (state === 'ready') wakePlayerUi();
@@ -1276,6 +1282,8 @@ function applySnapshotHeading({ title = '', subtitle = '', source = 'LOCAL' } = 
   heading.querySelector('h1').textContent = safeTitle;
   updateQualityLabel();
   heading.querySelector('p').textContent = subtitle || (source === 'VISTA PREVIA' ? 'Reproducción temporal sin descargar.' : 'Archivo multimedia local.');
+  localizeDom(heading, resolveLocale(loadLocale()));
+  localizeDom(document.querySelector('.player-titlebar') || document, resolveLocale(loadLocale()));
 }
 
 async function loadJob(jobId, { preservePlaylist = false } = {}) {

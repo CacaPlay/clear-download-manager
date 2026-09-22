@@ -1,0 +1,45 @@
+{
+  "messages": [
+    {
+      "id": "clear-download-manager-vX-Y-Z-news",
+      "type": "release",
+      "platform": "windows",
+      "locale": "all",
+      "title": "Clear Download Manager X.Y.Z",
+      "summary": "Resumen breve de la actualización, máximo 360 caracteres.",
+      "published_at": "2026-09-22T12:00:00Z",
+      "details": [
+        "Primer cambio importante.",
+        "Segundo cambio importante."
+      ],
+      "translations": {
+        "es": {
+          "title": "Clear Download Manager X.Y.Z",
+          "summary": "Resumen breve de la actualización, máximo 360 caracteres.",
+          "details": [
+            "Primer cambio importante.",
+            "Segundo cambio importante."
+          ],
+          "actionLabel": "Ver release"
+        },
+        "en": {
+          "title": "Clear Download Manager X.Y.Z",
+          "summary": "Short update summary, no more than 360 characters.",
+          "details": [
+            "First important change.",
+            "Second important change."
+          ],
+          "actionLabel": "View release"
+        }
+      },
+      "priority": 100,
+      "dismissible": false,
+      "action_required": false,
+      "action": {
+        "type": "open-url",
+        "url": "https://github.com/CacaPlay/clear-download-manager/releases",
+        "label": "Ver release"
+      }
+    }
+  ]
+}

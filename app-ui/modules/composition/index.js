@@ -1,4 +1,5 @@
 import { runDocumentTransition, runSettingsCategoryTransition } from '../motion/coordinator.js';
+import { runtimeState as downloadManagerState } from '../../download-manager/state.js';
 
 let compositionContext = {};
 let appState = {};
@@ -118,7 +119,10 @@ function captureRenderContinuity() {
     workspace: document.querySelector('.workspace')?.scrollTop || 0,
     playlist: document.querySelector('.playlist-v2-list > div')?.scrollTop || 0,
     dmSettings: document.querySelector('.dm-settings-popover')?.scrollTop || 0,
-    dmDownloads: document.querySelector('.dm-download-scroll')?.scrollTop || 0,
+    dmDownloads: downloadManagerState.pendingDownloadScrollTop
+      ?? document.querySelector('.dm-download-scroll')?.scrollTop
+      ?? downloadManagerState.downloadScrollTop
+      ?? 0,
     settingsWorkspace: document.querySelector('.settings-workspace-content')?.scrollTop || 0,
     focus
   };

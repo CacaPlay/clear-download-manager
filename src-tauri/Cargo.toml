@@ -1,6 +1,6 @@
 [package]
 name = "cacatools-desktop"
-version = "0.95.1"
+version = "0.95.4"
 description = "Local-first Windows download manager powered by aria2c, yt-dlp, FFmpeg and SQLite"
 authors = ["CacaTools"]
 edition = "2021"

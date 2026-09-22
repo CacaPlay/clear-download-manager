@@ -5,7 +5,7 @@
   "keyId": "test-only-2026",
   "origin": {
     "authority": "cacatools-controlled",
-    "repository": "CacaPlay/cacatools-download-manager-releases"
+    "repository": "CacaPlay/clear-download-manager"
   },
   "components": [
     {

@@ -233,29 +233,25 @@ def main() -> int:
             evidence["themeRootTransition"] = theme_runtime
             for key in ("during", "duringReverse"):
                 state = theme_runtime.get(key, {})
-                if not state.get("transitioning") or state.get("appTransitionProperty") != "none" or state.get("cardTransitionProperty") != "none":
-                    failures.append(f"tema no fue atómico durante {key}: {state}")
+                if state.get("transitioning") or state.get("motionNavigation") == "true":
+                    failures.append(f"tema activó una transición o navegación durante {key}: {state}")
                 before_rect = theme_runtime.get("mainBefore") or {}
                 during_rect = state.get("mainRect") or {}
                 if any(abs(float(before_rect.get(field, 0)) - float(during_rect.get(field, 0))) > 0.5 for field in ("x", "y", "width", "height")):
                     failures.append(f"Main se movió durante {key}: before={before_rect}, during={during_rect}")
-                if state.get("motionNavigation") == "true":
-                    failures.append(f"tema activó motion de navegación durante {key}: {state}")
             if theme_runtime.get("after", {}).get("overlayCount") or theme_runtime.get("reverse", {}).get("overlayCount"):
-                failures.append(f"transición raíz dejó overlay huérfano: {theme_runtime}")
-            for sample in theme_runtime.get("samples", []):
-                if sample.get("phase") in ("before-capture", "before-update", "after-update") and not sample.get("transitioning"):
-                    failures.append(f"supresión de tema llegó tarde: {sample}")
+                failures.append(f"cambio de tema dejó overlay: {theme_runtime}")
+            if theme_runtime.get("samples"):
+                failures.append(f"cambio de tema invocó una captura de documento: {theme_runtime['samples']}")
 
-            # Exercise the deterministic fallback cleanup by disabling the API
-            # for one theme click, then restore the property for the rest of the page.
+            # The static theme path must remain atomic even when the browser
+            # exposes no View Transition API; no fallback overlay is needed.
             page.evaluate("() => { window.__cdmOriginalStartViewTransition = document.startViewTransition; document.startViewTransition = undefined; }")
             page.locator("[data-dm-theme-toggle]").click()
-            page.wait_for_selector(".motion-theme-fallback-overlay")
-            evidence["themeFallbackMounted"] = True
-            page.wait_for_timeout(520)
+            page.wait_for_timeout(80)
+            evidence["themeAtomicWithoutViewTransition"] = True
             if page.locator(".motion-theme-fallback-overlay").count():
-                failures.append("fallback de tema dejó overlay huérfano")
+                failures.append("cambio de tema sin View Transition dejó overlay")
             page.evaluate("() => { if (window.__cdmOriginalStartViewTransition) document.startViewTransition = window.__cdmOriginalStartViewTransition; }")
 
             for mode in ("reduced", "off"):

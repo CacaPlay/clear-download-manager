@@ -2,12 +2,13 @@
   [string]$YtDlpVersion = "2026.08.19",
   [string]$YtDlpCommit = "3a08beaf031ab68f966401ead017ac81fe8486cf",
   [string]$YtDlpLicensesSha256 = "472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7",
-  [string]$FfmpegVersion = "8.1.2",
-  [string]$FfmpegSha256 = "db580001caa24ac104c8cb856cd113a87b0a443f7bdf47d8c12b1d740584a2ec",
+  [string]$FfmpegVersion = "9.0.2",
+  [string]$FfmpegSha256 = "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
+  [string]$FfmpegSourceCommit = "946fcce07b",
   [string]$Aria2Version = "1.37.0",
   [string]$Aria2Sha256 = "67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288",
-  [string]$DenoVersion = "2.9.5",
-  [string]$DenoSha256 = "171efab55ac6b9881fd53ee4c20f8bf3bb1340ffc618483746909014db12216a"
+  [string]$DenoVersion = "2.9.7",
+  [string]$DenoSha256 = "a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238"
 )
 
 Set-StrictMode -Version 2.0
@@ -17,12 +18,11 @@ $Root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot "powershell-hash-compat.ps1")
 $BinDir = Join-Path $Root "src-tauri\resources\bin"
 $LicenseDir = Join-Path $Root "src-tauri\resources\licenses"
-$Work = Join-Path $env:TEMP "cacatools-media-runtime"
+$Work = Join-Path $env:TEMP ("cdm-media-runtime-{0}" -f [guid]::NewGuid().ToString("N"))
 $CacheDir = Join-Path $Root "output\runtime-cache"
 $GitHubReleaseCache = @{}
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Remove-Item $Work -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $Work, $BinDir, $LicenseDir, $CacheDir -Force | Out-Null
 
 function Invoke-DownloadFile {
@@ -188,9 +188,13 @@ Copy-Item $Aria2Exe.FullName $Aria2Path -Force
 $Aria2Copying = Get-ChildItem $Aria2Extracted -Recurse -File |
   Where-Object { $_.Name -in @("COPYING", "COPYING.txt") } |
   Select-Object -First 1
-if ($Aria2Copying) {
-  Copy-Item $Aria2Copying.FullName (Join-Path $LicenseDir "ARIA2-COPYING.txt") -Force
-}
+if (-not $Aria2Copying) { throw "The verified aria2 archive does not contain its COPYING license text." }
+Copy-Item $Aria2Copying.FullName (Join-Path $LicenseDir "ARIA2-COPYING.txt") -Force
+$Aria2OpenSslLicense = Get-ChildItem $Aria2Extracted -Recurse -File |
+  Where-Object { $_.Name -eq "LICENSE.OpenSSL" } |
+  Select-Object -First 1
+if (-not $Aria2OpenSslLicense) { throw "The verified aria2 archive does not contain its upstream LICENSE.OpenSSL notice." }
+Copy-Item $Aria2OpenSslLicense.FullName (Join-Path $LicenseDir "ARIA2-OPENSSL-LICENSE.txt") -Force
 
 $FfmpegAssetName = "ffmpeg-$FfmpegVersion-essentials_build.zip"
 $FfmpegReleaseApi = "https://api.github.com/repos/GyanD/codexffmpeg/releases/tags/$FfmpegVersion"
@@ -348,7 +352,7 @@ $Manifest = [ordered]@{
     source = $FfmpegUrl
     releaseApi = $FfmpegReleaseApi
     officialAssetSha256 = $FfmpegApiSha256
-    sourceCommit = "38b88335f9"
+    sourceCommit = $FfmpegSourceCommit
     archiveSha256 = $FfmpegActual
     ffmpegSha256 = (Get-FileHash $FfmpegPath -Algorithm SHA256).Hash.ToLowerInvariant()
     ffprobeSha256 = (Get-FileHash $FfprobePath -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -379,8 +383,10 @@ Official release asset: $Aria2Url
 Archive SHA-256: $Aria2Actual
 Executable SHA-256: $((Get-FileHash $Aria2Path -Algorithm SHA256).Hash.ToLowerInvariant())
 
-aria2 is distributed under GPL-2.0-or-later. Keep this notice, ARIA2-COPYING.txt when present,
-and the corresponding-source offer or source distribution required for the exact binary shipped.
+aria2 is distributed under GPL-2.0-or-later. Keep this notice and the verified release COPYING text as
+ARIA2-COPYING.txt. The same release includes LICENSE.OpenSSL, preserved as ARIA2-OPENSSL-LICENSE.txt;
+it contains the upstream OpenSSL linking-exception notice and license text. Keep the corresponding-source
+offer or source distribution required for the exact binary shipped.
 Official source repository: https://github.com/aria2/aria2
 Release source tag: release-$Aria2Version
 "@ | Set-Content (Join-Path $LicenseDir "ARIA2-NOTICE.txt") -Encoding UTF8
@@ -389,7 +395,7 @@ Release source tag: release-$Aria2Version
 CacaTools Download Manager uses FFmpeg and FFprobe as external executables to combine and convert audio and video.
 Build: $FfmpegVersionActual
 Binary source: $FfmpegUrl
-Source commit reported by the provider: 38b88335f9
+Source commit reported by the provider: $FfmpegSourceCommit
 Archive SHA-256: $FfmpegActual
 
 Before public distribution, keep this notice and provide the applicable source code and build configuration required by the license of the distributed binary.
@@ -414,3 +420,4 @@ Write-Host "Deno: $DenoVersionActual"
 Write-Host "Spotify/spotDL: disabled"
 Write-Host "aria2c: $Aria2VersionActual"
 Write-Host "FFmpeg: $FfmpegVersionActual"
+Remove-Item -LiteralPath $Work -Recurse -Force

@@ -97,12 +97,13 @@ export function unifiedSearchMarkup(context, variant = 'zen') {
   </section>`;
 }
 
-export function helperChipsMarkup() {
+export function helperChipsMarkup({ disabled = false } = {}) {
+  const inactive = disabled ? ' disabled aria-disabled="true" tabindex="-1" class="is-inactive"' : '';
   return `<section class="dm-helper-chips" aria-label="Accesos de entrada">
-    <button data-dm-paste-link>${dmIcon('clipboard', 17)}<span>Pegar</span></button>
-    <button data-dm-add-torrent>${dmIcon('magnet', 17)}<span>Torrent</span></button>
-    <button data-dm-new-download>${dmIcon('file', 17)}<span>Archivo o enlace</span></button>
-    <button data-dm-focus-unified>${dmPlaylistLogo(16)}<span>Playlist</span></button>
+    <button type="button" data-dm-paste-link${inactive}>${dmIcon('clipboard', 17)}<span>Pegar</span></button>
+    <button type="button" data-dm-add-torrent${inactive}>${dmIcon('magnet', 17)}<span>Torrent</span></button>
+    <button type="button" data-dm-new-download${inactive}>${dmIcon('file', 17)}<span>Archivo o enlace</span></button>
+    <button type="button" data-dm-focus-unified${inactive}>${dmPlaylistLogo(16)}<span>Playlist</span></button>
   </section>`;
 }
 
@@ -380,7 +381,7 @@ export function downloadRowMarkup(job, index, selectedId, rowMenuJobId, rowMenuP
   const isVisualSelected = isVisuallySelected(job.id, { selectedJobId: selectedId }, selectionMode, selectedJobIds);
   const isSingleSelected = Boolean(!selectionMode && isVisualSelected);
   const type = typeMeta(job);
-  return `<article class="dm-download-item ${isSingleSelected ? 'is-selected' : ''} ${isVisualSelected ? 'is-visually-selected' : ''} ${selectionMode ? 'has-selection' : ''} ${batchSelected ? 'is-batch-selected' : ''} is-${escapeHtml(job.status)} kind-${escapeHtml(job.kind)}" data-dm-select-job="${job.id}" data-dm-state="${escapeHtml(job.status)}" data-dm-visual-state="${escapeHtml(visualState)}" data-dm-stage="${escapeHtml(job.stage || '')}" data-dm-processing="${processing ? 'true' : 'false'}" data-dm-row-structure="${structureSignature}" data-dm-row-content="${contentSignature}" data-dm-row-live="${escapeHtml(liveSignature)}" aria-selected="${isVisualSelected ? 'true' : 'false'}" tabindex="0">
+  return `<article class="dm-download-item ${isSingleSelected ? 'is-selected' : ''} ${isVisualSelected ? 'is-visually-selected' : ''} ${selectionMode ? 'has-selection' : ''} ${batchSelected ? 'is-batch-selected' : ''} is-${escapeHtml(job.status)} kind-${escapeHtml(job.kind)}" data-dm-select-job="${job.id}" data-dm-state="${escapeHtml(job.status)}" data-dm-visual-state="${escapeHtml(visualState)}" data-dm-stage="${escapeHtml(job.stage || '')}" data-dm-processing="${processing ? 'true' : 'false'}" data-dm-row-structure="${structureSignature}" data-dm-row-content="${contentSignature}" data-dm-row-live="${escapeHtml(liveSignature)}" data-dm-drag-path="${job.status === 'completed' && job.destination ? escapeHtml(job.destination) : ''}" draggable="${job.status === 'completed' && job.destination ? 'true' : 'false'}" aria-selected="${isVisualSelected ? 'true' : 'false'}" tabindex="0">
     <span class="dm-item-index" aria-hidden="true">${index + 1}</span>
     ${selectionMode ? `<label class="dm-row-select" title="Seleccionar esta descarga"><input type="checkbox" data-dm-select-checkbox="${job.id}" ${batchSelected ? 'checked' : ''} aria-label="Seleccionar ${escapeHtml(job.title)}"><i></i></label>` : ''}
     ${jobVisual(job)}

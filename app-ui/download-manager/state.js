@@ -49,6 +49,7 @@ export const runtimeState = {
   recoveryPending: new Set(),
   settingsScrollTop: 0,
   downloadScrollTop: 0,
+  pendingDownloadScrollTop: null,
   virtualLists: new Map(),
   virtualRenderFrame: 0,
   virtualMeasureFrame: 0,

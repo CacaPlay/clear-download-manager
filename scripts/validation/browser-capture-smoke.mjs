@@ -23,13 +23,14 @@ globalThis.chrome = {
         ? { ok: true, host: 'lat.cacaplay.cacatools.downloadmanager', protocolVersion: 1, hostVersion: '0.45.4', desktopAppVersion: '0.95.0' }
         : message.action === 'capabilities'
           ? { ok: true, protocolVersion: 1, actions: ['ping', 'capabilities', 'browser_download_capture', 'get_status'], sourceTypes: ['direct_file', 'generic_url'], spotifyEnabled: false }
-          : { ok: nativeStatus === 'accepted', status: nativeStatus };
+          : { ok: ['accepted', 'review_opened'].includes(nativeStatus), status: nativeStatus };
       setTimeout(() => callback(response), 0);
     }
   },
   storage: { local: { get: async (defaults) => ({ ...defaults, browserCaptureMode: 'automatic' }), set: async () => {}, remove: async () => {} } },
   downloads: {
     onCreated: register('downloads.onCreated'),
+    onDeterminingFilename: register('downloads.onDeterminingFilename'),
     onChanged: register('downloads.onChanged'),
     onErased: register('downloads.onErased'),
     pause(id, callback) { calls.push(`pause:${id}`); callback(); },
@@ -61,11 +62,22 @@ await new Promise((resolve) => setTimeout(resolve, 140));
 assert.deepEqual(calls, ['pause:10', 'cancel:10']);
 assert.equal(searchAttempts.get(10), 2, 'debe reintentar metadatos cuando Chrome aún reporta .crdownload');
 
+nativeStatus = 'review_opened';
+const determining = listeners.get('downloads.onDeterminingFilename');
+assert.equal(typeof determining, 'function');
+let suggested = 0;
+const asyncFilenameDecision = determining({ id: 12, url: 'https://example.com/setup.exe', finalUrl: 'https://example.com/setup.exe', filename: 'setup.exe', mime: 'application/x-msdownload', state: 'in_progress', startTime: 'review', incognito: false }, () => { suggested += 1; });
+assert.equal(asyncFilenameDecision, true, 'La extensión debe mantener abierto el evento mientras confirma la captura');
+await new Promise((resolve) => setTimeout(resolve, 40));
+assert.equal(suggested, 1, 'La sugerencia de nombre debe resolverse exactamente una vez');
+assert.ok(calls.includes('cancel:12'), 'La copia de Chromium debe cancelarse después de abrir la revisión HTTP');
+assert.equal(calls.includes('pause:12'), false, 'La decisión temprana de nombre no debe pausar la descarga');
+
 nativeStatus = 'temporary_failure';
 await created({ id: 11, url: 'https://example.com/file.pdf', finalUrl: 'https://example.com/file.pdf', filename: 'file.pdf', mime: 'application/pdf', state: 'in_progress', startTime: 'later', incognito: false });
 await new Promise((resolve) => setTimeout(resolve, 20));
 // An uncertain/temporary host response deliberately leaves the browser copy
 // paused; resuming could create two transfers before the user reviews CDM.
-assert.deepEqual(calls, ['pause:10', 'cancel:10', 'pause:11']);
+assert.deepEqual(calls, ['pause:10', 'cancel:10', 'cancel:12', 'pause:11']);
 
-console.log('OK: captura directa pausa/cancela con accepted y conserva pausada la copia ante fallback.');
+console.log('OK: captura HTTP temprana abre revisión, cancela la copia aceptada y conserva la pausa ante resultado incierto.');

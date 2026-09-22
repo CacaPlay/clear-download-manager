@@ -1,3 +1,6 @@
+; Always ask for an installer UI language, even when a previous choice is remembered.
+!define MUI_LANGDLL_ALWAYSSHOW
+
 ; Clear Download Manager startup registration is installed for the current user only.
 ; The app still exposes the setting to disable it and removes the value on uninstall.
 !macro NSIS_HOOK_POSTINSTALL

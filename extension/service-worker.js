@@ -60,11 +60,13 @@ const UPDATE_KEY = 'pendingExtensionUpdate';
 // New installations capture supported browser downloads automatically. A
 // stored user preference still wins because storage.get preserves it.
 const DEFAULT_CAPTURE_MODE = 'automatic';
-const DEFAULT_WINDOW_MODE = 'background';
+const DEFAULT_WINDOW_MODE = 'foreground';
 const AUTOMATIC_DETECTION_DOMAINS = ['youtube.com', 'spotify.com', 'pinterest.com', 'tiktok.com'];
 const panelPorts = new Set();
 const tabCache = new Map();
-const processedDownloadKeys = new Set();
+const appWindowIds = new Set();
+const captureTasksByDownload = new Map();
+const captureOutcomesByDownload = new Map();
 const activeCaptures = new Map();
 let activeTabId = null;
 let appStatePollTimer = null;
@@ -73,6 +75,8 @@ const operationJournal = createOperationJournal(chrome.storage.local);
 async function configureSidePanel() {
   if (!chrome.sidePanel?.setPanelBehavior) return false;
   try {
+    // Let Chromium open the panel as part of the toolbar click itself. Normal
+    // browser pages should not depend on an asynchronous service-worker hop.
     await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
     return true;
   } catch {
@@ -80,30 +84,65 @@ async function configureSidePanel() {
   }
 }
 
-async function openSidePanelForTab(tab = {}) {
-  if (!chrome.sidePanel?.open) return false;
-  await configureSidePanel();
-  const tabId = Number.isInteger(tab?.id) ? tab.id : null;
-  const windowId = Number.isInteger(tab?.windowId) ? tab.windowId : null;
-  if (tabId !== null && chrome.sidePanel.setOptions) {
-    await chrome.sidePanel.setOptions({ tabId, path: 'sidepanel.html', enabled: true }).catch(() => {});
-  }
+async function openExtensionPopup(tab = {}) {
+  const popupUrl = new URL(chrome.runtime.getURL('sidepanel.html'));
+  if (Number.isInteger(tab?.id)) popupUrl.searchParams.set('sourceTabId', String(tab.id));
   try {
-    if (windowId !== null) await chrome.sidePanel.open({ windowId });
-    else if (tabId !== null) await chrome.sidePanel.open({ tabId });
-    else return false;
+    const opened = await chrome.windows?.create?.({
+      url: popupUrl.href,
+      type: 'popup',
+      width: 440,
+      height: 720,
+      focused: true
+    });
+    if (opened) return true;
+  } catch {}
+  try {
+    await chrome.tabs.create({ url: popupUrl.href, active: true });
     return true;
   } catch {
-    if (tabId === null) return false;
-    try {
-      await chrome.sidePanel.open({ tabId });
-      return true;
-    } catch {
-      return false;
-    }
+    return false;
   }
 }
 
+async function disablePanelForAppTab(tabId) {
+  if (!Number.isInteger(tabId) || !chrome.sidePanel?.setOptions) return false;
+  try {
+    await chrome.sidePanel.setOptions({ tabId, path: 'sidepanel.html', enabled: false });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function configurePanelForAppWindow(windowId, tabs = null) {
+  if (!Number.isInteger(windowId)) return false;
+  appWindowIds.add(windowId);
+  let appTabs = Array.isArray(tabs) ? tabs : [];
+  if (!appTabs.length) {
+    try {
+      appTabs = await chrome.tabs.query({ windowId });
+    } catch {}
+  }
+  await Promise.all(appTabs.filter((tab) => Number.isInteger(tab?.id)).map((tab) => disablePanelForAppTab(tab.id)));
+  return true;
+}
+
+async function initializeAppWindowPanels() {
+  if (!chrome.windows?.getAll) return;
+  try {
+    const windows = await chrome.windows.getAll({ populate: true });
+    await Promise.all(windows.filter((browserWindow) => browserWindow?.type === 'app')
+      .map((browserWindow) => configurePanelForAppWindow(browserWindow.id, browserWindow.tabs)));
+  } catch {}
+}
+
+chrome.windows?.onCreated?.addListener((browserWindow) => {
+  if (browserWindow?.type === 'app') void configurePanelForAppWindow(browserWindow.id, browserWindow.tabs);
+});
+chrome.windows?.onRemoved?.addListener((windowId) => appWindowIds.delete(windowId));
+
+void initializeAppWindowPanels();
 void configureSidePanel();
 
 function safePageUrl(value) {
@@ -302,6 +341,9 @@ function shouldIgnoreDownload(item) {
   if (item.incognito || item.paused) return true;
   if (Number.isInteger(item.id) && activeCaptures.has(item.id)) return true;
   if (item.byExtensionId && item.byExtensionId === chrome.runtime.id) return true;
+  // Respect downloads explicitly started by another extension (for example a
+  // dedicated manager) instead of racing its own native handoff.
+  if (item.byExtensionId && item.byExtensionId !== chrome.runtime.id) return true;
   if (String(item.byExtensionName || '').toLowerCase().includes('cacatools')) return true;
   const urls = downloadUrls(item);
   if (!urls.length || urls.some((url) => isBrowserUpdate(url, item.filename))) return true;
@@ -374,18 +416,16 @@ function capturePayload(item, requestedWindowMode) {
   };
 }
 
-async function captureDownload(item) {
-  if (shouldIgnoreDownload(item)) return;
+async function performCaptureDownload(item, options = {}) {
+  if (shouldIgnoreDownload(item)) return 'passthrough';
   const key = captureDownloadKey(item);
-  if (processedDownloadKeys.has(key)) return;
-  processedDownloadKeys.add(key);
   const mode = await captureMode();
-  if (mode === 'disabled') return;
+  if (mode === 'disabled') return 'passthrough';
   const requestedWindowMode = await windowMode();
   let capture = capturePayload(item, requestedWindowMode);
   if (mode === 'ask') {
     publish({ type: 'CAPTURE_AVAILABLE', item: capture });
-    return;
+    return 'passthrough';
   }
   if (isSpotifyUrl(capture.finalUrl || capture.url)) {
     publish({
@@ -393,7 +433,7 @@ async function captureDownload(item) {
       item: capture,
       response: { ok: false, status: 'spotify_direct_capture_ignored', error: SPOTIFY_DIRECT_CAPTURE_MESSAGE }
     });
-    return;
+    return 'passthrough';
   }
 
   // Check compatibility while the browser download is still running.
@@ -402,16 +442,20 @@ async function captureDownload(item) {
     if (!bridge.actions.includes('browser_download_capture')) throw new Error('El puente instalado no admite transferir descargas.');
   } catch (error) {
     publish({type:'CAPTURE_FALLBACK',item:capture,response:{ok:false,error:String(error.message || error)}});
-    return;
+    return 'passthrough';
   }
 
   activeCaptures.set(item.id, key);
   let paused = false;
   try {
-    await downloadApiCall('pause', item.id);
-    paused = true;
-    const refreshedItem = await refreshDownloadMetadata(item);
-    capture = capturePayload(refreshedItem, requestedWindowMode);
+    // The filename-determination event runs before Chromium opens its save
+    // dialog. Do not pause or poll there: that can stall filename resolution.
+    if (options.determiningFilename !== true) {
+      await downloadApiCall('pause', item.id);
+      paused = true;
+      const refreshedItem = await refreshDownloadMetadata(item);
+      capture = capturePayload(refreshedItem, requestedWindowMode);
+    }
     publish({ type: 'CAPTURE_PENDING', item: capture });
     // A lost response is not a rejection. Resuming here could create two transfers.
     await chrome.storage.local.set({pendingCaptureReview: {downloadId:item.id, at:Date.now()}});
@@ -420,22 +464,23 @@ async function captureDownload(item) {
     const status = String(response?.status || '').toLowerCase();
     if (response?.uncertain || status === 'temporary_failure') {
       publish({type:'CAPTURE_FALLBACK',response:{ok:false,error:'Transferencia sin confirmar. La descarga del navegador queda pausada. Revisa Clear Download Manager antes de reanudarla manualmente en el navegador.'}});
-      return;
+      return 'uncertain';
     }
-    if (response?.ok === true && status === 'accepted') {
+    if (response?.ok === true && ['accepted', 'review_opened'].includes(status)) {
       try { await downloadApiCall('cancel', item.id); }
       catch {
         publish({type:'CAPTURE_FALLBACK',item:capture,response:{ok:false,error:'Clear Download Manager aceptó la descarga, pero no se pudo cancelar la copia del navegador. Revisa ambas descargas.'}});
-        return;
+        return 'cancel_failed';
       }
       publish({ type: 'CAPTURE_ACCEPTED', item: capture, response });
       await chrome.storage.local.remove('pendingCaptureReview');
       void refreshAppStatus();
-      return;
+      return 'captured';
     }
     if (paused) await downloadApiCall('resume', item.id);
     await chrome.storage.local.remove('pendingCaptureReview');
     publish({ type: 'CAPTURE_FALLBACK', item: capture, response });
+    return 'passthrough';
   } catch (error) {
     // Do not guess whether the app accepted a request if communication failed.
     publish({
@@ -443,9 +488,38 @@ async function captureDownload(item) {
       item: capture,
       response: { status: 'temporary_failure', error: paused ? 'La captura no se confirmó. Revisa Clear Download Manager y la descarga pausada del navegador antes de reanudar.' : String(error) }
     });
+    return paused ? 'uncertain' : 'passthrough';
   } finally {
     activeCaptures.delete(item.id);
   }
+}
+
+async function captureDownload(item, options = {}) {
+  if (!Number.isInteger(item?.id)) return performCaptureDownload(item, options);
+  const downloadId = item.id;
+  const key = captureDownloadKey(item);
+  const inFlight = captureTasksByDownload.get(downloadId);
+  if (inFlight) return inFlight;
+  const previous = captureOutcomesByDownload.get(downloadId);
+  if (previous) return previous.outcome;
+
+  const task = performCaptureDownload(item, options)
+    .catch((error) => {
+      diagnostic('download capture failed', downloadId, String(error?.message || error));
+      return 'passthrough';
+    })
+    .then((outcome) => {
+      captureOutcomesByDownload.set(downloadId, { key, outcome });
+      while (captureOutcomesByDownload.size > 256) {
+        captureOutcomesByDownload.delete(captureOutcomesByDownload.keys().next().value);
+      }
+      return outcome;
+    })
+    .finally(() => {
+      if (captureTasksByDownload.get(downloadId) === task) captureTasksByDownload.delete(downloadId);
+    });
+  captureTasksByDownload.set(downloadId, task);
+  return task;
 }
 
 function detectionQuality(items) {
@@ -520,7 +594,11 @@ async function collectFromTab(tabId) {
 
 async function activeTab() {
   const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-  return tabs[0] || null;
+  const focused = tabs[0] || null;
+  if (focused?.url?.startsWith(chrome.runtime.getURL('')) && Number.isInteger(activeTabId)) {
+    return chrome.tabs.get(activeTabId).catch(() => focused);
+  }
+  return focused;
 }
 
 async function refreshAppStatus() {
@@ -560,16 +638,37 @@ async function publishPendingUpdate() {
 }
 
 chrome.downloads.onCreated.addListener((item) => { void captureDownload(item); });
+chrome.downloads.onDeterminingFilename?.addListener((item, suggest) => {
+  let completed = false;
+  const finishFilenameResolution = () => {
+    if (completed) return;
+    completed = true;
+    try { suggest(); } catch {}
+  };
+  // Let the app accept the handoff (or fall back) before Chromium decides
+  // whether to show its own save-location dialog. The shared per-download
+  // task prevents this event racing with onCreated and launching two captures.
+  void captureDownload(item, { determiningFilename: true })
+    .then(finishFilenameResolution, finishFilenameResolution);
+  return true;
+});
 chrome.downloads.onChanged.addListener((delta) => {
   if (delta.state?.current && ['complete', 'interrupted'].includes(delta.state.current)) {
     activeCaptures.delete(delta.id);
   }
 });
-chrome.downloads.onErased.addListener((downloadId) => activeCaptures.delete(downloadId));
+chrome.downloads.onErased.addListener((downloadId) => {
+  activeCaptures.delete(downloadId);
+  captureOutcomesByDownload.delete(downloadId);
+});
 
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'cacatools-sidepanel') return;
   panelPorts.add(port);
+  try {
+    const sourceTabId = Number(new URL(port.sender?.url || '').searchParams.get('sourceTabId'));
+    if (Number.isInteger(sourceTabId) && sourceTabId > 0) activeTabId = sourceTabId;
+  } catch {}
   port.onDisconnect.addListener(() => {
     panelPorts.delete(port);
     stopAppStatePollingIfIdle();
@@ -678,11 +777,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.tabs.onActivated.addListener(({ tabId }) => {
-  activeTabId = tabId;
-  publish({type:'DETECTIONS',tabId,status:'analyzing',detections:[]});
-  if (panelPorts.size) void collectFromTab(tabId);
+  void chrome.tabs.get(tabId).then((tab) => {
+    if (appWindowIds.has(tab?.windowId)) void disablePanelForAppTab(tabId);
+    if (tab?.url?.startsWith(chrome.runtime.getURL(''))) return;
+    activeTabId = tabId;
+    publish({type:'DETECTIONS',tabId,status:'analyzing',detections:[]});
+    if (panelPorts.size) void collectFromTab(tabId);
+  }).catch(() => {});
 });
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+chrome.tabs.onCreated?.addListener((tab) => {
+  if (appWindowIds.has(tab?.windowId)) void disablePanelForAppTab(tab.id);
+});
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (Number.isInteger(tab?.windowId) && appWindowIds.has(tab.windowId)) void disablePanelForAppTab(tabId);
+  if (changeInfo.url?.startsWith(chrome.runtime.getURL(''))) return;
   if (panelPorts.size && (changeInfo.status === 'complete' || changeInfo.url)) {
     void collectAutomatically(tabId);
   }
@@ -694,8 +802,15 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   await initializeActionIcon();
   const existing = await chrome.storage.local.get({
     [CAPTURE_MODE_KEY]: DEFAULT_CAPTURE_MODE,
-    [WINDOW_MODE_KEY]: DEFAULT_WINDOW_MODE
+    [WINDOW_MODE_KEY]: DEFAULT_WINDOW_MODE,
+    extensionWindowModeConfigured: false
   });
+  // Older builds defaulted to background and did not record whether that value
+  // was explicitly chosen. Make foreground the opt-in-safe default on update;
+  // a user selection made in this build is preserved by the marker.
+  if (details?.reason === 'update' && existing.extensionWindowModeConfigured !== true) {
+    existing[WINDOW_MODE_KEY] = DEFAULT_WINDOW_MODE;
+  }
   if (details?.reason === 'update' && chrome.storage.local.remove) {
     await chrome.storage.local.remove(UPDATE_KEY);
   }
@@ -712,7 +827,16 @@ chrome.runtime.onStartup.addListener(() => {
 
 if (chrome.action?.onClicked?.addListener) {
   chrome.action.onClicked.addListener((tab) => {
-    void openSidePanelForTab(tab);
+    if (Number.isInteger(tab?.id)) activeTabId = tab.id;
+    // Normal tabs use Chromium's native openPanelOnActionClick behavior.
+    // App/PWA windows are disabled per-tab before the click and use a separate
+    // extension window to avoid the known standalone-window crash path.
+    if (appWindowIds.has(tab?.windowId)) {
+      if (Number.isInteger(tab?.id)) {
+        void chrome.sidePanel?.setOptions?.({ tabId: tab.id, path: 'sidepanel.html', enabled: false }).catch(() => {});
+      }
+      void openExtensionPopup(tab);
+    }
   });
 }
 

@@ -31,10 +31,13 @@ const excludedFiles = new Set([
   // Produced by build-store-msix.ps1 from extension/native-host.
   'src-tauri/resources/extension/cacatools-native-host.exe',
   'src-tauri/resources/licenses/ARIA2-COPYING.txt',
+  'src-tauri/resources/licenses/ARIA2-OPENSSL-LICENSE.txt',
   'src-tauri/resources/licenses/ARIA2-NOTICE.txt',
   'src-tauri/resources/licenses/FFMPEG-BUILD-README.txt',
   'src-tauri/resources/licenses/FFMPEG-LICENSE.txt',
   'src-tauri/resources/licenses/FFMPEG-NOTICE.txt',
+  // Generated into the resource folder immediately before Windows packaging.
+  'src-tauri/resources/licenses/THIRD_PARTY_NOTICES.txt',
   'src-tauri/resources/licenses/YT-DLP-NOTICE.txt',
   'src-tauri/resources/licenses/YT-DLP-THIRD-PARTY-LICENSES.txt',
   'desktop.ini',

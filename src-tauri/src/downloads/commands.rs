@@ -6,23 +6,23 @@ use super::{
     deduplicate_storage_paths, filename_extension, filename_from_url, job_final_storage_paths,
     job_is_active, job_partial_storage_paths, load_job_storage_record,
     read_download_concurrency_settings, remote_download_probe, remove_managed_storage_path,
-    run_download_worker, schedule_job_deletion_after_idle, stop_job_internal,
+    run_download_worker, sanitize_filename, schedule_job_deletion_after_idle, stop_job_internal,
     stop_job_internal_without_wait, validate_managed_candidate, wait_for_job_idle,
     CancelJobReceipt, DeleteJobReceipt, DeletePlaylistReceipt, JobStoragePreview,
 };
 use crate::extension_bridge;
 use crate::{
-    ensure_public_network_resolution, focus_main_window, html_attribute_values, html_page_title,
-    is_spotify_url, job_uses_disabled_spotify, kill_process_tree, normalize_schedule_time,
-    page_candidate_score, parse_public_http_url, read_currency_snapshot, read_download_activity,
-    read_schedule, reject_spotify_source, resolve_download_filename,
-    resolve_extension_download_filename, resume_download_worker_when_idle,
-    resume_media_worker_when_idle, resume_torrent_worker_when_idle, spotify_disabled_error,
-    terminate_external_processes, url_has_public_http_target, url_has_public_network_target,
-    validate_schedule_action, DesktopSettingsSnapshot, DesktopSnapshot, DownloadActivitySnapshot,
-    DownloadQueueReceipt, DownloadScheduleSnapshot, DownloadUrlInspection, FileMetadataSnapshot,
-    LocalState, PageDownloadCandidate, PageDownloadDiscovery, QueueActionReceipt,
-    RecentFileSnapshot, StorageSnapshot, SPOTIFY_DISABLED_MESSAGE,
+    ensure_public_network_resolution, html_attribute_values, html_page_title, is_spotify_url,
+    job_uses_disabled_spotify, kill_process_tree, normalize_schedule_time, page_candidate_score,
+    parse_public_http_url, read_currency_snapshot, read_download_activity, read_schedule,
+    reject_spotify_source, resolve_download_filename, resolve_extension_download_filename,
+    resume_download_worker_when_idle, resume_media_worker_when_idle,
+    resume_torrent_worker_when_idle, spotify_disabled_error, terminate_external_processes,
+    url_has_public_http_target, url_has_public_network_target, validate_schedule_action,
+    DesktopSettingsSnapshot, DesktopSnapshot, DownloadActivitySnapshot, DownloadQueueReceipt,
+    DownloadScheduleSnapshot, DownloadUrlInspection, FileMetadataSnapshot, LocalState,
+    PageDownloadCandidate, PageDownloadDiscovery, QueueActionReceipt, RecentFileSnapshot,
+    StorageSnapshot, SPOTIFY_DISABLED_MESSAGE,
 };
 use reqwest::blocking::Client;
 use reqwest::header::CONTENT_TYPE;
@@ -120,18 +120,19 @@ impl BrowserDownloadCaptureService {
             }
         };
         let normalized_source = parsed.to_string();
-        let connection = state
-            .connection
-            .lock()
-            .map_err(|_| "No se pudo bloquear la base local".to_string())?;
-        let duplicate = Self::duplicate_job(&connection, &normalized_source)?;
+        let duplicate = {
+            let connection = state
+                .connection
+                .lock()
+                .map_err(|_| "No se pudo bloquear la base local".to_string())?;
+            Self::duplicate_job(&connection, &normalized_source)?
+        };
         if let Some(job_id) = duplicate {
             return Self::respond(
                 request_id,
                 json!({ "ok": false, "status": "duplicate", "requestId": request_id, "jobId": job_id }),
             );
         }
-        drop(connection);
         let captured_filename = capture
             .get("filename")
             .and_then(Value::as_str)
@@ -177,6 +178,116 @@ impl BrowserDownloadCaptureService {
                 "jobId": receipt.job_id,
                 "filename": receipt.filename,
                 "destination": receipt.destination
+            }),
+        )
+    }
+
+    pub(crate) async fn prepare(
+        request_id: &str,
+        capture: Value,
+        app: AppHandle,
+        state: &LocalState,
+    ) -> Result<Value, String> {
+        if capture
+            .get("incognito")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+        {
+            return Self::respond(
+                request_id,
+                json!({
+                    "ok": false,
+                    "status": "unsupported",
+                    "requestId": request_id,
+                    "error": "Las descargas privadas no se transfieren automáticamente"
+                }),
+            );
+        }
+        let source = Self::source(&capture);
+        let original_capture_source = capture
+            .get("url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim();
+        if is_spotify_url(&source) || is_spotify_url(original_capture_source) {
+            return Self::respond(
+                request_id,
+                json!({
+                    "ok": false,
+                    "status": "spotify_disabled",
+                    "requestId": request_id,
+                    "error": SPOTIFY_DISABLED_MESSAGE
+                }),
+            );
+        }
+        let parsed = match parse_public_http_url(&source, "La descarga capturada no es HTTP/HTTPS")
+        {
+            Ok(parsed) => parsed,
+            Err(error) => {
+                return Self::respond(
+                    request_id,
+                    json!({ "ok": false, "status": "unsupported", "requestId": request_id, "error": error }),
+                )
+            }
+        };
+        let normalized_source = parsed.to_string();
+        let duplicate = {
+            let connection = state
+                .connection
+                .lock()
+                .map_err(|_| "No se pudo bloquear la base local".to_string())?;
+            Self::duplicate_job(&connection, &normalized_source)?
+        };
+        if let Some(job_id) = duplicate {
+            return Self::respond(
+                request_id,
+                json!({ "ok": false, "status": "duplicate", "requestId": request_id, "jobId": job_id }),
+            );
+        }
+        let captured_filename = capture
+            .get("filename")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let content_disposition = capture.get("contentDisposition").and_then(Value::as_str);
+        let mime = capture
+            .get("mime")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let filename = resolve_download_filename(
+            &parsed,
+            &parsed,
+            captured_filename,
+            content_disposition,
+            Some(mime),
+        );
+        let options = json!({
+            "filename": filename.clone(),
+            "mime": mime,
+            "windowMode": "foreground",
+            "pageTitle": "Preparar descarga HTTP",
+            "title": "Preparar descarga HTTP"
+        });
+        if let Err(error) = crate::subwindows::open_preparation_window(
+            "direct".to_string(),
+            normalized_source,
+            Some(options),
+            app,
+        )
+        .await
+        {
+            return Self::respond(
+                request_id,
+                json!({ "ok": false, "status": "preparation_failed", "requestId": request_id, "error": error }),
+            );
+        }
+        Self::respond(
+            request_id,
+            json!({
+                "ok": true,
+                "status": "review_opened",
+                "requestId": request_id,
+                "filename": filename
             }),
         )
     }
@@ -442,7 +553,7 @@ pub(crate) async fn queue_http_download(
         None,
     )
 }
-pub(crate) fn accept_browser_download_capture(
+pub(crate) async fn accept_browser_download_capture(
     request_id: String,
     capture: Value,
     app: AppHandle,
@@ -453,11 +564,10 @@ pub(crate) fn accept_browser_download_capture(
         .or_else(|| capture.get("windowBehavior"))
         .and_then(Value::as_str)
         .is_some_and(|value| value.eq_ignore_ascii_case("foreground"));
-    let response = BrowserDownloadCaptureService::accept(&request_id, capture, &state)?;
-    if foreground && response.get("status").and_then(Value::as_str) == Some("accepted") {
-        focus_main_window(app)?;
+    if foreground {
+        return BrowserDownloadCaptureService::prepare(&request_id, capture, app, &state).await;
     }
-    Ok(response)
+    BrowserDownloadCaptureService::accept(&request_id, capture, &state)
 }
 pub(crate) fn set_job_status(
     id: i64,
@@ -652,6 +762,136 @@ pub(crate) fn job_storage_preview(
         safety_warning,
     })
 }
+
+pub(crate) fn rename_completed_download(
+    id: i64,
+    new_name: String,
+    state: State<'_, LocalState>,
+) -> Result<String, String> {
+    let mut connection = state
+        .connection
+        .lock()
+        .map_err(|_| "No se pudo bloquear la base local".to_string())?;
+    let record = load_job_storage_record(&connection, id)?;
+    if record.status != "completed" {
+        return Err("Solo se pueden renombrar descargas completadas.".into());
+    }
+    if record.torrent_destination_dir.is_some() {
+        return Err("No se pueden renombrar carpetas torrent desde esta acción.".into());
+    }
+    let is_direct = record.direct_destination.is_some();
+    if new_name.trim().is_empty() {
+        return Err("Escribe un nombre de archivo válido.".into());
+    }
+    let old_path = match (record.direct_destination, record.media_output) {
+        (Some(_), Some(_)) => {
+            return Err("La descarga tiene más de una ruta final; no se modificó.".into())
+        }
+        (Some(path), None) | (None, Some(path)) => path,
+        (None, None) => return Err("No se encontró el archivo descargado.".into()),
+    };
+    if !old_path.is_absolute() {
+        return Err("La ruta del archivo descargado no es absoluta.".into());
+    }
+    let metadata = old_path
+        .symlink_metadata()
+        .map_err(|error| format!("No se pudo inspeccionar el archivo: {error}"))?;
+    if !metadata.is_file() || metadata.file_type().is_symlink() {
+        return Err("La ruta final no es un archivo normal.".into());
+    }
+    // Destination folders can be chosen by the user outside CDM's default
+    // Downloads directory. Canonicalize the exact database-owned file path
+    // rather than restricting rename to that default directory.
+    let old_path = old_path
+        .canonicalize()
+        .map_err(|error| format!("No se pudo resolver el archivo descargado: {error}"))?;
+
+    let requested = sanitize_filename(new_name.trim());
+    let requested_path = std::path::Path::new(&requested);
+    let original_extension = old_path.extension().and_then(|value| value.to_str());
+    let requested_stem = if original_extension.is_some() {
+        requested_path.file_stem().and_then(|value| value.to_str())
+    } else {
+        requested_path.file_name().and_then(|value| value.to_str())
+    }
+    .filter(|value| !value.trim().is_empty())
+    .ok_or_else(|| "Escribe un nombre de archivo válido.".to_string())?;
+    let final_name = match original_extension {
+        Some(extension) => format!("{requested_stem}.{extension}"),
+        None => requested.clone(),
+    };
+    let parent = old_path
+        .parent()
+        .ok_or_else(|| "No se encontró la carpeta del archivo.".to_string())?;
+    let new_path = parent.join(final_name);
+    if new_path.parent() != Some(parent) {
+        return Err("El nuevo nombre no puede mover el archivo a otra carpeta.".into());
+    }
+    if old_path == new_path
+        || old_path
+            .to_string_lossy()
+            .eq_ignore_ascii_case(&new_path.to_string_lossy())
+    {
+        return Ok(old_path.to_string_lossy().to_string());
+    }
+    if new_path.exists() {
+        return Err("Ya existe un archivo con ese nombre en la carpeta.".into());
+    }
+    let new_value = new_path.to_string_lossy().to_string();
+    let new_title = new_path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default();
+    let transaction = connection
+        .transaction()
+        .map_err(|error| format!("No se pudo preparar el cambio: {error}"))?;
+    fs::rename(&old_path, &new_path)
+        .map_err(|error| format!("No se pudo renombrar el archivo: {error}"))?;
+
+    let updates = (|| -> Result<(), String> {
+        let updated = transaction
+            .execute(
+                "UPDATE jobs SET title=?1,updated_at=CURRENT_TIMESTAMP WHERE id=?2 AND status='completed'",
+                params![new_title, id],
+            )
+            .map_err(|error| error.to_string())?;
+        if updated != 1 {
+            return Err("La descarga ya no está disponible para renombrarla.".into());
+        }
+        let path_rows = if is_direct {
+            transaction
+                .execute(
+                    "UPDATE download_jobs SET destination=?1 WHERE job_id=?2",
+                    params![new_value, id],
+                )
+                .map_err(|error| error.to_string())?
+        } else {
+            let path_rows = transaction
+                .execute(
+                    "UPDATE media_jobs SET output_path=?1,updated_at=CURRENT_TIMESTAMP WHERE job_id=?2",
+                    params![new_value, id],
+                )
+                .map_err(|error| error.to_string())?;
+            transaction
+                .execute(
+                    "UPDATE playlist_items SET output_path=?1 WHERE job_id=?2",
+                    params![new_value, id],
+                )
+                .map_err(|error| error.to_string())?;
+            path_rows
+        };
+        if path_rows != 1 {
+            return Err("No se pudo actualizar la ruta registrada de la descarga.".into());
+        }
+        transaction.commit().map_err(|error| error.to_string())
+    })();
+    if let Err(error) = updates {
+        let _ = fs::rename(&new_path, &old_path);
+        return Err(format!("No se pudo guardar el nuevo nombre: {error}"));
+    }
+    Ok(new_value)
+}
+
 pub(crate) fn emergency_stop_job(
     id: i64,
     delete_partial: bool,

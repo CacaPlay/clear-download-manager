@@ -11,7 +11,7 @@ const ES_TO_EN = Object.freeze({
   'Gestor local de archivos y multimedia.': 'Local file and media manager.', 'Documentos': 'Documents', 'Biblioteca': 'Library', 'Imágenes': 'Images', 'Utilidades': 'Utilities', 'Inicio': 'Home',
   'Pega un enlace, torrent, archivo, playlist o busca un vídeo…': 'Paste a link, torrent, file, playlist, or search for a video…',
   'Pega un enlace multimedia, playlist o archivo directo': 'Paste a media link, playlist, or direct file', 'Entrada universal de descarga': 'Universal download input',
-  'Pegar': 'Paste', 'Torrent': 'Torrent', 'Archivo o enlace': 'File or link', 'Playlist': 'Playlist', 'Seleccionar': 'Select', 'Seleccionar descargas': 'Select downloads', 'Todas las categorías': 'All categories', 'Filtrar categorías': 'Filter categories', 'Mostrar detalles': 'Show details', 'Pausar': 'Pause',
+  'Pegar': 'Paste', 'Torrent': 'Torrent', 'Archivo o enlace': 'File or link', 'Playlist': 'Playlist', 'Seleccionar': 'Select', 'Seleccionar descargas': 'Select downloads', 'Todas las categorías': 'Categories', 'Categorías': 'Categories', 'Filtrar categorías': 'Filter categories', 'Mostrar detalles': 'Show details', 'Pausar': 'Pause',
   'Analizar': 'Analyze', 'Analizando…': 'Analyzing…', 'Limpiar': 'Clear', 'Activas': 'Active', 'Completadas': 'Completed', 'Velocidad': 'Speed',
   'Pendientes': 'Pending', 'En ejecución': 'Running', 'Con errores': 'With errors', 'Archivos': 'Files', 'Vídeo': 'Video', 'Audio': 'Audio', 'Multimedia': 'Media',
   'No hay descargas aquí todavía': 'No downloads here yet', 'Pega un enlace, añade un torrent o busca un vídeo para comenzar.': 'Paste a link, add a torrent, or search for a video to get started.',
@@ -20,7 +20,8 @@ const ES_TO_EN = Object.freeze({
   'Sigue escribiendo para buscar coincidencias.': 'Keep typing to search for matches.', 'Busca un vídeo por su título': 'Search for a video by title', 'También puedes escribir artista, canal o palabras clave.': 'You can also enter an artist, channel, or keywords.',
   'Vídeo encontrado': 'Video found', 'Sugerencia de YouTube': 'YouTube suggestion', 'Reproducir': 'Play', '↑↓ para navegar · Enter para analizar': '↑↓ to navigate · Enter to analyze', 'Ctrl + K enfoca el buscador': 'Ctrl + K focuses search',
   'Resumen': 'Overview', 'Detalles avanzados': 'Advanced details', 'Registro': 'Log', 'Motor': 'Engine', 'Protocolo': 'Protocol', 'Modo': 'Mode', 'Transferencia': 'Transfer', 'Conexiones': 'Connections', 'Recuperación': 'Recovery', 'Enlace original': 'Original link',
-  'Cerrar': 'Close', 'Volver': 'Back', 'Volver al gestor': 'Back to manager', 'Abrir': 'Open', 'Mostrar archivo': 'Show in folder', 'Abrir archivo': 'Open file', 'Copiar ruta': 'Copy path', 'Copiar enlace original': 'Copy original link',
+  'Cerrar': 'Close', 'Volver': 'Back', 'Volver al gestor': 'Back to manager', 'Abrir': 'Open', 'Mostrar archivo': 'Show in folder', 'Abrir archivo': 'Open file', 'Copiar ruta': 'Copy path', 'Copiar archivo': 'Copy file', 'Copiar': 'Copy', 'Cortar archivo': 'Cut file', 'Cortar': 'Cut', 'Copiar enlace original': 'Copy original link', 'Ir a la extensión': 'Open extension', 'Renombrar': 'Rename', 'Renombrar archivo': 'Rename file', 'Nuevo nombre': 'New name', 'El archivo descargado se renombrará en su carpeta. Su extensión se conservará.': 'The downloaded file will be renamed in its folder. Its extension will be preserved.', 'Archivo renombrado correctamente.': 'File renamed successfully.',
+  'Formato y calidad': 'Format and quality', 'Calidad / formato': 'Quality / format', 'Salida predeterminada': 'Default output', 'Se reutiliza al analizar el siguiente enlace compatible.': 'Reused when analyzing the next compatible link.', 'Formato de playlist': 'Playlist format', 'Se conserva entre playlists y se reajusta solo si resulta incompatible.': 'Kept between playlists and adjusted only when incompatible.', 'Guardar en': 'Save to', 'Elementos seleccionados': 'Selected items', 'seleccionados': 'selected', 'Todo seleccionado': 'All selected', 'Seleccionar todo': 'Select all', 'Listo para descargar': 'Ready to download',
   'Eliminar': 'Delete', 'Eliminar selección': 'Delete selection', 'Cancelar': 'Cancel', 'Guardar': 'Save', 'Restablecer': 'Reset', 'Restablecer colores': 'Reset colors', 'Restablecer apariencia': 'Reset appearance',
   'Más detalles': 'More details', 'Actualizar': 'Update', 'Más tarde': 'Later', 'Instalar ahora': 'Install now', 'Preparando…': 'Preparing…', 'Buscar ahora': 'Check now', 'Buscar actualizaciones': 'Check for updates', 'Comentarios y sugerencias': 'Feedback', 'Ver release': 'View release', 'Ver extensión': 'View extension', 'Apoyar': 'Support',
   'Apoya el proyecto': 'Support the project', 'Tu apoyo ayuda a mantener Clear Download Manager en desarrollo.': 'Your support helps keep Clear Download Manager in development.',
@@ -31,7 +32,7 @@ const ES_TO_EN = Object.freeze({
   'Multimedia': 'Media', 'Motores y preferencias': 'Engines and preferences', 'Disponibilidad': 'Availability', 'Sesión': 'Session', 'Cookies de Brave activadas': 'Brave cookies enabled', 'Sin cookies del navegador': 'No browser cookies', 'Mejor disponible': 'Best available', 'Calidad preferida': 'Preferred quality', 'Compatibilidad': 'Compatibility', 'Las políticas multimedia y el reproductor se conservan sin cambios.': 'Media policies and the player remain unchanged.',
   'Apariencia': 'Appearance', 'Personaliza la interfaz': 'Customize the interface', 'Tema y color': 'Theme and color', 'Tema': 'Theme', 'Sistema': 'System', 'Oscuro': 'Dark', 'Claro': 'Light', 'Color de acento': 'Accent color', 'Colores de acento': 'Accent colors', 'Colores de acento para iconos': 'Accent colors for icons', 'Color de iconos': 'Icon color', 'Controla la parte de color de los iconos; la base gris permanece limpia y legible.': 'Controls the colored part of icons; the gray base stays clean and legible.', 'Colores preajustados': 'Preset colors', 'Colores preajustados para iconos': 'Preset icon colors', 'Color personalizado': 'Custom color', 'Color personalizado de iconos': 'Custom icon color', 'Colores de progreso': 'Progress colors', 'Activo': 'Active', 'Completado': 'Completed', 'En pausa': 'Paused', 'Error': 'Error', 'Activo, completado, pausa y error conservan sus colores independientes.': 'Active, completed, paused, and error keep independent colors.', 'Escala y densidad': 'Scale and density', 'Escala automática': 'Automatic scale', 'Activada': 'Enabled', 'Desactivada': 'Disabled', 'Escala de interfaz': 'Interface scale', 'Reducir escala': 'Decrease scale', 'Aumentar escala': 'Increase scale', 'Porcentaje de escala': 'Scale percentage', 'Densidad': 'Density', 'Compacta': 'Compact', 'Equilibrada': 'Balanced', 'Amplia': 'Spacious', 'Avanzado': 'Advanced', 'Tamaño del texto': 'Text size', 'Miniaturas': 'Thumbnails', 'Medianas': 'Medium', 'Grandes': 'Large', 'Muy grandes': 'Extra large', 'Efectos': 'Effects', 'Superficie': 'Surface', 'Sólida': 'Solid', 'Mica': 'Mica', 'Movimiento': 'Motion', 'Reducido': 'Reduced', 'Desactivado': 'Off', 'Esquinas': 'Corners', 'Rectas': 'Sharp', 'Estándar': 'Standard', 'Suaves': 'Soft', 'Tamaño de texto, miniaturas y preferencias visuales': 'Text size, thumbnails, and visual preferences', 'Caca verde': 'Green', 'Caca azul': 'Blue', 'Violeta': 'Violet', 'Cian': 'Cyan', 'Rosa': 'Rose', 'Ámbar': 'Amber', 'Esmeralda': 'Emerald', 'Índigo': 'Indigo', 'Magenta': 'Magenta', 'Carmesí': 'Crimson', 'Turquesa': 'Teal', 'Gris predeterminado': 'Default gray', 'Automático': 'Automatic',
   'Integraciones': 'Integrations', 'Conexiones disponibles': 'Available connections', 'Extensión del navegador': 'Browser extension', 'Puente': 'Bridge', 'Preparado': 'Ready', 'Spotify': 'Spotify', 'Spotify está desactivado temporalmente.': 'Spotify is temporarily disabled.', 'Spotify desactivado': 'Spotify disabled',
-  'Actualizaciones y diagnóstico': 'Updates and diagnostics', 'Estado local': 'Local status', 'Versiones': 'Versions', 'Aplicación': 'Application', 'Herramientas internas': 'Internal tools', 'Comprueba de forma segura el motor interno de multimedia.': 'Safely check the internal media engine.', 'Última comprobación': 'Last check', 'Diagnóstico visual': 'Visual diagnostics', 'Escala efectiva': 'Effective scale', 'Tipografía': 'Typography', 'Copiar diagnóstico': 'Copy diagnostics', 'Actualizado': 'Up to date', 'Comprobando…': 'Checking…', 'Descargando…': 'Downloading…', 'Verificando…': 'Verifying…', 'Instalando…': 'Installing…', 'No se pudo completar': 'Could not complete', 'Sin conexión': 'Offline', 'Actualizaciones no configuradas': 'Updates not configured', 'Estado no disponible': 'Status unavailable', 'Aún no comprobado': 'Not checked yet',
+  'Actualizaciones y diagnóstico': 'Updates and diagnostics', 'Estado local': 'Local status', 'Versiones': 'Versions', 'Aplicación': 'Application', 'Herramientas internas': 'Internal tools', 'Comprueba de forma segura el motor interno de multimedia.': 'Safely check the internal media engine.', 'yt-dlp · actualización segura': 'yt-dlp · safe update', 'FFmpeg / FFprobe / Deno / aria2c': 'FFmpeg / FFprobe / Deno / aria2c', 'FFmpeg, FFprobe, Deno y aria2c se actualizan junto con una versión firmada de la aplicación para conservar compatibilidad.': 'FFmpeg, FFprobe, Deno and aria2c update together with a signed application release to preserve compatibility.', 'yt-dlp puede actualizarse con catálogo firmado. FFmpeg, FFprobe, Deno y aria2c se actualizan junto con una versión firmada de la aplicación para conservar compatibilidad.': 'yt-dlp can be updated from a signed catalog. FFmpeg, FFprobe, Deno and aria2c update together with a signed application release to preserve compatibility.', 'Incluida en la actualización de la aplicación': 'Included in the application update', 'Disponible': 'Available', 'No detectado': 'Not detected', 'Última comprobación': 'Last check', 'Diagnóstico visual': 'Visual diagnostics', 'Escala efectiva': 'Effective scale', 'Tipografía': 'Typography', 'Copiar diagnóstico': 'Copy diagnostics', 'Actualizado': 'Up to date', 'Comprobando…': 'Checking…', 'Descargando…': 'Downloading…', 'Verificando…': 'Verifying…', 'Instalando…': 'Installing…', 'No se pudo completar': 'Could not complete', 'Sin conexión': 'Offline', 'Actualizaciones no configuradas': 'Updates not configured', 'Estado no disponible': 'Status unavailable', 'Aún no comprobado': 'Not checked yet',
   'Preparar una descarga': 'Prepare a download', 'Pega un enlace multimedia, playlist o archivo directo y pulsa Analizar.': 'Paste a media link, playlist, or direct file and press Analyze.', 'Espera a que termine el análisis para confirmar la descarga.': 'Wait for analysis to finish to confirm the download.', 'Cerrar ahora saldrá completamente': 'Close now to exit completely', 'Cerrar ahora enviará CacaTools a la bandeja': 'Close now to send Clear Download Manager to the tray',
   'CENTRO DE DESCARGAS': 'DOWNLOAD CENTER', 'Enlace de descarga': 'Download link', 'Calidad': 'Quality', 'Formato': 'Format', 'Destino': 'Destination', 'Tamaño': 'Size', 'Selección': 'Selection', 'Descargar': 'Download', 'Descargando…': 'Downloading…', 'Cancelar': 'Cancel', 'Cargando…': 'Loading…', 'Resolviendo metadatos multimedia…': 'Resolving media metadata…', 'Analizando elementos de la playlist…': 'Analyzing playlist items…', 'Descarga lista': 'Download ready', 'Confirmar descarga': 'Confirm download', 'Espera': 'Wait', 'No se pudo analizar el enlace.': 'The link could not be analyzed.', 'Debes seleccionar al menos un elemento.': 'Select at least one item.', 'Elementos seleccionados': 'Selected items',
   'Buscar vídeos': 'Search videos', 'Título, artista, canal o descripción': 'Title, artist, channel, or description', 'Buscar': 'Search', 'La búsqueda se realiza mediante el resolvedor local. Nada se envía a CacaTools.': 'Search uses the local resolver. Nothing is sent anywhere.', 'Buscando coincidencias…': 'Searching for matches…',
@@ -47,6 +48,39 @@ const ES_TO_EN = Object.freeze({
 // same runtime authority so settings, preparation dialogs, details, player,
 // and updater text are localized without changing their functional logic.
 const EXTRA_ES_TO_EN = Object.freeze({
+  'Límite de descarga': 'Download limit', 'Aplicar': 'Apply', 'Velocidad personalizada en KB/s': 'Custom speed in KB/s', 'Aplicar velocidad personalizada': 'Apply custom speed',
+  'Elegir archivo torrent': 'Choose torrent file', 'Pegar enlace magnet': 'Paste magnet link', 'magnet:?xt=urn:btih:… o C:\\ruta\\archivo.torrent': 'magnet:?xt=urn:btih:… or C:\\path\\file.torrent',
+  'Comprobación no disponible': 'Check unavailable', 'Instalada': 'Installed', 'Versión disponible': 'Version available', 'Actualización disponible': 'Update available', 'Repositorio': 'Repository', 'Abrir repositorio': 'Open repository', 'Repositorios oficiales': 'Official repositories',
+  'Comprobar automáticamente': 'Check automatically', 'Busca al iniciar y cada 6 horas cuando el actualizador firmado está configurado.': 'Checks at startup and every 6 hours when the signed updater is configured.',
+  'Descargando la actualización firmada…': 'Downloading the signed update…', 'Verificando e instalando la actualización firmada.': 'Verifying and installing the signed update.',
+  'Progreso de descarga': 'Download progress', 'Instalando actualización': 'Installing update', 'Descargando actualización': 'Downloading update',
+  'FFmpeg, FFprobe, Deno y aria2c se actualizan junto con la aplicación firmada.': 'FFmpeg, FFprobe, Deno, and aria2c are updated with the signed application.',
+  'Con la aplicación firmada': 'With the signed app',
+  'PREPARACIÓN': 'PREPARATION',
+  'Preparando vista previa…': 'Preparing preview…',
+  'Preparando vista previa...': 'Preparing preview...',
+  'Preparing vista previa…': 'Preparing preview…',
+  'Preparing vista previa...': 'Preparing preview...',
+  'Resolviendo primero un flujo nativo. Si el proveedor lo bloquea, podrás abrir el enlace oficial manualmente.': 'Resolving a native stream first. If the provider blocks it, you can open the official link manually.',
+  'Resolviendo primero un flujo nativo. Si el proveedor lo bloquea, podrás abrir el enlace oficial manualmente': 'Resolving a native stream first. If the provider blocks it, you can open the official link manually.',
+  'Resolviendo la mejor fuente disponible sin descargar el archivo final.': 'Resolving the best available source without downloading the final file.',
+  'Consultando descarga…': 'Checking download…',
+  'Consultando descarga...': 'Checking download...',
+  'Comprobando el archivo local final.': 'Checking the final local file.',
+  'Comprobando el archivo local final...': 'Checking the final local file...',
+  'VISTA PREVIA': 'PREVIEW',
+  'VISTA PREVIA ONLINE': 'ONLINE PREVIEW',
+  'ARCHIVO LOCAL': 'LOCAL FILE',
+  'Preparando vista previa': 'Preparing preview',
+  'Resolviendo primero un flujo nativo': 'Resolving a native stream first',
+  'Consultando descarga': 'Checking download',
+  'ANALIZANDO': 'ANALYZING',
+  'Preparando reproducción…': 'Preparing playback…',
+  'Resolviendo la mejor fuente disponible': 'Resolving the best available source',
+  'Playlist todavía no reproducible': 'Playlist is not playable yet',
+  'Puedes ver todos sus elementos en la lista, pero ninguno tiene todavía un archivo local final reproducible.': 'You can see all its items in the list, but none has a playable final local file yet.',
+  'Preparando playlist…': 'Preparing playlist…',
+  'Cargando todos los elementos y comprobando cuáles tienen archivo local reproducible.': 'Loading all items and checking which ones have a playable local file.',
   'Categorías de ajustes': 'Settings categories', 'Velocidad': 'Speed',
   'Nombre': 'Name', 'Guardar en': 'Save to', 'Cambiar': 'Change', 'Comprimido': 'Compressed',
   'Analiza': 'Analyze', 'ENLACE DETECTADO': 'LINK DETECTED', 'EXTENSIÓN DE CLEAR DOWNLOAD MANAGER': 'CLEAR DOWNLOAD MANAGER EXTENSION',
@@ -87,8 +121,9 @@ const EXTRA_ES_TO_EN = Object.freeze({
   'Diagnóstico local, doble comprobación y reparación según el tipo de tarea.': 'Local diagnosis, double-check, and repair based on the task type.',
   'Se distingue entre fallo temporal, restricción, archivo bloqueado y contenido realmente ausente.': 'Temporary failures, restrictions, blocked files, and genuinely missing content are distinguished.',
   '¿El error es definitivo o todavía se puede corregir?': 'Is the error final or can it still be fixed?', 'Primero se verificará la fuente. Solo los vídeos realmente no disponibles activarán la búsqueda de alternativas.': 'The source will be checked first. Only videos that are truly unavailable will trigger an alternative search.',
-  'Descargando': 'Downloading', 'En pausa': 'Paused', 'Cancelada': 'Cancelled', 'Error': 'Error', 'Programada': 'Scheduled', 'Procesando…': 'Processing…', 'Procesando': 'Processing', 'Pendiente': 'Pending', 'Verificando': 'Verifying', 'Finalizando': 'Finalizing', 'Preparando': 'Preparing',
-  'Vídeo': 'Video', 'Documento': 'Document', 'Imagen': 'Image', 'Fuente': 'Font', 'Texto': 'Text', 'Código': 'Code', 'Hoja': 'Spreadsheet', 'Presentación': 'Presentation', 'Aplicación': 'Application', 'Archivo': 'File', 'Completado': 'Completed',
+  'Descargando': 'Downloading', 'Descargando…': 'Downloading…', 'Descargando...': 'Downloading...', 'En pausa': 'Paused', 'Cancelada': 'Cancelled', 'Error': 'Error', 'Programada': 'Scheduled', 'Procesando…': 'Processing…', 'Procesando': 'Processing', 'Procesando...': 'Processing...', 'Pendiente': 'Pending', 'Verificando': 'Verifying', 'Finalizando': 'Finalizing', 'Preparando': 'Preparing',
+  'Original / mejor audio disponible': 'Original / best available audio', 'Mejor disponible': 'Best available', 'Original, sin conversión cuando sea posible': 'Original, without conversion when possible', 'MP4 · vídeo + audio': 'MP4 · video + audio', 'WebM · vídeo + audio': 'WebM · video + audio', 'Vídeo · mejor disponible': 'Video · best available', 'Vídeo · MP4 720p': 'Video · MP4 720p', 'Vídeo · MP4 480p': 'Video · MP4 480p', 'Vídeo · MP4 1080p': 'Video · MP4 1080p',
+  'Vídeo': 'Video', 'Documento': 'Document', 'Imagen': 'Image', 'Fuente': 'Font', 'Texto': 'Text', 'Código': 'Code', 'Hoja': 'Spreadsheet', 'Presentación': 'Presentation', 'Aplicación': 'Application', 'Archivo': 'File', 'Completado': 'Completed', 'Completada': 'Completed', 'Datos contabilizados': 'Counted data', 'Directo': 'Direct', 'Origen administrado': 'Managed source', 'Sin conexiones activas': 'No active connections',
   'Programar': 'Schedule', 'Programar tarea': 'Schedule task', 'Iniciar o reanudar': 'Start or resume',
   'Diagnosticar': 'Diagnose', 'Diagnosticar y confirmar': 'Diagnose and confirm', 'Prioridad': 'Priority',
   'Alta': 'High', 'Normal': 'Normal', 'Baja': 'Low', 'Todo seleccionado': 'All selected', 'Estado': 'Status',
@@ -123,7 +158,7 @@ const EXTRA_ES_TO_EN = Object.freeze({
   'Se configura una sola vez y se aplica a análisis, descargas y playlists.': 'Configured once and applied to analysis, downloads, and playlists.',
   'Diagnóstico y recuperación': 'Diagnostics and recovery', 'Se confirmará el error, se distinguirá si es temporal y se buscarán alternativas solo cuando corresponda.': 'The error will be confirmed, transient failures distinguished, and alternatives searched only when appropriate.',
   'Carpeta predeterminada': 'Default folder', 'Archivos relacionados': 'Related files', 'Rutas reales conocidas por el trabajo seleccionado.': 'Actual paths known for the selected job.',
-  'Información técnica reportada por el motor local.': 'Technical information reported by the local engine.', 'Registro del trabajo': 'Job log', 'Resumen persistente del último estado conocido.': 'Persistent summary of the last known state.',
+  'Información técnica reportada por el motor local.': 'Technical information reported by the local engine.', 'Registro del trabajo': 'Job log', 'Resumen persistente del último estado conocido.': 'Persistent summary of the last known state.', 'Trabajo finalizado': 'Job completed', 'Sesión y piezas persistentes': 'Persistent session and pieces', 'Parcial conservable y reanudable': 'Resumable partial file', 'Sin conexiones activas': 'No active connections', 'No hay un enlace original disponible para esta tarea.': 'No original link is available for this job.', 'Enlace original': 'Original link', 'Transferencia': 'Transfer', 'Recuperación': 'Recovery', 'Protocolo': 'Protocol', 'Endpoint': 'Endpoint', 'Modo': 'Mode', 'Conexiones': 'Connections',
   'Selecciona una descarga': 'Select a download', 'Los detalles, archivos, conexiones y acciones aparecerán aquí.': 'Details, files, connections, and actions will appear here.',
   'Abrir carpeta de descargas': 'Open download folder', 'Cancelar descarga': 'Cancel download', 'Eliminar del historial': 'Remove from history',
   'Pausar playlist': 'Pause playlist', 'Reanudar playlist': 'Resume playlist', 'Reproducir': 'Play',
@@ -186,7 +221,7 @@ const EXTRA_ES_TO_EN = Object.freeze({
   'Comprobando la versión publicada…': 'Checking published version…', 'Descargando y verificando la actualización firmada…': 'Downloading and verifying the signed update…',
   'Estás usando la versión más reciente.': 'You are using the latest version.', 'No se pudo comprobar la actualización.': 'The update could not be checked.',
   'Espera a que terminen las descargas activas antes de instalar.': 'Wait for active downloads to finish before installing.',
-  'No se pudo completar la operación.': 'The operation could not be completed.', 'La operación tardó demasiado.': 'The operation took too long.',
+  'No se pudo completar la operación.': 'The operation could not be completed.', 'La operación tardó demasiado.': 'The operation took too long.', 'Archivo copiado al portapapeles.': 'File copied to the clipboard.', 'Archivo listo para cortar y pegar.': 'File ready to cut and paste.',
   'Acción completada': 'Action completed', 'Ajustes guardados': 'Settings saved', 'Diagnóstico copiado': 'Diagnostics copied', 'Diagnóstico visual copiado': 'Visual diagnostics copied',
   'Integración de Windows reparada': 'Windows integration repaired', 'Estado de componentes actualizado': 'Component status updated', 'Límite de velocidad guardado': 'Speed limit saved',
   'No se pudo copiar el diagnóstico': 'Diagnostics could not be copied', 'No se pudo copiar el diagnóstico visual': 'Visual diagnostics could not be copied',
@@ -215,11 +250,17 @@ const ES_PHRASES = Object.freeze([
   ['CacaTools encontró un error de interfaz', 'Clear Download Manager encountered an interface error']
 ]);
 
-const EN_TO_ES = Object.freeze(Object.fromEntries(Object.entries(FULL_ES_TO_EN).map(([es, en]) => [en, es])));
+const EN_TO_ES = Object.freeze({
+  ...Object.fromEntries(Object.entries(FULL_ES_TO_EN).map(([es, en]) => [en, es])),
+  // “Playlist” is commonly used as-is in Spanish and keeps this toolbar compact.
+  Playlist: 'Playlist'
+});
 
-function replaceKnown(value, locale) {
+export function translateRuntimeText(value, locale = 'es') {
   let text = String(value ?? '');
   if (locale === 'en') {
+    const updatePercent = text.trim().match(/^Descargando la actualización firmada \((\d+)%\)\.$/);
+    if (updatePercent) return text.replace(text.trim(), `Downloading the signed update (${updatePercent[1]}%).`);
     const exact = FULL_ES_TO_EN[text.trim()];
     if (exact) return text.replace(text.trim(), exact);
     for (const [from, to] of ES_PHRASES) text = text.split(from).join(to);
@@ -242,6 +283,8 @@ function replaceKnown(value, locale) {
     text = text.replace(/Progreso actual:\s*(\d+)%/i, 'Current progress: $1%');
     text = text.replace(/^([^·]+) · reproducción online$/i, '$1 · online playback');
     text = text.replace(/^La calidad (\d+)p no está disponible en esta fuente\.?$/i, 'Quality $1p is not available from this source.');
+    text = text.replace(/Original\s*\/\s*mejor audio disponible/gi, 'Original / best available audio');
+    text = text.replace(/^(\d+) configurada?s?$/i, '$1 configured');
   } else {
     const exact = EN_TO_ES[text.trim()];
     if (exact) return text.replace(text.trim(), exact);
@@ -251,6 +294,8 @@ function replaceKnown(value, locale) {
     text = text.replace(/^Delete “(.+)”$/, 'Eliminar “$1”');
     text = text.replace(/^Download (\d+) selected$/, 'Descargar $1 seleccionados');
     text = text.replace(/^Current progress:\s*(\d+)%/i, 'Progreso actual: $1%');
+    text = text.replace(/Original\s*\/\s*best available audio/gi, 'Original / mejor audio disponible');
+    text = text.replace(/^(\d+) configured$/i, '$1 configurada');
   }
   return text;
 }
@@ -265,14 +310,14 @@ export function localizeDom(root, locale = 'es') {
   for (const node of nodes) {
     const parent = node.parentElement;
     if (!parent || /^(SCRIPT|STYLE|CODE|PRE|TEXTAREA|INPUT)$/i.test(parent.tagName)) continue;
-    const next = replaceKnown(node.nodeValue, locale);
+    const next = translateRuntimeText(node.nodeValue, locale);
     if (next !== node.nodeValue) node.nodeValue = next;
   }
   root.querySelectorAll('title, [title], [aria-label], [placeholder], [data-tooltip]').forEach((element) => {
     for (const attribute of ['title', 'aria-label', 'placeholder', 'data-tooltip']) {
       if (!element.hasAttribute(attribute)) continue;
       const value = element.getAttribute(attribute);
-      const next = replaceKnown(value, locale);
+      const next = translateRuntimeText(value, locale);
       if (next !== value) element.setAttribute(attribute, next);
     }
   });

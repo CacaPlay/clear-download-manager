@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release:
@@ -20,12 +20,14 @@ jobs:
       - name: Instalar dependencias visuales de Python
         shell: pwsh
         run: |
-          python -m pip install --disable-pip-version-check --no-input playwright
+          python -m pip install --disable-pip-version-check --no-input playwright pillow==12.3.0
           python -m playwright install chromium
       - name: Instalar dependencias
         run: npm ci --no-audit --no-fund
       - name: Gate de versión y fuente
         run: |
+          python scripts/build-nsis-artwork.py
+          npm run check:manifest
           npm run version:check
           npm run check:release
           npm run build:web
@@ -35,9 +37,6 @@ jobs:
           $cfg = Get-Content src-tauri/resources/updater/updater-config.json -Raw | ConvertFrom-Json
           if (-not $cfg.enabled -or [string]::IsNullOrWhiteSpace($cfg.repository)) {
             throw 'El updater no tiene un repositorio de releases válido.'
-          }
-          if ($cfg.repository -eq 'CacaPlay/cacatools-download-manager-releases' -and '${{ vars.LEGACY_BRIDGE_READY }}' -ne 'true') {
-            throw 'Puente legacy bloqueado: falta validar la continuidad de firma de CacaTools 0.45.4.'
           }
           "RELEASES_REPO=$($cfg.repository)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "Repositorio de releases: $($cfg.repository)"
@@ -77,10 +76,10 @@ jobs:
       - name: Publicar GitHub Release
         shell: pwsh
         env:
-          GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
-            throw 'Falta el secreto RELEASES_REPO_TOKEN. Debe estar limitado al repositorio publico de Releases.'
+            throw 'GitHub Actions no proporcionó GITHUB_TOKEN.'
           }
           $tag = $env:GITHUB_REF_NAME
           $releaseExists = gh release view $tag --repo $env:RELEASES_REPO 2>$null

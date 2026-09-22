@@ -1,4 +1,4 @@
-# Ficha de Chrome Web Store 0.45.12
+# Ficha de Chrome Web Store 0.95.4
 
 ## Nombre
 
@@ -29,7 +29,7 @@ Web Store.
 
 ## Enlaces públicos
 
-- Release público de la aplicación: `https://github.com/CacaPlay/clear-download-manager-releases/releases/tag/v0.95.0`
+- Release público de la aplicación: `https://github.com/CacaPlay/clear-download-manager/releases/latest`
 - La extensión se distribuye exclusivamente mediante Chrome Web Store; el ZIP
   local se usa solo para actualizar la ficha existente.
 

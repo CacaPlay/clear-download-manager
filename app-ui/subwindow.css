@@ -51,6 +51,9 @@
   color: var(--sp-text);
 }
 #subwindow-root * { min-width: 0; }
+html,body,body *{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+input,textarea,[contenteditable="true"],[role="textbox"]{-webkit-user-select:text;user-select:text}
+img{-webkit-user-drag:none;user-drag:none}
 body { min-width: 0; background: var(--sp-bg); color: var(--sp-text); }
 svg.icon { display: block; width: 1.15em; height: 1.15em; flex: 0 0 auto; }
 img { object-fit: contain; }

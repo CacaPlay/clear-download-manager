@@ -2,9 +2,29 @@ import { fallbackThumbnail, resolveThumbnail } from './thumbnail-service.js';
 import { canUseJobAction } from './sdk/compatibility.js';
 import {appendDetectedLink,youtubeSelection} from './sdk/panel-features.js';
 import { DEFAULT_ACCENT, brandAssetPath, effectiveAccent, iconAccentForAppearance, iconVariantForColor, accentPresentation, progressPalette, relativeLuminance as appearanceRelativeLuminance, contrastRatio as appearanceContrastRatio } from './sdk/appearance.js';
+import { applyI18n, loadLocale, saveLocale, translate } from './i18n.js';
 
 const port = chrome.runtime.connect({ name: 'cacatools-sidepanel' });
 const $ = (selector) => document.querySelector(selector);
+let extensionLocale = loadLocale();
+let extensionLocaleApplying = false;
+function localizeExtension() {
+  if (extensionLocaleApplying) return;
+  extensionLocaleApplying = true;
+  try {
+    const resolved = applyI18n(document, extensionLocale);
+    document.documentElement.lang = resolved;
+    const selector = $('#extension-locale');
+    if (selector) selector.value = extensionLocale;
+  } finally {
+    extensionLocaleApplying = false;
+  }
+}
+const t = (value) => translate(extensionLocale, value);
+localizeExtension();
+new MutationObserver(() => {
+  if (!extensionLocaleApplying) window.queueMicrotask(localizeExtension);
+}).observe(document.body, { childList: true, subtree: true, characterData: true });
 const RUNTIME_RESPONSE_TIMEOUT_MS = 12000;
 const EXT_DIAGNOSTICS = false;
 const diagnostic = (...args) => { if (EXT_DIAGNOSTICS) console.warn('[CDM EXT DIAG]', ...args); };
@@ -40,7 +60,7 @@ const readableAccent = (accent, theme) => accentPresentation(accent, theme).deta
 const readableInk = (accent, theme) => accentPresentation(accent, theme).ink;
 const state = {
   detections: [], detectionState: 'analyzing', busy: false, notice: '', quickPreset: 'auto',
-  windowMode: 'background', appearanceMode: 'follow-app', customTheme: 'dark', customAccent: DEFAULT_ACCENT,
+  windowMode: 'foreground', appearanceMode: 'follow-app', customTheme: 'dark', customAccent: DEFAULT_ACCENT,
   appState: { appearance: { theme: 'system', accent: DEFAULT_ACCENT, intensity: 82, motion: true, iconColorMode: 'accent', iconColor: '#596574', progressActive: '#00ff2a', progressCompleted: '#00ff2a', progressPaused: '#e2a93f', progressError: '#ef6674' }, jobs: [], queue: {}, updatedAt: 0 },
   collections: [], activeCollectionId: '', looseLinks: [], panelCollapsed: { downloads: false, links: false },
   updateAvailable: null, renderVersion: 0, showAllDownloads: false, contextJobId: null,
@@ -49,10 +69,10 @@ const state = {
 function setConnectionStatus(stateName, visibleText, titleText = visibleText) {
   const node = $('#connection');
   if (!node) return;
-  node.textContent = visibleText;
+  node.textContent = t(visibleText);
   node.dataset.state = stateName;
-  node.title = titleText;
-  node.setAttribute('aria-label', titleText);
+  node.title = t(titleText);
+  node.setAttribute('aria-label', t(titleText));
 }
 
 const statusCopy = {
@@ -251,7 +271,8 @@ function transferSizeLabel(job = {}) {
   return total ? `${formatBytesCompact(Math.min(downloaded, total))} / ${formatBytesCompact(total)}` : formatBytesCompact(downloaded);
 }
 function statusLabel(status) {
-  return ({ running: 'Descargando', queued: 'En cola', paused: 'Pausada', completed: 'Completada', failed: 'Error', cancelled: 'Cancelada' })[String(status)] || String(status || 'Pendiente');
+  const source = ({ running: 'Descargando', queued: 'En cola', paused: 'Pausada', completed: 'Completada', failed: 'Error', cancelled: 'Cancelada' })[String(status)] || String(status || 'Pendiente');
+  return t(source);
 }
 function applyAppearance() {
   const app = state.appState?.appearance || {};
@@ -266,7 +287,7 @@ function applyAppearance() {
   for(const [field,variable] of Object.entries({progressActive:'--progress-active',progressCompleted:'--progress-completed',progressPaused:'--progress-paused',progressError:'--progress-error'})) {
     document.documentElement.style.setProperty(variable,progress[field]);
   }
-  $('#progress-sync-note').textContent=progress.synced?'Colores de progreso sincronizados con Clear Download Manager.':'La app instalada todavía no envía sus colores de progreso. Se muestran los valores predeterminados, no una sincronización personalizada.';
+  $('#progress-sync-note').textContent=t(progress.synced?'Colores de progreso sincronizados con Clear Download Manager.':'La app instalada todavía no envía sus colores de progreso. Se muestran los valores predeterminados, no una sincronización personalizada.');
   document.body.dataset.theme = theme;
   document.documentElement.style.setProperty('--accent', accent);
   document.documentElement.style.setProperty('--accent-detail', detail);
@@ -292,30 +313,31 @@ function renderPanelState() {
     const body = document.querySelector(`[data-panel-body="${name}"]`);
     const button = document.querySelector(`[data-toggle-panel="${name}"]`);
     if (body) body.hidden = collapsed;
-    if (button) { button.textContent = collapsed ? 'Mostrar' : 'Ocultar'; button.setAttribute('aria-expanded', String(!collapsed)); }
+    if (button) { button.textContent = t(collapsed ? 'Mostrar' : 'Ocultar'); button.setAttribute('aria-expanded', String(!collapsed)); }
   }
 }
 function renderUpdate() {
   const section = $('#extension-update');
   section.hidden = !state.updateAvailable;
-  if (state.updateAvailable) $('#extension-update-version').textContent = `Versión ${state.updateAvailable.version || 'nueva'} descargada por Chrome`;
+  if (state.updateAvailable) $('#extension-update-version').textContent = t(`Versión ${state.updateAvailable.version || 'nueva'} descargada por Chrome`);
 }
 function renderDownloads() {
-  $('#bridge-actions-note').textContent = state.bridge && !state.bridge.actions.includes('job_action') ? 'Este puente solo ofrece apertura en la app. Para reproducir, gestionar o eliminar desde aquí hace falta actualizar el puente nativo; no la extensión únicamente.' : '';
+  $('#bridge-actions-note').textContent = t(state.bridge && !state.bridge.actions.includes('job_action') ? 'Este puente solo ofrece apertura en la app. Para reproducir, gestionar o eliminar desde aquí hace falta actualizar el puente nativo; no la extensión únicamente.' : '');
   const jobs = Array.isArray(state.appState?.jobs) ? state.appState.jobs : [];
   const active = jobs.filter((job) => ['running', 'queued', 'paused'].includes(job.status));
   const completed = jobs.filter((job) => ['completed', 'failed', 'cancelled'].includes(job.status));
-  $('#download-summary').textContent = `${active.length} activas · ${completed.filter((job) => job.status === 'completed').length} completadas`;
+  const completedCount = completed.filter((job) => job.status === 'completed').length;
+  $('#download-summary').textContent = t(`${active.length} ${active.length === 1 ? 'activa' : 'activas'} · ${completedCount} ${completedCount === 1 ? 'completada' : 'completadas'}`);
   const target = $('#downloads-list');
   const all = [...active, ...completed];
   const more = $('#show-all-downloads');
   if (more) {
     more.hidden = all.length <= 4;
-    more.textContent = state.showAllDownloads ? 'Ver menos' : `Ver más (${Math.max(0, all.length - 4)})`;
+    more.textContent = t(state.showAllDownloads ? 'Ver menos' : `Ver más (${Math.max(0, all.length - 4)})`);
   }
   const visible = state.showAllDownloads ? all : all.slice(0, 4);
   if (!visible.length) {
-    if (target.dataset.renderKey !== 'empty') { target.innerHTML = '<div class="download-empty">No hay descargas registradas todavía.</div>'; target.dataset.renderKey = 'empty'; }
+    if (target.dataset.renderKey !== 'empty') { target.innerHTML = `<div class="download-empty">${safe(t('No hay descargas registradas todavía.'))}</div>`; target.dataset.renderKey = 'empty'; }
     return;
   }
   const renderKey = JSON.stringify(visible.map((job) => ({
@@ -352,7 +374,7 @@ function renderDownloads() {
     const detail = `${extension ? `${extension.toUpperCase()} · ` : ''}${transfer} · ${statusLabel(status)}${status === 'running' ? ` · ${formatRate(job.speedBps)} · ${formatEta(job.etaSeconds)}` : ''}`;
     const thumbnail = safeImageUrl(job.thumbnail);
     const thumb = thumbnail ? `<img src="${safe(thumbnail)}" alt="" loading="lazy">` : fileAssetMarkup(downloadAssetType(job));
-    return `<article class="download-row kind-${safe(kind)}" data-job-id="${safe(job.id)}" tabindex="0" aria-label="${safe(job.title || 'Descarga')}. Menú contextual disponible"><div class="download-thumb">${thumb}</div><div class="download-copy"><strong title="${safe(job.title)}">${safe(job.title || 'Descarga')}</strong><small>${safe(detail)}</small></div><span class="download-state ${safe(status)}">${safe(statusLabel(status))}</span><button type="button" class="download-row-action" data-download-menu="${safe(job.id)}" aria-label="Acciones de ${safe(job.title || 'descarga')}">⋯</button><div class="download-progress"><span><i style="width:${progress}%"></i></span><b>${Math.round(progress)}%</b></div></article>`;
+    return `<article class="download-row kind-${safe(kind)}" data-job-id="${safe(job.id)}" tabindex="0" aria-label="${safe(job.title || t('Descarga'))}. ${safe(t('Menú contextual disponible'))}"><div class="download-thumb">${thumb}</div><div class="download-copy"><strong title="${safe(job.title)}">${safe(job.title || t('Descarga'))}</strong><small>${safe(detail)}</small></div><span class="download-state ${safe(status)}">${safe(statusLabel(status))}</span><button type="button" class="download-row-action" data-download-menu="${safe(job.id)}" aria-label="${safe(t('Acciones de '))}${safe(job.title || t('descarga'))}">⋯</button><div class="download-progress"><span><i style="width:${progress}%"></i></span><b>${Math.round(progress)}%</b></div></article>`;
   }).join('');
   target.querySelectorAll('.download-thumb img').forEach((image) => image.addEventListener('error', () => { image.replaceWith(Object.assign(document.createElement('span'), { className: 'download-file-mark', textContent: 'FILE' })); }, { once: true }));
 }
@@ -434,12 +456,12 @@ async function hydrateThumbnails(renderVersion) {
     image.src = result.url || fallbackThumbnail(); image.hidden = Boolean(result.fallback); skeleton.hidden = true; fallback.hidden = !result.fallback;
   }));
 }
-function renderAll() { applyAppearance(); renderPanelState(); renderUpdate(); renderDownloads(); renderCollections(); renderDetections(); }
+function renderAll() { applyAppearance(); renderPanelState(); renderUpdate(); renderDownloads(); renderCollections(); renderDetections(); localizeExtension(); }
 
 async function loadPreferences() {
   const values = await chrome.storage.local.get({
     browserCaptureMode: 'automatic', preferredQuality: 'auto', preferredFormat: 'auto',
-    extensionWindowMode: 'background', extensionAppearanceMode: 'follow-app', extensionCustomTheme: 'dark', extensionCustomAccent: DEFAULT_ACCENT,
+    extensionWindowMode: 'foreground', extensionWindowModeConfigured: false, extensionAppearanceMode: 'follow-app', extensionCustomTheme: 'dark', extensionCustomAccent: DEFAULT_ACCENT,
     extensionPanels: { downloads: false, links: false }, manualLinkCollections: [], activeManualCollectionId: '', looseManualLinks: [],
     lastAppState: state.appState, pendingExtensionUpdate: null
   });
@@ -447,7 +469,9 @@ async function loadPreferences() {
   state.quickPreset = values.preferredFormat !== 'auto' ? values.preferredFormat : values.preferredQuality;
   if (!['auto', '1080p', '720p', 'mp3', 'm4a'].includes(state.quickPreset)) state.quickPreset = 'auto';
   $('#quick-preset').value = state.quickPreset;
-  state.windowMode = ['background', 'foreground'].includes(values.extensionWindowMode) ? values.extensionWindowMode : 'background'; $('#window-mode').value = state.windowMode;
+  state.windowMode = values.extensionWindowModeConfigured === true && ['background', 'foreground'].includes(values.extensionWindowMode) ? values.extensionWindowMode : 'foreground';
+  $('#window-mode').value = state.windowMode;
+  if (values.extensionWindowModeConfigured !== true) await chrome.storage.local.set({ extensionWindowMode: 'foreground' });
   state.appearanceMode = values.extensionAppearanceMode === 'custom' ? 'custom' : 'follow-app'; state.customTheme = values.extensionCustomTheme === 'light' ? 'light' : 'dark'; state.customAccent = /^#[0-9a-f]{6}$/i.test(values.extensionCustomAccent) ? values.extensionCustomAccent : DEFAULT_ACCENT;
   state.panelCollapsed = { downloads: Boolean(values.extensionPanels?.downloads), links: Boolean(values.extensionPanels?.links) };
   state.collections = Array.isArray(values.manualLinkCollections) ? values.manualLinkCollections : []; state.activeCollectionId = String(values.activeManualCollectionId || ''); state.looseLinks = Array.isArray(values.looseManualLinks) ? values.looseManualLinks : [];
@@ -601,8 +625,13 @@ async function addDetectedToCollection(index) {
 }
 
 $('#capture-mode').addEventListener('change', async (event) => { await chrome.runtime.sendMessage({ type: 'SET_CAPTURE_MODE', mode: event.target.value }); });
+$('#extension-locale')?.addEventListener('change', (event) => {
+  extensionLocale = saveLocale(event.target.value);
+  delete $('#downloads-list').dataset.renderKey;
+  renderAll();
+});
 $('#quick-preset').addEventListener('change', async (event) => { state.quickPreset = event.target.value; await chrome.storage.local.set(presetPreferences()); });
-$('#window-mode').addEventListener('change', async (event) => { state.windowMode = event.target.value; await chrome.storage.local.set({ extensionWindowMode: state.windowMode }); });
+$('#window-mode').addEventListener('change', async (event) => { state.windowMode = event.target.value; await chrome.storage.local.set({ extensionWindowMode: state.windowMode, extensionWindowModeConfigured: true }); });
 $('#open-app').addEventListener('click', async () => { await chrome.runtime.sendMessage({ type: 'OPEN_APP' }); });
 $('#refresh').addEventListener('click', () => void analyze()); $('#retry').addEventListener('click', () => void analyze());
 $('#select-all').addEventListener('change', (event) => { state.detections.forEach((item) => { item.selected = event.target.checked; }); renderDetections(); });
@@ -695,7 +724,12 @@ port.onMessage.addListener((message) => {
   if (message?.type === 'EXTENSION_UPDATE_AVAILABLE') { state.updateAvailable = message.update || { version: 'nueva' }; renderUpdate(); }
   if (message?.type === 'CONTEXT_SEND_ERROR') state.notice=message.message;
   if (message?.type === 'CAPTURE_PENDING') state.notice = `Captura recibida: ${message.item?.filename || 'descarga'}.`;
-  if (message?.type === 'CAPTURE_ACCEPTED') { state.notice = 'Descarga transferida a Clear Download Manager.'; window.setTimeout(() => void refreshAppState(), 600); }
+  if (message?.type === 'CAPTURE_ACCEPTED') {
+    state.notice = message.response?.status === 'review_opened'
+      ? 'Abierta en Clear Download Manager; elige la carpeta y confirma.'
+      : 'Descarga transferida a Clear Download Manager.';
+    window.setTimeout(() => void refreshAppState(), 600);
+  }
   if (message?.type === 'CAPTURE_FALLBACK') state.notice = message.response?.error || 'Clear Download Manager no la aceptó; Chrome continúa la descarga.';
   if (message?.type === 'CAPTURE_AVAILABLE') state.notice = `Descarga disponible: ${message.item?.filename || 'archivo'}.`;
   renderDetections();

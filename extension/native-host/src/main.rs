@@ -15,7 +15,10 @@ const SPOTIFY_DIRECT_CAPTURE_MESSAGE: &str =
     "Las capturas directas de Spotify no se tratan como archivos HTTP.";
 const MAX_MESSAGE: usize = 4 * 1024 * 1024;
 const MAX_STATE_BYTES: usize = 768 * 1024;
-const CAPTURE_RESPONSE_TIMEOUT_MS: u64 = 2_850;
+// Cold-starting the desktop app can take longer than the old 2.85 s window.
+// The extension-side native-message timeout remains 8 s, leaving room for the
+// app to open the HTTP review window and report that handoff.
+const CAPTURE_RESPONSE_TIMEOUT_MS: u64 = 7_000;
 static REQUEST_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
 fn bridge_root() -> PathBuf {

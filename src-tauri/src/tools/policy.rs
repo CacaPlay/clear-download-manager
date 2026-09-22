@@ -78,10 +78,7 @@ pub(crate) fn component_policy(id: ToolId) -> ComponentPolicy {
 }
 
 pub(crate) const fn manifest_origin_policy() -> (&'static str, &'static str) {
-    (
-        "cacatools-controlled",
-        "CacaPlay/cacatools-download-manager-releases",
-    )
+    ("cacatools-controlled", "CacaPlay/clear-download-manager")
 }
 
 #[cfg(test)]

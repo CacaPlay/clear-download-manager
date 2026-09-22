@@ -2,12 +2,12 @@
 
 ## Repositorios
 
-- Código fuente: `CacaPlay/clear-download-manager`.
-- Distribución: `CacaPlay/clear-download-manager-releases`.
-- Puente de migración 0.45.4: `CacaPlay/cacatools-download-manager-releases`.
+- Código fuente y release principal: `CacaPlay/clear-download-manager`.
+- Canal puente para clientes antiguos: `CacaPlay/cacatools-download-manager-releases`.
+- Archivo privado histórico: `CacaPlay/cacatools-download-manager-releases-private-archive`.
 
-El repositorio de distribución contiene únicamente instaladores, firmas,
-`latest.json`, `news.json`, hashes y notas de release. Las claves privadas
+El repositorio principal contiene el código y sus Releases con instaladores,
+firmas, `latest.json`, hashes y notas de release. Las claves privadas
 permanecen fuera del árbol de trabajo y se guardan solo como secretos de
 GitHub Actions.
 
@@ -19,26 +19,26 @@ GitHub Actions.
 
    ```powershell
    npm.cmd ci --no-audit --no-fund
+   npm.cmd run check:manifest
    npm.cmd run version:check
    npm.cmd run check:release
    ```
 
-3. Crear un tag firmado o protegido, por ejemplo `v0.95.1`, y abrir el
+3. Crear y enviar un tag de versión, por ejemplo `v0.95.4`, para iniciar el
    workflow de release.
 4. El workflow compila en Windows, genera artefactos Tauri firmados,
-   `latest.json` y `SHA256SUMS.txt`, y publica todo en el repositorio de
-   distribución.
-5. Verificar el endpoint, los hashes, la firma y una instalación limpia antes
-   de marcar el release como estable.
+   `latest.json` y `SHA256SUMS.txt`, y publica todo en una Release del
+   repositorio principal.
+5. Verificar el endpoint principal, los hashes, la firma y una instalación
+   limpia.
+6. Para mantener compatibilidad, publicar como release puente en el canal
+   legacy una copia del `latest.json` del release principal. Ese catálogo debe
+   apuntar al artefacto firmado del repositorio principal. Verificar ambos
+   endpoints y la URL del artefacto antes de dar por completada la migración.
 
-La primera publicación de Clear Download Manager 0.95.0 salió como puente por
-el repositorio legacy para que los usuarios 0.45.4 puedan actualizar. El
-cliente 0.95.0 conserva el endpoint legacy para mantener la continuidad del
-puente, mientras el `latest.json` publicado identifica el artefacto canónico.
-La validación manual de instalación, arranque y funcionamiento básico en un
-entorno Windows 11 limpio fue completada por el mantenedor. El cambio definitivo
-al endpoint canónico queda reservado para una versión posterior y una prueba
-separada de configuración, historial, SQLite, extensión y Native Messaging.
+Los clientes antiguos pueden tener el endpoint legacy incrustado. Mantén el
+repositorio puente público y el archivo privado separado; nunca publiques el
+contenido ni cambies la visibilidad del archivo privado.
 
 ## No publicar
 

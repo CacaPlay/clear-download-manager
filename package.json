@@ -1,7 +1,7 @@
 {
   "name": "clear-download-manager",
   "private": true,
-  "version": "0.95.1",
+  "version": "0.95.4",
   "type": "module",
   "scripts": {
     "dev": "python -m http.server 4173 --bind 127.0.0.1",
@@ -36,6 +36,7 @@
     "check:http-finalization": "python scripts/validation/http-resume-integrity.py --finalization",
     "check:http-single-writer": "python scripts/validation/http-single-writer-recovery.py",
     "prepare:windows-binaries": "powershell -ExecutionPolicy Bypass -File scripts/prepare-windows-binaries.ps1",
+    "prepare:third-party-notices": "node scripts/generate-third-party-notices.mjs",
     "verify:binaries": "node scripts/verify-binaries.mjs",
     "tauri": "tauri",
     "build:windows": "powershell -ExecutionPolicy Bypass -File scripts/build-windows-beta.ps1",
@@ -135,7 +136,7 @@
     "check:pre2i-stabilization": "node scripts/validation/pre2i-stabilization.mjs && python scripts/validation/pre2i_player_interaction.py"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "2.11.4",
+    "@tauri-apps/cli": "2.11.5",
     "esbuild": "0.28.1"
   },
   "dependencies": {

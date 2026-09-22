@@ -122,9 +122,12 @@ try:
                 "document.activeElement?.matches('[data-dm-unified-input]')"
             ),
             "value": input_box.input_value(),
+            # The current product order intentionally keeps newest insertion
+            # first, so select the running fixture by its stable job id
+            # instead of assuming it is the first visible row.
             "progress": page.locator(
-                ".dm-download-item .dm-progress-wrap strong"
-            ).first.text_content(),
+                '.dm-download-item[data-dm-select-job="1"] .dm-progress-wrap strong'
+            ).text_content(),
             "selected": page.locator(".dm-download-item.is-selected").count(),
             "suggestions": suggestion_texts,
             "queries": page.evaluate("window.phase20SuggestionQueries"),

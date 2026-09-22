@@ -186,6 +186,15 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
   const jobs = normalizeJobs(context.snapshot || {}, context.pendingJobs || []);
   runtimeState.liveJobs = jobs;
   const rerenderNow = () => rerender(context);
+  const openAdvancedDetails = (id) => {
+    syncPreferences({ selectedJobId: id, inspectorTab: 'connections', inspectorCollapsed: false });
+    runtimeState.modal = '';
+    runtimeState.modalJobId = id;
+    runtimeState.mobileInspectorOpen = window.innerWidth <= 820;
+    runtimeState.rowMenuJobId = null;
+    runtimeState.rowMenuPosition = null;
+    rerenderNow();
+  };
 
   root.addEventListener('wheel', (event) => {
     if (!event.ctrlKey) return;
@@ -219,15 +228,11 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     await context.onAnalyzeSource?.(source, { query: source, alternatives: [] });
   });
   root.addEventListener('contextmenu', (event) => {
+    // The native/WebView menu is never useful in CDM. A download row still
+    // gets its own application menu below; blank areas intentionally do none.
+    event.preventDefault();
     const row = event.target.closest('[data-dm-select-job]');
-    if (!row) {
-      const blankMain = event.target === root || Boolean(event.target.closest?.('.dm-zen-main,.dm-zen-content,.dm-download-area,.dm-news-page'));
-      if (blankMain) {
-        syncPreferences({ selectedJobId: null });
-        patchVisualSelection(root);
-      }
-      return;
-    }
+    if (!row) return;
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
@@ -334,11 +339,9 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
   };
   const handleGlobalPointerDown = (event) => {
     if (!runtimeState.rowMenuJobId || event.button !== 0) return;
-    // Keep the contextual menu and the inspector speed editor alive through
-    // the pointerdown -> click sequence.  Closing it during capture used to
-    // detach the button before the delegated click handler could persist the
-    // selected limit, which made every preset appear inert.
-    if (event.target instanceof Element && event.target.closest('.dm-row-menu,.dm-row-menu-floating,.dm-inspector,.dm-speed-menu,[data-dm-row-menu]')) return;
+    // Keep the contextual menu and the `.dm-inspector,.dm-speed-menu` editor
+    // alive through pointerdown -> click; otherwise capture would detach the button before the delegated click handler can persist the selected limit.
+    if (event.target instanceof Element && event.target.closest('.dm-row-menu,.dm-row-menu-floating,.dm-speed-menu,.dm-inspector-speed-menu,[data-dm-row-menu]')) return;
     const elapsed = performance.now() - Number(runtimeState.rowMenuOpenedAt || 0);
     const anchor = runtimeState.rowMenuAnchor;
     const nearContextAnchor = anchor
@@ -352,14 +355,34 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     runtimeState.rowMenuAnchor = null;
     rerenderNow();
   };
+  const handleRowMenuClickDismiss = (event) => {
+    if (!runtimeState.rowMenuJobId) return;
+    const target = event.target instanceof Element ? event.target : null;
+    const menu = target?.closest('.dm-row-menu,.dm-row-menu-floating');
+    if (!menu) return;
+    // Let the action's own click handler finish first. Keep the speed input
+    // open while the user is entering a value; clicking its Apply button still
+    // closes the menu through this deferred path.
+    if (target.closest('.dm-speed-menu') && !target.closest('button')) return;
+    window.setTimeout(() => {
+      if (!runtimeState.rowMenuJobId) return;
+      runtimeState.rowMenuJobId = null;
+      runtimeState.rowMenuPosition = null;
+      runtimeState.rowMenuOpenedAt = 0;
+      runtimeState.rowMenuAnchor = null;
+      rerenderNow();
+    }, 0);
+  };
   document.addEventListener('keydown', handleGlobalKeydown);
   // Close row menus only on a genuine primary-button pointer gesture. WebView2
   // may emit a retargeted/synthetic click after contextmenu while progress is
   // repainting; listening to click was the reason active-download menus flashed.
   document.addEventListener('pointerdown', handleGlobalPointerDown, true);
+  document.addEventListener('click', handleRowMenuClickDismiss, true);
   runtimeState.releaseGlobalShortcuts = () => {
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('pointerdown', handleGlobalPointerDown, true);
+    document.removeEventListener('click', handleRowMenuClickDismiss, true);
   };
   root.addEventListener('click', (event) => {
     const previewSuggestion = event.target.closest('[data-dm-preview-suggestion]');
@@ -429,6 +452,26 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
       return;
     }
     const currentJobs = runtimeState.liveJobs || [];
+    const renameButton = target.closest('[data-dm-rename-job]');
+    if (renameButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      runtimeState.rowMenuJobId = null;
+      runtimeState.rowMenuPosition = null;
+      runtimeState.modal = 'rename';
+      runtimeState.modalJobId = Number(renameButton.dataset.dmRenameJob || 0);
+      rerenderNow();
+      const input = root.querySelector('#dm-rename-name');
+      input?.focus();
+      input?.select();
+      input?.addEventListener('keydown', (keyEvent) => {
+        if (keyEvent.key === 'Enter') {
+          keyEvent.preventDefault();
+          root.querySelector('[data-dm-rename-save]')?.click();
+        }
+      });
+      return;
+    }
     const priorityButton = target.closest('[data-dm-set-priority]');
     if (priorityButton) {
       event.stopPropagation();
@@ -618,11 +661,7 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
       event.stopPropagation();
       const id = Number(advancedButton.dataset.dmAdvancedDetails || 0);
       if (!id) return;
-      syncPreferences({ selectedJobId: id, inspectorTab: 'connections' });
-      runtimeState.rowMenuJobId = null;
-      runtimeState.rowMenuPosition = null;
-      if (window.innerWidth <= 820) runtimeState.mobileInspectorOpen = true;
-      rerenderNow();
+      openAdvancedDetails(id);
       return;
     }
     if (row && !target.closest('button,input,select,a,.dm-row-select')) {
@@ -646,9 +685,15 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
   root.addEventListener('click', (event) => {
     if (event.target.closest?.('[data-dm-select-job],button,input,select,textarea,a,.dm-row-menu,.dm-inspector,.dm-settings-popover,.dm-category-menu')) return;
     const blankMain = event.target === root || Boolean(event.target.closest?.('.dm-zen-main,.dm-zen-content,.dm-download-area'));
-    if (!blankMain || runtimeState.preferences.selectedJobId === null) return;
+    const hasSelection = runtimeState.preferences.selectedJobId !== null || runtimeState.selectedJobIds.size > 0;
+    if (!blankMain || !hasSelection) return;
     syncPreferences({ selectedJobId: null });
+    runtimeState.selectedJobIds.clear();
+    runtimeState.selectionMode = false;
+    runtimeState.rowMenuJobId = null;
+    runtimeState.rowMenuPosition = null;
     patchVisualSelection(root);
+    patchSelectionControls(root, runtimeState.liveJobs || []);
     rerenderNow();
   });
   // Floating row menus live outside .dm-host to avoid clipped panels, so
@@ -779,17 +824,25 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     const copied = await writeClipboard(button.dataset.dmCopyValue || '');
     context.onToast?.(copied ? 'Copiado al portapapeles.' : 'No se pudo copiar el valor.', copied ? 'success' : 'error');
   }));
-  root.querySelectorAll('[data-dm-advanced-details]').forEach((button) => button.addEventListener('click', (event) => {
-    if (button.closest('.dm-download-scroll[data-dm-virtual-list="1"]')) return;
-    event.stopPropagation();
-    const id = Number(button.dataset.dmAdvancedDetails || 0);
-    if (!id) return;
-    syncPreferences({ selectedJobId: id, inspectorTab: 'connections' });
-    runtimeState.rowMenuJobId = null;
-    runtimeState.rowMenuPosition = null;
-    if (window.innerWidth <= 820) runtimeState.mobileInspectorOpen = true;
-    rerenderNow();
-  }));
+  root.querySelector('[data-dm-rename-save]')?.addEventListener('click', async (event) => {
+    event.preventDefault();
+    const button = event.currentTarget;
+    const id = Number(runtimeState.modalJobId || 0);
+    const filename = String(root.querySelector('#dm-rename-name')?.value || '').trim();
+    if (!id || !filename) return;
+    button.disabled = true;
+    try {
+      await context.invoke?.('rename_completed_download', { id, newName: filename });
+      runtimeState.modal = '';
+      runtimeState.modalJobId = null;
+      await context.onRefresh?.();
+      context.onToast?.('Archivo renombrado correctamente.', 'success');
+      rerenderNow();
+    } catch (error) {
+      button.disabled = false;
+      context.onToast?.(String(error), 'error');
+    }
+  });
   root.querySelectorAll('[data-dm-toggle]').forEach((button) => button.addEventListener('click', () => {
     const target = button.dataset.dmToggle;
     if (target === 'sidebar') {
@@ -841,6 +894,7 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     if (action === 'open-news-details') { runtimeState.modalNewsId = button.dataset.newsId || ''; runtimeState.modal = 'news-details'; rerenderNow(); }
     if (action === 'open-news-image') { runtimeState.modalNewsImage = button.dataset.newsImage || ''; runtimeState.modal = 'news-image'; rerenderNow(); }
     if (action === 'support') context.onSupport?.();
+    if (action === 'dismiss-news') context.onDismissNews?.(button.dataset.newsId || '');
     if (action === 'dismiss-history') context.onDismissHistory?.(button.dataset.historyId || '');
     if (action === 'install-update') context.onInstallUpdate?.();
     if (action === 'dismiss-update') context.onDismissUpdate?.();
@@ -1052,6 +1106,104 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     rerenderNow();
     if (anchor) settleFloatingRowMenu(root, anchor);
   }));
+  const nativeWindowsDrag = /Windows/i.test(navigator.userAgent || '') && typeof context.invoke === 'function';
+  const nativeDrag = { row: null, path: '', pointerId: null, startX: 0, startY: 0, started: false, invoked: false };
+  const resetNativeDrag = () => {
+    nativeDrag.row?.classList.remove('is-native-dragging', 'is-drag-candidate');
+    nativeDrag.row = null;
+    nativeDrag.path = '';
+    nativeDrag.pointerId = null;
+    nativeDrag.startX = 0;
+    nativeDrag.startY = 0;
+    nativeDrag.started = false;
+    nativeDrag.invoked = false;
+  };
+  if (nativeWindowsDrag) {
+    // The browser's drag session cannot carry a real Windows file object from
+    // a webview. Disable it for completed rows and start the OLE session after
+    // a small pointer threshold. Windows supplies the moving drag image.
+    // Disable the browser's HTML5 drag session for every native row.  Live
+    // refreshes replace row markup, so selecting only the rows that happened
+    // to be `draggable="true"` at bind time left newly completed files on the
+    // unreliable WebView drag path.
+    const disableNativeBrowserDrag = () => {
+      root.querySelectorAll('[data-dm-drag-path]').forEach((row) => { row.draggable = false; });
+    };
+    disableNativeBrowserDrag();
+    root.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      const row = event.target.closest?.('[data-dm-drag-path]');
+      if (!row?.dataset.dmDragPath || event.target.closest?.('button,input,select,textarea,a,[data-dm-row-menu]')) return;
+      // A row can have been inserted by the live renderer since the initial
+      // bind. Turn off HTML5 drag before the pointer crosses its threshold so
+      // this gesture always enters the native OLE path below.
+      row.draggable = false;
+      nativeDrag.row = row;
+      nativeDrag.path = row.dataset.dmDragPath;
+      nativeDrag.pointerId = event.pointerId;
+      nativeDrag.startX = event.clientX;
+      nativeDrag.startY = event.clientY;
+      nativeDrag.started = false;
+      nativeDrag.invoked = false;
+      row.classList.add('is-drag-candidate');
+      // Do not capture the pointer: WebView2 pointer capture can keep the
+      // gesture inside the webview and prevent the native OLE target from
+      // receiving the drag outside the window.
+    });
+    root.addEventListener('pointermove', (event) => {
+      if (!nativeDrag.row || nativeDrag.pointerId !== event.pointerId) return;
+      if (!nativeDrag.started) {
+        const distance = Math.hypot(event.clientX - nativeDrag.startX, event.clientY - nativeDrag.startY);
+        if (distance < 8) return;
+        nativeDrag.started = true;
+        event.preventDefault();
+        nativeDrag.row.classList.add('is-native-dragging');
+      }
+      if (nativeDrag.started) {
+        event.preventDefault();
+        if (!nativeDrag.invoked) {
+          nativeDrag.invoked = true;
+          void context.invoke('start_file_drag', { path: nativeDrag.path })
+            .catch((error) => context.onToast?.(`No se pudo iniciar el arrastre: ${String(error)}`, 'error'))
+            .finally(resetNativeDrag);
+        }
+      }
+    }, { passive: false });
+    root.addEventListener('pointerup', resetNativeDrag);
+    root.addEventListener('pointercancel', resetNativeDrag);
+  }
+  root.addEventListener('dragstart', (event) => {
+    const row = event.target.closest?.('[data-dm-drag-path][draggable="true"]');
+    const path = row?.dataset.dmDragPath || '';
+    if (!path || !event.dataTransfer) return;
+    const filename = path.replace(/\\/g, '/').split('/').pop() || 'download';
+    const mime = 'application/octet-stream';
+    // A normal drag from a completed download is a copy. Cutting remains an
+    // explicit context-menu action, matching Explorer's default behavior.
+    event.dataTransfer.effectAllowed = 'copy';
+    event.dataTransfer.dropEffect = 'copy';
+    const fileUrl = `file:///${path.replace(/\\/g, '/')}`;
+    // WebView2's DownloadURL payload remains a compatibility fallback, but on
+    // Windows the native OLE command is the primary path so Explorer and
+    // external apps receive a real CF_HDROP file object.
+    const isWindows = /Windows/i.test(navigator.userAgent || '');
+    if (isWindows && typeof context.invoke === 'function') {
+      event.preventDefault();
+      void context.invoke('start_file_drag', { path }).catch(() => {
+        // A failed native call must not make the row unusable on older hosts;
+        // put the standard browser formats back for the current gesture.
+        try {
+          event.dataTransfer?.setData('DownloadURL', `${mime}:${filename}:${fileUrl}`);
+          event.dataTransfer?.setData('text/uri-list', fileUrl);
+          event.dataTransfer?.setData('text/plain', path);
+        } catch {}
+      });
+      return;
+    }
+    event.dataTransfer.setData('DownloadURL', `${mime}:${filename}:${fileUrl}`);
+    event.dataTransfer.setData('text/uri-list', fileUrl);
+    event.dataTransfer.setData('text/plain', path);
+  });
   root.querySelector('.dm-download-scroll')?.addEventListener('wheel', () => {
     if (!runtimeState.rowMenuJobId) return;
     runtimeState.rowMenuJobId = null;

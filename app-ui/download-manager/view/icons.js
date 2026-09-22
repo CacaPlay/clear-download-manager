@@ -14,6 +14,7 @@ const ICON_PATHS = Object.freeze({
   plus: '<path d="M12 5v14M5 12h14"/>',
   link: '<path d="M10 13a5 5 0 0 0 7.1.1l2-2A5 5 0 0 0 12 4l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/>',
   clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 8h6M9 12h6M9 16h4"/>',
+  scissors: '<circle cx="6" cy="7" r="3"/><circle cx="6" cy="17" r="3"/><path d="m8.5 8.5 10 7M8.5 15.5l10-7"/>',
   magnet: '<path d="M6 4v8a6 6 0 0 0 12 0V4"/><path d="M6 8h4M14 8h4"/>',
   more: '<circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/>',
   pause: '<path d="M9 6v12M15 6v12"/>',
@@ -30,6 +31,7 @@ const ICON_PATHS = Object.freeze({
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
   terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12 16h5"/>',
   file: '<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/>',
+  edit: '<path d="m4 16.5-.8 4.3 4.3-.8L19 8.5 15.5 5z"/><path d="m13.8 6.7 3.5 3.5"/>',
   eye: '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/>',
   shield: '<path d="M12 3 20 6v6c0 5-3.4 8.2-8 10-4.6-1.8-8-5-8-10V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -68,7 +70,7 @@ const FILE_TYPE_ASSETS = Object.freeze({
   // Unknown files use the supplied rounded image geometry instead of the old
   // generic document glyph.  Real image thumbnails still take precedence in
   // fileGlyph and are not replaced by this fallback.
-  generic: { neutral: './app-ui/assets/news/Imagenes.png', accent: './app-ui/assets/news/Imagenes.png' },
+  generic: { neutral: './app-ui/assets/file-types/generic-neutral.png', accent: './app-ui/assets/file-types/generic-accent.png' },
   'playlist-prep': { neutral: './app-ui/assets/file-types/playlist-prep-neutral.png', accent: './app-ui/assets/file-types/playlist-prep-accent.png' }
 });
 const iconMarkupCache = new Map();

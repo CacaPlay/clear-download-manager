@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::{fs, path::PathBuf, time::Duration};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_updater::UpdaterExt;
 
@@ -46,7 +47,7 @@ pub struct AppUpdateInfo {
 }
 
 #[tauri::command]
-pub fn notify_app_update(app: AppHandle, version: String) -> Result<(), String> {
+pub fn notify_app_update(app: AppHandle, version: String, locale: String) -> Result<(), String> {
     let version = version.trim();
     if version.is_empty()
         || version.len() > 80
@@ -56,10 +57,21 @@ pub fn notify_app_update(app: AppHandle, version: String) -> Result<(), String> 
     {
         return Err("La versión de actualización no es válida".into());
     }
+    let (title, body) = if locale == "en" {
+        (
+            "Update available",
+            format!("Version {version} is available."),
+        )
+    } else {
+        (
+            "Actualización disponible",
+            format!("La versión {version} está disponible."),
+        )
+    };
     app.notification()
         .builder()
-        .title("Clear Download Manager")
-        .body(format!("La versión {version} está disponible."))
+        .title(title)
+        .body(body)
         .show()
         .map_err(|error| format!("No se pudo mostrar la notificación: {error}"))
 }
@@ -190,8 +202,33 @@ pub async fn install_app_update(
         .map_err(|error| format!("No se pudo comprobar la actualización: {error}"))?
         .ok_or_else(|| "No hay una actualización nueva disponible".to_string())?;
 
+    let progress_app = app.clone();
+    let finish_app = app.clone();
+    let mut downloaded_bytes = 0_u64;
     update
-        .download_and_install(|_, _| {}, || {})
+        .download_and_install(
+            move |chunk_length, content_length| {
+                downloaded_bytes = downloaded_bytes.saturating_add(chunk_length as u64);
+                let percent = content_length.filter(|total| *total > 0).map(|total| {
+                    (downloaded_bytes as f64 * 100.0 / total as f64).clamp(0.0, 100.0)
+                });
+                let _ = progress_app.emit(
+                    "cacatools-app-update-progress",
+                    json!({
+                        "downloadedBytes": downloaded_bytes,
+                        "contentLength": content_length,
+                        "percent": percent,
+                        "phase": "download"
+                    }),
+                );
+            },
+            move || {
+                let _ = finish_app.emit(
+                    "cacatools-app-update-progress",
+                    json!({ "phase": "install", "percent": 100.0 }),
+                );
+            },
+        )
         .await
         .map_err(|error| format!("No se pudo instalar la actualización: {error}"))?;
     Ok(())

@@ -27,6 +27,15 @@
   background:var(--dm-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--dm-accent) 18%,transparent);
 }
 
+/* The active navigation/category state is persistent, not a notification.
+   Do not replay a settle animation every time a live render refreshes it. */
+.dm-zen-nav>nav>button.is-active>svg,
+.dm-zen-nav>nav>button.is-active>.dm-icon{
+  animation:none!important;
+  opacity:1!important;
+  transform:none!important;
+}
+
 /* Exact visual centering for generic file glyphs. Extension badge stays in the corner. */
 .dm-job-file>.dm-icon{
   position:absolute!important;left:50%!important;top:50%!important;
@@ -362,3 +371,23 @@
 .dm-priority-marker{font-size:.78rem;font-weight:700;line-height:1}
 .dm-priority-meta>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dm-priority-badge{display:none!important}
+
+/* CDM is an application surface, not a document editor. Prevent accidental
+   text highlighting in rows, menus and dialogs; retain native text editing in
+   controls where users enter URLs, names, search terms, or settings. */
+html,body,body *{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+input,textarea,[contenteditable="true"],[role="textbox"]{-webkit-user-select:text;user-select:text}
+img{-webkit-user-drag:none;user-drag:none}
+
+/* The Advanced Details view is a compact utility dialog, not a full-width
+   dashboard. */
+.dm-modal-backdrop[data-dm-modal="rename"]{padding:.75rem}
+.dm-modal-backdrop[data-dm-modal="rename"]>.dm-modal{width:min(40rem,100%);max-height:min(22rem,calc(100dvh - 1.5rem));border-radius:.78rem}
+.dm-modal-backdrop[data-dm-modal="rename"]>.dm-modal>header{min-height:3.1rem;padding:.5rem .8rem}
+.dm-modal-backdrop[data-dm-modal="rename"]>.dm-modal>.dm-modal-body{padding:.7rem .8rem}
+.dm-modal-backdrop[data-dm-modal="rename"]>.dm-modal>footer{padding:.5rem .8rem}
+.dm-modal-backdrop[data-dm-modal="rename"] .dm-rename-form{max-width:none;margin:0}
+.dm-rename-form{display:grid;gap:.45rem;max-width:32rem;margin:0 auto}
+.dm-rename-form>label{font-size:.82rem;font-weight:650;color:var(--dm-text)}
+.dm-rename-form>input{min-width:0;min-height:2.7rem;padding:.6rem .75rem;border:1px solid var(--dm-border);border-radius:.55rem;background:var(--dm-surface-2);color:var(--dm-text);font:inherit;user-select:text;-webkit-user-select:text}
+.dm-rename-form>small{color:var(--dm-faint);font-size:.73rem;line-height:1.45}

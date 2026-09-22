@@ -5749,6 +5749,8 @@ fn run_app() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::clipboard::read_clipboard_text,
+            commands::clipboard::set_file_clipboard,
+            commands::clipboard::start_file_drag,
             commands::system::runtime_status,
             commands::downloads::desktop_snapshot,
             commands::downloads::download_activity_snapshot,
@@ -5770,6 +5772,7 @@ fn run_app() {
             commands::downloads::set_job_status,
             commands::downloads::set_download_priority,
             commands::downloads::job_storage_preview,
+            commands::downloads::rename_completed_download,
             commands::downloads::emergency_stop_job,
             commands::downloads::cancel_download_job,
             commands::downloads::delete_download_job,

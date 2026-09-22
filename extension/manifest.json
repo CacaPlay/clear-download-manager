@@ -2,9 +2,9 @@
   "manifest_version": 3,
   "name": "Clear Download Manager",
   "description": "Detecta multimedia compatible en la pestaña activa y la prepara en Clear Download Manager.",
-  "homepage_url": "https://github.com/CacaPlay/clear-download-manager-releases/releases/tag/v0.95.1",
-  "version": "0.45.12",
-  "version_name": "0.45.12",
+  "homepage_url": "https://github.com/CacaPlay/clear-download-manager/releases/latest",
+  "version": "0.95.4",
+  "version_name": "0.95.4",
   "minimum_chrome_version": "116",
   "permissions": [
     "activeTab",

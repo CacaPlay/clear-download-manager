@@ -58,7 +58,7 @@ const dmStyles = read('app-ui/download-manager/styles.css');
 
 const appLockBlock = cargoPackageBlock(cargoLock, 'cacatools-desktop');
 const expectedAppVersion = packageJson.version;
-const expectedExtensionVersion = '0.45.12';
+const expectedExtensionVersion = '0.95.4';
 const tauriLockBlock = cargoPackageBlock(cargoLock, 'tauri');
 const httpRangeLockBlock = cargoPackageBlock(cargoLock, 'http-range');
 

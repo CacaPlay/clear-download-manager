@@ -46,9 +46,13 @@ import {
 import {
   configureComposition, render, bindThumbnailFallbacks, start
 } from './modules/composition/index.js?v=0.95.0-verify-20260911-r3';
-import { runThemeTransition } from './modules/motion/coordinator.js';
 import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, translate } from './modules/i18n/index.js';
 import { localizeDom } from './modules/i18n/runtime.js';
+
+// CDM uses its own context menus for downloads and no browser context menu on
+// empty content. Keep this at document capture phase so every main-view area
+// (including settings and What's New) behaves consistently.
+document.addEventListener('contextmenu', (event) => event.preventDefault(), true);
 const qs = new URLSearchParams(window.location.search);
 const previewMode = qs.has('preview');
 const previewSlide = Math.max(0, Number(qs.get('slide') || 0));
@@ -56,13 +60,13 @@ const previewView = qs.get('view') || 'home';
 const previewAccent = qs.get('accent') || '';
 const previewPreset = qs.get('preset') || '';
 configureAppearance({ previewAccent, previewPreset, getAppState: () => appState, onDownloadManagerAppearance: patchDownloadManagerAppearance });
-const APP_VERSION = '0.95.1';
+const APP_VERSION = '0.95.4';
 const initialLocale = loadLocale();
 const SPOTIFY_DISABLED_MESSAGE = 'Spotify está desactivado temporalmente. Esta versión de CacaTools no puede procesar enlaces de Spotify.';
 const SPOTIFY_RESTRICTED_CODE = 'spotify_authenticated_restricted';
 const SPOTIFY_RESTRICTED_MESSAGE = 'Spotify autenticado · API no disponible. Spotify requiere una suscripción Premium activa en la cuenta propietaria de la aplicación para permitir estas consultas. CacaTools no puede eliminar esa restricción; YouTube y el resto de la aplicación siguen funcionando normalmente.';
 const SPOTIFY_AUTH_ERROR_STATE = 'auth_error';
-const BUILD_ID = 'CDM-0.95.1-20260916-localized-news';
+const BUILD_ID = 'CDM-0.95.4-20260922-release-migration';
 let deferredDownloadManagerRefresh = false;
 let deferredDownloadManagerRefreshTimer = 0;
 let snapshotRefreshTimer = 0;
@@ -278,7 +282,6 @@ const icon = (name, size = 24) => {
 
 const navItems = [
   ['Inicio', 'home'], ['Descargas', 'download'], ['Documentos', 'file'], ['Imágenes', 'image'], ['Utilidades', 'tools']
-
 ];
 
 
@@ -431,6 +434,7 @@ const appState = {
   updaterStatus: previewMode ? { enabled: false, configured: false, currentVersion: APP_VERSION, channel: 'stable', provider: 'github-releases', endpoint: '', repository: '', message: 'Vista previa' } : null,
   updaterCheckBusy: false,
   updaterInstallBusy: false,
+  updaterProgress: null,
   availableUpdate: null,
   releaseMetadata: null,
   remoteNewsMessages: [],
@@ -485,20 +489,12 @@ function applyAppAppearance(value = appState.appearance, options = {}) {
   return result;
 }
 
-function resolvedThemeForMotion(value = appState.appearance) {
-  const normalized = normalizeAppearance(value || {});
-  if (normalized.theme !== 'system') return normalized.theme;
-  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
-
-function applyThemeWithMotion(value = appState.appearance, options = {}, trigger = document.activeElement) {
-  const currentTheme = document.documentElement.dataset.theme || '';
-  const nextTheme = resolvedThemeForMotion(value);
-  if (currentTheme && currentTheme !== nextTheme) {
-    return runThemeTransition(() => applyAppAppearance(value, options), trigger);
-  }
+// Theme changes are committed atomically.  The download-manager surface must
+// not animate through a document snapshot: that animation can temporarily
+// change the available width and make rows appear to resize or shift.
+function applyThemeWithMotion(value = appState.appearance, options = {}) {
   applyAppAppearance(value, options);
-  return Promise.resolve({ used: false, reason: 'same-theme' });
+  return Promise.resolve({ used: false, reason: 'theme-static' });
 }
 
 configureSettings({
@@ -635,6 +631,21 @@ async function bindPreparationModalState() {
   } catch (error) {
     applyPreparationModalState([]);
     console.warn('No se pudo sincronizar la jerarquía visual de ventanas.', error);
+  }
+}
+
+async function bindAppUpdateProgress() {
+  const listen = window.__TAURI__?.event?.listen;
+  if (typeof listen !== 'function') return;
+  try {
+    await listen('cacatools-app-update-progress', (event) => {
+      const payload = event?.payload && typeof event.payload === 'object' ? event.payload : {};
+      appState.updaterProgress = payload;
+      if (payload.phase === 'install') appState.updaterMessage = 'Verificando e instalando la actualización firmada…';
+      requestDownloadManagerRender({ force: true });
+    });
+  } catch (error) {
+    console.warn('No se pudo registrar el progreso del actualizador.', error);
   }
 }
 
@@ -891,18 +902,16 @@ function newsMessages() {
   return buildNewsInbox({
     update: appState.availableUpdate,
     releaseMetadata: appState.releaseMetadata,
-    remoteMessages: appState.experienceSettings?.receiveNews === false
-      ? []
-      : appState.remoteNewsMessages || parseCachedNews(appState.experienceSettings, { appVersion: APP_VERSION }),
+    remoteMessages: appState.remoteNewsMessages || parseCachedNews(appState.experienceSettings, { appVersion: APP_VERSION }),
     experience: appState.experienceSettings,
     appVersion: APP_VERSION,
-    includeExtension: appState.experienceSettings?.showExtensionRecommendation !== false,
+    includeExtension: true,
     locale: resolveLocale(currentLocale())
   });
 }
 
 async function refreshNewsFeed({ force = false } = {}) {
-  if (previewMode || appState.experienceSettings?.receiveNews === false) return [];
+  if (previewMode) return [];
   const settings = normalizeExperienceSettings(appState.experienceSettings);
   const ttl = 6 * 60 * 60 * 1000;
   const cacheIsCurrent = settings.newsCacheSource === NEWS_FEED_CACHE_KEY;
@@ -1078,7 +1087,7 @@ async function checkForAppUpdate({ silent = false } = {}) {
     if (update?.version) {
       try {
         if (localStorage.getItem(UPDATE_NOTIFICATION_KEY) !== String(update.version)) {
-          await invoke('notify_app_update', { version: String(update.version) });
+          await invoke('notify_app_update', { version: String(update.version), locale: resolveLocale(currentLocale()) });
           localStorage.setItem(UPDATE_NOTIFICATION_KEY, String(update.version));
         }
       } catch (error) { console.info('No se pudo mostrar la notificación de actualización.', error); }
@@ -1120,6 +1129,7 @@ async function installAvailableAppUpdate() {
     return;
   }
   appState.updaterInstallBusy = true;
+  appState.updaterProgress = { phase: 'download', percent: null, downloadedBytes: 0, contentLength: null };
   appState.updaterMessage = 'Descargando y verificando la actualización firmada…';
   requestDownloadManagerRender({ force: true });
   try {
@@ -1130,6 +1140,7 @@ async function installAvailableAppUpdate() {
     appState.updaterMessage = 'Actualización instalada. Windows cerrará la aplicación para finalizar.';
   } catch (error) {
     appState.updaterMessage = String(error);
+    appState.updaterProgress = null;
     appState.updaterInstallBusy = false;
     requestDownloadManagerRender({ force: true });
     showToast(appState.updaterMessage, 'error');
@@ -1211,6 +1222,7 @@ function downloadsPageMarkup() {
     updaterStatus: appState.updaterStatus,
     updaterCheckBusy: appState.updaterCheckBusy,
     updaterInstallBusy: appState.updaterInstallBusy,
+    updaterProgress: appState.updaterProgress,
     availableUpdate: appState.availableUpdate,
     updaterMessage: appState.updaterMessage,
     autoUpdateEnabled: appState.autoUpdateEnabled,
@@ -1236,6 +1248,11 @@ function downloadsPageMarkup() {
       void persistExperienceSettings({ dismissedHistoryIds: ids });
       requestDownloadManagerRender({ force: true });
     },
+    onDismissNews: (id) => {
+      const ids = [...(appState.experienceSettings?.newsDismissedIds || []), String(id || '')].filter(Boolean).slice(-64);
+      void persistExperienceSettings({ newsDismissedIds: ids });
+      requestDownloadManagerRender({ force: true });
+    },
     newsHasAttention: newsAttention(newsMessages(), appState.experienceSettings),
     previewMode,
     invoke,
@@ -1258,7 +1275,7 @@ function downloadsPageMarkup() {
     onDismissUpdate: () => dismissAvailableAppUpdate(),
     onOpenExtension: async () => {
       await persistExperienceSettings({ extensionPromptDecision: 'accepted' });
-      await invoke('open_external_url', { url: 'https://chromewebstore.google.com/detail/cacatools-download-manager/aonppfnabjnicjjeoofkfjofolfibggp' }).catch((error) => showToast(friendlyError(error), 'error'));
+      await invoke('open_external_url', { url: 'https://chromewebstore.google.com/detail/aonppfnabjnicjjeoofkfjofolfibggp?utm_source=item-share-cb' }).catch((error) => showToast(friendlyError(error), 'error'));
       requestDownloadManagerRender({ force: true });
     },
     onExtensionPromptDecision: (decision) => { if (['accepted', 'declined'].includes(decision)) { void persistExperienceSettings({ extensionPromptDecision: decision }); requestDownloadManagerRender({ force: true }); } },
@@ -1388,6 +1405,19 @@ function bindEvents() {
       appState.toolUpdateChecking = false;
       render();
     }
+  });
+  const toolRepositories = {
+    'yt-dlp': 'https://github.com/yt-dlp/yt-dlp',
+    ffmpeg: 'https://github.com/GyanD/codexffmpeg',
+    deno: 'https://github.com/denoland/deno',
+    aria2: 'https://github.com/aria2/aria2'
+  };
+  document.querySelectorAll('[data-settings-tool-repo]').forEach((button) => button.addEventListener('click', () => {
+    const url = toolRepositories[button.dataset.settingsToolRepo];
+    if (url) void invoke('open_external_url', { url }).catch((error) => showToast(friendlyError(error), 'error'));
+  }));
+  document.querySelector('[data-settings-official-site]')?.addEventListener('click', () => {
+    void invoke('open_external_url', { url: 'https://cdm.cacaplay.lat' }).catch((error) => showToast(friendlyError(error), 'error'));
   });
   document.querySelector('.tool-update-apply')?.addEventListener('click', async () => {
     if (!appState.toolUpdateStatus?.canUpdate || appState.toolUpdateChecking || appState.toolUpdateApplying) return;
@@ -1761,6 +1791,7 @@ function bindEvents() {
     schedules: appState.downloadSchedules,
     availableUpdate: appState.availableUpdate,
     updaterInstallBusy: appState.updaterInstallBusy,
+    updaterProgress: appState.updaterProgress,
     experienceSettings: appState.experienceSettings,
     newsMessages: newsMessages(),
     locale: currentLocale,
@@ -1771,6 +1802,11 @@ function bindEvents() {
     onDismissHistory: (id) => {
       const ids = [...(appState.experienceSettings?.dismissedHistoryIds || []), String(id || '')].filter(Boolean).slice(-32);
       void persistExperienceSettings({ dismissedHistoryIds: ids });
+      requestDownloadManagerRender({ force: true });
+    },
+    onDismissNews: (id) => {
+      const ids = [...(appState.experienceSettings?.newsDismissedIds || []), String(id || '')].filter(Boolean).slice(-64);
+      void persistExperienceSettings({ newsDismissedIds: ids });
       requestDownloadManagerRender({ force: true });
     },
     newsHasAttention: newsAttention(newsMessages(), appState.experienceSettings),
@@ -1802,7 +1838,7 @@ function bindEvents() {
     onDismissUpdate: () => dismissAvailableAppUpdate(),
     onOpenExtension: async () => {
       await persistExperienceSettings({ extensionPromptDecision: 'accepted' });
-      await invoke('open_external_url', { url: 'https://chromewebstore.google.com/detail/cacatools-download-manager/aonppfnabjnicjjeoofkfjofolfibggp' }).catch((error) => showToast(friendlyError(error), 'error'));
+      await invoke('open_external_url', { url: 'https://chromewebstore.google.com/detail/aonppfnabjnicjjeoofkfjofolfibggp?utm_source=item-share-cb' }).catch((error) => showToast(friendlyError(error), 'error'));
       requestDownloadManagerRender({ force: true });
     },
     onExtensionPromptDecision: (decision) => { if (['accepted', 'declined'].includes(decision)) { void persistExperienceSettings({ extensionPromptDecision: decision }); requestDownloadManagerRender({ force: true }); } },
@@ -2056,6 +2092,7 @@ void bindAppearanceSync({
 const nativeClipboardFocusBinding = !previewMode ? bindNativeClipboardFocus() : Promise.resolve();
 const destinationPickerStateBinding = !previewMode ? bindDestinationPickerState() : Promise.resolve();
 const preparationModalStateBinding = !previewMode ? bindPreparationModalState() : Promise.resolve();
+const appUpdateProgressBinding = !previewMode ? bindAppUpdateProgress() : Promise.resolve();
 const startupPromise = start();
 // The startup snapshot hydrates the persisted accent asynchronously.  Apply
 // the native icon once, after that snapshot is ready, then leave it alone while
@@ -2068,7 +2105,7 @@ if (!previewMode) {
   // A launch can complete without emitting a new focus event. Check only
   // after the real startup lifecycle has hydrated settings and rendered the
   // main surface, so the coordinator can present the suggestion safely.
-  void Promise.all([nativeClipboardFocusBinding, destinationPickerStateBinding, preparationModalStateBinding, startupPromise])
+  void Promise.all([nativeClipboardFocusBinding, destinationPickerStateBinding, preparationModalStateBinding, appUpdateProgressBinding, startupPromise])
     .then(() => clipboardFocusWatcher.checkNow())
     .catch(() => {});
 }

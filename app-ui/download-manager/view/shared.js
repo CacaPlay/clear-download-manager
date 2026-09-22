@@ -32,7 +32,7 @@ function relatedFilesMarkup(job) {
   </div></section>`;
 }
 
-function connectionsMarkup(job) {
+export function connectionsMarkup(job) {
   const source = sourceDescriptor(job);
   const resume = job.status === 'completed' ? 'Trabajo finalizado' : job.kind === 'torrent' ? 'Sesión y piezas persistentes' : 'Parcial conservable y reanudable';
   const mode = job.kind === 'torrent' ? 'Pares BitTorrent gestionados por aria2c' : ['video', 'audio', 'media'].includes(job.kind) ? 'Extractor yt-dlp; unión local con FFmpeg cuando hace falta' : 'Descarga HTTP con rangos y reintentos';
@@ -60,7 +60,7 @@ function inspectorLogMarkup(job) {
 
 function categoryLabel(value) {
   return ({
-    all: 'Todas las categorías',
+    all: 'Categorías',
     __pending: 'Pendientes',
     __running: 'En ejecución',
     __completed: 'Completadas',
@@ -69,7 +69,7 @@ function categoryLabel(value) {
     Torrents: 'Torrent',
     Video: 'Vídeo',
     Audio: 'Música'
-  })[value] || String(value || 'Todas las categorías');
+  })[value] || String(value || 'Categorías');
 }
 
 export function categoryOptions(jobs, selected, open = false) {
@@ -185,6 +185,11 @@ function inspectorActions(job) {
   if (cancellableStatuses.has(job.status)) actions.push(`<button class="is-danger" data-dm-cancel-job="${job.id}">${dmIcon('shield')}<span>Cancelar descarga</span></button>`);
   actions.push(`<button class="is-danger" data-dm-delete-job="${job.id}">${dmIcon('trash')}<span>Eliminar</span></button>`);
   if (job.destination) actions.push(`<button data-dm-job-action="reveal" data-job-id="${job.id}">${dmIcon('folder')}<span>Abrir carpeta</span></button>`);
+  if (job.status === 'completed' && job.destination) {
+    const path = escapeHtml(job.destination);
+    actions.push(`<button data-dm-file-action="copy" data-dm-file-path="${path}">${dmIcon('clipboard')}<span>Copiar</span></button>`);
+    actions.push(`<button data-dm-file-action="cut" data-dm-file-path="${path}">${dmIcon('scissors')}<span>Cortar</span></button>`);
+  }
   if (cancellableStatuses.has(job.status)) actions.push(`<button data-dm-schedule-job="${job.id}">${dmIcon('calendar')}<span>Programar</span></button>`);
   if (job.sourceUrl) actions.push(`<button data-dm-advanced-details="${job.id}">${dmIcon('globe')}<span>Detalles avanzados</span></button>`);
   return actions.length ? `<section class="dm-inspector-actions">${actions.join('')}</section>` : `<section class="dm-inspector-actions dm-inspector-actions-empty"><span>Esta tarea no tiene acciones disponibles.</span></section>`;
@@ -207,7 +212,13 @@ function rowMenuActions(job) {
     if (isPlayableJob(job) && job.id) {
       actions.push(`<button data-dm-open-player="${job.id}">${dmIcon('play')}<span>Reproducir</span></button>`);
     }
-    if (job.status === 'completed' && job.destination) actions.push(`<button data-dm-open-path="${escapeHtml(job.destination)}">${dmIcon('file')}<span>Abrir archivo</span></button>`);
+    if (job.status === 'completed' && job.destination) {
+      const path = escapeHtml(job.destination);
+      actions.push(`<button data-dm-open-path="${path}">${dmIcon('file')}<span>Abrir</span></button>`);
+      actions.push(`<button data-dm-file-action="copy" data-dm-file-path="${path}">${dmIcon('clipboard')}<span>Copiar</span></button>`);
+      actions.push(`<button data-dm-file-action="cut" data-dm-file-path="${path}">${dmIcon('scissors')}<span>Cortar</span></button>`);
+      actions.push(`<button data-dm-rename-job="${job.id}">${dmIcon('edit')}<span>Renombrar</span></button>`);
+    }
     if (job.status === 'running') actions.push(`<button data-dm-job-action="pause" data-job-id="${job.id}">${dmIcon('pause')}<span>Pausar</span></button>`);
     else if (resumableStatuses.has(job.status)) actions.push(`<button data-dm-job-action="resume" data-job-id="${job.id}">${dmIcon('play')}<span>Iniciar o reanudar</span></button>`);
     if (cancellableStatuses.has(job.status)) actions.push(`<button data-dm-schedule-job="${job.id}">${dmIcon('calendar')}<span>Programar</span></button>`);
@@ -296,12 +307,36 @@ function updaterSettings(context = {}) {
       : '';
   return `<article class="dm-settings-feature ${configured ? 'is-ready' : 'is-pending'}">
     <div class="dm-settings-feature-head"><span>${dmIcon('download', 20)}</span><div><strong>Actualizaciones automáticas</strong><small>${configured ? `Canal ${escapeHtml(updater.channel || 'stable')} · ${escapeHtml(updater.repository || 'repositorio configurado')}` : 'El código está preparado; la publicación requiere endpoint y firma válidos.'}</small></div><i>${configured ? 'Listo' : 'Sin configurar'}</i></div>
-    <label class="dm-switch-row"><span><strong>Comprobar al iniciar</strong><small>Solo se activa cuando el actualizador firmado está configurado.</small></span><input type="checkbox" data-dm-auto-update ${context.autoUpdateEnabled !== false ? 'checked' : ''} ${configured ? '' : 'disabled'}></label>
+    <label class="dm-switch-row"><span><strong>Comprobar automáticamente</strong><small>Busca al iniciar y cada 6 horas cuando el actualizador firmado está configurado.</small></span><input type="checkbox" data-dm-auto-update ${context.autoUpdateEnabled !== false ? 'checked' : ''} ${configured ? '' : 'disabled'}></label>
     ${update ? `<div class="dm-update-available"><b>Versión ${escapeHtml(update.version)}</b><span>${escapeHtml(update.notes || 'Nueva versión disponible.')}</span></div>` : ''}
     ${updaterMessage ? `<p class="dm-settings-message ${messageTone}">${escapeHtml(updaterMessage)}</p>` : ''}
-    ${context.updaterInstallBusy ? `<div class="dm-update-progress" role="status" aria-live="polite"><div class="dm-update-progress-track"><i></i></div><span>Descargando, verificando e instalando la actualización.</span></div>` : ''}
+    ${updateProgressMarkup(context)}
     <div class="dm-settings-feature-actions"><button type="button" data-dm-check-update ${!configured || context.updaterCheckBusy || context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterCheckBusy ? 'Comprobando…' : 'Buscar actualización'}</button>${update ? `<button type="button" data-dm-dismiss-update>Más tarde</button><button type="button" class="is-primary" data-dm-install-update ${context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterInstallBusy ? 'Instalando…' : 'Descargar e instalar'}</button>` : ''}</div>
   </article>`;
+}
+
+export function updateProgressMarkup(context = {}) {
+  if (!context.updaterInstallBusy) return '';
+  const progress = context.updaterProgress || {};
+  const phase = progress.phase === 'install' ? 'install' : 'download';
+  const rawPercent = Number(progress.percent);
+  const percent = phase === 'download' && Number.isFinite(rawPercent)
+    ? Math.max(0, Math.min(100, Math.round(rawPercent)))
+    : phase === 'install' ? 100 : null;
+  const downloaded = Number(progress.downloadedBytes);
+  const total = Number(progress.contentLength);
+  const hasDownloaded = Number.isFinite(downloaded) && downloaded > 0;
+  const hasTotal = Number.isFinite(total) && total > 0;
+  const detail = phase === 'install'
+    ? 'Verificando e instalando la actualización firmada.'
+    : percent === null
+      ? 'Descargando la actualización firmada…'
+      : `Descargando la actualización firmada (${percent}%).`;
+  const transfer = hasTotal
+    ? `${formatBytes(downloaded)} / ${formatBytes(total)}`
+    : hasDownloaded ? formatBytes(downloaded) : '';
+  const progressLabel = phase === 'install' ? 'Instalando actualización' : 'Progreso de descarga';
+  return `<div class="dm-update-progress" role="status" aria-live="polite"><div class="dm-update-progress-track ${percent === null ? 'is-indeterminate' : ''}" role="progressbar" aria-label="${progressLabel}" aria-valuemin="0" aria-valuemax="100" ${percent === null ? 'aria-valuetext="Descargando actualización"' : `aria-valuenow="${percent}"`}><i style="width:${percent === null ? 28 : percent}%"></i></div><span>${detail}</span>${transfer ? `<small>${transfer}${hasTotal && percent !== null ? ` · ${percent}%` : ''}</small>` : ''}</div>`;
 }
 
 function extensionSettings(context = {}) {

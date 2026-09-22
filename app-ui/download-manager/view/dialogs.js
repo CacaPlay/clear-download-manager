@@ -1,6 +1,6 @@
 import { escapeHtml } from '../core/model.js';
 import { dmFileAsset, dmIcon, dmPlaylistLogo } from './icons.js';
-import { dialogShell } from './shared.js';
+import { dialogShell, updateProgressMarkup } from './shared.js';
 
 
 function progressiveThumbnailMarkup(item, index, iconSize = 34) {
@@ -28,11 +28,8 @@ export function videoSearchDialog(state) {
 export function torrentDialog(state) {
   const source = escapeHtml(state.torrentSource || '');
   const body = `<section class="dm-torrent-dialog">
-    <div class="dm-torrent-hero">${dmIcon('magnet', 42)}<div><strong>Añadir torrent de forma local</strong><span>Pega un enlace magnet o selecciona un archivo .torrent. aria2c gestionará la descarga, la pausa y la recuperación.</span></div></div>
-    <label class="dm-torrent-source"><span>Magnet o archivo .torrent</span><div>${dmIcon('link')}<input id="dm-torrent-source" value="${source}" placeholder="magnet:?xt=urn:btih:… o C:\\ruta\\archivo.torrent" autocomplete="off" spellcheck="false"></div></label>
-    <div class="dm-torrent-actions"><button type="button" data-dm-choose-torrent>${dmIcon('folder')}<span><strong>Elegir archivo</strong><small>Abre el selector nativo de Windows.</small></span></button><button type="button" data-dm-paste-torrent>${dmIcon('clipboard')}<span><strong>Pegar magnet</strong><small>Lee el portapapeles solo al pulsarlo.</small></span></button></div>
-    <aside class="dm-torrent-privacy">${dmIcon('shield')}<span><strong>Motor privado y local</strong><small>La fuente se entrega directamente a aria2c. CacaTools no utiliza un servidor intermediario.</small></span></aside>
-  </section>`;
+      <label class="dm-torrent-source"><span>Magnet o archivo .torrent</span><div>${dmIcon('magnet')}<input id="dm-torrent-source" value="${source}" placeholder="magnet:?xt=urn:btih:… o C:\\ruta\\archivo.torrent" autocomplete="off" spellcheck="false"><button type="button" class="dm-torrent-icon-action" data-dm-choose-torrent title="Elegir archivo torrent" aria-label="Elegir archivo torrent">${dmIcon('folder')}</button><button type="button" class="dm-torrent-icon-action" data-dm-paste-torrent title="Pegar enlace magnet" aria-label="Pegar enlace magnet">${dmIcon('clipboard')}</button></div></label>
+    </section>`;
   const footer = `<button data-dm-modal-close>Cancelar</button><button class="dm-primary-button" data-dm-queue-torrent ${state.torrentBusy ? 'disabled' : ''}>${state.torrentBusy ? 'Añadiendo…' : 'Añadir a la cola'}</button>`;
   return dialogShell('torrent', 'Nueva descarga torrent', body, footer);
 }
@@ -85,8 +82,16 @@ export function updateDialog(context = {}) {
     <div class="dm-info-dialog-icon">${dmIcon('download', 30)}</div>
     <div class="dm-info-dialog-copy"><span class="dm-info-dialog-kicker">ACTUALIZACIÓN DISPONIBLE</span><h3>Clear Download Manager ${escapeHtml(version)}</h3><p>${escapeHtml(notes)}</p><small>La instalación no comienza automáticamente y se mantiene bloqueada mientras haya descargas activas.</small></div>
   </section>`;
-  const footer = `<button data-dm-modal-close>Más tarde</button><button class="dm-primary-button" data-dm-modal-action="install-update" ${context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterInstallBusy ? 'Preparando…' : 'Instalar ahora'}</button>`;
-  return dialogShell('update', 'Actualización disponible', body, footer);
+  const busyLabel = context.updaterProgress?.phase === 'install' ? 'Instalando…' : 'Descargando…';
+  const progress = updateProgressMarkup(context);
+  const footer = `<button data-dm-modal-close ${context.updaterInstallBusy ? 'disabled' : ''}>Más tarde</button><button class="dm-primary-button" data-dm-modal-action="install-update" ${context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterInstallBusy ? busyLabel : 'Instalar ahora'}</button>`;
+  return dialogShell('update', 'Actualización disponible', `${body}${progress}`, footer);
+}
+
+export function renameDialog(job) {
+  const currentName = String(job?.destination || job?.title || '').replace(/^.*[\\/]/, '');
+  const body = `<form class="dm-rename-form" data-dm-rename-form><label for="dm-rename-name">Nuevo nombre</label><input id="dm-rename-name" name="filename" value="${escapeHtml(currentName)}" maxlength="180" autocomplete="off" required><small>El archivo descargado se renombrará en su carpeta. Su extensión se conservará.</small></form>`;
+  return dialogShell('rename', 'Renombrar archivo', body, '<button data-dm-modal-close>Cancelar</button><button class="dm-primary-button" data-dm-rename-save>Guardar</button>');
 }
 
 export function newsDetailsDialog(context = {}) {
