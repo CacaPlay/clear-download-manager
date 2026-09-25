@@ -286,3 +286,21 @@ test('PR #14 local build support remains present on the updated PR #13 tree', ()
   assert.match(readme, /npm\.cmd run build:local/);
   assert.match(contributing, /npm\.cmd run build:local/);
 });
+
+test('Quality and release CI install pinned Playwright Chromium before release gates', () => {
+  const quality = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/quality.yml'), 'utf8');
+  const release = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const buildTestStart = release.indexOf('\n  build-test:');
+  const packageSignStart = release.indexOf('\n  package-sign:');
+  assert.ok(buildTestStart >= 0 && packageSignStart > buildTestStart);
+  const buildTest = release.slice(buildTestStart, packageSignStart);
+
+  for (const [name, workflow] of [['Quality', quality], ['release build-test', buildTest]]) {
+    const installIndex = workflow.indexOf('playwright==1.62.0');
+    const browserIndex = workflow.indexOf('python -m playwright install chromium');
+    const gateIndex = workflow.indexOf('npm run check:release');
+    assert.ok(installIndex >= 0, `${name} must install the pinned Python Playwright package`);
+    assert.ok(browserIndex > installIndex, `${name} must install Chromium after Playwright`);
+    assert.ok(gateIndex > browserIndex, `${name} must install Chromium before check:release`);
+  }
+});
