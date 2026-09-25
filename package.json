@@ -47,6 +47,7 @@
     "check:asset-provenance": "node scripts/validation/asset-provenance-readiness.mjs",
     "check:source-release": "node scripts/validation/source-release-readiness.mjs",
     "check:binary-release": "node scripts/validation/binary-release-readiness.mjs",
+    "check:quality": "node scripts/validation/quality-gate.mjs",
     "source:archive": "node scripts/create-source-archive.mjs",
     "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs",
     "verify:binaries": "node scripts/verify-binaries.mjs",

@@ -48,8 +48,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'check:local-build failed.' }
           npm run test:release-artifacts
           if ($LASTEXITCODE -ne 0) { throw 'release artifact tests failed.' }
-          npm run check:release
-          if ($LASTEXITCODE -ne 0) { throw 'check:release failed.' }
+          npm run check:quality
+          if ($LASTEXITCODE -ne 0) { throw 'check:quality failed.' }
           npm run build:web
           if ($LASTEXITCODE -ne 0) { throw 'build:web failed.' }
       - name: Rust gates

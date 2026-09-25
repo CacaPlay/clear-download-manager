@@ -109,6 +109,31 @@ test('playlist glyph uses the official Lucide list-music path in every UI icon m
   assert.ok(downloadManagerIcons.includes(`playlist: '${officialListMusic}'`));
 });
 
+test('current playlist icon contract passes the dedicated icon audit', () => {
+  const audit = path.join(repositoryRoot, 'scripts/validation/phase20_icon_audit.mjs');
+  const result = spawnSync(process.execPath, [audit], { cwd: repositoryRoot, encoding: 'utf8', windowsHide: true });
+
+  assert.equal(result.status, 0, `${result.stdout || ''}${result.stderr || ''}`);
+});
+
+test('source manifest excludes the .git pointer file used by linked worktrees', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-worktree-manifest-test-'));
+  const generator = path.join(repositoryRoot, 'scripts/generate-source-manifest.mjs');
+  try {
+    fs.writeFileSync(path.join(temp, '.git'), 'gitdir: ../worktrees/example/.git\n');
+    fs.writeFileSync(path.join(temp, 'source.js'), 'export const clean = true;\n');
+    const generated = spawnSync(process.execPath, [generator], { cwd: temp, encoding: 'utf8', windowsHide: true });
+    assert.equal(generated.status, 0, `${generated.stdout || ''}${generated.stderr || ''}`);
+    const manifest = fs.readFileSync(path.join(temp, 'MANIFEST.sha256'), 'utf8');
+    assert.doesNotMatch(manifest, /  \.git\r?\n/);
+    assert.match(manifest, /  source\.js\r?\n/);
+    const checked = spawnSync(process.execPath, [generator, '--check'], { cwd: temp, encoding: 'utf8', windowsHide: true });
+    assert.equal(checked.status, 0, `${checked.stdout || ''}${checked.stderr || ''}`);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 test('vendored Lucide subset includes ISC and Feather-derived MIT notices', () => {
   const license = fs.readFileSync(path.join(repositoryRoot, 'app-ui/assets/icons/LICENSE'), 'utf8');
   assert.match(license, /ISC License/);
@@ -273,6 +298,38 @@ test('build and normal Windows package commands retain the complete strict relea
   assert.doesNotMatch(finalBuild, /ForBinaryVerification/);
 });
 
+test('PR Quality uses a source-only gate while binary release keeps GPL source readiness', () => {
+  const packageJson = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
+  const quality = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/quality.yml'), 'utf8');
+  const releaseWorkflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const releaseGate = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/release-gate.mjs'), 'utf8');
+  const binaryReadiness = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/binary-release-readiness.mjs'), 'utf8');
+  const qualityGatePath = path.join(repositoryRoot, 'scripts/validation/quality-gate.mjs');
+  const qualityList = spawnSync(process.execPath, [qualityGatePath, '--list'], {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+    windowsHide: true,
+  });
+
+  assert.equal(packageJson.scripts['check:quality'], 'node scripts/validation/quality-gate.mjs');
+  assert.match(quality, /npm run check:quality/);
+  assert.doesNotMatch(quality, /npm run check:release/);
+  assert.equal(qualityList.status, 0, `${qualityList.stdout || ''}${qualityList.stderr || ''}`);
+  const qualityGates = JSON.parse(qualityList.stdout).gates;
+  assert.ok(!qualityGates.includes('check:gpl-source'));
+  assert.ok(qualityGates.includes('check:rights'));
+  assert.ok(qualityGates.includes('check:asset-rights'));
+  assert.ok(qualityGates.includes('check:asset-provenance'));
+  assert.ok(qualityGates.includes('check:licenses'));
+  assert.ok(qualityGates.includes('check:manifest'));
+  assert.ok(qualityGates.includes('check:source-release'));
+  assert.match(releaseGate, /'check:gpl-source'/);
+  assert.match(releaseWorkflow, /npm run check:release/);
+  assert.match(releaseWorkflow, /npm run check:binary-release/);
+  assert.match(binaryReadiness, /run\('check:gpl-source'/);
+  assert.match(binaryReadiness, /run\('verify:binaries'/);
+});
+
 test('PR #14 local build support remains present on the updated PR #13 tree', () => {
   const packageJson = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
   const quality = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/quality.yml'), 'utf8');
@@ -287,7 +344,7 @@ test('PR #14 local build support remains present on the updated PR #13 tree', ()
   assert.match(contributing, /npm\.cmd run build:local/);
 });
 
-test('Quality and release CI install pinned Playwright Chromium before release gates', () => {
+test('Quality and release CI install pinned Playwright Chromium before their respective gates', () => {
   const quality = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/quality.yml'), 'utf8');
   const release = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
   const buildTestStart = release.indexOf('\n  build-test:');
@@ -295,12 +352,15 @@ test('Quality and release CI install pinned Playwright Chromium before release g
   assert.ok(buildTestStart >= 0 && packageSignStart > buildTestStart);
   const buildTest = release.slice(buildTestStart, packageSignStart);
 
-  for (const [name, workflow] of [['Quality', quality], ['release build-test', buildTest]]) {
+  for (const [name, workflow, gateCommand] of [
+    ['Quality', quality, 'npm run check:quality'],
+    ['release build-test', buildTest, 'npm run check:release'],
+  ]) {
     const installIndex = workflow.indexOf('playwright==1.62.0');
     const browserIndex = workflow.indexOf('python -m playwright install chromium');
-    const gateIndex = workflow.indexOf('npm run check:release');
+    const gateIndex = workflow.indexOf(gateCommand);
     assert.ok(installIndex >= 0, `${name} must install the pinned Python Playwright package`);
     assert.ok(browserIndex > installIndex, `${name} must install Chromium after Playwright`);
-    assert.ok(gateIndex > browserIndex, `${name} must install Chromium before check:release`);
+    assert.ok(gateIndex > browserIndex, `${name} must install Chromium before ${gateCommand}`);
   }
 });

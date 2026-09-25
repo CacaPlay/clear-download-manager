@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Current release gate for the 0.95.x line.
@@ -9,7 +11,7 @@ import { spawnSync } from 'node:child_process';
  * baseline evidence, but must not block a release that has passed the current
  * focused contracts below.
  */
-const gates = [
+export const releaseGateIds = [
   'version:check',
   'check:licenses',
   'check:rights',
@@ -45,30 +47,37 @@ const gates = [
 
 const windows = process.platform === 'win32';
 const npm = windows ? (process.env.ComSpec || 'cmd.exe') : 'npm';
-const failures = [];
+const scriptPath = fileURLToPath(import.meta.url);
 
-for (const gate of gates) {
-  console.log(`\n== release gate: ${gate} ==`);
-  const args = windows
-    ? ['/d', '/s', '/c', `npm.cmd run ${gate} --silent`]
-    : ['run', gate, '--silent'];
-  const result = spawnSync(npm, args, {
-    cwd: process.cwd(),
-    env: process.env,
-    stdio: 'inherit',
-    windowsHide: windows,
-  });
-  if (result.error) {
-    failures.push(`${gate}: ${result.error.message}`);
-  } else if (result.status !== 0) {
-    failures.push(`${gate}: exit ${result.status}`);
+function runReleaseGate() {
+  const failures = [];
+
+  for (const gate of releaseGateIds) {
+    console.log(`\n== release gate: ${gate} ==`);
+    const args = windows
+      ? ['/d', '/s', '/c', `npm.cmd run ${gate} --silent`]
+      : ['run', gate, '--silent'];
+    const result = spawnSync(npm, args, {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: 'inherit',
+      windowsHide: windows,
+    });
+    if (result.error) {
+      failures.push(`${gate}: ${result.error.message}`);
+    } else if (result.status !== 0) {
+      failures.push(`${gate}: exit ${result.status}`);
+    }
   }
+
+  if (failures.length > 0) {
+    console.error('\nRELEASE GATE FAILED');
+    for (const failure of failures) console.error(`- ${failure}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(`\nRELEASE GATE PASSED: ${releaseGateIds.length} current-contract checks`);
 }
 
-if (failures.length > 0) {
-  console.error('\nRELEASE GATE FAILED');
-  for (const failure of failures) console.error(`- ${failure}`);
-  process.exit(1);
-}
-
-console.log(`\nRELEASE GATE PASSED: ${gates.length} current-contract checks`);
+if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) runReleaseGate();

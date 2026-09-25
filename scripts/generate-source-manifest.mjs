@@ -69,6 +69,8 @@ function normalize(relative) {
 
 function shouldInclude(relative, entry) {
   const normalized = normalize(relative);
+  // A normal clone has a .git directory; a linked worktree has a .git pointer file.
+  if (entry.name === '.git') return false;
   if (excludedFiles.has(normalized) || excludedFiles.has(entry.name)) return false;
   // Retain the authored runtime inventory so Tauri source builds have one
   // resource matching resources/bin/*; never include staged executables.

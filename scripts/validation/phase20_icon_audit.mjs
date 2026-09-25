@@ -72,10 +72,11 @@ const mainPlaylist = main.match(/playlist:\s*'([^']+)'/)?.[1] || '';
 const mainLibrary = main.match(/library:\s*'([^']+)'/)?.[1] || '';
 const dmPlaylist = dmIcons.match(/playlist:\s*'([^']+)'/)?.[1] || '';
 const dmLibrary = dmIcons.match(/library:\s*'([^']+)'/)?.[1] || '';
+const approvedListMusic = '<path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/>';
 if (!mainPlaylist || mainPlaylist === mainLibrary) fail('Playlist y Biblioteca comparten el mismo dibujo en la interfaz principal');
 if (!dmPlaylist || dmPlaylist === dmLibrary) fail('Playlist y Biblioteca comparten el mismo dibujo en el gestor');
 if (!mainPlaylist.includes('<circle') || !dmPlaylist.includes('<circle')) fail('El icono de Playlist debe incluir identidad musical, no solo barras genéricas');
-if (!mainPlaylist.includes('<circle cx="3.8" cy="5.2"') || !dmPlaylist.includes('<circle cx="3.8" cy="5.2"') || !mainPlaylist.includes('fill="#4f9bff"') || !dmPlaylist.includes('fill="#4f9bff"')) fail('Playlist debe usar el glifo de marca lista + reproducción aprobado');
+if (mainPlaylist !== approvedListMusic || dmPlaylist !== approvedListMusic) fail('Playlist debe coincidir con el icono Lucide oficial list-music aprobado');
 
 if (main.includes('renderDownloadDialog') || main.includes('data-floating-download-dialog') || main.includes('download-dialog-v2')) fail('La interfaz principal todavía contiene el renderer legacy de preparación');
 if (dmUi.includes('<footer class="dm-minimal-footer">')) fail('El footer visual permanente del gestor debe permanecer eliminado');
