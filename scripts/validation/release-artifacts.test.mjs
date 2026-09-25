@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { lucideIcon } from '../../app-ui/assets/icons/lucide.js';
 import { inspectSourcePaths, evaluateSourceReadiness, SOURCE_ONLY_GATE_IDS } from './source-release-artifact.mjs';
@@ -173,4 +175,114 @@ test('PR5 owner review records explicit approval while preserving evidence limit
   assert.equal(pr5Register.decision.ACCOUNT_TO_TERMS_CHAIN, 'PASS_OWNER_DECLARATION_AND_PUBLIC_TERMS');
   assert.equal(pr5Register.decision.OUTPUT_RIGHTS, 'SUPPORTED_BY_SECTION_3_1_AND_OWNER_AUTHORIZATION');
   assert.equal(pr5Register.decision.GPL_RELICENSING_READINESS, 'PASS_FOR_REVIEWED_PR5_DIFF');
+});
+
+test('release pipeline builds once, verifies the uploaded artifact, and gates publication', () => {
+  const workflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const jobsText = workflow.slice(workflow.indexOf('\njobs:') + '\njobs:'.length);
+  const headers = [...jobsText.matchAll(/^  ([a-z0-9-]+):\s*$/gm)];
+  const jobNames = headers.map((match) => match[1]);
+  assert.deepEqual(jobNames, [
+    'validate-release-ref',
+    'preflight-release',
+    'build-test',
+    'package-sign',
+    'verify-binary-release',
+    'publish',
+  ]);
+
+  const job = (name) => {
+    const index = jobNames.indexOf(name);
+    assert.notEqual(index, -1, `missing workflow job ${name}`);
+    const start = headers[index].index;
+    const end = headers[index + 1]?.index ?? jobsText.length;
+    return jobsText.slice(start, end);
+  };
+  const buildTest = job('build-test');
+  const packageSign = job('package-sign');
+  const verify = job('verify-binary-release');
+  const publish = job('publish');
+  const secretRefs = [...workflow.matchAll(/secrets\.(RELEASE_TAURI_SIGNING_PRIVATE_KEY(?:_PASSWORD)?)/g)];
+
+  assert.match(buildTest, /npm run check:local-build/);
+  assert.match(buildTest, /npm run check:release/);
+  assert.doesNotMatch(buildTest, /check:release-build/);
+  assert.match(buildTest, /npm run source:archive/);
+  assert.match(buildTest, /npm run test:release-artifacts/);
+  assert.doesNotMatch(buildTest, /check:binary-release/);
+  assert.match(buildTest, /permissions:\s*\n\s+contents:\s*read/);
+  assert.doesNotMatch(buildTest, /secrets\./);
+  assert.match(packageSign, /environment:\s*\n\s+name: release/);
+  assert.match(packageSign, /contents:\s*read/);
+  assert.match(packageSign, /npm run build:windows:final/);
+  assert.match(packageSign, /uses:\s*actions\/upload-artifact@[a-f0-9]{40}/);
+  assert.match(packageSign, /release_artifact_id:\s*\$\{\{\s*steps\.release_artifact\.outputs\.artifact-id\s*\}\}/);
+  assert.equal(secretRefs.length, 2);
+  assert.ok(secretRefs.every((match) => match.index >= workflow.indexOf('  package-sign:')));
+  assert.match(verify, /artifact-ids:\s*\$\{\{\s*needs\.package-sign\.outputs\.release_artifact_id\s*\}\}/);
+  assert.match(verify, /npm run check:binary-release/);
+  assert.match(verify, /--package/);
+  assert.match(verify, /--inspection-dir/);
+  assert.match(verify, /permissions:\s*\n\s+contents:\s*read/);
+  assert.doesNotMatch(verify, /build:windows:final|TAURI_SIGNING_PRIVATE_KEY|prepare-update-release/);
+  assert.match(publish, /needs:[\s\S]*- verify-binary-release/);
+  assert.match(publish, /needs\.verify-binary-release\.result\s*==\s*'success'/);
+  assert.match(publish, /artifact-ids:\s*\$\{\{\s*needs\.package-sign\.outputs\.release_artifact_id\s*\}\}/);
+  assert.match(publish, /SHA256SUMS\.txt/);
+  assert.match(publish, /gh release create/);
+  assert.match(publish, /permissions:\s*\n\s+contents:\s*write/);
+  assert.doesNotMatch(publish, /build:windows:final|TAURI_SIGNING_PRIVATE_KEY|prepare-update-release/);
+  assert.doesNotMatch(verify, /secrets\.RELEASE_TAURI_SIGNING_PRIVATE_KEY/);
+});
+
+test('release artifact checksum verifier rejects changed and unlisted files', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-release-artifact-test-'));
+  const verifier = path.join(repositoryRoot, 'scripts/validation/verify-release-artifact.mjs');
+  try {
+    fs.writeFileSync(path.join(temp, 'ClearDownloadManager.nsis.zip'), 'verified package bytes');
+    fs.writeFileSync(path.join(temp, 'latest.json'), '{"version":"0.95.4"}\n');
+    const names = ['ClearDownloadManager.nsis.zip', 'latest.json'];
+    const checksumText = names.map((name) => `${crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, name))).digest('hex')}  ${name}`).join('\n') + '\n';
+    const checksumPath = path.join(temp, 'SHA256SUMS.txt');
+    fs.writeFileSync(checksumPath, checksumText);
+    const invoke = () => spawnSync(process.execPath, [verifier, '--directory', temp], { encoding: 'utf8', windowsHide: true });
+
+    assert.equal(invoke().status, 0);
+    fs.appendFileSync(path.join(temp, 'latest.json'), 'tampered');
+    assert.notEqual(invoke().status, 0);
+    fs.writeFileSync(path.join(temp, 'latest.json'), '{"version":"0.95.4"}\n');
+    fs.writeFileSync(path.join(temp, 'unlisted.txt'), 'extra');
+    assert.notEqual(invoke().status, 0);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test('build and normal Windows package commands retain the complete strict release gate', () => {
+  const packageJson = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
+  const releaseGate = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/release-gate.mjs'), 'utf8');
+  const windowsBuild = fs.readFileSync(path.join(repositoryRoot, 'scripts/build-windows-beta.ps1'), 'utf8');
+  const finalBuild = fs.readFileSync(path.join(repositoryRoot, 'scripts/final-windows-build.ps1'), 'utf8');
+
+  assert.match(releaseGate, /'check:gpl-source'/);
+  assert.equal(packageJson.scripts['check:release-build'], undefined);
+  assert.match(windowsBuild, /npm\.cmd" @\("run", "check:release"\)/);
+  assert.doesNotMatch(windowsBuild, /ForBinaryVerification/);
+  assert.match(windowsBuild, /prepare:windows-binaries/);
+  assert.match(windowsBuild, /verify:binaries/);
+  assert.doesNotMatch(finalBuild, /ForBinaryVerification/);
+});
+
+test('PR #14 local build support remains present on the updated PR #13 tree', () => {
+  const packageJson = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
+  const quality = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/quality.yml'), 'utf8');
+  const readme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
+  const contributing = fs.readFileSync(path.join(repositoryRoot, 'CONTRIBUTING.md'), 'utf8');
+
+  assert.equal(packageJson.scripts['build:local'], 'tauri build --no-bundle');
+  assert.equal(packageJson.scripts['check:local-build'], 'node scripts/validation/local-app-build-command.mjs');
+  assert.ok(fs.existsSync(path.join(repositoryRoot, 'scripts/validation/local-app-build-command.mjs')));
+  assert.match(quality, /npm run check:local-build/);
+  assert.match(readme, /npm\.cmd run build:local/);
+  assert.match(contributing, /npm\.cmd run build:local/);
 });

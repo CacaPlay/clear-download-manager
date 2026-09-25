@@ -37,6 +37,7 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm run check:local-build
+          npm run test:release-artifacts
           npm run check:release
           npm run build:web
       - name: Rust gates
