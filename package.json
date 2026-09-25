@@ -51,6 +51,8 @@
     "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs",
     "verify:binaries": "node scripts/verify-binaries.mjs",
     "tauri": "tauri",
+    "build:local": "tauri build --no-bundle",
+    "check:local-build": "node scripts/validation/local-app-build-command.mjs",
     "build:windows": "powershell -ExecutionPolicy Bypass -File scripts/build-windows-beta.ps1",
     "check:windows-toolchain": "powershell -ExecutionPolicy Bypass -File scripts/check-windows-toolchain.ps1",
     "check:native-windows": "powershell -ExecutionPolicy Bypass -File scripts/native-check-windows.ps1",

@@ -87,6 +87,20 @@ not build or publish a release. Multimedia and torrent workflows may require
 the separately licensed runtime tools described in
 [`docs/THIRD-PARTY-RUNTIMES.md`](docs/THIRD-PARTY-RUNTIMES.md).
 
+To compile a runnable local desktop executable from source without creating an
+installer or signing a release, run:
+
+```powershell
+npm.cmd run build:local
+```
+
+This uses the Tauri CLI, which runs `npm run build:web` and embeds the generated
+`dist/` frontend in the executable. The result is
+`src-tauri/target/release/cacatools-desktop.exe`. Use this command for a
+standalone app build; `cargo build --release` alone only compiles the Rust
+crate and can leave the app pointing at the development server on
+`127.0.0.1:4173`. The local executable is not an installer or a release package.
+
 Build scripts clear their default output directories before writing. Do not run
 them over outputs you need to keep; review
 [`docs/BUILD-RELEASE-AUDIT.md`](docs/BUILD-RELEASE-AUDIT.md) before making

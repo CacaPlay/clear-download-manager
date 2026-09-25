@@ -30,6 +30,11 @@ project's [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 - For Rust changes, run `cargo fmt --manifest-path src-tauri/Cargo.toml --all
   -- --check`, `cargo check --manifest-path src-tauri/Cargo.toml --locked`,
   and the relevant tests.
+- Cargo checks and tests do not produce a runnable desktop app. To compile the
+  local app with its frontend embedded and without creating an installer, run
+  `npm.cmd run build:local` from the repository root. Do not use the executable
+  from `cargo build --release` as a desktop build; that command does not run the
+  Tauri frontend build step.
 - Never include user databases, downloaded media, installers, logs, signing
   keys, or native runtime binaries in a source pull request.
 - To build outside the default `src-tauri/target`, set `CARGO_TARGET_DIR`
