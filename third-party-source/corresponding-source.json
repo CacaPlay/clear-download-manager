@@ -1,41 +1,98 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "status": "PENDING",
-  "releaseAssetPolicy": "Each GPL runtime binary distribution must include the reviewed corresponding-source archive or the reviewed written offer selected by the distributor.",
+  "releaseAssetPolicy": "Each GPL runtime file must link to the exact releaseAssetName recorded for its runtime family. The release asset SHA-256 must match the recorded digest, and a human distributor review must approve the selected corresponding-source archive or written offer.",
   "runtimes": [
     {
       "id": "aria2",
       "version": "1.37.0",
+      "sourceRepository": "https://github.com/aria2/aria2",
+      "sourceVersion": "release-1.37.0",
+      "sourceCommit": "02f2d0d8472b3c38c29b4dba8c75ebd5fdd2899a",
       "license": "GPL-2.0-or-later",
       "binarySha256": "be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2",
       "binarySourceUrl": "https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip",
       "binaryArchiveSha256": "67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288",
+      "runtimeFiles": [
+        {
+          "name": "aria2c.exe",
+          "sha256": "be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2",
+          "correspondingSourceAsset": "aria2-1.37.0-win64-corresponding-source.tar.xz"
+        }
+      ],
       "distributionMethod": null,
       "sourceArchivePath": null,
       "sourceArchiveSha256": null,
       "buildInputsPath": null,
       "buildInputsSha256": null,
-      "releaseAssetName": null,
+      "releaseAssetName": "aria2-1.37.0-win64-corresponding-source.tar.xz",
+      "releaseAssetSha256": null,
       "writtenOfferPath": null,
-      "humanReview": { "status": "PENDING", "reviewRecordPath": null }
+      "writtenOfferSha256": null,
+      "humanReview": { "required": true, "status": "PENDING", "reviewRecordPath": null, "reviewRecordSha256": null }
     },
     {
       "id": "ffmpeg",
       "version": "9.0.2",
-      "license": "GPL-3.0-only",
+      "sourceRepository": "https://github.com/FFmpeg/FFmpeg",
+      "sourceVersion": "n9.0.2",
+      "sourceCommit": "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
+      "license": "GPL-3.0-or-later",
       "binarySha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
       "ffprobeSha256": "f0d36ecbbdd3bcfac3efa078c96c7271c2e68b3810595552ac3b7f17e9a65c52",
       "binarySourceUrl": "https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-essentials_build.zip",
       "binaryArchiveSha256": "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
       "buildConfigurationEvidence": "src-tauri/resources/licenses/FFMPEG-BUILD-README.txt",
+      "runtimeFiles": [
+        {
+          "name": "ffmpeg.exe",
+          "sha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
+          "correspondingSourceAsset": "ffmpeg-9.0.2-essentials-win64-corresponding-source.tar.xz"
+        },
+        {
+          "name": "ffprobe.exe",
+          "sha256": "f0d36ecbbdd3bcfac3efa078c96c7271c2e68b3810595552ac3b7f17e9a65c52",
+          "correspondingSourceAsset": "ffmpeg-9.0.2-essentials-win64-corresponding-source.tar.xz"
+        }
+      ],
       "distributionMethod": null,
       "sourceArchivePath": null,
       "sourceArchiveSha256": null,
       "buildInputsPath": null,
       "buildInputsSha256": null,
-      "releaseAssetName": null,
+      "releaseAssetName": "ffmpeg-9.0.2-essentials-win64-corresponding-source.tar.xz",
+      "releaseAssetSha256": null,
       "writtenOfferPath": null,
-      "humanReview": { "status": "PENDING", "reviewRecordPath": null }
+      "writtenOfferSha256": null,
+      "humanReview": { "required": true, "status": "PENDING", "reviewRecordPath": null, "reviewRecordSha256": null }
+    },
+    {
+      "id": "yt-dlp",
+      "version": "2026.08.19",
+      "sourceRepository": "https://github.com/yt-dlp/yt-dlp",
+      "sourceVersion": "2026.08.19",
+      "sourceCommit": "3a08beaf031ab68f966401ead017ac81fe8486cf",
+      "license": "GPL-3.0-or-later",
+      "binarySha256": "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
+      "binaryAssetSha256": "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
+      "binarySourceUrl": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe",
+      "runtimeFiles": [
+        {
+          "name": "yt-dlp.exe",
+          "sha256": "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
+          "correspondingSourceAsset": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz"
+        }
+      ],
+      "distributionMethod": null,
+      "sourceArchivePath": null,
+      "sourceArchiveSha256": null,
+      "buildInputsPath": null,
+      "buildInputsSha256": null,
+      "releaseAssetName": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
+      "releaseAssetSha256": null,
+      "writtenOfferPath": null,
+      "writtenOfferSha256": null,
+      "humanReview": { "required": true, "status": "PENDING", "reviewRecordPath": null, "reviewRecordSha256": null }
     }
   ]
 }

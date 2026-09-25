@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,9 +59,16 @@ requireText('package.json', '"source:archive"', 'A source archive builder must b
 requireText('scripts/validation/source-release-readiness.mjs', 'check:gpl-source', 'The source-only gate must document/guard its distinct runtime boundary.');
 requireText('scripts/validation/binary-release-readiness.mjs', "'scripts/validation/gpl-source-readiness.mjs'", 'Binary readiness must require the strict GPL source gate.');
 requireText('scripts/validation/binary-release-readiness.mjs', "'scripts/verify-binaries.mjs'", 'Binary readiness must verify the runtime binaries.');
+requireText('scripts/validation/binary-release-readiness.mjs', "['yt-dlp.exe', runtime.ytDlp?.sha256]", 'Binary package inspection must verify the bundled yt-dlp.exe hash.');
+requireText('scripts/validation/binary-release-readiness.mjs', "'yt-dlp-third-party-licenses.txt'", 'Binary package inspection must require the pinned yt-dlp license inventory.');
 requireText('scripts/build-store-msix.ps1', "@('run', 'check:release')", 'Store packaging must require the release/GPL readiness gate.');
 requireText('third-party-source/corresponding-source.json', 'aria2');
 requireText('third-party-source/corresponding-source.json', 'ffmpeg');
+requireText('third-party-source/corresponding-source.json', '"id": "yt-dlp"', 'The bundled yt-dlp.exe GPL combined work must be included in the corresponding-source registry.');
+requireText('src-tauri/resources/licenses/YT-DLP-NOTICE.txt', 'GPL-3.0-or-later', 'The yt-dlp executable notice must state the effective upstream GPL license expression.');
+requireText('src-tauri/resources/licenses/YT-DLP-NOTICE.txt', 'mutagen', 'The yt-dlp executable notice must identify its included GPL dependency.');
+requireText('src-tauri/resources/licenses/YT-DLP-THIRD-PARTY-LICENSES.txt', 'mutagen | GPL-2.0-or-later', 'The pinned yt-dlp third-party inventory must retain Mutagen license evidence.');
+requireText('src-tauri/resources/licenses/DENO-LICENSE.txt', 'MIT License', 'The Deno runtime notice must preserve its MIT license text.');
 requireText('third-party-source/README.md', 'complete source');
 requireText('README.md', projectLicense, 'README must identify the first-party source license.');
 requireText('extension/README.md', projectLicense, 'Extension README must identify the source license.');
@@ -70,6 +78,13 @@ const sbom = json('src-tauri/resources/licenses/NPM-SBOM.spdx.json');
 const rootSbomPackage = sbom.packages.find((packageEntry) => packageEntry.name === 'clear-download-manager' && packageEntry.versionInfo === pkgVersion);
 if (rootSbomPackage?.licenseDeclared !== projectLicense) {
   failures.push(`NPM-SBOM.spdx.json must declare ${projectLicense} for the root package.`);
+}
+const runtimeManifest = JSON.parse(read('src-tauri/resources/bin/runtime-manifest.json').replace(/^\uFEFF/, ''));
+const ytDlpLicenseInventory = read('src-tauri/resources/licenses/YT-DLP-THIRD-PARTY-LICENSES.txt').replace(/\r\n/g, '\n');
+const ytDlpLicenseInventorySha256 = crypto.createHash('sha256').update(ytDlpLicenseInventory, 'utf8').digest('hex');
+if (runtimeManifest.ytDlp?.thirdPartyLicensesPinnedSha256 !== ytDlpLicenseInventorySha256 ||
+    runtimeManifest.ytDlp?.thirdPartyLicensesSha256 !== ytDlpLicenseInventorySha256) {
+  failures.push('YT-DLP-THIRD-PARTY-LICENSES.txt canonical LF SHA-256 must match both pinned and recorded runtime-manifest hashes.');
 }
 if (/Apache License 2\.0|Apache-2\.0|license remains proprietary/i.test([
   license,

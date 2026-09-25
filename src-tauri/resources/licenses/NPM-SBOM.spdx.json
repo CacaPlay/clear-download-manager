@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "clear-download-manager@0.95.4",
-  "documentNamespace": "http://spdx.org/spdxdocs/clear-download-manager-0.95.4-f13f1bf5-abeb-43ac-af1b-0de9056ee358",
+  "documentNamespace": "http://spdx.org/spdxdocs/clear-download-manager-0.95.4-93c138ad-5164-4316-a25b-e198d8b76108",
   "creationInfo": {
-    "created": "2026-09-24T21:56:58.711Z",
+    "created": "2026-09-25T22:49:02.521Z",
     "creators": [
       "Tool: npm/cli-11.16.0"
     ]

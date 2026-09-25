@@ -11,21 +11,25 @@ The individual runtime binaries have separate version, source, hash and license 
 
 The intended license for Clear Download Manager source code established by the
 project owner is **GNU General Public License version 3 or any later version**
-(`GPL-3.0-or-later`). The complete GNU GPL version 3 text is in
-[`COPYING`](COPYING).
+(GPL-3.0-or-later). The complete GNU GPL version 3 text is in [COPYING](COPYING).
 
-**Clearance status: PENDING.** This local licensing preparation does not by
-itself establish ownership or permission for every historical contribution.
-The changes introduced by merged PR #5 in four source files remain under rights
-review; see [`docs/OPEN-SOURCE-RIGHTS-REVIEW.md`](docs/OPEN-SOURCE-RIGHTS-REVIEW.md).
-Do not treat this working tree as cleared for public release under this license
-until that review is closed.
+**Clearance status: PENDING.** The PR #5 evidence investigation is sufficiently
+supported and closed for further investigation, but that is not an absolute
+legal conclusion or formal GPL clearance. The remaining GPL source-clearance
+action is the explicit owner review recorded in
+rights/pr5-owner-review-draft.md and rights/release-rights.json; see
+docs/OPEN-SOURCE-RIGHTS-REVIEW.md and rights/asset-provenance.json.
+Separately, permission to distribute the retained visual assets is still
+pending. Do not treat this working tree as cleared for public release under
+this license.
 
 The intended license applies only to project-authored source code. Third-party
 components, runtime tools, marks, artwork and other assets may have separate
-terms or may be excluded; see [`NOTICE.md`](NOTICE.md) and the notices under
-`src-tauri/resources/licenses/`. Their presence here does not change their
-licenses or grant additional rights.
+terms or may be excluded; see NOTICE.md and the notices under
+src-tauri/resources/licenses/. Their presence here does not change their
+licenses or grant additional rights. Clear names, marks, logos, and artwork
+are reserved and excluded from GPL absent a separate grant; their distribution
+rights are evaluated separately from the project-code license.
 
 ----- COPYING (GNU GPL version 3 text) -----
 
@@ -710,10 +714,15 @@ Public License instead of this License.  But first, please read
 
 The intended license for project-authored Clear Download Manager source code is
 the GNU General Public License version 3 or any later version
-(`GPL-3.0-or-later`); see [`COPYING`](COPYING) for the complete version 3 text.
-Rights clearance remains **PENDING** for the PR #5 changes listed in
-[`docs/OPEN-SOURCE-RIGHTS-REVIEW.md`](docs/OPEN-SOURCE-RIGHTS-REVIEW.md). This
-local preparation is not a public-release clearance.
+(GPL-3.0-or-later); see COPYING for the complete version 3 text.
+
+The PR #5 evidence review is **SUFFICIENTLY SUPPORTED / CLOSED FOR FURTHER
+INVESTIGATION**; that is not an absolute legal conclusion or formal GPL
+clearance. The owner’s formal review remains pending. Distribution permission
+for retained visual assets also remains pending in
+rights/asset-provenance.json and rights/release-rights.json. This local
+preparation is not a public-release clearance.
+
 Third-party components and separately authored material keep their own terms.
 This notice does not change those terms or establish provenance for material
 whose source has not yet been verified.
@@ -722,48 +731,61 @@ whose source has not yet been verified.
 
 The project source license does not grant rights to use the Clear Download
 Manager, CacaPlay or CacaTools names, logos or other project branding as a
-product name or endorsement. The following assets are excluded from the
-project-code license pending individual provenance and permission review:
+product name or endorsement. These names, marks, logos and artwork are reserved
+and outside GPL absent a separate grant. The asset provenance gate checks
+permission to distribute these assets; it does not require the Clear brand to
+be GPL-licensed.
 
-- `app-ui/assets/brand/` and `src-tauri/icons/` — Clear Download Manager
-  branding, launcher/store icons and theme variants.
+The grouped inventory in rights/asset-provenance.json currently records:
 
-Their appearance in the source tree or an application package is not a grant of
-permission to reuse them. Replace or separately clear these assets before
-redistributing a fork that uses them. Other third-party marks remain the property
-of their respective owners.
+- 62 Clear brand and installer-art assets, including app-ui/assets/brand/,
+  extension variants, color variants, and derivative sizes.
+- 51 generated/framework platform icons under src-tauri/icons/, excluding
+  src-tauri/icons/brand/.
+- 97 product and documentation art assets.
+- 210 image assets with provenance/owner confirmation pending across the three
+  groups above. This is a cross-cutting count, not an additional group.
+
+Their appearance in the source tree or an application package is not a grant
+of permission to reuse them. If the owner cannot confirm a family, remove it
+if unused, replace it if replaceable, or require manual owner review if
+indispensable.
 
 The 28 unused provider, document-type and store graphics listed in
-[`docs/ASSET-MARKS-AUDIT.md`](docs/ASSET-MARKS-AUDIT.md) were physically removed
-from this working tree on 2026-09-24. Their removal does not grant rights to
-copies retained in backups or forks.
+docs/ASSET-MARKS-AUDIT.md were physically removed from this working tree on
+2026-09-24. Their removal does not grant rights to copies retained in backups
+or forks.
 
 ## Third-party components
 
-- `app-ui/assets/icons/` contains Lucide Icons 1.34.0, distributed under the ISC
-  license; its license text and notice are in that directory.
-- `src-tauri/resources/bin/` contains separately licensed runtime tools when
+The local icon subset is Lucide Icons; its upstream license details are in
+app-ui/assets/icons/LICENSE and app-ui/assets/icons/NOTICE.md.
+
+- app-ui/assets/icons/ contains a local Lucide icon subset under upstream ISC
+  terms, with the upstream MIT exception for Feather-derived icons. Both
+  license texts and source references are in that directory. The ambiguous
+  custom music vector was replaced by the official Lucide list-music path,
+  pinned to an upstream commit in its local notice.
+- src-tauri/resources/bin/ contains separately licensed runtime tools when
   prepared for a Windows build. Their version-specific license texts, notices,
   source references and build information are under
-  `src-tauri/resources/licenses/`. In particular, aria2 and the current
+  src-tauri/resources/licenses/. In particular, aria2 and the current
   FFmpeg/FFprobe build have copyleft obligations; consult their notices before
   redistributing binaries.
 - Rust and npm dependencies retain their individual licenses. The lockfiles
-  identify the resolved versions; generated dependency inventory and SBOM files
-  accompany release builds where available.
+  identify the resolved versions; generated dependency inventory and SBOM
+  files accompany release builds where available.
 
 The project-code license does not grant rights to third-party marks or override
 any separate third-party license. The applicable third-party license text and
-runtime notices remain under `src-tauri/resources/licenses/`.
+runtime notices remain under src-tauri/resources/licenses/.
 
-See [`TRADEMARKS.md`](TRADEMARKS.md) for the project's name and brand boundary,
-and [`docs/ASSET-MARKS-AUDIT.md`](docs/ASSET-MARKS-AUDIT.md) for the asset
-inventory and unresolved provenance.
+See TRADEMARKS.md for the project’s name and brand boundary, and
+docs/ASSET-MARKS-AUDIT.md for the asset inventory and unresolved provenance.
 
 The active preparation UI uses a generic local link icon and host text.
 Download links in the README are text-only. The inventory retains the removed
-paths and their review evidence in
-[`docs/ASSET-MARKS-AUDIT.md`](docs/ASSET-MARKS-AUDIT.md).
+paths and their review evidence in docs/ASSET-MARKS-AUDIT.md.
 
 ----- Lucide Icons (ISC) -----
 
@@ -777,11 +799,36 @@ copyright notice and this permission notice appear in all copies.
 
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
-RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
-NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
-USE OR PERFORMANCE OF THIS SOFTWARE.
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+---
+The following Lucide icons are derived from the Feather project:
+airplay, alert-circle, alert-octagon, alert-triangle, aperture, arrow-down-circle, arrow-down-left, arrow-down-right, arrow-down, arrow-left-circle, arrow-left, arrow-right-circle, arrow-right, arrow-up-circle, arrow-up-left, arrow-up-right, arrow-up, at-sign, calendar, cast, check, chevron-down, chevron-left, chevron-right, chevron-up, chevrons-down, chevrons-left, chevrons-right, chevrons-up, circle, clipboard, clock, code, columns, command, compass, corner-down-left, corner-down-right, corner-left-down, corner-left-up, corner-right-down, corner-right-up, corner-up-left, corner-up-right, crosshair, database, divide-circle, divide-square, dollar-sign, download, external-link, feather, frown, hash, headphones, help-circle, info, italic, key, layout, life-buoy, link-2, link, loader, lock, log-in, log-out, maximize, meh, minimize, minimize-2, minus-circle, minus-square, minus, monitor, moon, more-horizontal, more-vertical, move, music, navigation-2, navigation, octagon, pause-circle, percent, plus-circle, plus-square, plus, power, radio, rss, search, server, share, shopping-bag, sidebar, smartphone, smile, square, table-2, tablet, target, terminal, trash-2, trash, triangle, tv, type, upload, x-circle, x-octagon, x-square, x, zoom-in, zoom-out
+
+The MIT License (MIT) (for the icons listed above)
+
+Copyright (c) 2013-present Cole Bemis
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ----- Resolved dependency inventories -----
 
@@ -802,7 +849,11 @@ Third-party licenses source commit: 3a08beaf031ab68f966401ead017ac81fe8486cf
 Third-party licenses source: https://raw.githubusercontent.com/yt-dlp/yt-dlp/3a08beaf031ab68f966401ead017ac81fe8486cf/THIRD_PARTY_LICENSES.txt
 Third-party licenses pinned SHA-256: 472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7
 The verified source file is included as YT-DLP-THIRD-PARTY-LICENSES.txt.
-yt-dlp itself is distributed under The Unlicense: https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/LICENSE.
+The yt-dlp repository code itself is distributed under The Unlicense: https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/LICENSE.
+
+This is not the effective license expression for the standalone Windows executable. The README at the exact release tag states that PyInstaller-bundled executables include GPLv3+ code and that the combined work is GPLv3+. It also states that standalone release binaries contain the Python interpreter and packages marked with an asterisk; mutagen is marked and is GPL-2.0-or-later. See https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/README.md#licensing and the pinned third-party license inventory above.
+
+Clear records this yt-dlp.exe artifact as GPL-3.0-or-later for release gating. Corresponding source/build inputs or a reviewed alternative have not been assembled or approved; status: PENDING. The upstream source tarball alone is not treated as corresponding source because the release README says it contains only Unlicense-licensed code.
 
 ----- YT-DLP-LICENSE.txt -----
 

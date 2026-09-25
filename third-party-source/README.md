@@ -3,7 +3,7 @@
 This directory is the controlled intake point for the exact corresponding
 source materials of GPL binaries distributed by Clear Download Manager. It is
 intentionally a template: no source archive has yet been proven to correspond
-to the bundled aria2 or Gyan FFmpeg/FFprobe executables.
+to the bundled aria2, Gyan FFmpeg/FFprobe, or yt-dlp Windows executable.
 
 The release gate reads `corresponding-source.json`. Keep every downloaded
 archive, build script, patch, dependency source manifest, license/notice, hash
@@ -15,11 +15,16 @@ distributed. For FFmpeg this includes the enabled external libraries shown in
 
 ## Distributor work still required
 
-1. Obtain the exact source package and reproducible build inputs from the
-   upstream distributor/build provider for each binary. For aria2, identify
-   the exact Windows build recipe and linked OpenSSL source. For FFmpeg, obtain
-   the complete source for the Gyan build and every linked library, plus its
-   build scripts/configuration and patches.
+1. Obtain the exact source package and build inputs from the upstream
+   distributor/build provider for each binary. For aria2, identify the exact
+   Windows build recipe and linked libraries. For FFmpeg, obtain the complete
+   source for the Gyan build and every linked library, plus its build
+   scripts/configuration and patches. For yt-dlp, the PyInstaller Windows
+   executable is identified upstream as a GPLv3+ combined work; obtain the
+   exact source of its included GPL components (including the bundled Mutagen
+   version) and the build/packaging inputs. The yt-dlp source tarball alone is
+   not sufficient evidence: upstream says that tarball contains only
+   Unlicense-licensed code.
 2. Record immutable upstream references and SHA-256 values; preserve the
    unmodified source archives and all additional scripts/files required to
    build and install the executables.

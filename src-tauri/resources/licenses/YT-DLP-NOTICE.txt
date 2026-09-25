@@ -8,4 +8,8 @@ Third-party licenses source commit: 3a08beaf031ab68f966401ead017ac81fe8486cf
 Third-party licenses source: https://raw.githubusercontent.com/yt-dlp/yt-dlp/3a08beaf031ab68f966401ead017ac81fe8486cf/THIRD_PARTY_LICENSES.txt
 Third-party licenses pinned SHA-256: 472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7
 The verified source file is included as YT-DLP-THIRD-PARTY-LICENSES.txt.
-yt-dlp itself is distributed under The Unlicense: https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/LICENSE.
+The yt-dlp repository code itself is distributed under The Unlicense: https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/LICENSE.
+
+This is not the effective license expression for the standalone Windows executable. The README at the exact release tag states that PyInstaller-bundled executables include GPLv3+ code and that the combined work is GPLv3+. It also states that standalone release binaries contain the Python interpreter and packages marked with an asterisk; mutagen is marked and is GPL-2.0-or-later. See https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/README.md#licensing and the pinned third-party license inventory above.
+
+Clear records this yt-dlp.exe artifact as GPL-3.0-or-later for release gating. Corresponding source/build inputs or a reviewed alternative have not been assembled or approved; status: PENDING. The upstream source tarball alone is not treated as corresponding source because the release README says it contains only Unlicense-licensed code.

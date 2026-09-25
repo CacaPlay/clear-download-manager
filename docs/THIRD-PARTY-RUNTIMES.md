@@ -17,6 +17,15 @@ hash del archivo extraído y, cuando se conserva, hash del archivo descargado.
 | aria2c | 1.37.0 | GPL-2.0-or-later con texto de excepción/licencia OpenSSL procedente del archivo distribuido. | [Release oficial](https://github.com/aria2/aria2/releases/tag/release-1.37.0); ejecutable `be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2`; ZIP fijado `67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288`. | `ARIA2-COPYING.txt`, `ARIA2-OPENSSL-LICENSE.txt`, `ARIA2-NOTICE.txt`. Falta preparar la fuente correspondiente o una oferta escrita que acompañe una distribución binaria. |
 | FFmpeg | 9.0.2 essentials, Gyan build; FFprobe tiene la misma versión. | GPL v3, según el README del build verificado; `--enable-gpl` y `--enable-version3` están presentes en `-buildconf`. | [Release del proveedor](https://github.com/GyanD/codexffmpeg/releases/tag/9.0.2); ejecutable FFmpeg `3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec`; FFprobe `f0d36ecbbdd3bcfac3efa078c96c7271c2e68b3810595552ac3b7f17e9a65c52`; ZIP `60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba`. | `FFMPEG-LICENSE.txt`, `FFMPEG-BUILD-README.txt`, `FFMPEG-NOTICE.txt`; fuente FFmpeg: commit `946fcce07b`. El aviso incluye la configuración exacta reportada por `-buildconf`. Falta preparar las fuentes correspondientes de la compilación completa —incluidas las bibliotecas enlazadas— o una oferta escrita que acompañe cualquier redistribución binaria. |
 
+El README del release exacto de yt-dlp declara que los ejecutables PyInstaller
+incluyen código GPLv3+ y que la obra combinada queda bajo GPLv3+. También indica
+que los standalone incluyen las dependencias marcadas con `*`, entre ellas
+Mutagen (`GPL-2.0-or-later`). El código fuente/tarball de yt-dlp contiene solo
+código Unlicense; el inventario de licencias no es el source de Mutagen. Por eso
+`yt-dlp.exe` forma parte de `corresponding-source.json` y permanece PENDING hasta
+que el source/build package o una alternativa revisada esté completo. Deno
+2.9.7 conserva su licencia MIT y no tiene evidencia equivalente de copyleft.
+
 El hash del asset de aria2 no se publica como digest del GitHub API en el
 runtime-manifest (`officialAssetSha256: null`); el build fija el SHA-256 del ZIP
 y la prueba local verifica el ejecutable extraído contra el manifiesto. No se

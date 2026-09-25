@@ -4,8 +4,9 @@
   [string]$YtDlpLicensesSha256 = "472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7",
   [string]$FfmpegVersion = "9.0.2",
   [string]$FfmpegSha256 = "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
-  [string]$FfmpegSourceCommit = "946fcce07b",
+  [string]$FfmpegSourceCommit = "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
   [string]$Aria2Version = "1.37.0",
+  [string]$Aria2SourceCommit = "02f2d0d8472b3c38c29b4dba8c75ebd5fdd2899a",
   [string]$Aria2Sha256 = "67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288",
   [string]$DenoVersion = "2.9.7",
   [string]$DenoSha256 = "a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238"
@@ -18,6 +19,13 @@ $Root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot "powershell-hash-compat.ps1")
 $BinDir = Join-Path $Root "src-tauri\resources\bin"
 $LicenseDir = Join-Path $Root "src-tauri\resources\licenses"
+$FullCommitPattern = '^[a-fA-F0-9]{40}$'
+if ($YtDlpCommit -notmatch $FullCommitPattern -or $FfmpegSourceCommit -notmatch $FullCommitPattern -or $Aria2SourceCommit -notmatch $FullCommitPattern -or
+    $YtDlpCommit -ne "3a08beaf031ab68f966401ead017ac81fe8486cf" -or
+    $FfmpegSourceCommit -ne "946fcce07b6dcd0331c8cc609192aeff5e1924f8" -or
+    $Aria2SourceCommit -ne "02f2d0d8472b3c38c29b4dba8c75ebd5fdd2899a") {
+  throw "The pinned full 40-character upstream commits for yt-dlp, aria2, and FFmpeg are required."
+}
 $Work = Join-Path $env:TEMP ("cdm-media-runtime-{0}" -f [guid]::NewGuid().ToString("N"))
 $CacheDir = Join-Path $Root "output\runtime-cache"
 $GitHubReleaseCache = @{}
@@ -317,6 +325,10 @@ $Manifest = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("o")
   ytDlp = [ordered]@{
     version = $YtDlpVersionActual
+    sourceRepository = "https://github.com/yt-dlp/yt-dlp"
+    sourceVersion = $YtDlpVersion
+    sourceCommit = $YtDlpCommit.ToLowerInvariant()
+    effectiveLicense = "GPL-3.0-or-later"
     source = $YtDlpUrl
     releaseApi = $YtDlpReleaseApi
     checksumsSource = $YtDlpChecksumsUrl
@@ -337,6 +349,9 @@ $Manifest = [ordered]@{
   }
   aria2 = [ordered]@{
     version = $Aria2VersionActual
+    sourceRepository = "https://github.com/aria2/aria2"
+    sourceVersion = "release-$Aria2Version"
+    sourceCommit = $Aria2SourceCommit.ToLowerInvariant()
     source = $Aria2Url
     releaseApi = $Aria2ReleaseApi
     officialAssetSha256 = $Aria2ApiSha256
@@ -346,10 +361,12 @@ $Manifest = [ordered]@{
   ffmpeg = [ordered]@{
     version = $FfmpegVersionActual
     ffprobeVersion = $FfprobeVersionActual
+    sourceRepository = "https://github.com/FFmpeg/FFmpeg"
+    sourceVersion = "n$FfmpegVersion"
     source = $FfmpegUrl
     releaseApi = $FfmpegReleaseApi
     officialAssetSha256 = $FfmpegApiSha256
-    sourceCommit = $FfmpegSourceCommit
+    sourceCommit = $FfmpegSourceCommit.ToLowerInvariant()
     archiveSha256 = $FfmpegActual
     ffmpegSha256 = (Get-FileHash $FfmpegPath -Algorithm SHA256).Hash.ToLowerInvariant()
     ffprobeSha256 = (Get-FileHash $FfprobePath -Algorithm SHA256).Hash.ToLowerInvariant()
