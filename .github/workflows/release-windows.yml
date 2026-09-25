@@ -5,18 +5,58 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
-  release:
+  validate-release-ref:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Require a v* tag ref
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" != "tag" || ! "$GITHUB_REF_NAME" =~ ^v[^/]+$ ]]; then
+            echo "Release workflows only run from a v* tag; received $GITHUB_REF_TYPE:$GITHUB_REF_NAME." >&2
+            exit 1
+          fi
+
+  preflight-release:
+    needs: validate-release-ref
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Refuse an existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        shell: pwsh
+        run: |
+          $encodedTag = [Uri]::EscapeDataString($env:RELEASE_TAG)
+          $releasePath = "repos/$($env:REPOSITORY)/releases/tags/$encodedTag"
+          $result = gh api $releasePath 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            throw "Release $($env:RELEASE_TAG) already exists; existing releases are never overwritten."
+          }
+          if (($result -join "`n") -notmatch '(?i)not found|HTTP 404') {
+            throw "Could not confirm that release $($env:RELEASE_TAG) is absent. Refusing to continue."
+          }
+          Write-Host "OK: no existing release for $($env:RELEASE_TAG)."
+
+  build-test:
+    needs: validate-release-ref
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with: { node-version: 22, cache: npm }
+        with:
+          node-version: 22
+          cache: npm
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master 2026-09-24
         with:
           toolchain: stable
@@ -24,26 +64,29 @@ jobs:
           components: rustfmt, clippy
       - name: Instalar dependencias visuales de Python
         shell: pwsh
-        run: |
-          python -m pip install --disable-pip-version-check --no-input pillow==12.3.0
+        run: python -m pip install --disable-pip-version-check --no-input pillow==12.3.0
       - name: Instalar dependencias
         run: npm ci --no-audit --no-fund
-      - name: Gate de versión y fuente
-        run: |
-          python scripts/build-nsis-artwork.py
-          npm run check:manifest
-          npm run version:check
-          npm run check:release
-          npm run build:web
-      - name: Resolver repositorio de releases
+      - name: Comprobar repositorio configurado para updater
         shell: pwsh
         run: |
           $cfg = Get-Content src-tauri/resources/updater/updater-config.json -Raw | ConvertFrom-Json
           if (-not $cfg.enabled -or [string]::IsNullOrWhiteSpace($cfg.repository)) {
             throw 'El updater no tiene un repositorio de releases válido.'
           }
-          "RELEASES_REPO=$($cfg.repository)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "Repositorio de releases: $($cfg.repository)"
+          $releaseRepository = [string]$cfg.repository
+          if ($releaseRepository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+            throw 'El repositorio de releases tiene un formato inválido.'
+          }
+          if (-not [StringComparer]::OrdinalIgnoreCase.Equals($releaseRepository, $env:GITHUB_REPOSITORY)) {
+            throw 'El repositorio de releases debe coincidir con GITHUB_REPOSITORY para mantener el token limitado a este repositorio.'
+          }
+      - name: Gate de versión, derechos y fuente
+        run: |
+          python scripts/build-nsis-artwork.py
+          npm run check:manifest
+          npm run version:check
+          npm run build:web
       - name: Preparar runtimes para el gate Rust
         run: npm run prepare:windows-binaries
       - name: Gate Rust
@@ -53,14 +96,68 @@ jobs:
           cargo check --manifest-path src-tauri/Cargo.toml --locked --all-targets
           cargo test --manifest-path src-tauri/Cargo.toml --locked --lib
           cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
-      - name: Compilar artefactos Tauri firmados
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: Gate actual de release
+        run: npm run check:release
+      # Deliberately omit package inputs until corresponding aria2/FFmpeg sources or an approved offer,
+      # the exact release package, and its expanded inspection tree are available. PENDING blocks publish.
+      - name: Binary release gate (PENDING blocks publication)
+        if: ${{ always() }}
+        run: npm run check:binary-release
+
+  publish:
+    needs:
+      - validate-release-ref
+      - preflight-release
+      - build-test
+    if: ${{ needs.validate-release-ref.result == 'success' && needs.preflight-release.result == 'success' && needs.build-test.result == 'success' }}
+    runs-on: windows-latest
+    environment:
+      name: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master 2026-09-24
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+      - name: Instalar dependencias visuales de Python
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check --no-input pillow==12.3.0
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+      - name: Resolver repositorio de releases
         shell: pwsh
         run: |
           $cfg = Get-Content src-tauri/resources/updater/updater-config.json -Raw | ConvertFrom-Json
-          if (-not $cfg.enabled -or [string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) { throw 'El updater no está configurado o falta TAURI_SIGNING_PRIVATE_KEY.' }
+          if (-not $cfg.enabled -or [string]::IsNullOrWhiteSpace($cfg.repository)) {
+            throw 'El updater no tiene un repositorio de releases válido.'
+          }
+          $releaseRepository = [string]$cfg.repository
+          if ($releaseRepository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -or
+              -not [StringComparer]::OrdinalIgnoreCase.Equals($releaseRepository, $env:GITHUB_REPOSITORY)) {
+            throw 'El repositorio de releases debe ser válido y coincidir con GITHUB_REPOSITORY.'
+          }
+          "RELEASES_REPO=$releaseRepository" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Preparar runtimes
+        run: npm run prepare:windows-binaries
+      - name: Compilar artefactos Tauri firmados
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.RELEASE_TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.RELEASE_TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY) -or
+              [string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD)) {
+            throw 'Faltan las claves RELEASE_TAURI_SIGNING_PRIVATE_KEY o RELEASE_TAURI_SIGNING_PRIVATE_KEY_PASSWORD del environment release.'
+          }
           npm run build:windows:final
       - name: Preparar latest.json y hashes
         shell: pwsh
@@ -80,26 +177,28 @@ jobs:
       - name: Publicar GitHub Release
         shell: pwsh
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
-            throw 'GitHub Actions no proporcionó GITHUB_TOKEN.'
-          }
           $tag = $env:GITHUB_REF_NAME
-          $releaseExists = gh release view $tag --repo $env:RELEASES_REPO 2>$null
+          $encodedTag = [Uri]::EscapeDataString($tag)
+          $releasePath = "repos/$($env:RELEASES_REPO)/releases/tags/$encodedTag"
+          $existing = gh api $releasePath 2>&1
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag --repo $env:RELEASES_REPO output/update-release/* --clobber
-          } else {
-            gh release create $tag --repo $env:RELEASES_REPO --title "Clear Download Manager $tag" --generate-notes output/update-release/*
+            throw "Release $tag already exists; refusing to alter it or upload with --clobber."
           }
+          if (($existing -join "`n") -notmatch '(?i)not found|HTTP 404') {
+            throw "Could not confirm that release $tag is absent. Refusing to publish."
+          }
+          gh release create $tag --repo $env:RELEASES_REPO --title "Clear Download Manager $tag" --generate-notes output/update-release/*
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation failed.' }
       - name: Verificar endpoint del updater
         shell: pwsh
         run: |
           $releaseTag = [Uri]::EscapeDataString($env:GITHUB_REF_NAME)
           $latestUrl = "https://github.com/$env:RELEASES_REPO/releases/download/$releaseTag/latest.json"
-          $latest = Invoke-RestMethod -Uri $latestUrl -Headers @{ 'User-Agent' = 'CacaTools-Release-Gate' }
+          $latest = Invoke-RestMethod -Uri $latestUrl -Headers @{ 'User-Agent' = 'Clear-Download-Manager-Release-Gate' }
           $platform = $latest.platforms.'windows-x86_64'
           if ([string]::IsNullOrWhiteSpace($platform.url)) { throw 'latest.json no contiene la URL de Windows.' }
-          $asset = Invoke-WebRequest -Uri $platform.url -Method Head -MaximumRedirection 5 -Headers @{ 'User-Agent' = 'CacaTools-Release-Gate' }
-          if ($asset.StatusCode -lt 200 -or $asset.StatusCode -ge 400) { throw "El artefacto del updater devolvio HTTP $($asset.StatusCode)." }
-          Write-Host "OK: latest.json y artefacto del updater responden correctamente." -ForegroundColor Green
+          $asset = Invoke-WebRequest -Uri $platform.url -Method Head -MaximumRedirection 5 -Headers @{ 'User-Agent' = 'Clear-Download-Manager-Release-Gate' }
+          if ($asset.StatusCode -lt 200 -or $asset.StatusCode -ge 400) { throw "El artefacto del updater devolvió HTTP $($asset.StatusCode)." }
+          Write-Host 'OK: latest.json y el artefacto del updater responden correctamente.' -ForegroundColor Green
