@@ -245,7 +245,7 @@ jobs:
           $inspection = Join-Path $PWD 'output/binary-package-inspection'
           New-Item -ItemType Directory -Force -Path $inspection | Out-Null
           Expand-Archive -LiteralPath $packages[0].FullName -DestinationPath $inspection -Force
-          npm run check:binary-release -- --source-archive $sourceArchives[0].FullName --package $packages[0].FullName --inspection-dir $inspection
+          npm run check:binary-release -- --source-archive $sourceArchives[0].FullName --package $packages[0].FullName --inspection-dir $inspection --release-assets-dir output/update-release
           if ($LASTEXITCODE -ne 0) { throw 'The final binary release gate did not pass; publication is blocked.' }
 
   publish:

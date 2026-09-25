@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { lucideIcon } from '../../app-ui/assets/icons/lucide.js';
 import { inspectSourcePaths, evaluateSourceReadiness, SOURCE_ONLY_GATE_IDS } from './source-release-artifact.mjs';
+import { validateCorrespondingSourceRegistry, inspectCorrespondingSourceReleaseAssets } from './corresponding-source-contract.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const assetRights = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'rights/asset-provenance.json'), 'utf8'));
@@ -328,6 +329,132 @@ test('PR Quality uses a source-only gate while binary release keeps GPL source r
   assert.match(releaseWorkflow, /npm run check:binary-release/);
   assert.match(binaryReadiness, /run\('check:gpl-source'/);
   assert.match(binaryReadiness, /run\('verify:binaries'/);
+});
+
+test('corresponding-source inventory pins full upstream revisions and exact runtime-to-release assets', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'third-party-source/corresponding-source.json'), 'utf8'));
+  const byId = new Map(manifest.runtimes.map((entry) => [entry.id, entry]));
+  assert.equal(manifest.schemaVersion, 2);
+  assert.equal(manifest.status, 'PENDING');
+
+  for (const id of ['aria2', 'ffmpeg']) {
+    const entry = byId.get(id);
+    assert.match(entry.sourceCommit, /^[a-f0-9]{40}$/);
+    assert.ok(entry.sourceVersion);
+    assert.match(entry.binarySha256, /^[a-f0-9]{64}$/);
+    assert.match(entry.binaryArchiveSha256, /^[a-f0-9]{64}$/);
+    assert.match(entry.releaseAssetName, /^[a-z0-9.-]+\.tar\.xz$/);
+    assert.equal(entry.humanReview.required, true);
+    assert.equal(entry.humanReview.status, 'PENDING');
+    assert.equal(entry.distributionMethod, null);
+    for (const runtimeFile of entry.runtimeFiles) {
+      assert.match(runtimeFile.sha256, /^[a-f0-9]{64}$/);
+      assert.equal(runtimeFile.correspondingSourceAsset, entry.releaseAssetName);
+    }
+  }
+  assert.equal(byId.get('aria2').license, 'GPL-2.0-or-later');
+  assert.equal(byId.get('ffmpeg').license, 'GPL-3.0-or-later');
+  assert.deepEqual(byId.get('aria2').runtimeFiles.map((file) => file.name), ['aria2c.exe']);
+  assert.deepEqual(byId.get('ffmpeg').runtimeFiles.map((file) => file.name), ['ffmpeg.exe', 'ffprobe.exe']);
+  const runtime = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'src-tauri/resources/bin/runtime-manifest.json'), 'utf8').replace(/^\uFEFF/, ''));
+  const issues = validateCorrespondingSourceRegistry(manifest, runtime, repositoryRoot);
+  assert.deepEqual(issues.failures, []);
+  assert.ok(issues.pending.length > 0);
+  assert.match(runtime.aria2.sourceCommit, /^[a-f0-9]{40}$/);
+  assert.match(runtime.ffmpeg.sourceCommit, /^[a-f0-9]{40}$/);
+  const prepareScript = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-windows-binaries.ps1'), 'utf8');
+  assert.match(prepareScript, /Aria2SourceCommit\s*=\s*"02f2d0d8472b3c38c29b4dba8c75ebd5fdd2899a"/);
+  assert.match(prepareScript, /FfmpegSourceCommit\s*=\s*"946fcce07b6dcd0331c8cc609192aeff5e1924f8"/);
+  assert.match(prepareScript, /FullCommitPattern/);
+  assert.match(prepareScript, /FfmpegSourceCommit\s+-ne\s+"946fcce07b6dcd0331c8cc609192aeff5e1924f8"/);
+
+  const badCommitManifest = structuredClone(manifest);
+  badCommitManifest.runtimes.find((entry) => entry.id === 'ffmpeg').sourceCommit = '946fcce07b';
+  const badCommit = validateCorrespondingSourceRegistry(badCommitManifest, runtime, repositoryRoot);
+  assert.match(badCommit.failures.join('\n'), /full pinned 40-character source commit/);
+
+  const badLinkManifest = structuredClone(manifest);
+  badLinkManifest.runtimes.find((entry) => entry.id === 'ffmpeg').runtimeFiles[0].correspondingSourceAsset = 'ffmpeg-any-source.tar.xz';
+  const badLink = validateCorrespondingSourceRegistry(badLinkManifest, runtime, repositoryRoot);
+  assert.match(badLink.failures.join('\n'), /exact runtime filenames, hashes, and corresponding-source asset links/);
+
+  const reviewDisabledManifest = structuredClone(manifest);
+  reviewDisabledManifest.runtimes.find((entry) => entry.id === 'aria2').humanReview.required = false;
+  const reviewDisabled = validateCorrespondingSourceRegistry(reviewDisabledManifest, runtime, repositoryRoot);
+  assert.match(reviewDisabled.failures.join('\n'), /explicit required=true/);
+});
+
+test('yt-dlp Windows standalone is a GPL runtime and remains source-pending', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'third-party-source/corresponding-source.json'), 'utf8'));
+  const byId = new Map(manifest.runtimes.map((entry) => [entry.id, entry]));
+  const entry = byId.get('yt-dlp');
+  assert.ok(entry, 'yt-dlp.exe must participate in corresponding-source readiness');
+  assert.equal(entry.license, 'GPL-3.0-or-later');
+  assert.equal(entry.version, '2026.08.19');
+  assert.equal(entry.sourceRepository, 'https://github.com/yt-dlp/yt-dlp');
+  assert.equal(entry.sourceVersion, '2026.08.19');
+  assert.equal(entry.sourceCommit, '3a08beaf031ab68f966401ead017ac81fe8486cf');
+  assert.equal(entry.binarySha256, '66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a');
+  assert.equal(entry.binaryAssetSha256, entry.binarySha256);
+  assert.equal(entry.releaseAssetName, 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
+  assert.equal(entry.humanReview.required, true);
+  assert.equal(entry.humanReview.status, 'PENDING');
+  assert.equal(entry.distributionMethod, null);
+  assert.deepEqual(entry.runtimeFiles, [{
+    name: 'yt-dlp.exe',
+    sha256: entry.binarySha256,
+    correspondingSourceAsset: entry.releaseAssetName,
+  }]);
+
+  const runtime = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'src-tauri/resources/bin/runtime-manifest.json'), 'utf8').replace(/^\uFEFF/, ''));
+  assert.equal(runtime.ytDlp.effectiveLicense, 'GPL-3.0-or-later');
+  assert.equal(runtime.ytDlp.sourceCommit, entry.sourceCommit);
+  assert.match(runtime.deno.version, /^deno 2\.9\.7/);
+  assert.equal(byId.has('deno'), false);
+  const licenses = fs.readFileSync(path.join(repositoryRoot, 'src-tauri/resources/licenses/YT-DLP-THIRD-PARTY-LICENSES.txt'), 'utf8');
+  assert.match(licenses, /mutagen \| GPL-2\.0-or-later/);
+  const issues = validateCorrespondingSourceRegistry(manifest, runtime, repositoryRoot);
+  assert.deepEqual(issues.failures, []);
+  assert.ok(issues.pending.some((issue) => issue.startsWith('yt-dlp:')));
+});
+
+test('binary release requires exact corresponding-source assets outside the expanded installer tree', () => {
+  const workflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const binaryReadiness = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/binary-release-readiness.mjs'), 'utf8');
+  const sourceContract = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/corresponding-source-contract.mjs'), 'utf8');
+  assert.doesNotMatch(binaryReadiness, /files\.some\(\(file\)\s*=>\s*\/\(\?:aria2\|ffmpeg\)/);
+  assert.match(binaryReadiness, /--release-assets-dir/);
+  assert.match(binaryReadiness, /inspectCorrespondingSourceReleaseAssets/);
+  assert.match(binaryReadiness, /\['yt-dlp\.exe', runtime\.ytDlp\?\.sha256\]/, 'package inspection must hash-check the bundled yt-dlp.exe');
+  assert.match(binaryReadiness, /'yt-dlp-notice\.txt'/, 'package inspection must require the yt-dlp effective-license notice');
+  assert.match(binaryReadiness, /'yt-dlp-third-party-licenses\.txt'/, 'package inspection must require the pinned yt-dlp third-party license inventory');
+  assert.match(sourceContract, /releaseAssetName/);
+  assert.match(sourceContract, /releaseAssetSha256/);
+  assert.match(workflow, /--release-assets-dir\s+output\/update-release/);
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'third-party-source/corresponding-source.json'), 'utf8'));
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-corresponding-source-test-'));
+  try {
+    fs.writeFileSync(path.join(temp, 'unrelated-aria2-source-files.tar.xz'), 'not the named release asset');
+    const absent = inspectCorrespondingSourceReleaseAssets(manifest, temp);
+    assert.deepEqual(absent.failures, []);
+    assert.equal(absent.pending.length, 3);
+
+    const exactManifest = structuredClone(manifest);
+    for (const entry of exactManifest.runtimes) {
+      const bytes = Buffer.from(`fixture for ${entry.id}`);
+      fs.writeFileSync(path.join(temp, entry.releaseAssetName), bytes);
+      entry.releaseAssetSha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+    }
+    const present = inspectCorrespondingSourceReleaseAssets(exactManifest, temp);
+    assert.deepEqual(present, { failures: [], pending: [] });
+
+    exactManifest.runtimes[0].releaseAssetSha256 = '0'.repeat(64);
+    const tampered = inspectCorrespondingSourceReleaseAssets(exactManifest, temp);
+    assert.match(tampered.failures.join('\n'), /SHA-256 does not match/);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
 });
 
 test('PR #14 local build support remains present on the updated PR #13 tree', () => {

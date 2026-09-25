@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { inspectCorrespondingSourceReleaseAssets } from './corresponding-source-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const args = process.argv.slice(2);
@@ -13,6 +14,7 @@ const value = (name) => {
 const sourceArchive = value('--source-archive') ? path.resolve(value('--source-archive')) : '';
 const packagePath = value('--package') ? path.resolve(value('--package')) : '';
 const inspectionRoot = value('--inspection-dir') ? path.resolve(value('--inspection-dir')) : '';
+const releaseAssetsDir = value('--release-assets-dir') ? path.resolve(value('--release-assets-dir')) : '';
 const checks = [];
 const failures = [];
 const pending = [];
@@ -26,7 +28,7 @@ function run(label, script, scriptArgs = []) {
   });
   const output = `${result.stdout || ''}${result.stderr || ''}`;
   if (result.status === 0) checks.push({ label, status: 'PASS' });
-  else if (output.includes('PENDING') || result.status === 2) {
+  else if (result.status === 2 || (output.includes('PENDING') && !output.includes('FAIL:'))) {
     checks.push({ label, status: 'PENDING' });
     pending.push(label);
   } else {
@@ -60,6 +62,19 @@ else {
 run('check:gpl-source', 'scripts/validation/gpl-source-readiness.mjs');
 run('verify:binaries', 'scripts/verify-binaries.mjs');
 
+try {
+  const sourceRegistry = JSON.parse(fs.readFileSync(path.join(root, 'third-party-source/corresponding-source.json'), 'utf8'));
+  const sourceAssetIssues = inspectCorrespondingSourceReleaseAssets(sourceRegistry, releaseAssetsDir);
+  for (const issue of sourceAssetIssues.failures) failures.push(`corresponding-source assets: ${issue}`);
+  for (const issue of sourceAssetIssues.pending) pending.push(`corresponding-source assets: ${issue}`);
+  const status = sourceAssetIssues.failures.length ? 'FAIL' : sourceAssetIssues.pending.length ? 'PENDING' : 'PASS';
+  console.log(`${status}: exact runtime-linked corresponding-source release assets`);
+  for (const issue of sourceAssetIssues.failures) console.error(`FAIL: corresponding-source assets: ${issue}`);
+  for (const issue of sourceAssetIssues.pending) console.log(`PENDING: corresponding-source assets: ${issue}`);
+} catch (error) {
+  failures.push(`corresponding-source assets: ${error.message}`);
+}
+
 if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isFile()) {
   pending.push('package inspection');
   checks.push({ label: 'package inspection', status: 'PENDING' });
@@ -75,6 +90,7 @@ if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isF
     const byName = new Map(files.map((file) => [path.basename(file.path).toLowerCase(), file]));
     const runtime = JSON.parse(fs.readFileSync(path.join(root, 'src-tauri/resources/bin/runtime-manifest.json'), 'utf8'));
     const expected = new Map([
+      ['yt-dlp.exe', runtime.ytDlp?.sha256],
       ['aria2c.exe', runtime.aria2?.executableSha256],
       ['ffmpeg.exe', runtime.ffmpeg?.ffmpegSha256],
       ['ffprobe.exe', runtime.ffmpeg?.ffprobeSha256],
@@ -86,17 +102,15 @@ if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isF
       }
     }
     const requiredNotices = [
+      'yt-dlp-license.txt', 'yt-dlp-notice.txt', 'yt-dlp-third-party-licenses.txt',
       'aria2-copying.txt', 'aria2-notice.txt', 'ffmpeg-license.txt',
       'ffmpeg-notice.txt', 'ffmpeg-build-readme.txt', 'third_party_notices.txt',
     ];
     const missingNotices = requiredNotices.filter((name) => !byName.has(name));
     if (missingNotices.length) failures.push(`package inspection: missing runtime/license notices: ${missingNotices.join(', ')}.`);
-    const sourceMaterial = files.some((file) => /(?:aria2|ffmpeg).*(?:source|written.offer|offer)/i.test(file.path));
-    if (!sourceMaterial) pending.push('corresponding source or reviewed written offer is not present in the inspected package tree');
     console.log(`Package inspection SHA-256: ${packageSha256}`);
     console.log(`Expanded package files inspected: ${files.length}`);
-    console.log(`${failures.some((entry) => entry.startsWith('package inspection:')) ? 'FAIL' : sourceMaterial ? 'PASS' : 'PENDING'}: package contents, runtime hashes, notices, and source/offer presence`);
-    if (!sourceMaterial) console.log('PENDING: package tree has no aria2/FFmpeg corresponding source archive or written-offer material.');
+    console.log(`${failures.some((entry) => entry.startsWith('package inspection:')) ? 'FAIL' : 'PASS'}: package contents, runtime hashes, and notices`);
   } catch (error) {
     failures.push(`package inspection: ${error.message}`);
   }
