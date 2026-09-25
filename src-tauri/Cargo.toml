@@ -1,0 +1,57 @@
+[package]
+name = "cacatools-desktop"
+version = "0.95.4"
+description = "Local-first Windows download manager powered by aria2c, yt-dlp, FFmpeg and SQLite"
+license = "GPL-3.0-or-later"
+authors = ["CacaTools"]
+edition = "2021"
+
+[lib]
+name = "cacatools_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+default = ["github-updater"]
+github-updater = ["dep:tauri-plugin-updater"]
+microsoft-store = []
+maintainer-tooling = []
+
+[[example]]
+name = "catalog-signer"
+path = "examples/catalog-signer.rs"
+required-features = ["maintainer-tooling"]
+
+[[example]]
+name = "catalog-verifier"
+path = "examples/catalog-verifier.rs"
+required-features = ["maintainer-tooling"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "protocol-asset", "image-png"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-updater = { version = "2.10.1", optional = true }
+window-vibrancy = "=0.6.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "=0.22.1"
+ed25519-dalek = { version = "=2.2.0", default-features = false, features = ["std"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+fs2 = "0.4"
+semver = "=1.0.28"
+
+url = "2"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "gzip", "rustls-tls"] }
+sha2 = "0.10"
+tokio = { version = "1", features = ["sync", "time"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

@@ -1,0 +1,9 @@
+{
+  "name": "lat.cacaplay.cacatools.downloadmanager",
+  "description": "Puente local para Clear Download Manager",
+  "path": "__CACATOOLS_EXECUTABLE__",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://aonppfnabjnicjjeoofkfjofolfibggp/"
+  ]
+}

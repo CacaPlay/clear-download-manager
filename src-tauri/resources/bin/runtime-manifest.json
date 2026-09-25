@@ -1,0 +1,48 @@
+﻿{
+    "generatedAt":  "2026-09-22T19:34:00.7638480Z",
+    "ytDlp":  {
+                  "version":  "2026.08.19",
+                  "source":  "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe",
+                  "releaseApi":  "https://api.github.com/repos/yt-dlp/yt-dlp/releases/tags/2026.08.19",
+                  "checksumsSource":  "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/SHA2-256SUMS",
+                  "officialAssetSha256":  "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
+                  "sha256":  "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
+                  "thirdPartyLicensesSource":  "https://raw.githubusercontent.com/yt-dlp/yt-dlp/3a08beaf031ab68f966401ead017ac81fe8486cf/THIRD_PARTY_LICENSES.txt",
+                  "thirdPartyLicensesSourceCommit":  "3a08beaf031ab68f966401ead017ac81fe8486cf",
+                  "thirdPartyLicensesPinnedSha256":  "472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7",
+                  "thirdPartyLicensesSha256":  "472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7"
+              },
+    "deno":  {
+                 "version":  "deno 2.9.7 (stable, release, x86_64-pc-windows-msvc)",
+                 "source":  "https://github.com/denoland/deno/releases/download/v2.9.7/deno-x86_64-pc-windows-msvc.zip",
+                 "releaseApi":  "https://api.github.com/repos/denoland/deno/releases/tags/v2.9.7",
+                 "archiveSha256":  "a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238",
+                 "executableSha256":  "e020f3e232bd16e33768dee528e5983349c962952051ced0a5d58ad42f5d9b33",
+                 "jsRuntime":  "deno"
+             },
+    "spotify":  {
+                    "enabled":  false,
+                    "runtime":  "omitted"
+                },
+    "aria2":  {
+                  "version":  "aria2 version 1.37.0",
+                  "source":  "https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip",
+                  "releaseApi":  "https://api.github.com/repos/aria2/aria2/releases/tags/release-1.37.0",
+                  "officialAssetSha256":  null,
+                  "archiveSha256":  "67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288",
+                  "executableSha256":  "be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2"
+              },
+    "ffmpeg":  {
+                   "version":  "ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+                   "ffprobeVersion":  "ffprobe version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+                   "source":  "https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-essentials_build.zip",
+                   "releaseApi":  "https://api.github.com/repos/GyanD/codexffmpeg/releases/tags/9.0.2",
+                   "officialAssetSha256":  "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
+                   "sourceCommit":  "946fcce07b",
+                   "archiveSha256":  "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
+                   "ffmpegSha256":  "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
+                   "ffprobeSha256":  "f0d36ecbbdd3bcfac3efa078c96c7271c2e68b3810595552ac3b7f17e9a65c52",
+                   "licenseSha256":  "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+                   "buildConfiguration":  "configuration:\r\n    --enable-gpl\r\n    --enable-version3\r\n    --enable-static\r\n    --disable-w32threads\r\n    --disable-autodetect\r\n    --enable-cairo\r\n    --enable-fontconfig\r\n    --enable-iconv\r\n    --enable-gnutls\r\n    --enable-libxml2\r\n    --enable-gmp\r\n    --enable-bzlib\r\n    --enable-lzma\r\n    --enable-zlib\r\n    --enable-libsrt\r\n    --enable-libssh\r\n    --enable-libzmq\r\n    --enable-avisynth\r\n    --enable-sdl2\r\n    --enable-libwebp\r\n    --enable-libx264\r\n    --enable-libx265\r\n    --enable-libxvid\r\n    --enable-libaom\r\n    --enable-libopenjpeg\r\n    --enable-libvpx\r\n    --enable-mediafoundation\r\n    --enable-libass\r\n    --enable-libfreetype\r\n    --enable-libfribidi\r\n    --enable-libharfbuzz\r\n    --enable-libvidstab\r\n    --enable-libvmaf\r\n    --enable-libzimg\r\n    --enable-amf\r\n    --enable-cuda-llvm\r\n    --enable-cuvid\r\n    --enable-dxva2\r\n    --enable-d3d11va\r\n    --enable-d3d12va\r\n    --enable-ffnvcodec\r\n    --enable-libvpl\r\n    --enable-nvdec\r\n    --enable-nvenc\r\n    --enable-vaapi\r\n    --enable-openal\r\n    --enable-libgme\r\n    --enable-libopenmpt\r\n    --enable-libopencore-amrwb\r\n    --enable-libmp3lame\r\n    --enable-libtheora\r\n    --enable-libvo-amrwbenc\r\n    --enable-libgsm\r\n    --enable-libopencore-amrnb\r\n    --enable-libopus\r\n    --enable-libspeex\r\n    --enable-libvorbis\r\n    --enable-librubberband\r\n\r\nExiting with exit code 0\r\n\r\nffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers\r\n  built with gcc 16.2.0 (Rev3, Built by MSYS2 project)\r\n  configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-cairo --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-bzlib --enable-lzma --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-sdl2 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-mediafoundation --enable-libass --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-ffnvcodec --enable-libvpl --enable-nvdec --enable-nvenc --enable-vaapi --enable-openal --enable-libgme --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libtheora --enable-libvo-amrwbenc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-librubberband\r\n  libavutil      61.  1.102 / 61.  1.102\r\n  libavcodec     63.  1.102 / 63.  1.102\r\n  libavformat    63.  1.102 / 63.  1.102\r\n  libavdevice    63.  1.102 / 63.  1.102\r\n  libavfilter    12.  1.102 / 12.  1.102\r\n  libswscale     10.  1.102 / 10.  1.102\r\n  libswresample   7.  1.102 /  7.  1.102"
+               }
+}

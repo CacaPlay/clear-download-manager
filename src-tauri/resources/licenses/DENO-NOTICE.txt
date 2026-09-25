@@ -1,0 +1,7 @@
+﻿CacaTools Download Manager includes Deno as the bundled JavaScript runtime used by yt-dlp EJS challenges.
+Version output: deno 2.9.7 (stable, release, x86_64-pc-windows-msvc)
+Official release asset: https://github.com/denoland/deno/releases/download/v2.9.7/deno-x86_64-pc-windows-msvc.zip
+Archive SHA-256: a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238
+Executable SHA-256: e020f3e232bd16e33768dee528e5983349c962952051ced0a5d58ad42f5d9b33
+Official release metadata: https://api.github.com/repos/denoland/deno/releases/tags/v2.9.7
+Deno source and license: https://github.com/denoland/deno

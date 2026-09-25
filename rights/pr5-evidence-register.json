@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-09-25",
+  "scope": "Public evidence register for the PR #5 Devin output rights review plus a direct owner declaration. It contains no private account, billing, credential, or contract documents.",
+  "decision": {
+    "PR5_PUBLIC_CHAIN": "PASS",
+    "PR5_EVIDENCE_ASSESSMENT": "SUFFICIENTLY_SUPPORTED_CLOSED_FOR_FURTHER_INVESTIGATION",
+    "ACCOUNT_TO_TERMS_CHAIN": "PASS_OWNER_DECLARATION_AND_PUBLIC_TERMS",
+    "OUTPUT_RIGHTS": "SUPPORTED_BY_SECTION_3_1_AND_OWNER_AUTHORIZATION",
+    "GPL_RELICENSING_READINESS": "PASS_FOR_REVIEWED_PR5_DIFF"
+  },
+  "publicEvidence": {
+    "pr5": {
+      "url": "https://github.com/CacaPlay/clear-download-manager/pull/5",
+      "openedBy": "devin-ai-integration[bot]",
+      "requestedBy": "@CacaPlay",
+      "sessionUrl": "https://app.devin.ai/sessions/0505a2fb68854e28a6468f1370f0da06",
+      "headBranch": "devin/1789865720-portable-tests",
+      "headCommit": "78ceb49a8ff2e870fbeb604e586f6e7212e5c5d2",
+      "mergedAt": "2026-09-20",
+      "mergeCommitShort": "c789c02",
+      "commitMetadata": {
+        "rawGitAuthorName": "Ozelot",
+        "rawGitCommitterName": "Ozelot",
+        "githubRenderedParticipants": [
+          "CacaPlay",
+          "devin-ai-integration[bot]"
+        ],
+        "coAuthorTrailer": "Devin AI (devin-ai-integration[bot] no-reply identity; exact email omitted from this register)",
+        "signatureStatus": "not verified",
+        "signedOffBy": false
+      },
+      "exactDiff": {
+        "url": "https://github.com/CacaPlay/clear-download-manager/commit/78ceb49a8ff2e870fbeb604e586f6e7212e5c5d2.patch",
+        "sha256": "14e9faf1fdfbe9377304aafc34b1e3d8ca55ab896f66e071e178ded5a10fd1f6",
+        "byteCount": 9033,
+        "files": [
+          "MANIFEST.sha256",
+          "src-tauri/src/app/runtime.rs",
+          "src-tauri/src/extension_bridge.rs",
+          "src-tauri/src/tools/download.rs",
+          "src-tauri/src/tools/manifest.rs"
+        ],
+        "sourceFilesDelta": "+22/-7",
+        "manifestDelta": "+4/-4",
+        "commitDelta": "+26/-11"
+      }
+    },
+    "pr4CrossReference": {
+      "url": "https://github.com/CacaPlay/clear-download-manager/pull/4",
+      "requestedBy": "@CacaPlay",
+      "sessionUrl": "https://app.devin.ai/sessions/0505a2fb68854e28a6468f1370f0da06",
+      "note": "The same session URL appears in both PR bodies; this does not by itself allocate the session's output between PRs."
+    },
+    "ownerDeclaration": {
+      "record": "Direct owner declaration in the Codex conversation on 2026-09-25, recorded in rights/pr5-owner-review-draft.md.",
+      "evidencePath": "rights/pr5-owner-review-draft.md",
+      "approvedBy": "Julio Angel / CacaPlay",
+      "approvedAt": "2026-09-25",
+      "signedExternalArtifact": false,
+      "sha256": "4731b18b79f9eea9012ff43220feab30a0b23ca3672b414a7cfcc6eb86ee813f",
+      "independentlyVerified": false,
+      "scope": "Personal self-service account; no owner-known MSA, Order Form, custom contract or separate modification; continued use after terms transition; owner requested and reviewed exact PR #5 diff and authorizes GPL distribution of code the owner has rights to license."
+    },
+    "cognitionTerms": [
+      {
+        "type": "Platform Terms of Service",
+        "url": "https://cognition.com/legal/platform-terms-of-service",
+        "lastUpdated": "2026-06-30",
+        "retrievedAt": "2026-09-24T19:38:54-04:00",
+        "localCopy": "external private archive/cognition-terms/platform-terms-2026-06-30.html",
+        "sha256": "7be2a95e9c981a7c75502d0d6fad060d46e0c85bc3d1750d53b3a04f7480e542",
+        "byteCount": 190389,
+        "httpStatus": 200,
+        "publicEffectNote": "The preamble says prior terms control for 30 days from posting and access thereafter is governed by this update; §1.2 and §1.5 define Customer Data and Output; §3.1 assigns Cognition's rights in Output to Customer and recognizes Customer ownership of Customer Data including Outputs; §12.4 says continued use constitutes acceptance. The owner declares this was a self-service account and continued use after the transition. No account-specific click-through timestamp or log is independently evidenced. The registered archive path is external and not stored in this repository; its recorded archive hash was not recomputed in this checkout. The live official page was rechecked on 2026-09-25 and still identifies 2026-06-30 as its last-updated date."
+      },
+      {
+        "type": "Master Services Agreement",
+        "url": "https://cognition.com/legal/enterprise-terms-of-service",
+        "lastUpdated": "2026-06-08",
+        "retrievedAt": "2026-09-24T19:40:29-04:00",
+        "localCopy": "external private archive/cognition-terms/master-services-agreement-2026-06-08.html",
+        "sha256": "d66d15f7766235b9fd88d371fe30f4609475ab7177a176dce16114fd179e5ec7",
+        "byteCount": 196597,
+        "httpStatus": 200,
+        "publicEffectNote": "The public MSA references applicable Order Forms and §12.12 gives Order Forms priority over exhibits, AUP, and the general Terms. No account-specific Order Form was provided."
+      },
+      {
+        "type": "Historical Platform Terms of Service",
+        "url": "https://old.cognition.ai/terms-of-service",
+        "lastUpdated": "2025-04-03",
+        "retrievedAt": "2026-09-24T19:38:54-04:00",
+        "localCopy": "external private archive/cognition-terms/platform-terms-2025-04-03.html",
+        "sha256": "2ee48adffb62afa3b832f7b1c256ab5fb90819ff304091b042b51c60b7485847",
+        "byteCount": 56963,
+        "httpStatus": 200,
+        "publicEffectNote": "The page describes self-serve customers, excludes customers with custom agreements, and incorporates signed Order Forms; no general precedence clause was found on that page."
+      }
+    ]
+  },
+  "privateEvidence": {
+    "status": "USER_PROVIDED_CONTEXT_REVIEWED_LIMITED_PRIVATE_RECORDS_NOT_RETAINED",
+    "items": [
+      {
+        "id": "devin-account-and-service-tier",
+        "description": "Redacted account/customer identifier and evidence whether this was self-service or enterprise; no password or token.",
+        "status": "OWNER_DECLARED_PERSONAL_SELF_SERVICE_NOT_ENTERPRISE; HISTORICAL_TIER_NOT_INDEPENDENTLY_VERIFIED",
+        "sha256": null
+      },
+      {
+        "id": "session-to-account-activity",
+        "description": "Devin activity/export record tying session 0505a2fb68854e28a6468f1370f0da06 to that account and PR #5 output.",
+        "status": "PUBLIC_PR_SESSION_LINK_AND_OWNER_CONFIRMED_AUTHORIZATION; NO_PRIVATE_ACTIVITY_EXPORT_RETAINED",
+        "sha256": null
+      },
+      {
+        "id": "governing-agreement",
+        "description": "Accepted Platform Terms for self-service, or the applicable MSA, executed Order Form, and custom amendment if enterprise; state explicitly if no Order Form/custom agreement existed.",
+        "status": "PUBLIC_PLATFORM_TERMS_2026-06-30; APPLICABILITY_BASED_ON_OWNER_DECLARATION_OF_SELF_SERVICE_AND_CONTINUED_USE_AFTER_TRANSITION; NO_ACCOUNT_CLICKTHROUGH_LOG_INDEPENDENTLY_VERIFIED",
+        "sha256": null
+      },
+      {
+        "id": "owner-provenance-and-relicensing-review",
+        "description": "Dated owner review of the exact patch and relevant inputs for third-party/copy provenance and authority to license the exact output under GPL-3.0-or-later.",
+        "status": "APPROVED_BY_DIRECT_OWNER_DECLARATION; NOT_INDEPENDENTLY_VERIFIED",
+        "sha256": "4731b18b79f9eea9012ff43220feab30a0b23ca3672b414a7cfcc6eb86ee813f"
+      },
+      {
+        "id": "billing-or-subscription-corroboration",
+        "description": "Optional redacted record only if needed to establish service tier; retain outside the repository.",
+        "status": "NOT_PROVIDED_OPTIONAL",
+        "sha256": null
+      }
+    ]
+  },
+  "attestationLimits": [
+    "Public PR metadata establishes attribution clues and a session link, not transfer of copyright.",
+    "The owner directly declares that the Devin account was personal self-service, not Enterprise, had no owner-known MSA/Order Form/custom modification, and continued using the service after the 30-day transition. The public terms page and the previously recorded external archive hash support the stated terms/version; the archive file is not present in this checkout, and no click-through or account-specific acceptance log is independently verified.",
+    "Sensitive email bodies, account identifiers, screenshot data, and credentials were not copied or hashed into the repository.",
+    "The PR #5 investigation is closed and its exact reviewed diff is formally approved for GPL-3.0-or-later in the project rights register based on the direct owner declaration and public terms. This register is not an independent legal opinion or proof of an account click-through."
+  ]
+}

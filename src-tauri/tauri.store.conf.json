@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBuildCommand": "node scripts/build.mjs",
+    "frontendDist": "../dist-store"
+  },
+  "bundle": {
+    "resources": [
+      "resources/bin/*",
+      "resources/licenses/*",
+      "resources/extension/*"
+    ],
+    "createUpdaterArtifacts": false
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": []
+    }
+  }
+}

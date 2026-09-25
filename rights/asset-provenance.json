@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-09-25",
+  "status": "READY",
+  "scope": "Distribution-rights and provenance inventory for retained visual assets. This gate does not require Clear branding or artwork to be licensed under GPL-3.0-or-later.",
+  "ownerStatement": {
+    "status": "APPROVED",
+    "receivedAt": "2026-09-24",
+    "approvedAt": "2026-09-25",
+    "approvedBy": "Julio Angel / CacaPlay",
+    "groups": [
+      "clear-brand-assets",
+      "generated-tauri-platform-icons",
+      "clear-product-file-type-icons",
+      "clear-product-other-art"
+    ],
+    "summary": "The owner explicitly approved grouped distribution rights for all retained assets on 2026-09-25, confirmed authorship/ownership or necessary rights over inputs, and kept Clear branding outside GPL.",
+    "evidencePath": "rights/owner-asset-rights-attestation.md",
+    "evidenceSha256": "740f969109a2db404f1b1d588db4bb84a3dc712f347d2de689b7df804c98d0c5"
+  },
+  "groups": [
+    {
+      "id": "clear-brand-assets",
+      "category": "CLEAR_BRAND",
+      "status": "CLEAR",
+      "assetCount": 62,
+      "pathPrefixes": [
+        "app-ui/assets/brand/",
+        "extension/assets/brand/",
+        "extension/icons/brand/",
+        "src-tauri/icons/brand/",
+        "src-tauri/windows/artwork/"
+      ],
+      "files": [
+        "extension/icons/icon16.png",
+        "extension/icons/icon32.png",
+        "extension/icons/icon48.png",
+        "extension/icons/icon128.png",
+        "src-tauri/windows/nsis-header.bmp",
+        "src-tauri/windows/nsis-sidebar.bmp"
+      ],
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "licenseTreatment": "EXCLUDED_FROM_GPL",
+      "ownerAttestationStatus": "CONFIRMED",
+      "evidence": "The owner explicitly approved this group's distribution rights on 2026-09-25 in rights/owner-asset-rights-attestation.md; its SHA-256 is recorded in ownerStatement. Clear branding remains outside GPL.",
+      "missing": [],
+      "relatedGenerationScripts": [
+        "scripts/generate-brand-assets.py"
+      ]
+    },
+    {
+      "id": "generated-tauri-platform-icons",
+      "category": "GENERATED_FRAMEWORK",
+      "status": "CLEAR",
+      "assetCount": 8,
+      "pathPrefixes": [
+        "src-tauri/icons/"
+      ],
+      "excludePathPrefixes": [
+        "src-tauri/icons/brand/"
+      ],
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "licenseTreatment": "SEPARATE_ASSET_TERMS_PENDING_OWNER_REVIEW",
+      "ownerAttestationStatus": "CONFIRMED",
+      "evidence": "The owner explicitly approved this group's distribution rights on 2026-09-25 in rights/owner-asset-rights-attestation.md; its SHA-256 is recorded in ownerStatement. Five obsolete purple logos from early app versions were removed. Tauri/MSIX generation details remain undocumented but are not a distribution-rights blocker under the owner's attestation.",
+      "missing": []
+    },
+    {
+      "id": "clear-product-art",
+      "category": "CLEAR_PRODUCT_ART",
+      "status": "CLEAR",
+      "assetCount": 95,
+      "pathPrefixes": [
+        "app-ui/assets/file-types/",
+        "extension/assets/file-types/",
+        "app-ui/assets/news/",
+        "app-ui/player/",
+        "docs/assets/"
+      ],
+      "files": [
+        "app-ui/assets/playlist-logo.png",
+        "app-ui/assets/http-file-sheet.png"
+      ],
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "licenseTreatment": "SEPARATE_ASSET_TERMS_PENDING_OWNER_REVIEW",
+      "ownerAttestationStatus": "CONFIRMED",
+      "attestationSubgroups": [
+        {
+          "id": "clear-product-file-type-icons",
+          "assetCount": 70,
+          "status": "CONFIRMED",
+          "pathPrefixes": [
+            "app-ui/assets/file-types/",
+            "extension/assets/file-types/"
+          ]
+        },
+        {
+          "id": "clear-product-other-art",
+          "assetCount": 25,
+          "status": "CONFIRMED",
+          "pathPrefixes": [
+            "app-ui/assets/news/",
+            "app-ui/player/",
+            "docs/assets/"
+          ],
+          "files": [
+            "app-ui/assets/playlist-logo.png",
+            "app-ui/assets/http-file-sheet.png"
+          ]
+        }
+      ],
+      "evidence": "The owner explicitly approved distribution rights for retained product and documentation art on 2026-09-25 in rights/owner-asset-rights-attestation.md; its SHA-256 is recorded in ownerStatement. The two obsolete CacaTools placeholders were removed and runtime fallbacks use an existing Clear brand asset.",
+      "missing": [],
+      "relatedGenerationScripts": [
+        "scripts/prepare-file-type-assets.ps1"
+      ]
+    },
+    {
+      "id": "lucide-icons-subset",
+      "category": "THIRD_PARTY_KNOWN",
+      "status": "THIRD_PARTY_COMPATIBLE",
+      "files": [
+        "app-ui/assets/icons/lucide.js",
+        "app-ui/assets/icons/LICENSE",
+        "app-ui/assets/icons/NOTICE.md"
+      ],
+      "evidence": "The official Lucide list-music.svg paths are pinned to upstream commit 66d8f9fc394b8530377e5f6112f0b8908ba01280. The local license includes upstream ISC terms and the MIT terms for Lucide icons derived from Feather.",
+      "limitations": [
+        "The original upstream snapshot for the complete local helper is not pinned; only the replacement list-music path was independently matched to an official upstream SVG in this pass."
+      ],
+      "licenses": [
+        "ISC",
+        "MIT for Feather-derived icons identified by upstream"
+      ],
+      "missing": []
+    },
+    {
+      "id": "custom-music-vector-replaced",
+      "category": "CUSTOM_MODIFIED_THIRD_PARTY",
+      "status": "REPLACED",
+      "files": [
+        "app-ui/assets/icons/lucide.js",
+        "app-ui/main.js",
+        "app-ui/download-manager/view/icons.js"
+      ],
+      "previousAsset": "Custom music/playlist vector previously stored under music/playlist glyph keys.",
+      "replacement": "Official Lucide list-music.svg path data, used by playlist and music aliases.",
+      "upstreamCommit": "66d8f9fc394b8530377e5f6112f0b8908ba01280",
+      "evidence": "The exact official list-music path data replaced the ambiguous vector in all three UI icon maps. The local files no longer retain the supplied-reference vector.",
+      "missing": []
+    },
+    {
+      "id": "removed-28-assets",
+      "category": "REMOVED",
+      "status": "CLEAR",
+      "files": [],
+      "evidence": "All 28 individually listed brand/documentation files have REMOVE dispositions and are confirmed absent by check:asset-rights.",
+      "missing": []
+    },
+    {
+      "id": "removed-marked-legacy-assets",
+      "category": "REMOVED",
+      "status": "CLEAR",
+      "removedImageCount": 40,
+      "removedSupportingFileCount": 2,
+      "removedPaths": [
+        "src-tauri/icons/64x64.png",
+        "src-tauri/icons/icon.icns",
+        "src-tauri/icons/Square30x30Logo.png",
+        "src-tauri/icons/Square310x310Logo.png",
+        "src-tauri/icons/app-icon.svg",
+        "src-tauri/icons/android/ (15 image outputs)",
+        "src-tauri/icons/ios/ (18 image outputs)",
+        "app-ui/favicon.svg",
+        "app-ui/media-preview.svg"
+      ],
+      "evidence": "Owner-marked obsolete legacy icon/art families were removed. The configured Windows bundle and Store staging continue to use the separate, unmarked Clear icon files; active UI preview fallbacks now use an existing Clear brand asset.",
+      "evidencePath": "docs/ASSET-MARKS-AUDIT.md",
+      "missing": []
+    },
+    {
+      "id": "removed-obsolete-purple-platform-logos",
+      "category": "REMOVED",
+      "status": "CLEAR",
+      "removedImageCount": 5,
+      "removedPaths": [
+        "src-tauri/icons/Square71x71Logo.png",
+        "src-tauri/icons/Square89x89Logo.png",
+        "src-tauri/icons/Square107x107Logo.png",
+        "src-tauri/icons/Square142x142Logo.png",
+        "src-tauri/icons/Square284x284Logo.png"
+      ],
+      "evidence": "The owner identified these purple platform logos as obsolete artwork from early app versions and said they are not part of the current app. Tauri bundle configuration and the MSIX staging script do not consume them.",
+      "evidencePath": "docs/ASSET-MARKS-AUDIT.md",
+      "missing": []
+    }
+  ],
+  "unknownProvenance": {
+    "status": "CLEAR",
+    "assetCount": 165,
+    "crossCutting": true,
+    "notAdditive": true,
+    "groups": [
+      "clear-brand-assets",
+      "generated-tauri-platform-icons",
+      "clear-product-art"
+    ],
+    "rule": "The owner approved distribution rights for the complete retained family union in rights/owner-asset-rights-attestation.md; the recorded SHA-256 is verified by check:asset-provenance. This cross-cut documents the covered union and is not additive to the family counts.",
+    "dispositions": {
+      "unused": "REMOVE",
+      "replaceable": "REPLACE_WITH_KNOWN_LICENSE_OR_CLEAR_ASSET",
+      "indispensable": "MANUAL_OWNER_REVIEW"
+    }
+  },
+  "removedAssetCount": 73,
+  "removedSupportingFileCount": 2,
+  "replacedAssetCount": 1
+}

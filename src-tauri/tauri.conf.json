@@ -1,0 +1,109 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Clear Download Manager",
+  "version": "0.95.4",
+  "identifier": "lat.cacaplay.cacatools.downloadmanager",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:4173/?v=0.95.4-extension-0.95.4",
+    "beforeBuildCommand": "npm run build:web",
+    "frontendDist": "../dist",
+    "removeUnusedCommands": true
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Clear Download Manager",
+        "width": 1123,
+        "height": 714,
+        "minWidth": 1123,
+        "minHeight": 714,
+        "decorations": true,
+        "resizable": true,
+        "center": true,
+        "visible": false,
+        "label": "main",
+        "maximized": false
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self' customprotocol: asset:",
+        "script-src": "'self' customprotocol: asset: https://www.youtube.com",
+        "connect-src": "ipc: http://ipc.localhost",
+        "img-src": "'self' asset: http://asset.localhost blob: data: https:",
+        "style-src": "'self' 'unsafe-inline'",
+        "font-src": "'self' data:",
+        "object-src": "'none'",
+        "frame-src": "'self' asset: http://asset.localhost https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com https://assets.pinterest.com https://www.pinterest.com",
+        "base-uri": "'self'",
+        "form-action": "'self'",
+        "media-src": "'self' asset: http://asset.localhost https: http:"
+      },
+      "capabilities": [
+        "main-capability"
+      ],
+      "assetProtocol": {
+        "enable": true,
+        "scope": []
+      }
+    },
+    "withGlobalTauri": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "shortDescription": "Gestor local de descargas, torrents, video, audio y playlists.",
+    "longDescription": "Clear Download Manager administra descargas HTTP, torrents y contenido multimedia de forma local mediante aria2c, yt-dlp, FFmpeg y SQLite.",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "./windows/hooks.nsh",
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
+        "headerImage": "windows/nsis-header.bmp",
+        "uninstallerHeaderImage": "windows/nsis-header.bmp",
+        "sidebarImage": "windows/nsis-sidebar.bmp",
+        "languages": [
+          "Spanish",
+          "English"
+        ],
+        "displayLanguageSelector": true,
+        "startMenuFolder": "Clear Download Manager",
+        "compression": "lzma"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
+    "resources": [
+      "resources/bin/*",
+      "resources/licenses/*",
+      "resources/updater/*",
+      "resources/extension/*"
+    ],
+    "publisher": "CacaPlay",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "copyright": "Copyright © 2026 CacaPlay",
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQzMDY3QjQ2OUFDODhDODIKUldTQ2pNaWFSbnNHUStEaCt4WndBVSt4MDFpazVkQkM1L2hjWTFodDZYUFlhMjRySlhpYWlGN3IK",
+      "endpoints": [
+        "https://github.com/CacaPlay/clear-download-manager/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

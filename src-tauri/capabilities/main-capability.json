@@ -1,0 +1,21 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "Permisos mínimos de la ventana principal, el reproductor local y su lista secundaria.",
+  "windows": [
+    "main",
+    "player",
+    "media-prep",
+    "playlist-prep",
+    "http-prep"
+  ],
+  "platforms": [
+    "windows"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-enabled",
+    "core:window:allow-set-theme",
+    "core:app:allow-set-app-theme"
+  ]
+}

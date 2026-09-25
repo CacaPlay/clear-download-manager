@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="110" height="36" viewBox="0 0 110 36" role="img" aria-label="Torrents">
+  <title>Torrents</title>
+  <rect x="0.5" y="0.5" width="109" height="35" rx="17.5" fill="#f6f8fa" stroke="#cfd4da"/>
+  <g transform="translate(14 9.0) scale(0.75)" fill="none" stroke="#0b8a83" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h4.5v8a2.5 2.5 0 0 0 5 0v-8H19v8a7 7 0 0 1-14 0z"/><path d="M5 8h4.5M14.5 8H19"/></g>
+  <text x="40" y="23.0" font-family="'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="600" fill="#1f2328">Torrents</text>
+</svg>

@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Editor de imágenes local avanzado de CacaTools">
+  <title>Editor de imágenes · CacaTools</title>
+  <link rel="stylesheet" href="./images.css?v=0.30.1-phase1">
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m5 18 5-5 3 3 2-2 4 4"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+    <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 3v12a3 3 0 0 0 3 3h12M3 6h12a3 3 0 0 1 3 3v12"/></symbol>
+    <symbol id="i-resize" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/><path d="m3 8 6-5M21 8l-6-5M3 16l6 5M21 16l-6 5"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
+    <symbol id="i-flip" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="m10 6-6 6 6 6M14 6l6 6-6 6"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h7M15 6h5M4 12h3M11 12h9M4 18h9M17 18h3"/><circle cx="13" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="18" r="2"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4Z"/><path d="m18 14 .8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8Z"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><path d="M5 5h14M12 5v14M8 19h8"/></symbol>
+    <symbol id="i-shapes" viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="8" rx="1"/><circle cx="17" cy="16" r="4"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10Z"/><path d="m14 7 3 3"/></symbol>
+    <symbol id="i-bg" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m4 16 4-4 4 4 4-6 4 6"/></symbol>
+    <symbol id="i-watermark" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="m7 15 3-6 2 4 2-3 3 5"/></symbol>
+    <symbol id="i-compress" viewBox="0 0 24 24"><path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5"/><path d="m8 8-5-5M16 8l5-5M8 16l-5 5M16 16l5 5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7 4 12l5 5"/><path d="M5 12h8a6 6 0 0 1 6 6"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 7 5 5-5 5"/><path d="M19 12h-8a6 6 0 0 0-6 6"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-cutout" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 13h7v7h-7z"/><path d="m13 4 7 7M4 13l7 7"/></symbol>
+    <symbol id="i-clone" viewBox="0 0 24 24"><circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/><path d="M12 8v4M10 10h4"/></symbol>
+    <symbol id="i-pixel" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-compare" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M8 9l-3 3 3 3M16 9l3 3-3 3"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="m3 3 18 18M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-2.1 2.8M6.6 6.7C4 8.3 2.5 12 2.5 12S6 18 12 18c1 0 2-.2 2.8-.5"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m6 14 6-6 6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 10 6 6 6-6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></symbol>
+    <symbol id="i-plus-layer" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5Z"/><path d="M12 16v6M9 19h6"/></symbol>
+    <symbol id="i-merge" viewBox="0 0 24 24"><path d="M7 3v5c0 4 3 4 5 4s5 0 5 4v5"/><path d="m13 17 4 4 4-4M3 8h8"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z"/></symbol>
+    <symbol id="i-fingerprint" viewBox="0 0 24 24"><path d="M6 11a6 6 0 0 1 12 0v2M9 11a3 3 0 0 1 6 0v3a8 8 0 0 1-1.3 4.4M12 11v3a11 11 0 0 1-1.1 4.8M4 11a8 8 0 0 1 16 0v3M7 15a8 8 0 0 1-1 4M17 16a12 12 0 0 1-1 4"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M18.5 9A7 7 0 0 0 6.3 6.3L4 9M5.5 15A7 7 0 0 0 17.7 17.7L20 15"/></symbol>
+  </svg>
+
+  <input id="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden>
+  <input id="layer-file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden>
+  <input id="collage-file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" multiple hidden>
+
+  <main class="image-studio" id="image-studio">
+    <header class="studio-topbar">
+      <div class="brand-block">
+        <span class="brand-mark"><svg><use href="#i-image"/></svg></span>
+        <div>
+          <strong>Editor de imágenes</strong>
+          <span id="document-status">Sin imagen abierta</span>
+        </div>
+      </div>
+
+      <div class="topbar-history" aria-label="Historial">
+        <button class="icon-button" id="undo-button" type="button" title="Deshacer (Ctrl+Z)" disabled><svg><use href="#i-undo"/></svg></button>
+        <button class="icon-button" id="redo-button" type="button" title="Rehacer (Ctrl+Y)" disabled><svg><use href="#i-redo"/></svg></button>
+        <span class="history-label" id="history-label">0 cambios</span>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="icon-button theme-toggle" id="theme-toggle" type="button" title="Cambiar tema" aria-label="Cambiar tema"><svg class="theme-dark-icon"><use href="#i-sun"/></svg><svg class="theme-light-icon"><use href="#i-moon"/></svg></button>
+        <button class="button secondary" id="compare-hold" type="button" disabled title="Mantén pulsado para ver el original"><svg><use href="#i-compare"/></svg><span>Original</span></button>
+        <button class="button secondary" id="save-project" type="button" disabled><svg><use href="#i-save"/></svg><span>Proyecto</span></button>
+        <button class="button secondary" id="open-button" type="button"><svg><use href="#i-folder"/></svg><span>Abrir</span></button>
+        <button class="button primary" id="export-button" type="button" disabled><svg><use href="#i-download"/></svg><span>Exportar</span></button>
+      </div>
+    </header>
+
+    <div class="studio-grid">
+      <nav class="tool-rail" aria-label="Herramientas de imagen">
+        <button class="tool-button active" type="button" data-tool="open"><svg><use href="#i-folder"/></svg><span>Mover / seleccionar</span></button>
+        <button class="tool-button" type="button" data-tool="crop" disabled><svg><use href="#i-crop"/></svg><span>Recortar</span></button>
+        <button class="tool-button" type="button" data-tool="resize" disabled><svg><use href="#i-resize"/></svg><span>Tamaño</span></button>
+        <button class="tool-button" type="button" data-tool="rotate" disabled><svg><use href="#i-rotate"/></svg><span>Rotar</span></button>
+        <button class="tool-button" type="button" data-tool="flip" disabled><svg><use href="#i-flip"/></svg><span>Voltear</span></button>
+        <button class="tool-button" type="button" data-tool="adjust" disabled><svg><use href="#i-sliders"/></svg><span>Ajustes</span></button>
+        <button class="tool-button" type="button" data-tool="filters" disabled><svg><use href="#i-sparkle"/></svg><span>Filtros</span></button>
+        <button class="tool-button" type="button" data-tool="text" disabled><svg><use href="#i-text"/></svg><span>Texto</span></button>
+        <button class="tool-button" type="button" data-tool="shapes" disabled><svg><use href="#i-shapes"/></svg><span>Formas</span></button>
+        <button class="tool-button" type="button" data-tool="draw" disabled><svg><use href="#i-pen"/></svg><span>Dibujo</span></button>
+        <button class="tool-button" type="button" data-tool="background" disabled><svg><use href="#i-bg"/></svg><span>Fondo</span></button>
+        <button class="tool-button" type="button" data-tool="removebg" disabled><svg><use href="#i-cutout"/></svg><span>Quitar fondo</span></button>
+        <button class="tool-button" type="button" data-tool="retouch" disabled><svg><use href="#i-clone"/></svg><span>Retocar</span></button>
+        <button class="tool-button" type="button" data-tool="pixelate" disabled><svg><use href="#i-pixel"/></svg><span>Pixelar</span></button>
+        <button class="tool-button" type="button" data-tool="compare" disabled><svg><use href="#i-compare"/></svg><span>Comparar</span></button>
+        <button class="tool-button" type="button" data-tool="watermark" disabled><svg><use href="#i-watermark"/></svg><span>Marca</span></button>
+        <button class="tool-button" type="button" data-tool="compress" disabled><svg><use href="#i-compress"/></svg><span>Comprimir</span></button>
+        <button class="tool-button" type="button" data-tool="privacy" disabled><svg><use href="#i-shield"/></svg><span>Privacidad</span></button>
+        <button class="tool-button" type="button" data-tool="collage" disabled><svg><use href="#i-grid"/></svg><span>Collage</span></button>
+      </nav>
+
+      <section class="canvas-column">
+        <div class="canvas-toolbar">
+          <div class="zoom-group">
+            <button class="icon-button small" id="zoom-out" type="button" title="Alejar" disabled><svg><use href="#i-minus"/></svg></button>
+            <button class="zoom-value" id="zoom-value" type="button" disabled>100%</button>
+            <button class="icon-button small" id="zoom-in" type="button" title="Acercar" disabled><svg><use href="#i-plus"/></svg></button>
+            <button class="toolbar-button" id="fit-button" type="button" disabled><svg><use href="#i-fit"/></svg><span>Ajustar</span></button>
+            <button class="toolbar-button" id="actual-button" type="button" disabled><span>1:1</span></button>
+          </div>
+          <div class="image-stats" id="image-stats"><span>— × — px</span><span>—</span><small class="canvas-hint">Rueda: zoom · Espacio o mano: mover · herramientas directas sobre la imagen</small></div>
+        </div>
+
+        <div class="canvas-viewport" id="canvas-viewport" tabindex="0" aria-label="Lienzo del editor">
+          <div class="empty-canvas" id="empty-canvas">
+            <span class="empty-icon"><svg><use href="#i-image"/></svg></span>
+            <h1>Edita imágenes sin subirlas</h1>
+            <p>Abre una imagen, arrástrala aquí o pégala con <kbd>Ctrl</kbd> + <kbd>V</kbd>.</p>
+            <button class="button primary large" id="empty-open-button" type="button"><svg><use href="#i-folder"/></svg><span>Seleccionar imagen</span></button>
+            <small>PNG, JPG, WebP, GIF o BMP</small>
+          </div>
+          <div class="canvas-stage" id="canvas-stage" hidden>
+            <canvas id="editor-canvas"></canvas>
+            <canvas id="overlay-canvas" aria-hidden="true"></canvas>
+            <div class="crop-overlay" id="crop-overlay" hidden>
+              <div class="crop-grid"></div>
+              <span class="crop-handle nw" data-handle="nw"></span><span class="crop-handle n" data-handle="n"></span><span class="crop-handle ne" data-handle="ne"></span>
+              <span class="crop-handle e" data-handle="e"></span><span class="crop-handle se" data-handle="se"></span><span class="crop-handle s" data-handle="s"></span>
+              <span class="crop-handle sw" data-handle="sw"></span><span class="crop-handle w" data-handle="w"></span>
+              <span class="crop-size" id="crop-size"></span>
+            </div>
+          </div>
+          <div class="drop-curtain" id="drop-curtain" hidden><svg><use href="#i-folder"/></svg><strong>Suelta la imagen para abrirla</strong></div>
+        </div>
+
+        <section class="library-panel" aria-labelledby="library-title">
+          <div class="library-heading">
+            <div><strong id="library-title">Biblioteca local</strong><span>Recientes y proyectos guardados solo en este navegador</span></div>
+            <div class="library-actions"><div class="library-tabs" id="library-tabs"><button class="active" type="button" data-library-tab="recent">Recientes</button><button type="button" data-library-tab="projects">Proyectos</button></div><button class="text-button danger" id="clear-library" type="button" disabled>Vaciar</button></div>
+          </div>
+          <div class="library-strip" id="library-strip">
+            <button class="library-add" id="library-add" type="button"><svg><use href="#i-plus"/></svg><span>Añadir imagen</span></button>
+            <div class="library-empty" id="library-empty">Todavía no hay imágenes recientes.</div>
+          </div>
+        </section>
+      </section>
+
+      <aside class="inspector" id="inspector">
+        <section class="tool-panel active" data-panel="open">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-folder"/></svg></span><div><h2>Mover y seleccionar</h2><p>Usa la rueda para acercar o alejar, arrastra para navegar y trabaja directamente sobre la imagen.</p></div></div>
+          <button class="drop-card" id="panel-open-button" type="button"><svg><use href="#i-image"/></svg><strong>Abrir otra imagen</strong><span>también puedes arrastrarla al lienzo</span></button>
+          <div class="privacy-note"><svg><use href="#i-shield"/></svg><div><strong>Edición local</strong><p>La imagen no se envía a ningún servidor.</p></div></div>
+          <div class="shortcut-list"><span><kbd>Rueda</kbd> Zoom</span><span><kbd>Espacio</kbd> + arrastrar mover</span><span><kbd>Ctrl</kbd> + <kbd>O</kbd> Abrir</span><span><kbd>Ctrl</kbd> + <kbd>V</kbd> Pegar</span></div>
+        </section>
+
+        <section class="tool-panel" data-panel="crop">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-crop"/></svg></span><div><h2>Recortar</h2><p>Arrastra el marco o introduce valores exactos.</p></div></div>
+          <label class="field-label">Proporción</label>
+          <div class="segmented" id="aspect-options">
+            <button class="active" type="button" data-aspect="free">Libre</button><button type="button" data-aspect="1">1:1</button><button type="button" data-aspect="1.333333">4:3</button><button type="button" data-aspect="1.777778">16:9</button>
+          </div>
+          <div class="field-grid four compact-values">
+            <label><span>X</span><input id="crop-x" type="number" min="0" step="1"></label>
+            <label><span>Y</span><input id="crop-y" type="number" min="0" step="1"></label>
+            <label><span>Ancho</span><input id="crop-width" type="number" min="1" step="1"></label>
+            <label><span>Alto</span><input id="crop-height" type="number" min="1" step="1"></label>
+          </div>
+          <div class="panel-actions"><button class="button ghost" id="crop-reset" type="button">Restablecer</button><button class="button primary" id="crop-apply" type="button"><svg><use href="#i-check"/></svg>Aplicar</button></div>
+        </section>
+
+        <section class="tool-panel" data-panel="resize">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-resize"/></svg></span><div><h2>Redimensionar</h2><p>Usa la rueda o las esquinas sobre el lienzo para previsualizar el tamaño y luego aplícalo.</p></div></div>
+          <div class="field-grid two resize-fields compact-values">
+            <label><span>Ancho (px)</span><input id="resize-width" type="number" min="1" max="20000" step="1"></label>
+            <button class="ratio-lock active" id="ratio-lock" type="button" aria-pressed="true" title="Mantener proporción"><svg class="locked"><use href="#i-lock"/></svg><svg class="unlocked"><use href="#i-unlock"/></svg></button>
+            <label><span>Alto (px)</span><input id="resize-height" type="number" min="1" max="20000" step="1"></label>
+          </div>
+          <label class="field-label" for="resize-quality">Calidad de reescalado</label>
+          <select id="resize-quality"><option value="high">Alta (recomendada)</option><option value="medium">Media</option><option value="low">Rápida</option></select>
+          <div class="preset-list"><button type="button" data-scale="0.5">50%</button><button type="button" data-scale="0.75">75%</button><button type="button" data-scale="1.5">150%</button><button type="button" data-scale="2">200%</button></div>
+          <div class="dimension-result" id="resize-result">—</div>
+          <button class="button primary full" id="resize-apply" type="button"><svg><use href="#i-check"/></svg>Aplicar tamaño</button>
+        </section>
+
+        <section class="tool-panel" data-panel="rotate">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-rotate"/></svg></span><div><h2>Rotar</h2><p>Gira la imagen en incrementos exactos.</p></div></div>
+          <div class="action-tiles two">
+            <button type="button" data-rotate="-90"><svg><use href="#i-rotate"/></svg><strong>90° izquierda</strong></button>
+            <button type="button" data-rotate="90"><svg class="mirror"><use href="#i-rotate"/></svg><strong>90° derecha</strong></button>
+            <button type="button" data-rotate="180"><span class="angle-glyph">180°</span><strong>Media vuelta</strong></button>
+            <button type="button" data-rotate="360"><span class="angle-glyph">0°</span><strong>Restablecer vista</strong></button>
+          </div>
+          <div class="operation-note"><svg><use href="#i-info"/></svg><p>Cada rotación aplicada se guarda en el historial y puede deshacerse.</p></div>
+        </section>
+
+        <section class="tool-panel" data-panel="flip">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-flip"/></svg></span><div><h2>Voltear</h2><p>Refleja la imagen horizontal o verticalmente.</p></div></div>
+          <div class="action-tiles">
+            <button type="button" data-flip="horizontal"><svg><use href="#i-flip"/></svg><strong>Voltear horizontal</strong><span>Invierte izquierda y derecha</span></button>
+            <button type="button" data-flip="vertical"><svg class="vertical"><use href="#i-flip"/></svg><strong>Voltear vertical</strong><span>Invierte arriba y abajo</span></button>
+          </div>
+        </section>
+
+        <section class="tool-panel" data-panel="adjust">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-sliders"/></svg></span><div><h2>Ajustes</h2><p>Previsualiza y aplica correcciones de color.</p></div></div>
+          <div class="slider-field"><div><label for="brightness">Brillo</label><output id="brightness-output">0</output></div><input id="brightness" type="range" min="-100" max="100" value="0"></div>
+          <div class="slider-field"><div><label for="contrast">Contraste</label><output id="contrast-output">0</output></div><input id="contrast" type="range" min="-100" max="100" value="0"></div>
+          <div class="slider-field"><div><label for="saturation">Saturación</label><output id="saturation-output">0</output></div><input id="saturation" type="range" min="-100" max="100" value="0"></div>
+          <div class="slider-field"><div><label for="blur">Desenfoque</label><output id="blur-output">0 px</output></div><input id="blur" type="range" min="0" max="20" step="0.5" value="0"></div>
+          <div class="panel-actions"><button class="button ghost" id="adjust-reset" type="button">Restablecer</button><button class="button primary" id="adjust-apply" type="button"><svg><use href="#i-check"/></svg>Aplicar</button></div>
+        </section>
+
+        <section class="tool-panel" data-panel="filters">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-sparkle"/></svg></span><div><h2>Filtros</h2><p>Previsualiza estilos y regula su intensidad.</p></div></div>
+          <div class="filter-grid" id="filter-grid">
+            <button class="active" type="button" data-filter="none"><span class="filter-swatch original"></span><strong>Original</strong></button>
+            <button type="button" data-filter="mono"><span class="filter-swatch mono"></span><strong>Mono</strong></button>
+            <button type="button" data-filter="sepia"><span class="filter-swatch sepia"></span><strong>Sepia</strong></button>
+            <button type="button" data-filter="vintage"><span class="filter-swatch vintage"></span><strong>Vintage</strong></button>
+            <button type="button" data-filter="warm"><span class="filter-swatch warm"></span><strong>Cálido</strong></button>
+            <button type="button" data-filter="cool"><span class="filter-swatch cool"></span><strong>Frío</strong></button>
+            <button type="button" data-filter="vivid"><span class="filter-swatch vivid"></span><strong>Vívido</strong></button>
+            <button type="button" data-filter="invert"><span class="filter-swatch invert"></span><strong>Invertir</strong></button>
+          </div>
+          <div class="slider-field"><div><label for="filter-intensity">Intensidad</label><output id="filter-intensity-output">100%</output></div><input id="filter-intensity" type="range" min="0" max="100" value="100"></div>
+          <div class="panel-actions"><button class="button ghost" id="filter-reset" type="button">Restablecer</button><button class="button primary" id="filter-apply" type="button"><svg><use href="#i-check"/></svg>Aplicar</button></div>
+        </section>
+
+        <section class="tool-panel" data-panel="text">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-text"/></svg></span><div><h2>Texto</h2><p>Añade texto rasterizado. Haz clic en la imagen para colocarlo.</p></div></div>
+          <label class="field-label" for="text-content">Contenido</label>
+          <textarea id="text-content" rows="3" maxlength="500">Tu texto</textarea>
+          <div class="field-grid two compact-grid">
+            <label><span>Fuente</span><select id="text-font"><option value="Inter, Arial, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Courier New', monospace">Courier</option><option value="Impact, sans-serif">Impact</option></select></label>
+            <label><span>Tamaño</span><input id="text-size" type="number" min="8" max="600" value="64"></label>
+            <label><span>Color</span><input id="text-color" type="color" value="#ffffff"></label>
+            <label><span>Contorno</span><input id="text-stroke-color" type="color" value="#111827"></label>
+          </div>
+          <div class="field-grid four compact-grid">
+            <label><span>X</span><input id="text-x" type="number" min="0" value="80"></label>
+            <label><span>Y</span><input id="text-y" type="number" min="0" value="80"></label>
+            <label><span>Borde</span><input id="text-stroke-width" type="number" min="0" max="30" value="2"></label>
+            <label><span>Opacidad</span><input id="text-opacity" type="number" min="1" max="100" value="100"></label>
+          </div>
+          <div class="segmented text-style-options" id="text-style-options"><button class="active" type="button" data-text-style="normal">Normal</button><button type="button" data-text-style="bold">Negrita</button><button type="button" data-text-style="italic">Cursiva</button><button type="button" data-text-style="bold italic">Ambas</button></div>
+          <div class="segmented three" id="text-align-options"><button class="active" type="button" data-text-align="left">Izquierda</button><button type="button" data-text-align="center">Centro</button><button type="button" data-text-align="right">Derecha</button></div>
+          <div class="panel-actions"><button class="button ghost" id="text-center" type="button">Centrar</button><button class="button primary" id="text-apply" type="button"><svg><use href="#i-check"/></svg>Añadir texto</button></div>
+        </section>
+
+        <section class="tool-panel" data-panel="shapes">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-shapes"/></svg></span><div><h2>Formas</h2><p>Arrastra sobre la imagen o introduce medidas exactas.</p></div></div>
+          <div class="shape-types" id="shape-types"><button class="active" type="button" data-shape="rectangle">Rectángulo</button><button type="button" data-shape="ellipse">Elipse</button><button type="button" data-shape="line">Línea</button><button type="button" data-shape="arrow">Flecha</button></div>
+          <div class="field-grid two compact-grid">
+            <label><span>Relleno</span><input id="shape-fill" type="color" value="#8b5cf6"></label>
+            <label><span>Contorno</span><input id="shape-stroke" type="color" value="#ffffff"></label>
+            <label><span>Grosor</span><input id="shape-stroke-width" type="number" min="0" max="80" value="5"></label>
+            <label><span>Opacidad</span><input id="shape-opacity" type="number" min="1" max="100" value="85"></label>
+          </div>
+          <label class="toggle-row"><input id="shape-fill-enabled" type="checkbox" checked><span>Usar relleno en rectángulos y elipses</span></label>
+          <div class="field-grid four compact-grid">
+            <label><span>X</span><input id="shape-x" type="number" min="0" value="80"></label>
+            <label><span>Y</span><input id="shape-y" type="number" min="0" value="80"></label>
+            <label><span>Ancho</span><input id="shape-width" type="number" min="1" value="260"></label>
+            <label><span>Alto</span><input id="shape-height" type="number" min="1" value="160"></label>
+          </div>
+          <button class="button primary full" id="shape-apply" type="button"><svg><use href="#i-check"/></svg>Añadir forma</button>
+        </section>
+
+        <section class="tool-panel" data-panel="draw">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-pen"/></svg></span><div><h2>Dibujo</h2><p>Dibuja directamente sobre la imagen con ratón, lápiz o tacto.</p></div></div>
+          <div class="segmented three" id="draw-modes"><button class="active" type="button" data-draw-mode="pen">Lápiz</button><button type="button" data-draw-mode="marker">Marcador</button><button type="button" data-draw-mode="eraser">Borrador</button></div>
+          <label class="field-label" for="draw-color">Color del trazo</label><input id="draw-color" type="color" value="#f97316">
+          <div class="slider-field"><div><label for="draw-size">Tamaño</label><output id="draw-size-output">12 px</output></div><input id="draw-size" type="range" min="1" max="120" value="12"></div>
+          <div class="slider-field"><div><label for="draw-opacity">Opacidad</label><output id="draw-opacity-output">100%</output></div><input id="draw-opacity" type="range" min="5" max="100" value="100"></div>
+          <div class="operation-note"><svg><use href="#i-info"/></svg><p>Cada trazo completo crea una entrada independiente en Deshacer/Rehacer.</p></div>
+        </section>
+
+        <section class="tool-panel" data-panel="background">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-bg"/></svg></span><div><h2>Fondo y margen</h2><p>Rellena transparencias o amplía el lienzo alrededor de la imagen.</p></div></div>
+          <div class="background-preview" id="background-preview"><span></span></div>
+          <div class="field-grid two compact-grid">
+            <label><span>Color</span><input id="background-color" type="color" value="#ffffff"></label>
+            <label><span>Margen (px)</span><input id="background-padding" type="number" min="0" max="2000" value="0"></label>
+          </div>
+          <div class="preset-list background-presets"><button type="button" data-bg="#ffffff">Blanco</button><button type="button" data-bg="#000000">Negro</button><button type="button" data-bg="#f3f4f6">Gris</button><button type="button" data-bg="#8b5cf6">Morado</button></div>
+          <div class="operation-note"><svg><use href="#i-info"/></svg><p>Con margen 0 se rellenan solo las zonas transparentes. Un margen mayor amplía el tamaño final.</p></div>
+          <button class="button primary full" id="background-apply" type="button"><svg><use href="#i-check"/></svg>Aplicar fondo</button>
+        </section>
+
+        <section class="tool-panel" data-panel="removebg">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-cutout"/></svg></span><div><h2>Eliminar fondo</h2><p>Elimina localmente colores de fondo similares. No sube la imagen.</p></div></div>
+          <div class="segmented four" id="removebg-modes"><button class="active" type="button" data-remove-mode="auto">Automático</button><button type="button" data-remove-mode="sample">Muestra</button><button type="button" data-remove-mode="edges">Bordes</button><button type="button" data-remove-mode="manual">Manual</button></div>
+          <div class="sample-color-row"><span id="removebg-sample" style="background:#ffffff"></span><div><strong>Color objetivo</strong><small id="removebg-sample-label">Detectado desde las esquinas</small></div></div>
+          <div class="slider-field"><div><label for="removebg-tolerance">Tolerancia</label><output id="removebg-tolerance-output">42</output></div><input id="removebg-tolerance" type="range" min="1" max="140" value="42"></div>
+          <div class="slider-field"><div><label for="removebg-feather">Suavizado</label><output id="removebg-feather-output">12</output></div><input id="removebg-feather" type="range" min="0" max="80" value="12"></div>
+          <label class="toggle-row removebg-auto-only"><input id="removebg-contiguous" type="checkbox" checked><span>Limitar a píxeles conectados con los bordes</span></label>
+          <div class="removebg-manual" id="removebg-manual" hidden>
+            <div class="slider-field"><div><label for="removebg-brush-size">Pincel</label><output id="removebg-brush-size-output">44 px</output></div><input id="removebg-brush-size" type="range" min="6" max="220" value="44"></div>
+            <div class="segmented two" id="removebg-manual-mode"><button class="active" type="button" data-remove-manual="erase">Borrar</button><button type="button" data-remove-manual="restore">Restaurar</button></div>
+            <div class="operation-note"><svg><use href="#i-info"/></svg><p>Pinta directamente sobre la imagen. Borrar elimina el fondo y Restaurar recupera píxeles de la capa activa.</p></div>
+          </div>
+          <div class="operation-note"><svg><use href="#i-info"/></svg><p>Automático usa esquinas, Muestra usa el color que elijas, Bordes se centra en regiones conectadas y Manual te deja borrar o restaurar a mano.</p></div>
+          <div class="panel-actions"><button class="button ghost removebg-action" id="removebg-preview" type="button">Previsualizar</button><button class="button primary removebg-action" id="removebg-apply" type="button"><svg><use href="#i-check"/></svg>Aplicar</button></div>
+        </section>
+
+        <section class="tool-panel" data-panel="retouch">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-clone"/></svg></span><div><h2>Reparar y clonar</h2><p>Clona píxeles, suaviza la copia o limpia pequeñas manchas.</p></div></div>
+          <div class="segmented three" id="retouch-modes"><button class="active" type="button" data-retouch-mode="clone">Clonar</button><button type="button" data-retouch-mode="heal">Reparar</button><button type="button" data-retouch-mode="clean">Limpiar</button></div>
+          <div class="slider-field"><div><label for="retouch-size">Pincel</label><output id="retouch-size-output">44 px</output></div><input id="retouch-size" type="range" min="6" max="220" value="44"></div>
+          <div class="slider-field"><div><label for="retouch-opacity">Opacidad</label><output id="retouch-opacity-output">88%</output></div><input id="retouch-opacity" type="range" min="10" max="100" value="88"></div>
+          <div class="clone-source" id="clone-source"><span></span><div><strong>Fuente sin definir</strong><small>Alt + clic sobre la imagen para elegirla.</small></div></div>
+          <div class="operation-note"><svg><use href="#i-info"/></svg><p>En modo Limpiar basta pintar la mancha; el editor toma color del contorno del pincel.</p></div>
+        </section>
+
+        <section class="tool-panel" data-panel="pixelate">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-pixel"/></svg></span><div><h2>Pixelado selectivo</h2><p>Oculta rostros, matrículas o datos usando una región exacta.</p></div></div>
+          <div class="field-grid four compact-grid"><label><span>X</span><input id="pixel-x" type="number" min="0" value="80"></label><label><span>Y</span><input id="pixel-y" type="number" min="0" value="80"></label><label><span>Ancho</span><input id="pixel-width" type="number" min="1" value="260"></label><label><span>Alto</span><input id="pixel-height" type="number" min="1" value="160"></label></div>
+          <div class="slider-field"><div><label for="pixel-size">Tamaño de bloque</label><output id="pixel-size-output">18 px</output></div><input id="pixel-size" type="range" min="3" max="80" value="18"></div>
+          <label class="toggle-row"><input id="pixel-round" type="checkbox"><span>Región elíptica</span></label>
+          <div class="panel-actions"><button class="button ghost" id="pixel-full" type="button">Imagen completa</button><button class="button primary" id="pixel-apply" type="button"><svg><use href="#i-check"/></svg>Aplicar</button></div>
+        </section>
+
+        <section class="tool-panel" data-panel="compare">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-compare"/></svg></span><div><h2>Antes y después</h2><p>Desliza la división para comparar el original con el resultado actual.</p></div></div>
+          <div class="compare-card"><div><span class="before-dot"></span>Original</div><div><span class="after-dot"></span>Actual</div></div>
+          <div class="slider-field"><div><label for="compare-position">División</label><output id="compare-position-output">50%</output></div><input id="compare-position" type="range" min="0" max="100" value="50"></div>
+          <label class="toggle-row"><input id="compare-enabled" type="checkbox" checked><span>Mostrar división sobre el lienzo</span></label>
+          <button class="button secondary full" id="compare-swap" type="button"><svg><use href="#i-compare"/></svg>Invertir lados</button>
+        </section>
+
+        <section class="tool-panel" data-panel="watermark">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-watermark"/></svg></span><div><h2>Marca de agua y autoría</h2><p>Añade una marca visible o una huella discreta como capa independiente.</p></div></div>
+          <label class="field-label" for="watermark-text">Texto de la marca</label>
+          <input id="watermark-text" type="text" maxlength="180" value="© Mi autoría">
+          <div class="field-grid two compact-grid">
+            <label><span>Fuente</span><select id="watermark-font"><option value="Inter, Arial, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="Impact, sans-serif">Impact</option></select></label>
+            <label><span>Tamaño</span><input id="watermark-size" type="number" min="8" max="600" value="48"></label>
+            <label><span>Color</span><input id="watermark-color" type="color" value="#ffffff"></label>
+            <label><span>Contorno</span><input id="watermark-stroke" type="color" value="#111827"></label>
+          </div>
+          <div class="slider-field"><div><label for="watermark-opacity">Opacidad</label><output id="watermark-opacity-output">42%</output></div><input id="watermark-opacity" type="range" min="5" max="100" value="42"></div>
+          <div class="slider-field"><div><label for="watermark-rotation">Rotación</label><output id="watermark-rotation-output">−18°</output></div><input id="watermark-rotation" type="range" min="-90" max="90" value="-18"></div>
+          <label class="field-label">Posición</label>
+          <div class="position-grid" id="watermark-position"><button type="button" data-position="tl">↖</button><button type="button" data-position="tc">↑</button><button type="button" data-position="tr">↗</button><button type="button" data-position="ml">←</button><button class="active" type="button" data-position="mc">•</button><button type="button" data-position="mr">→</button><button type="button" data-position="bl">↙</button><button type="button" data-position="bc">↓</button><button type="button" data-position="br">↘</button></div>
+          <label class="toggle-row"><input id="watermark-tile" type="checkbox"><span>Repetir sobre toda la imagen</span></label>
+          <label class="toggle-row"><input id="watermark-fingerprint" type="checkbox"><span>Añadir huella perceptual discreta</span></label>
+          <div class="operation-note"><svg><use href="#i-info"/></svg><p>La huella añade una señal visual tenue y verificable, pero ninguna técnica puede impedir de forma universal que una red social acepte la imagen.</p></div>
+          <div class="panel-actions"><button class="button ghost" id="watermark-preview-button" type="button">Previsualizar</button><button class="button primary" id="watermark-apply" type="button"><svg><use href="#i-check"/></svg>Aplicar como capa</button></div>
+        </section>
+
+        <section class="tool-panel" data-panel="compress">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-compress"/></svg></span><div><h2>Comprimir imagen</h2><p>Compara peso y calidad antes de descargar una copia optimizada.</p></div></div>
+          <div class="compression-summary"><div><span>Original</span><strong id="compress-original-size">—</strong></div><div><span>Optimizada</span><strong id="compress-output-size">—</strong></div><div><span>Ahorro</span><strong id="compress-saving">—</strong></div></div>
+          <label class="field-label" for="compress-format">Formato de salida</label>
+          <select id="compress-format"><option value="image/webp">WebP · mejor compresión</option><option value="image/jpeg">JPG · máxima compatibilidad</option><option value="image/png">PNG · sin pérdida</option></select>
+          <div class="slider-field" id="compress-quality-field"><div><label for="compress-quality">Calidad</label><output id="compress-quality-output">82%</output></div><input id="compress-quality" type="range" min="10" max="100" value="82"></div>
+          <label class="field-label" for="compress-max-side">Lado máximo</label>
+          <select id="compress-max-side"><option value="0">Conservar dimensiones</option><option value="3840">3840 px · 4K</option><option value="2560">2560 px</option><option value="1920">1920 px · Full HD</option><option value="1280">1280 px</option><option value="1080">1080 px · redes</option></select>
+          <div class="compression-preview"><canvas id="compress-preview" width="300" height="180"></canvas><span id="compress-status">Preparando vista previa…</span></div>
+          <label class="toggle-row"><input id="compress-strip-metadata" type="checkbox" checked disabled><span>Eliminar metadatos del archivo exportado</span></label>
+          <button class="button primary full" id="compress-download" type="button"><svg><use href="#i-download"/></svg>Descargar optimizada</button>
+        </section>
+
+        <section class="tool-panel" data-panel="privacy">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-shield"/></svg></span><div><h2>Privacidad y metadatos</h2><p>Revisa la información detectada y controla la autoría del proyecto.</p></div></div>
+          <div class="privacy-status safe"><svg><use href="#i-shield"/></svg><div><strong>Exportación limpia activada</strong><span>PNG, JPG y WebP se generan desde el lienzo y no copian EXIF, GPS ni miniaturas incrustadas.</span></div></div>
+          <div class="metadata-list" id="metadata-list"><div><span>Archivo</span><strong>—</strong></div><div><span>Tipo</span><strong>—</strong></div><div><span>Dimensiones</span><strong>—</strong></div><div><span>EXIF/GPS</span><strong>Sin analizar</strong></div></div>
+          <label class="field-label" for="privacy-author">Autor</label>
+          <input id="privacy-author" type="text" maxlength="120" placeholder="Nombre o seudónimo">
+          <label class="field-label" for="privacy-copyright">Aviso de autoría</label>
+          <input id="privacy-copyright" type="text" maxlength="180" placeholder="© 2026 Nombre. Todos los derechos reservados.">
+          <label class="toggle-row"><input id="privacy-project-only" type="checkbox" checked><span>Guardar estos datos solo dentro del proyecto local</span></label>
+          <div class="fingerprint-card"><svg><use href="#i-fingerprint"/></svg><div><span>Huella del lienzo</span><strong id="privacy-fingerprint">—</strong><small>Cambia cuando cambia el contenido visible.</small></div></div>
+          <div class="panel-actions"><button class="button ghost" id="privacy-refresh" type="button"><svg><use href="#i-refresh"/></svg>Actualizar</button><button class="button primary" id="privacy-report" type="button"><svg><use href="#i-file"/></svg>Informe JSON</button></div>
+        </section>
+
+        <section class="tool-panel" data-panel="collage">
+          <div class="panel-heading"><span class="panel-icon"><svg><use href="#i-grid"/></svg></span><div><h2>Collage básico</h2><p>Combina de dos a seis imágenes en un nuevo lienzo.</p></div></div>
+          <button class="drop-card compact" id="collage-add" type="button"><svg><use href="#i-plus"/></svg><strong>Añadir imágenes</strong><span>La imagen actual ya está incluida</span></button>
+          <div class="collage-items" id="collage-items"><div class="collage-item current"><canvas id="collage-current-preview" width="92" height="64"></canvas><span>Imagen actual</span></div></div>
+          <label class="field-label">Diseño</label>
+          <div class="collage-layouts" id="collage-layouts"><button class="active" type="button" data-layout="grid"><span class="layout-icon grid"></span>Cuadrícula</button><button type="button" data-layout="columns"><span class="layout-icon columns"></span>Columnas</button><button type="button" data-layout="rows"><span class="layout-icon rows"></span>Filas</button><button type="button" data-layout="hero"><span class="layout-icon hero"></span>Destacada</button></div>
+          <div class="field-grid two compact-grid"><label><span>Ancho final</span><input id="collage-width" type="number" min="320" max="12000" value="1600"></label><label><span>Proporción</span><select id="collage-ratio"><option value="1">1:1</option><option value="1.333333">4:3</option><option value="1.777778" selected>16:9</option><option value="0.8">4:5</option></select></label><label><span>Separación</span><input id="collage-gap" type="number" min="0" max="160" value="18"></label><label><span>Fondo</span><input id="collage-background" type="color" value="#111827"></label></div>
+          <div class="slider-field"><div><label for="collage-radius">Esquinas</label><output id="collage-radius-output">18 px</output></div><input id="collage-radius" type="range" min="0" max="120" value="18"></div>
+          <button class="button primary full" id="collage-create" type="button"><svg><use href="#i-grid"/></svg>Crear collage</button>
+        </section>
+
+        <section class="layers-panel">
+          <div class="layers-heading"><div><strong>Capas</strong><span id="layers-count">0 capas</span></div><div class="layers-heading-actions"><button class="icon-button small" id="add-layer" type="button" title="Añadir capa" disabled><svg><use href="#i-plus-layer"/></svg></button><button class="icon-button small" id="flatten-layers" type="button" title="Combinar visibles" disabled><svg><use href="#i-merge"/></svg></button></div></div>
+          <div class="layers-list" id="layers-list"><div class="layers-empty">Abre una imagen para crear la primera capa.</div></div>
+          <div class="layer-properties" id="layer-properties" hidden>
+            <label><span>Opacidad <output id="layer-opacity-output">100%</output></span><input id="layer-opacity" type="range" min="0" max="100" value="100"></label>
+            <label><span>Fusión</span><select id="layer-blend"><option value="source-over">Normal</option><option value="multiply">Multiplicar</option><option value="screen">Trama</option><option value="overlay">Superponer</option><option value="darken">Oscurecer</option><option value="lighten">Aclarar</option></select></label>
+            <div class="layer-action-grid"><button id="layer-up" type="button" title="Subir"><svg><use href="#i-up"/></svg></button><button id="layer-down" type="button" title="Bajar"><svg><use href="#i-down"/></svg></button><button id="layer-duplicate" type="button" title="Duplicar"><svg><use href="#i-copy"/></svg></button><button id="layer-delete" type="button" title="Eliminar"><svg><use href="#i-trash"/></svg></button></div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <dialog class="export-dialog" id="export-dialog">
+    <form method="dialog" class="dialog-card" id="export-form">
+      <header><div><h2>Exportar imagen</h2><p>El archivo se genera localmente.</p></div><button class="icon-button" type="button" id="export-close" aria-label="Cerrar"><svg><use href="#i-close"/></svg></button></header>
+      <div class="export-preview"><canvas id="export-preview" width="360" height="220"></canvas><span id="export-size">Calculando…</span></div>
+      <div class="field-grid two">
+        <label><span>Nombre del archivo</span><input id="export-name" type="text" value="imagen-editada" maxlength="120"></label>
+        <label><span>Formato</span><select id="export-format"><option value="image/png">PNG</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option></select></label>
+      </div>
+      <div class="slider-field" id="quality-field"><div><label for="export-quality">Calidad</label><output id="quality-output">92%</output></div><input id="export-quality" type="range" min="10" max="100" value="92"></div>
+      <div class="export-info"><span><svg><use href="#i-shield"/></svg>Los metadatos del archivo original no se copian.</span><span id="export-dimensions">—</span></div>
+      <footer><button class="button ghost" type="button" id="export-cancel">Cancelar</button><button class="button primary" type="submit" id="export-download"><svg><use href="#i-download"/></svg>Descargar</button></footer>
+    </form>
+  </dialog>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <script src="./images.js?v=0.30.1-phase1" defer></script>
+</body>
+</html>

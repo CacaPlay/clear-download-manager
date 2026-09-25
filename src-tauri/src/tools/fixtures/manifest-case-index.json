@@ -1,0 +1,19 @@
+{
+  "valid": "valid-manifest-payload.json",
+  "rejectionCases": [
+    "invalid-signature",
+    "unknown-key-id",
+    "unknown-component",
+    "wrong-platform",
+    "wrong-arch",
+    "malformed-sha256",
+    "oversized-component",
+    "incompatible-app-version",
+    "downgrade",
+    "revoked-version",
+    "forbidden-field",
+    "duplicate-json-key",
+    "partial-ffmpeg-set",
+    "untrusted-origin-repository"
+  ]
+}

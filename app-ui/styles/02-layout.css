@@ -1,0 +1,568 @@
+:root { --density-scale: 1; }
+html {
+  font-size: clamp(16px, var(--root-font-size, 20px), 31px);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1;
+  font-kerning: normal;
+}
+.workspace > *:not(.module-embed-shell) {
+  max-width: 112rem;
+  margin-inline: auto;
+}
+.page-heading h1, .welcome-row h1, .brand strong,
+.currency-card-header h2, .settings-card-title h2 {
+  font-family: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  text-rendering: geometricPrecision;
+}
+.page-heading h1 { font-size: clamp(1.75rem, 2.1vw, 2.15rem); letter-spacing: -.025em; }
+.page-heading p, .welcome-row p { font-size: .82rem; line-height: 1.5; }
+.nav-item { min-height: 3.05rem; font-size: .82rem; }
+.brand strong { font-size: 1.34rem; }
+.brand span { font-size: .7rem; }
+.quick-status { min-height: 2.75rem; font-size: .73rem; }
+.panel-heading { min-height: 3.65rem; }
+.panel-heading h3 { font-size: 1rem; }
+.count-badge, .module-count, .tool-label { font-size: .64rem; }
+.download-title-row strong { font-size: .84rem; letter-spacing: 0; }
+.download-main > small, .download-tags span, .queue-footer,
+.side-card small, .destination-card > span, .queue-summary-card dl span,
+.recent-copy small, .privacy-card span, .storage b, .storage strong {
+  font-size: max(.68rem, 12px);
+}
+.download-percent, .recent-copy strong, .side-card strong, .panel-link,
+.download-new, .ghost-button { font-size: max(.72rem, 13px); }
+.expanded-list .download-title-row strong { font-size: 1rem; }
+.expanded-list .download-main > small { font-size: max(.72rem, 13px); }
+.expanded-list .download-percent { font-size: .9rem; }
+.download-tags span { padding: .2rem .48rem; }
+.file-badge, .recent-icon, .page-title-icon { shape-rendering: geometricPrecision; }
+.downloads-queue-panel { min-height: 0; }
+.download-featured { min-height: 15.5rem !important; }
+.download-expanded-detail dl div { font-size: max(.68rem, 12px); }
+.chunk-progress > span { font-size: max(.69rem, 12px); }
+.chunk-progress > small { font-size: max(.62rem, 11px); }
+.progress-indeterminate span {
+  width: 28% !important;
+  min-width: 4.5rem;
+  animation: progress-indeterminate 1.25s cubic-bezier(.4,0,.2,1) infinite;
+}
+.progress-indeterminate span::after { animation: none; background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent); }
+.download-pending { border-color: color-mix(in srgb, var(--accent) 52%, var(--line)) !important; }
+.download-pending .file-badge { animation: pending-breathe 1.35s ease-in-out infinite; }
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-125%); }
+  55% { transform: translateX(185%); }
+  100% { transform: translateX(310%); }
+}
+@keyframes pending-breathe { 50% { filter: brightness(1.18); box-shadow: 0 0 1.1rem var(--accent-glow); } }
+@media (min-width: 2200px) {
+  .workspace { padding-inline: 3.2rem; }
+  .desktop-shell { grid-template-columns: 17.5rem minmax(0, 1fr); }
+}
+@media (max-width: 1350px) {
+  html { font-size: clamp(15px, calc(14.6px * var(--ui-scale)), 20px); }
+  .downloads-layout { grid-template-columns: minmax(0, 1fr) 18rem; }
+}
+
+/* Detalle técnico sin recortes en tarjetas de descarga */
+.download-featured .download-expanded-detail { grid-template-columns: minmax(0, 1.05fr) minmax(17rem, .95fr); }
+.download-expanded-detail dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .78rem 1rem; }
+.download-expanded-detail dl div { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; min-width: 0; }
+.download-expanded-detail dt { font-size: max(.62rem, 11px); }
+.download-expanded-detail dd { width: 100%; white-space: normal; overflow-wrap: anywhere; line-height: 1.38; }
+@media (max-width: 1450px) {
+  .download-featured .download-expanded-detail { grid-template-columns: 1fr; }
+  .chunk-progress { padding-top: .2rem; }
+}
+
+
+/* Phase 15 Hotfix 07 — escala física QHD y jerarquía profesional */
+html { font-size: var(--effective-font-size, 20px) !important; text-rendering: optimizeLegibility; }
+body { font-weight: 450; }
+.workspace > *:not(.module-embed-shell) { max-width: 88rem; }
+.page-heading, .welcome-row { margin-bottom: 1.45rem; }
+.page-heading h1, .welcome-row h1 { font-weight: 760; }
+.page-heading p, .welcome-row p { color: #9fb0c4; font-size: .84rem; }
+.panel-heading h3, .side-card strong, .playlist-summary-copy h3, .playlist-current-copy h4 { font-weight: 720; }
+.nav-item { font-weight: 650; }
+.playlist-backdrop .playlist-dialog { width: min(88rem, calc(100vw - 2.6rem)); max-width: 88rem; margin-inline: auto; }
+.playlist-backdrop .dialog-header { min-height: 4.6rem; padding-inline: 1.4rem; }
+.playlist-backdrop .dialog-header h2 { font-size: 1.34rem; }
+.playlist-summary-card { min-height: 6.1rem; padding: 1.15rem 1.35rem; }
+.playlist-heading h3, .playlist-summary-copy h3 { font-size: 1.25rem; }
+.playlist-heading p, .playlist-summary-copy p { font-size: .74rem; }
+.playlist-current-card { min-height: 14.8rem; padding: 1.15rem; }
+.playlist-current-copy h4 { font-size: 1.28rem; }
+.playlist-current-copy p, .playlist-current-copy > small { font-size: .76rem; }
+.playlist-next-strip { min-height: 4.6rem; }
+.playlist-next-strip strong { font-size: .78rem; }
+.playlist-next-strip small { font-size: .69rem; }
+.playlist-current-actions button, .playlist-retry-failed, .playlist-view-downloads { min-height: 3rem; padding-inline: 1.05rem; font-size: .78rem; }
+.download-title-row strong { font-weight: 680; }
+.download-main > small { color: #91a3b8; }
+.progress { min-height: .38rem; }
+@media (min-width: 2200px) {
+  .workspace { padding-inline: 3rem; }
+  .desktop-shell { grid-template-columns: 17.2rem minmax(0, 1fr); }
+  .playlist-backdrop { left: 17.2rem; }
+}
+@media (max-width: 1500px) {
+  .workspace > *:not(.module-embed-shell) { max-width: none; }
+  .playlist-backdrop .playlist-dialog { width: calc(100vw - 2rem); }
+}
+
+/* Phase 15 Hotfix 09 — escala adaptativa, playlist estable y navegación fiable */
+:root {
+  --sidebar-width: 15.55rem;
+  --footer-height: 4.35rem;
+}
+html { font-size: var(--effective-font-size, 16.8px) !important; }
+
+/* El gestor nunca puede medir más que el área real disponible. */
+.playlist-backdrop {
+  left: var(--sidebar-width) !important;
+  bottom: var(--footer-height) !important;
+  right: 0;
+  top: 0;
+  width: auto;
+  min-width: 0;
+  padding: clamp(.75rem, 1.6vh, 1.5rem) clamp(.85rem, 1.7vw, 2rem) clamp(.55rem, 1.1vh, 1rem) !important;
+  overflow: hidden;
+}
+.playlist-backdrop .playlist-dialog {
+  width: 100% !important;
+  max-width: 88rem;
+  min-width: 0;
+  height: 100%;
+  max-height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.playlist-backdrop .dialog-header,
+.playlist-backdrop .dialog-footer { flex: none; }
+.playlist-backdrop .dialog-body {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: clamp(.65rem, 1.2vh, 1rem) clamp(.75rem, 1.3vw, 1.35rem);
+}
+.playlist-backdrop .playlist-workspace {
+  min-width: 0;
+  min-height: 0;
+  align-content: start;
+  gap: clamp(.55rem, 1vh, .85rem);
+}
+.playlist-summary-card {
+  min-width: 0;
+  grid-template-columns: 3.65rem minmax(0, 1fr) minmax(12rem, .44fr);
+  min-height: clamp(4.9rem, 8.5vh, 6rem);
+  padding: clamp(.7rem, 1.2vh, 1rem) clamp(.8rem, 1.2vw, 1.2rem);
+}
+.playlist-summary-icon { width: 3.45rem; height: 3.45rem; }
+.playlist-current-card {
+  min-width: 0;
+  min-height: clamp(10.5rem, 27vh, 14rem);
+  grid-template-columns: minmax(12rem, 19rem) minmax(0, 1fr) minmax(6.8rem, auto);
+  gap: clamp(.8rem, 1.4vw, 1.25rem);
+  padding: clamp(.72rem, 1.3vh, 1rem);
+  overflow: hidden;
+}
+.playlist-thumb.large {
+  width: min(19rem, 100%);
+  min-height: 0;
+  height: clamp(8.5rem, 23vh, 11.5rem);
+}
+.playlist-current-copy { min-width: 0; }
+.playlist-current-copy h4 { font-size: clamp(1rem, 1.25vw, 1.25rem); }
+.playlist-current-actions { min-width: 0; justify-self: end; }
+.playlist-current-actions button { max-width: 100%; }
+.playlist-next-strip {
+  min-width: 0;
+  grid-template-columns: auto auto minmax(8rem, auto) minmax(0, 1fr) minmax(0, .8fr);
+  overflow: hidden;
+}
+.playlist-next-strip > span:last-child,
+.playlist-next-strip small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.playlist-terminal-card { min-width: 0; grid-template-columns: auto minmax(0, 1fr) auto; }
+.playlist-terminal-actions { min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+/* La transición termina en estado completamente visible; nunca queda opaca. */
+.playlist-current-card.item-changed {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: playlist-current-enter .34s var(--ease-out) both;
+}
+.playlist-current-card.switching { opacity: .58; transform: translateY(.12rem); }
+@keyframes playlist-current-enter {
+  from { opacity: .62; transform: translateY(.18rem); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Selección sin reconstruir el diálogo ni provocar parpadeo. */
+.playlist-select-item { contain: layout paint; }
+.playlist-select-item.selected { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent); }
+.playlist-select-item input { width: 1rem; height: 1rem; }
+
+/* Compactación automática por altura. */
+@media (max-height: 980px) {
+  .playlist-backdrop .dialog-header { min-height: 3.65rem; }
+  .playlist-backdrop .dialog-header h2 { font-size: 1.15rem; }
+  .playlist-summary-card { min-height: 4.6rem; }
+  .playlist-current-card { min-height: 10rem; }
+  .playlist-thumb.large { height: 8.7rem; }
+  .playlist-next-strip { min-height: 3.7rem; }
+  .playlist-backdrop .dialog-footer { min-height: 3.7rem; }
+  .playlist-info-note { padding-block: 0; }
+}
+@media (max-height: 780px) {
+  .playlist-backdrop { padding: .45rem .65rem !important; }
+  .playlist-summary-card { grid-template-columns: 3rem minmax(0,1fr) minmax(9rem,.38fr); padding: .55rem .7rem; }
+  .playlist-summary-icon { width: 2.85rem; height: 2.85rem; }
+  .playlist-current-card { grid-template-columns: minmax(10rem, 15rem) minmax(0, 1fr) auto; min-height: 8.3rem; padding: .55rem; }
+  .playlist-thumb.large { height: 7rem; width: 14rem; }
+  .playlist-current-copy h4 { margin-block: .3rem .22rem; font-size: 1rem; }
+  .current-progress { margin-block: .55rem .4rem; }
+  .selected-format { margin-top: .35rem; }
+  .playlist-next-strip { min-height: 3.2rem; }
+  .playlist-backdrop .dialog-footer { min-height: 3.25rem; }
+}
+
+/* Anchuras intermedias: los controles bajan sin salirse del marco. */
+@media (max-width: 1800px) {
+  :root { --sidebar-width: 15.55rem; }
+  .playlist-current-card { grid-template-columns: minmax(11rem, 17rem) minmax(0, 1fr); }
+  .playlist-current-actions { grid-column: 2; justify-self: start; }
+  .playlist-thumb.large { grid-row: 1 / span 2; }
+  .playlist-next-strip > span:last-child { display: none; }
+}
+@media (max-width: 1360px) {
+  :root { --sidebar-width: 14.6rem; }
+  .playlist-summary-card { grid-template-columns: 3.4rem minmax(0,1fr); }
+  .playlist-overall { grid-column: 1 / -1; }
+  .playlist-current-card { grid-template-columns: minmax(10rem, 15rem) minmax(0,1fr); }
+  .playlist-next-strip { grid-template-columns: auto auto minmax(7rem,auto) minmax(0,1fr); }
+}
+@media (max-width: 1120px) {
+  :root { --sidebar-width: 13rem; }
+  .playlist-current-card { grid-template-columns: 1fr; }
+  .playlist-thumb.large { grid-row: auto; width: 100%; height: min(27vh, 12rem); }
+  .playlist-current-actions { grid-column: 1; }
+  .playlist-next-strip { grid-template-columns: auto auto minmax(0,1fr); }
+  .playlist-next-strip small { display: none; }
+}
+@media (max-width: 860px) {
+  :root { --sidebar-width: 5.3rem; }
+}
+/* QHD: usar el espacio disponible sin volver a miniaturizar la interfaz. */
+.workspace > *:not(.module-embed-shell) { max-width: 104rem; }
+.playlist-backdrop .playlist-dialog { max-width: 106rem; }
+
+
+/* Phase 15 Core Polish: color global, hover seguro y playlist sin parpadeo */
+.playlist-current-card,
+.playlist-terminal-card,
+.playlist-summary-card,
+.playlist-next-strip { backface-visibility: hidden; transform: translateZ(0); }
+.playlist-current-card.item-changed { animation-duration: .22s; }
+html[data-motion="off"] .playlist-current-card.item-changed { animation: none !important; }
+.palette-option.active,
+.palette-option:hover { border-color: var(--accent-border); }
+.panel-link,
+.ghost-button,
+.tool-label,
+.count-badge { color: var(--accent-contrast); }
+.progress span,
+.playlist-overall > div i,
+.current-progress i,
+.storage span i { background: var(--accent-gradient) !important; box-shadow: 0 0 .8rem var(--accent-glow) !important; }
+.nav-item.active { background: var(--accent-gradient-soft) !important; }
+.nav-item.active::before { background: var(--accent-contrast) !important; }
+.selected-format,
+.currency-live-badge.cached,
+.download-tags span { border-color: color-mix(in srgb, var(--accent-base) 28%, var(--line)); background: color-mix(in srgb, var(--accent-base) 14%, transparent); color: var(--accent-contrast); }
+
+/* ========================================================================== 
+   Fase 15 · Local Engine RC — escala, herramientas y descarga final
+   ========================================================================== */
+:root {
+  --accent-base: #24b8e8;
+  --accent: #7784ff;
+  --accent-strong: #795cff;
+  --content-max: 112rem;
+  --control-height: 3rem;
+}
+
+html {
+  font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", Inter, system-ui, sans-serif;
+  font-size: clamp(15px, calc(15px * var(--ui-scale)), 25.5px);
+}
+
+.workspace > :not(.module-embed-shell) {
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+
+.icon {
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+  overflow: visible;
+}
+
+/* Acento global: la paleta elegida se propaga a toda la interfaz. */
+.nav-item.active,
+.settings-save,
+.module-primary,
+.new-download-top,
+.confirm-download,
+.analyze-button,
+.side-primary,
+.empty-new-download {
+  border-color: color-mix(in srgb, var(--accent-base) 48%, var(--line));
+  background: var(--accent-button);
+}
+.nav-item.active::before,
+.storage span i,
+.progress span,
+.playlist-overall i,
+.current-progress i {
+  background: var(--accent-gradient);
+}
+.count-badge,
+.module-count,
+.download-tags span,
+.tool-label,
+.local-pill {
+  color: var(--accent-contrast);
+  background: color-mix(in srgb, var(--accent-base) 20%, transparent);
+}
+.page-title-icon,
+.utility-kicker,
+.result-kind,
+.queue-footer strong,
+.panel-link,
+.currency-live-badge,
+.utility-tile em {
+  color: var(--accent-contrast);
+}
+
+/* Utilidades: pasan de tarjetas diminutas a módulos legibles. */
+.utility-intro {
+  min-height: 5.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+}
+.utility-intro > div { display: flex; align-items: center; gap: .9rem; }
+.utility-intro > div > span {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: .9rem;
+  color: var(--accent-contrast);
+  background: color-mix(in srgb, var(--accent-base) 24%, #10243a);
+  box-shadow: inset 0 1px rgba(255,255,255,.08);
+}
+.utility-intro strong, .utility-intro small { display: block; }
+.utility-intro strong { font-size: .94rem; }
+.utility-intro small { margin-top: .2rem; color: var(--muted); font-size: .69rem; }
+.local-pill { display: inline-flex; align-items: center; gap: .45rem; padding: .45rem .7rem; border-radius: 999px; font-size: .64rem; font-weight: 750; }
+.local-pill i { width: .44rem; height: .44rem; border-radius: 50%; background: var(--green); box-shadow: 0 0 .7rem rgba(37,202,147,.55); }
+.utility-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.utility-tile {
+  min-height: 10.25rem;
+  grid-template-columns: 4.6rem minmax(0,1fr) 2.4rem;
+  gap: 1.05rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  overflow: visible;
+}
+.utility-tile:hover { transform: translateY(-.08rem) scale(1.006); }
+.utility-icon-wrap,
+.utility-tile > span:first-child {
+  width: 4.6rem;
+  height: 4.6rem;
+  border-radius: 1.05rem;
+}
+.utility-tile em { display: block; margin-bottom: .35rem; font-size: .56rem; font-style: normal; font-weight: 800; letter-spacing: .09em; }
+.utility-tile strong { font-size: 1.05rem; }
+.utility-tile small { margin-top: .38rem; font-size: .72rem; line-height: 1.55; }
+.utility-open { width: 2.4rem !important; height: 2.4rem !important; border: 1px solid var(--line); border-radius: 50% !important; color: var(--muted); background: rgba(9,25,43,.65) !important; }
+.utility-detail-frame { width: 100%; }
+.utility-detail-frame .page-heading { margin-bottom: 1.2rem; }
+.utility-detail-frame .panel { border-radius: 1rem; }
+.metadata-studio, .qr-studio, .links-studio {
+  grid-template-columns: minmax(25rem, .78fr) minmax(31rem, 1.22fr);
+  gap: 1.2rem;
+}
+.metadata-picker, .metadata-result, .qr-controls, .qr-preview, .link-editor, .link-library { padding: 1.45rem; }
+.qr-controls, .link-editor { gap: .95rem; }
+.qr-controls h2, .link-editor h2, .metadata-picker h2 { font-size: 1.35rem; }
+.qr-controls label, .link-editor label { font-size: .7rem; gap: .45rem; }
+.qr-controls textarea, .link-editor input { min-height: 3.1rem; padding: .9rem; font-size: .78rem; }
+.qr-controls textarea { min-height: 8rem; }
+.qr-color-row input { height: 3.25rem; }
+.qr-preview { min-height: 34rem; }
+#qr-svg-host { width: min(25rem, 78%); padding: 1rem; border-radius: 1rem; }
+.empty-tool-result { gap: .55rem; }
+.empty-tool-result strong { font-size: .9rem; }
+.empty-tool-result span { font-size: .7rem; }
+
+/* Descargas: jerarquía, progreso real y estados indeterminados. */
+.downloads-layout { grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.2rem; }
+.downloads-queue-panel { min-height: 31rem; }
+.queue-heading { min-height: 4rem; }
+.queue-heading > div:first-child { display: grid; gap: .18rem; }
+.queue-heading small { color: var(--muted); font-size: .62rem; }
+.expanded-list { padding: .8rem 1.05rem; }
+.expanded-list .download-item { min-height: 6.4rem; padding: .95rem .75rem; }
+.download-featured { min-height: 18.4rem !important; }
+.download-title-row strong { font-size: .86rem; }
+.expanded-list .download-title-row strong { font-size: .98rem; }
+.download-tags { flex-wrap: wrap; }
+.download-tags span { font-size: .57rem; }
+.download-tags .stage-tag { color: color-mix(in srgb, var(--accent-base) 24%, white); background: color-mix(in srgb, var(--accent-base) 12%, transparent); }
+.progress { height: .42rem; }
+.download-main > small { font-size: .69rem; line-height: 1.4; }
+.download-percent { min-width: 3.1rem; font-size: .82rem; text-align: right; }
+.download-expanded-detail { min-height: 8.7rem; }
+.download-expanded-detail dl div { font-size: .66rem; }
+.chunk-progress > span { font-size: .68rem; }
+.chunk-progress > small { font-size: .57rem; }
+.side-card { padding: 1.15rem; border-radius: .95rem; }
+.side-card strong { font-size: .84rem; }
+.side-card small { font-size: .69rem; }
+.queue-summary-card dl span { font-size: .72rem; }
+.queue-summary-card .mini-wave { height: 3.1rem; }
+.queue-summary-card .mini-wave i { transition: height .45s var(--ease-out), opacity .3s ease; }
+.queue-summary-card .mini-wave i[style*="height:8%"] { opacity: .22; }
+.queue-footer { min-height: 3.55rem; font-size: .7rem; }
+
+.download-item.is-indeterminate .progress span {
+  width: 34% !important;
+  min-width: 3.5rem;
+  background: linear-gradient(90deg, transparent, var(--accent), color-mix(in srgb, var(--accent-base) 45%, white), transparent);
+  animation: indeterminate-progress 1.35s ease-in-out infinite;
+  box-shadow: 0 0 .9rem var(--accent-glow);
+}
+.download-item.is-indeterminate .progress span::after { display: none; }
+@keyframes indeterminate-progress {
+  0% { transform: translateX(-115%); }
+  55% { transform: translateX(185%); }
+  100% { transform: translateX(185%); }
+}
+
+/* El estado activo nunca queda visualmente deshabilitado por transiciones del diálogo. */
+.playlist-current-card,
+.playlist-current-card.active,
+.playlist-current-card.downloading,
+.playlist-current-card:not(.switching) {
+  opacity: 1 !important;
+  filter: none !important;
+}
+.playlist-current-card.switching { animation: playlist-card-change .28s ease both; }
+@keyframes playlist-card-change { 0% { opacity: .72; transform: translateY(.15rem); } 100% { opacity: 1; transform: none; } }
+
+/* Logo y marca: el SVG tiene más detalle; se mantiene nítido a cualquier escala. */
+.brand img { width: 3.35rem; height: 3.35rem; }
+.brand strong { font-size: 1.32rem; }
+
+@media (max-width: 1500px) {
+  .downloads-layout { grid-template-columns: minmax(0,1fr) 19.2rem; }
+  .metadata-studio, .qr-studio, .links-studio { grid-template-columns: minmax(21rem,.8fr) minmax(0,1.2fr); }
+}
+@media (max-width: 1180px) {
+  .utility-grid { grid-template-columns: 1fr; }
+  .downloads-layout, .metadata-studio, .qr-studio, .links-studio { grid-template-columns: 1fr; }
+  .downloads-side-stack { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .qr-preview { min-height: 25rem; }
+}
+@media (max-height: 800px) {
+  .utility-tile { min-height: 8.8rem; }
+  .qr-preview { min-height: 23rem; }
+  .download-featured { min-height: 15.7rem !important; }
+}
+
+
+/* Phase 15 Final: contraste profesional, estabilidad visual y captura nítida. */
+.utility-tile > span:first-child,
+.utility-icon-wrap {
+  color: #f4f7ff;
+  background:
+    radial-gradient(circle at 72% 22%, color-mix(in srgb, var(--accent-base) 36%, white), transparent 35%),
+    linear-gradient(145deg, color-mix(in srgb, var(--accent-base) 72%, #24365f), color-mix(in srgb, var(--accent-base) 42%, #172542));
+  border: 1px solid color-mix(in srgb, var(--accent-base) 52%, var(--line));
+  box-shadow: inset 0 1px rgba(255,255,255,.13), 0 .75rem 1.45rem color-mix(in srgb, var(--accent-base) 14%, transparent);
+}
+.utility-tile em { color: color-mix(in srgb, var(--accent-base) 58%, white); }
+.utility-tile strong { color: #f1f5fb; font-weight: 760; }
+.utility-tile small { color: #9fb1c7; }
+.utility-open { color: #c8d5e5 !important; border-color: #31506f !important; }
+.utility-open:hover { color: #fff !important; border-color: var(--accent-border) !important; background: color-mix(in srgb, var(--accent-base) 16%, #0d2137) !important; }
+.utility-intro strong { color: #f1f5fb; }
+.utility-intro small { color: #9eb0c6; }
+
+/* El diálogo de playlist deja de heredar animaciones de entrada que podían producir parpadeo. */
+.playlist-backdrop,
+.playlist-backdrop .playlist-dialog {
+  opacity: 1 !important;
+  animation: none !important;
+}
+.playlist-current-card.switching {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+/* Los controles activos mantienen contraste incluso al cambiar la paleta global. */
+.nav-item.active,
+.new-download-top,
+.primary-action,
+.module-primary,
+.settings-save,
+.confirm-download,
+.analyze-button {
+  color: #fff;
+}
+
+/* Texto HiDPI: evita pesos demasiado finos en WebView2/Chromium. */
+body { font-weight: 450; }
+.page-heading h1, .welcome-copy h1, .panel-heading h3,
+.utility-tile strong, .dialog-header h2, .playlist-current-copy h4 { font-weight: 760; }
+
+/* Phase 16: explorador seguro de recursos descargables dentro de páginas. */
+.page-discovery-result { display: grid; gap: .75rem; }
+.page-discovery-hero,
+.page-resource-toolbar,
+.page-discovery-safety,
+.page-resource-empty { border: 1px solid #1e3853; border-radius: .78rem; background: rgba(8, 22, 38, .58); }
+.page-discovery-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .85rem; padding: .9rem 1rem; }
+.page-discovery-hero > span { width: 3.4rem; height: 3.4rem; display: grid; place-items: center; border-radius: .8rem; color: #aebfff; background: color-mix(in srgb, var(--accent-base) 18%, #0a1b2d); }
+.page-discovery-hero h3 { margin: .28rem 0 .2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.02rem; }
+.page-discovery-hero p { margin: 0; color: #8195ad; font-size: .62rem; }
+.page-discovery-hero > strong { padding: .42rem .65rem; border: 1px solid #29445f; border-radius: 99px; color: #dce6f2; background: #0b2035; font-size: .62rem; white-space: nowrap; }
+.page-resource-toolbar { min-height: 2.9rem; display: flex; align-items: center; justify-content: space-between; gap: .8rem; padding: .55rem .8rem; }
+.page-resource-toolbar label { display: flex; align-items: center; gap: .48rem; color: #d2dbe8; font-size: .64rem; }
+.page-resource-toolbar input,
+.page-resource-item input { width: 1rem; height: 1rem; accent-color: var(--accent-base); }
+.page-resource-toolbar small { color: #778ba3; font-size: .56rem; text-align: right; }
+.page-resource-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .48rem; max-height: min(26rem, 45vh); overflow: auto; padding-right: .18rem; scrollbar-width: thin; }
+.page-resource-item { min-width: 0; display: grid; grid-template-columns: auto 1.65rem 2.35rem minmax(0, 1fr) auto; align-items: center; gap: .55rem; min-height: 4.55rem; padding: .55rem .65rem; border: 1px solid #1d354e; border-radius: .68rem; background: rgba(9, 25, 42, .76); cursor: pointer; transition: border-color .18s ease, background .18s ease, transform .18s var(--ease-out); contain: layout paint; }
+.page-resource-item:hover { transform: translateY(-.06rem); border-color: #36516e; }
+.page-resource-item.selected { border-color: color-mix(in srgb, var(--accent) 55%, #27435e); background: color-mix(in srgb, var(--accent-base) 10%, rgba(9, 25, 42, .92)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); }
+.page-resource-number { color: #657b93; font-size: .56rem; font-variant-numeric: tabular-nums; text-align: right; }
+.page-resource-icon { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 1px solid #29445f; border-radius: .6rem; color: #a9bad0; background: #0a1d31; }
+.page-resource-copy { min-width: 0; display: grid; gap: .16rem; }
+.page-resource-copy strong,
+.page-resource-copy small,

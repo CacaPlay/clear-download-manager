@@ -1,0 +1,494 @@
+/* Clear Download Manager · Motion System Tier 1
+   CSS-first, state-first feedback.  Positioning roots never transform; only
+   their visual motion-inner descendants are animated. */
+:root {
+  --motion-duration-fast: 140ms;
+  --motion-duration-standard: 205ms;
+  --motion-duration-emphasis: 250ms;
+  --motion-ease-standard: cubic-bezier(.2, .8, .2, 1);
+  --motion-ease-enter: cubic-bezier(.16, 1, .3, 1);
+  --motion-ease-exit: cubic-bezier(.4, 0, 1, 1);
+  --motion-ease-emphasis: cubic-bezier(.16, 1, .3, 1);
+  --motion-ease-linear: linear;
+  --motion-distance-sm: 4px;
+  --motion-distance-md: 8px;
+  --motion-delay-xs: 25ms;
+  --motion-delay-sm: 45ms;
+  --motion-press-scale: .988;
+  /* Legacy alias used by one pre-existing rule; keep its authority local. */
+  --motion-fast: var(--motion-duration-fast);
+}
+
+/* Controls: exact properties only; layout and containing blocks remain still. */
+html[data-motion-mode="on"] #app button,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app button,
+html[data-motion-mode="on"] #app [role="button"],
+html[data-motion-mode="system"][data-reduced-motion="false"] #app [role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+html[data-motion-mode="on"] #app button:active,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app button:active,
+html[data-motion-mode="on"] #app [role="button"]:active,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app [role="button"]:active {
+  transform: scale(var(--motion-press-scale));
+}
+
+/* The two navigation implementations share the same active-state feedback. */
+.side-nav .nav-item,
+.dm-zen-nav nav button,
+.settings-workspace-nav button {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--motion-duration-standard);
+  transition-timing-function: var(--motion-ease-standard);
+}
+.side-nav .nav-item:hover,
+.dm-zen-nav nav button:hover,
+.settings-workspace-nav button:hover {
+  transform: none;
+}
+.dm-zen-nav nav button.is-active,
+.settings-workspace-nav button.is-active {
+  transition-duration: var(--motion-duration-emphasis);
+}
+
+/* Real section changes only. Download refreshes keep this attribute false, so
+   progress patches never replay a page-entry animation. */
+html[data-motion-mode="on"] #app[data-motion-navigation="true"] .desktop-shell > .workspace > *,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app[data-motion-navigation="true"] .desktop-shell > .workspace > *,
+html[data-motion-mode="on"] #app[data-motion-navigation="true"] > .dm-host > .dm-root > .dm-zen-main > .dm-zen-content,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app[data-motion-navigation="true"] > .dm-host > .dm-root > .dm-zen-main > .dm-zen-content,
+html[data-motion-mode="on"] #app[data-motion-navigation="true"] > .module-page,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app[data-motion-navigation="true"] > .module-page,
+html[data-motion-mode="on"] #app[data-motion-navigation="true"] > .settings-view,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app[data-motion-navigation="true"] > .settings-view {
+  animation: cdm-motion-section-enter var(--motion-duration-standard) var(--motion-ease-enter) both;
+}
+@keyframes cdm-motion-section-enter {
+  from { opacity: 0; transform: translateY(var(--motion-distance-md)); }
+  62% { opacity: .86; transform: translateY(1px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cards use surface/border feedback instead of scaling the complete card. */
+.utility-tile,
+.dm-media-card,
+.dm-category-card,
+.dm-schedule-row,
+.dm-download-item,
+.dm-command-row,
+.dm-zen-row,
+.playlist-select-item,
+.playlist-upcoming-row,
+.playlist-current-card {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-duration: var(--motion-duration-standard);
+  transition-timing-function: var(--motion-ease-standard);
+}
+.utility-tile:hover,
+.dm-media-card:hover,
+.dm-category-card:hover,
+.dm-schedule-row:hover,
+.dm-download-item:hover,
+.dm-command-row:hover,
+.dm-zen-row:hover,
+.playlist-select-item:hover,
+.playlist-upcoming-row:hover {
+  transform: none !important;
+}
+.utility-tile:hover,
+.dm-media-card:hover,
+.dm-category-card:hover,
+.dm-schedule-row:hover,
+.dm-download-item:hover,
+.dm-command-row:hover,
+.dm-zen-row:hover,
+.playlist-select-item:hover,
+.playlist-upcoming-row:hover {
+  border-color: color-mix(in srgb, var(--dm-accent, var(--accent)) 28%, var(--dm-border, var(--border-strong))) !important;
+  box-shadow: 0 7px 20px color-mix(in srgb, var(--dm-accent, var(--accent)) 10%, transparent);
+}
+.dm-download-item[data-dm-state="running"],
+.dm-download-item[data-dm-state="paused"],
+.dm-download-item[data-dm-state="queued"],
+.dm-download-item[data-dm-state="completed"],
+.dm-download-item[data-dm-state="failed"] {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-duration: var(--motion-duration-standard);
+  transition-timing-function: var(--motion-ease-standard);
+}
+/* The canonical manager sheet uses an important transition shorthand. Keep
+   the calibrated property list authoritative without touching layout. */
+html[data-motion-mode="on"] #app .dm-host :is(.dm-download-item, .dm-command-row, .dm-zen-row),
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-host :is(.dm-download-item, .dm-command-row, .dm-zen-row) {
+  transition-property: color, background-color, border-color, box-shadow, opacity !important;
+  transition-duration: var(--motion-duration-standard) !important;
+  transition-timing-function: var(--motion-ease-standard) !important;
+}
+#playlist-current-card.item-changed {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: var(--motion-duration-emphasis);
+  transition-timing-function: var(--motion-ease-emphasis);
+}
+
+/* Settings accordion and panel changes keep focus and geometry authoritative. */
+.settings-advanced-toggle > i,
+.settings-category-button,
+.dm-settings-nav > button,
+.dm-inspector-tabs > button {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-standard);
+}
+.settings-advanced-toggle > i { transition-property: color, transform; }
+.settings-advanced-body,
+.dm-settings-panel,
+.dm-settings-section-body {
+  transition-property: opacity, background-color;
+  transition-duration: var(--motion-duration-standard);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+/* Floating UI protection: roots retain position, measurement, clamping,
+   pointer/focus ownership and lifetime.  Motion is confined to the inner box. */
+.floating-position-root,
+.floating-position-root:hover,
+.floating-position-root:focus-within {
+  transform: none !important;
+}
+.floating-position-root > .motion-inner {
+  /* Visible fallback when motion attributes are not initialized yet. The
+     animation-enabled selectors below still provide the enter transition. */
+  transform: none;
+  opacity: 1;
+}
+html[data-motion-mode="on"] .floating-position-root > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="false"] .floating-position-root > .motion-inner {
+  animation: cdm-motion-floating-enter var(--motion-duration-standard) var(--motion-ease-emphasis) both;
+}
+@keyframes cdm-motion-floating-enter {
+  from { opacity: 0; transform: translateY(var(--motion-distance-sm)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dm-category-menu > .motion-inner {
+  min-width: 0;
+}
+.dm-row-menu-floating > .motion-inner {
+  display: grid;
+  gap: .18rem;
+}
+.dm-row-menu-floating > .motion-inner > button {
+  min-height: 2.65rem;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .45rem .65rem;
+  border: 0;
+  border-radius: .48rem;
+  text-align: left;
+  color: var(--dm-muted);
+  background: transparent;
+}
+.dm-row-menu-floating > .motion-inner > button:hover,
+.dm-row-menu-floating > .motion-inner > button:focus-visible {
+  color: var(--dm-text);
+  background: var(--dm-surface-2);
+}
+.dm-row-menu-floating > .motion-inner > button.is-danger {
+  color: color-mix(in srgb, var(--dm-danger) 78%, var(--dm-text));
+}
+.dm-row-menu-floating > .motion-inner > button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dm-settings-popover > .motion-inner {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  gap: inherit;
+}
+.dm-settings-popover > .motion-inner > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: .8rem;
+  border-bottom: 1px solid var(--dm-border-soft);
+}
+.dm-settings-popover > .motion-inner > header > div {
+  min-width: 0;
+  display: grid;
+  gap: .12rem;
+}
+.dm-settings-popover > .motion-inner > header small {
+  color: var(--dm-accent);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.dm-settings-popover > .motion-inner > header strong {
+  font-size: 1.18rem;
+}
+.dm-settings-popover > .motion-inner > header span {
+  color: var(--dm-muted);
+  font-size: .78rem;
+}
+.dm-settings-popover > .motion-inner > .dm-settings-shell {
+  min-height: 0;
+}
+.dm-modal-backdrop {
+  transition-property: background-color, opacity;
+  transition-duration: var(--motion-duration-standard);
+  transition-timing-function: var(--motion-ease-standard);
+}
+.dm-modal-backdrop > .motion-inner {
+  transform: translateY(var(--motion-distance-md));
+}
+html[data-motion-mode="on"] .dm-modal-backdrop > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="false"] .dm-modal-backdrop > .motion-inner {
+  animation: cdm-motion-dialog-enter var(--motion-duration-emphasis) var(--motion-ease-emphasis) both;
+}
+@keyframes cdm-motion-dialog-enter {
+  from { opacity: 0; transform: translateY(var(--motion-distance-md)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Eliminate the historical transform animation on the old floating workspace
+   positioning root.  Its placement remains entirely under existing JS. */
+html[data-motion="on"] .dm-floating-workspace,
+html[data-motion-mode="on"] .dm-floating-workspace,
+html[data-motion-mode="system"][data-reduced-motion="false"] .dm-floating-workspace {
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Toasts and transient state feedback are short and mount/state driven. */
+html[data-motion-mode="on"] .app-toast,
+html[data-motion-mode="system"][data-reduced-motion="false"] .app-toast {
+  animation: cdm-motion-toast-enter var(--motion-duration-standard) var(--motion-ease-emphasis) both;
+}
+@keyframes cdm-motion-toast-enter {
+  from { opacity: 0; transform: translateY(var(--motion-distance-md)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dm-download-item .dm-item-status > i {
+  transition-property: background-color, box-shadow, opacity, transform;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-linear);
+}
+.dm-download-item[data-dm-state="completed"] .dm-item-status > i,
+.dm-download-item[data-dm-state="failed"] .dm-item-status > i {
+  transform: scale(1.12);
+}
+.dm-download-item[data-dm-state="paused"] .dm-item-status > i {
+  transform: scale(.94);
+}
+.dm-download-item[data-dm-processing="true"] .dm-item-status > i {
+  transform: scale(1.06);
+}
+
+/* Reduced/off retains state changes but removes non-essential motion. */
+html[data-motion-mode="off"] #app .motion-inner,
+html[data-motion-mode="reduced"] #app .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app .motion-inner,
+html[data-motion-mode="off"] #app[data-motion-navigation="true"] .desktop-shell > .workspace > *,
+html[data-motion-mode="reduced"] #app[data-motion-navigation="true"] .desktop-shell > .workspace > *,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app[data-motion-navigation="true"] .desktop-shell > .workspace > *,
+html[data-motion-mode="off"] #app[data-motion-navigation="true"] > .dm-host > .dm-root > .dm-zen-main > .dm-zen-content,
+html[data-motion-mode="reduced"] #app[data-motion-navigation="true"] > .dm-host > .dm-root > .dm-zen-main > .dm-zen-content,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app[data-motion-navigation="true"] > .dm-host > .dm-root > .dm-zen-main > .dm-zen-content,
+html[data-motion-mode="off"] #app[data-motion-navigation="true"] > .module-page,
+html[data-motion-mode="reduced"] #app[data-motion-navigation="true"] > .module-page,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app[data-motion-navigation="true"] > .module-page {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+}
+html[data-motion-mode="off"] #app[data-motion-navigation="true"] > .settings-view,
+html[data-motion-mode="reduced"] #app[data-motion-navigation="true"] > .settings-view,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app[data-motion-navigation="true"] > .settings-view {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+}
+
+html[data-motion-mode="off"] #app :is(.motion-fade, .motion-reveal, .motion-slide-fade, .motion-crossfade, .motion-status-enter, .motion-status-complete, .motion-status-error),
+html[data-motion-mode="reduced"] #app :is(.motion-fade, .motion-reveal, .motion-slide-fade, .motion-crossfade, .motion-status-enter, .motion-status-complete, .motion-status-error),
+html[data-motion-mode="system"][data-reduced-motion="true"] #app :is(.motion-fade, .motion-reveal, .motion-slide-fade, .motion-crossfade, .motion-status-enter, .motion-status-complete, .motion-status-error) {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+}
+html[data-motion-mode="off"] #app .motion-press:active,
+html[data-motion-mode="reduced"] #app .motion-press:active,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app .motion-press:active {
+  transform: none !important;
+}
+
+/* Final polish patterns. These are deliberately small, state-driven building
+   blocks: no framework, no list staggering, and no persistent animation. */
+.motion-fade { animation-name: cdm-motion-fade; }
+.motion-reveal { animation-name: cdm-motion-reveal; }
+.motion-slide-fade { animation-name: cdm-motion-slide-fade; }
+.motion-crossfade { animation-name: cdm-motion-crossfade; }
+.motion-press:active { transform: scale(var(--motion-press-scale)); }
+.motion-status-enter { animation-name: cdm-motion-status-enter; }
+.motion-status-complete { animation-name: cdm-motion-status-complete; }
+.motion-status-error { animation-name: cdm-motion-status-error; }
+@keyframes cdm-motion-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes cdm-motion-reveal {
+  from { opacity: 0; clip-path: inset(0 0 12% 0); }
+  to { opacity: 1; clip-path: inset(0); }
+}
+@keyframes cdm-motion-slide-fade {
+  from { opacity: 0; transform: translateY(var(--motion-distance-md)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes cdm-motion-crossfade {
+  0% { opacity: 0; }
+  45% { opacity: .55; }
+  100% { opacity: 1; }
+}
+@keyframes cdm-motion-status-enter {
+  0% { opacity: .35; transform: translateY(3px); }
+  62% { opacity: 1; transform: translateY(-1px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes cdm-motion-status-complete {
+  0% { opacity: .38; transform: scale(.84); }
+  68% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes cdm-motion-status-error {
+  0% { opacity: .45; transform: scale(.9); }
+  55% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Active navigation feedback stays inside the existing hit area. The shared
+   Tier 2 indicator owns the selected surface; the button remains the hit
+   target and positioning authority. */
+html[data-motion-mode="on"] #app .dm-host .dm-zen-nav nav button.is-active,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-host .dm-zen-nav nav button.is-active {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: var(--motion-duration-emphasis);
+  transition-timing-function: var(--motion-ease-enter);
+}
+html[data-motion-mode="on"] #app .dm-host .dm-zen-nav nav button.is-active > *,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-host .dm-zen-nav nav button.is-active > * {
+  transition-property: color, opacity;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+/* State transitions are emitted only by the keyed live patch when the visual
+   state actually changes. Progress-only refreshes never receive this attr. */
+html[data-motion-mode="on"] #app .dm-download-item.dm-status-transition-active,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item.dm-status-transition-active {
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: var(--motion-duration-emphasis);
+  transition-timing-function: var(--motion-ease-standard);
+}
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="queued"] .dm-item-status > i,
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="downloading"] .dm-item-status > i,
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="resumed"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="queued"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="downloading"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="resumed"] .dm-item-status > i {
+  animation: cdm-motion-status-enter var(--motion-duration-standard) var(--motion-ease-enter) both;
+}
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="paused"] .dm-item-status > i,
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="finalizing"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="paused"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="finalizing"] .dm-item-status > i {
+  animation: cdm-motion-status-enter var(--motion-duration-standard) var(--motion-ease-exit) both;
+}
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="completed"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="completed"] .dm-item-status > i {
+  animation: cdm-motion-status-complete var(--motion-duration-emphasis) var(--motion-ease-enter) both;
+  animation-delay: var(--motion-delay-xs);
+}
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="error"] .dm-item-status > i,
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="retry"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="error"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="retry"] .dm-item-status > i {
+  animation: cdm-motion-status-error var(--motion-duration-standard) var(--motion-ease-enter) both;
+}
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition] .dm-item-status > span,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition] .dm-item-status > span {
+  animation: cdm-motion-crossfade var(--motion-duration-standard) var(--motion-ease-standard) both;
+  animation-delay: var(--motion-delay-xs);
+}
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="finalizing"] .dm-item-transfer,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="finalizing"] .dm-item-transfer {
+  animation: cdm-motion-reveal var(--motion-duration-standard) var(--motion-ease-standard) both;
+}
+
+/* The roots never move; only their visual descendants do. */
+.dm-category-menu > .motion-inner,
+.dm-row-menu-floating > .motion-inner,
+.dm-settings-popover > .motion-inner,
+.dm-modal-backdrop > .motion-inner {
+  transform-origin: top center;
+}
+html[data-motion-mode="on"] .dm-category-menu > .motion-inner,
+html[data-motion-mode="on"] .dm-row-menu-floating > .motion-inner,
+html[data-motion-mode="on"] .dm-settings-popover > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="false"] .dm-category-menu > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="false"] .dm-row-menu-floating > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="false"] .dm-settings-popover > .motion-inner {
+  animation-duration: 180ms;
+  animation-timing-function: var(--motion-ease-enter);
+}
+html[data-motion-mode="on"] .dm-modal-backdrop > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="false"] .dm-modal-backdrop > .motion-inner {
+  animation-duration: 205ms;
+  animation-timing-function: var(--motion-ease-enter);
+}
+html[data-motion-mode="on"] .app-toast > :is(svg, i, .icon),
+html[data-motion-mode="system"][data-reduced-motion="false"] .app-toast > :is(svg, i, .icon) {
+  animation: cdm-motion-status-enter var(--motion-duration-fast) var(--motion-ease-enter) both;
+  animation-delay: var(--motion-delay-xs);
+}
+
+/* Reduced/system-reduced preserve immediate state feedback but remove travel,
+   scale, pulses and all non-essential motion. */
+html[data-motion-mode="reduced"] #app .dm-download-item[data-status-transition] .dm-item-status > i,
+html[data-motion-mode="reduced"] #app .dm-download-item[data-status-transition] .dm-item-status > span,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app .dm-download-item[data-status-transition] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app .dm-download-item[data-status-transition] .dm-item-status > span,
+html[data-motion-mode="off"] #app .dm-download-item[data-status-transition] .dm-item-status > i,
+html[data-motion-mode="off"] #app .dm-download-item[data-status-transition] .dm-item-status > span {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+html[data-motion-mode="reduced"] #app .dm-download-item[data-status-transition],
+html[data-motion-mode="system"][data-reduced-motion="true"] #app .dm-download-item[data-status-transition],
+html[data-motion-mode="off"] #app .dm-download-item[data-status-transition] {
+  animation: none !important;
+  transform: none !important;
+}
+html[data-motion-mode="off"] #app button:active,
+html[data-motion-mode="reduced"] #app button:active,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app button:active {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion-mode="system"] #app .motion-inner,
+  html[data-motion-mode="system"] #app[data-motion-navigation="true"] .desktop-shell > .workspace > *,
+  html[data-motion-mode="system"] #app[data-motion-navigation="true"] > .dm-host > .dm-root > .dm-zen-main > .dm-zen-content,
+  html[data-motion-mode="system"] #app[data-motion-navigation="true"] > .module-page,
+  html[data-motion-mode="system"] #app[data-motion-navigation="true"] > .settings-view {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}

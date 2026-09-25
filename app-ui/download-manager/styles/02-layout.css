@@ -1,0 +1,604 @@
+@media(max-width:820px){
+  .dm-command-center,.dm-command-center.has-collapsed-sidebar,.dm-command-center.has-collapsed-inspector,.dm-command-center.has-collapsed-sidebar.has-collapsed-inspector,
+  .dm-zen-sidebar,.dm-zen-sidebar.has-collapsed-sidebar,.dm-zen-sidebar.has-collapsed-inspector,.dm-zen-sidebar.has-collapsed-sidebar.has-collapsed-inspector{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:minmax(0,1fr) 2.8rem!important;
+  }
+  .dm-command-main,.dm-zen-main{grid-column:1!important;grid-row:1!important;width:100%;padding:.72rem!important}
+  .dm-command-sidebar,.dm-zen-nav{grid-column:auto!important;width:min(18rem,85vw)!important}
+  .dm-command-top,.dm-zen-top{display:grid!important;grid-template-columns:3.25rem minmax(0,1fr)!important;gap:.55rem!important}
+  .dm-command-top>.dm-unified-search,.dm-zen-top>.dm-unified-search{grid-column:2!important;width:100%!important}
+  .dm-unified-input-wrap{height:3.25rem}
+  .dm-helper-chips{grid-column:1/-1}
+  .dm-zen-content{width:100%;min-width:0}
+  .dm-primary-workspace,.dm-zen-workspace{width:100%;min-width:0}
+  .dm-download-area{width:100%;min-width:0}
+  .dm-download-item{min-width:0}
+  .dm-inline-recovery{min-width:0}
+}
+
+/* Phase 18 · Zen is the calm default; Command Center remains the detailed secondary layout. */
+.dm-zen-sidebar .dm-download-area{
+  grid-template-rows:minmax(0,1fr);
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  overflow:hidden;
+}
+.dm-zen-sidebar .dm-download-area>header{display:none}
+.dm-zen-sidebar .dm-download-scroll{
+  display:grid;
+  align-content:start;
+  gap:.72rem;
+  padding:.08rem .12rem .3rem;
+  background:transparent;
+}
+.dm-zen-sidebar .dm-download-item{
+  min-height:6.65rem;
+  grid-template-columns:4.65rem minmax(13rem,2fr) minmax(6.6rem,.72fr) minmax(9rem,1.05fr) minmax(7.3rem,.82fr) 5rem;
+  gap:.82rem;
+  padding:.82rem .95rem;
+  border:1px solid var(--dm-border-soft);
+  border-radius:1rem;
+  background:color-mix(in srgb,var(--dm-surface) 96%,transparent);
+  box-shadow:0 .55rem 1.7rem rgba(0,0,0,.07);
+}
+.dm-zen-sidebar .dm-download-item+.dm-inline-recovery{margin-top:-.42rem;border-radius:.82rem}
+.dm-zen-sidebar .dm-item-index{display:none}
+.dm-zen-sidebar .dm-download-item.is-selected{
+  border-color:color-mix(in srgb,var(--dm-accent) 42%,var(--dm-border));
+  box-shadow:0 .65rem 2rem rgba(0,0,0,.09),inset 0 0 0 1px color-mix(in srgb,var(--dm-accent) 12%,transparent);
+}
+.dm-zen-sidebar .dm-download-item.is-selected:before{content:none}
+.dm-zen-sidebar .dm-item-name>strong{font-size:.92rem}
+.dm-zen-sidebar .dm-item-name small{font-size:.67rem}
+.dm-zen-sidebar .dm-item-status{justify-self:start;padding:.28rem .48rem;border-radius:999px;background:var(--dm-surface-2)}
+.dm-zen-sidebar .dm-item-progress .dm-progress{height:.5rem;border-radius:999px}
+.dm-zen-sidebar .dm-job-thumb,.dm-zen-sidebar .dm-job-file,.dm-zen-sidebar .dm-playlist-stack{width:4.65rem;height:3.55rem}
+.dm-zen-sidebar .dm-inline-recovery{padding-left:1rem;grid-template-columns:minmax(11rem,.9fr) minmax(18rem,1.7fr) auto;border:1px solid var(--dm-border-soft)}
+
+.dm-command-center .dm-primary-workspace{position:relative;padding-top:.1rem}
+.dm-command-center .dm-workspace-toolbar{padding:.08rem 0 .2rem}
+.dm-command-center .dm-download-scroll{background:linear-gradient(180deg,color-mix(in srgb,var(--dm-surface) 98%,transparent),var(--dm-surface))}
+.dm-command-center .dm-download-item{border-left:2px solid transparent}
+.dm-command-center .dm-download-item.is-selected{border-left-color:var(--dm-accent);box-shadow:none}
+.dm-command-center .dm-item-index{font-variant-numeric:tabular-nums;color:var(--dm-faint)}
+.dm-command-center .dm-item-status{justify-self:start}
+.dm-command-center .dm-item-progress .dm-progress{box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+.dm-command-center .dm-item-meta span{border-radius:.4rem;text-transform:none}
+
+@media(max-width:1320px) and (min-width:821px){
+  .dm-zen-sidebar .dm-download-item{
+    grid-template-columns:4.3rem minmax(11rem,2fr) minmax(5.6rem,.7fr) minmax(8rem,1fr) minmax(6.7rem,.8fr) 4.7rem;
+  }
+  .dm-zen-sidebar .dm-job-thumb,.dm-zen-sidebar .dm-job-file,.dm-zen-sidebar .dm-playlist-stack{width:4.3rem;height:3.3rem}
+  .dm-zen-sidebar .dm-item-meta{display:none}
+}
+@media(max-width:980px) and (min-width:821px){
+  .dm-zen-sidebar .dm-download-item{grid-template-columns:4.15rem minmax(10rem,2fr) minmax(7.5rem,1fr) minmax(6.7rem,.8fr) 4.5rem}
+  .dm-zen-sidebar .dm-item-status{display:none}
+}
+@media(max-width:820px){
+  .dm-zen-sidebar .dm-download-scroll{gap:.55rem;padding:0}
+  .dm-zen-sidebar .dm-download-item{grid-template-columns:4rem minmax(10rem,1fr) 4.3rem;min-width:31rem;border-radius:.82rem}
+}
+
+/* Phase 19 · stable rows, non-clipped menus and readable narrow-window progress. */
+.dm-row-menu-floating {
+  position: fixed !important;
+  z-index: 2147483000 !important;
+  width: 14.5rem;
+  max-height: min(24rem, calc(100vh - 1rem));
+  overflow: auto;
+  transform: none !important;
+  contain: none !important;
+  isolation: isolate;
+  box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, .48), 0 0 0 1px var(--dm-border) !important;
+}
+.dm-download-area { overflow: visible; }
+.dm-download-scroll { overflow: auto; }
+
+/* Zen intentionally hides secondary engine metadata; action buttons never wrap. */
+.dm-zen-sidebar .dm-item-meta { display: none !important; }
+.dm-zen-sidebar .dm-download-item {
+  min-height: 5.85rem;
+  grid-template-columns: 4.4rem minmax(12rem, 2fr) minmax(6.2rem, .72fr) minmax(9.4rem, 1.05fr) minmax(7rem, .8fr) 5.15rem;
+  grid-template-rows: 1fr;
+  align-content: center;
+}
+.dm-item-actions {
+  min-width: 5rem;
+  align-self: center;
+  justify-self: end;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.dm-item-actions > * { flex: 0 0 auto; }
+
+/* Speed gets its own line; it can no longer collide with the percentage. */
+.dm-item-progress {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: .26rem;
+}
+.dm-item-progress > small {
+  justify-self: end;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-item-progress .dm-progress-wrap { grid-template-columns: minmax(3.8rem, 1fr) auto; }
+
+@media (max-width: 1320px) and (min-width: 981px) {
+  .dm-zen-sidebar .dm-download-item {
+    grid-template-columns: 4.2rem minmax(10rem, 2fr) minmax(5.2rem, .68fr) minmax(8.5rem, 1fr) minmax(6.4rem, .76fr) 4.9rem;
+  }
+  .dm-item-progress > small { font-size: .52rem; }
+}
+@media (max-width: 980px) and (min-width: 821px) {
+  .dm-zen-sidebar .dm-download-item {
+    grid-template-columns: 4.1rem minmax(10rem, 2fr) minmax(8rem, 1fr) minmax(6.2rem, .8fr) 4.8rem;
+  }
+  .dm-zen-sidebar .dm-item-status { display: none; }
+}
+@media (max-width: 820px) {
+  .dm-zen-sidebar .dm-download-item {
+    min-height: 6.25rem;
+    grid-template-columns: 4rem minmax(10rem, 1fr) 4.5rem;
+    grid-template-areas:
+      "visual name actions"
+      "visual progress size";
+    grid-template-rows: auto auto;
+  }
+  .dm-zen-sidebar .dm-job-thumb,
+  .dm-zen-sidebar .dm-job-file,
+  .dm-zen-sidebar .dm-playlist-stack { grid-area: visual; }
+  .dm-zen-sidebar .dm-item-name { grid-area: name; }
+  .dm-zen-sidebar .dm-item-progress { grid-area: progress; }
+  .dm-zen-sidebar .dm-item-size { grid-area: size; text-align: right; }
+  .dm-zen-sidebar .dm-item-actions { grid-area: actions; }
+  .dm-zen-sidebar .dm-item-status,
+  .dm-zen-sidebar .dm-item-index { display: none; }
+}
+
+/* Phase 19 · updater and browser bridge live inside the real Download Manager settings. */
+.dm-settings-popover{
+  width:min(31rem,calc(100% - 2rem));
+  max-height:calc(100% - 5.6rem);
+  padding:1rem 1.05rem;
+  gap:.8rem;
+}
+.dm-infrastructure-settings{display:grid;gap:.72rem;padding-top:.1rem}
+.dm-settings-feature{display:grid;gap:.62rem;padding:.78rem;border:1px solid var(--dm-border-soft);border-radius:.72rem;background:var(--dm-surface-2)}
+.dm-settings-feature.is-ready{border-color:color-mix(in srgb,var(--dm-success) 28%,var(--dm-border-soft))}
+.dm-settings-feature.is-pending{border-color:color-mix(in srgb,var(--dm-warning) 28%,var(--dm-border-soft))}
+.dm-settings-feature-head{display:grid;grid-template-columns:2.3rem minmax(0,1fr) auto;align-items:center;gap:.6rem}
+.dm-settings-feature-head>span{width:2.3rem;height:2.3rem;display:grid;place-items:center;border-radius:.58rem;color:var(--dm-accent);background:color-mix(in srgb,var(--dm-accent) 12%,var(--dm-surface))}
+.dm-settings-feature-head strong,.dm-settings-feature-head small{display:block}
+.dm-settings-feature-head strong{font-size:.72rem;color:var(--dm-text)}
+.dm-settings-feature-head small{margin-top:.14rem;font-size:.55rem;line-height:1.4;color:var(--dm-muted)}
+.dm-settings-feature-head>i{padding:.22rem .42rem;border-radius:999px;font-style:normal;font-size:.5rem;font-weight:760;color:var(--dm-success);background:color-mix(in srgb,var(--dm-success) 11%,transparent)}
+.dm-settings-feature.is-pending .dm-settings-feature-head>i{color:var(--dm-warning);background:color-mix(in srgb,var(--dm-warning) 11%,transparent)}
+.dm-settings-feature .dm-switch-row{padding:.5rem .58rem;border:1px solid var(--dm-border-soft);border-radius:.56rem;background:var(--dm-surface)}
+.dm-settings-message{margin:0;color:var(--dm-muted);font-size:.55rem;line-height:1.48}
+.dm-settings-message.is-status-ready{color:var(--dm-success)}
+.dm-settings-message.is-status-warning{color:var(--dm-warning)}
+.dm-update-available{display:grid;gap:.16rem;padding:.55rem .62rem;border-radius:.56rem;color:var(--dm-text);background:color-mix(in srgb,var(--dm-accent) 10%,var(--dm-surface))}
+.dm-update-available b{font-size:.66rem}.dm-update-available span{font-size:.54rem;color:var(--dm-muted);line-height:1.4}
+.dm-settings-feature-actions{display:flex;justify-content:flex-end;gap:.45rem;flex-wrap:wrap}
+.dm-settings-feature-actions button{min-height:2.25rem;padding:.38rem .62rem;border:1px solid var(--dm-border);border-radius:.5rem;color:var(--dm-text);background:var(--dm-surface);font-size:.56rem;font-weight:680}
+.dm-settings-feature-actions button.is-primary{border-color:transparent;color:#fff;background:var(--dm-accent)}
+.dm-settings-feature-actions button:disabled{opacity:.45;cursor:not-allowed}
+.dm-bridge-host{display:block;max-width:100%;padding:.45rem .55rem;overflow:hidden;border:1px solid var(--dm-border-soft);border-radius:.48rem;color:var(--dm-muted);background:var(--dm-surface);font-size:.52rem;text-overflow:ellipsis;white-space:nowrap}
+
+/* Download Center and Playlist Manager inherit the same readable 120% visual rhythm as the main page. */
+.download-dialog-v2{font-size:1rem}
+.download-dialog-v2>.dialog-header,
+.download-dialog-v2>.dialog-footer{padding-left:1.45rem;padding-right:1.45rem}
+.download-dialog-v2>.dialog-body{padding:1.15rem 1.4rem 1.25rem}
+.download-dialog-v2>.dialog-header h2{font-size:1.38rem}
+.download-dialog-v2>.dialog-header>div>span{font-size:.72rem}
+.dialog-unified-entry{min-height:4.85rem;padding:.72rem 1.05rem}
+.dialog-unified-entry .url-field,
+.dialog-unified-entry .analyze-button,
+.dialog-detection{min-height:3.35rem}
+.dialog-unified-entry .url-field input{font-size:.84rem}
+.playlist-v2-hero{min-height:8rem}
+.playlist-v2-hero h3{font-size:1.25rem}
+.playlist-v2-hero p{font-size:.72rem}
+.playlist-v2-list .playlist-select-item{min-height:4.55rem}
+.playlist-v2-list .playlist-item-copy strong{font-size:.75rem}
+.playlist-v2-list .playlist-item-copy small{font-size:.59rem}
+.playlist-current-card{min-height:15rem}
+.playlist-current-copy h4{font-size:1.15rem}
+.playlist-current-copy p{font-size:.7rem}
+.playlist-next-strip{min-height:5.65rem}
+.playlist-next-strip>strong{font-size:.75rem}
+.playlist-next-strip>small{font-size:.62rem}
+
+@media(max-width:760px){
+  .dm-settings-popover{width:calc(100% - 1rem);right:.5rem;top:4.2rem}
+  .dm-settings-feature-head{grid-template-columns:2.2rem minmax(0,1fr)}
+  .dm-settings-feature-head>i{grid-column:2;justify-self:start}
+}
+
+/* Phase 19: keep Command Center row actions inside compact 1024 px windows. */
+@media (max-width:1080px) and (min-width:821px){
+  .dm-command-center .dm-item-actions .dm-icon-button{width:2.4rem;height:2.4rem}
+}
+
+/* Phase 19 final responsive clamp: grid children cannot widen the main workspace. */
+.dm-download-area{grid-template-columns:minmax(0,1fr)}
+.dm-download-scroll{min-width:0;width:100%;max-width:100%}
+@media (max-width:1080px) and (min-width:821px){
+  .dm-command-center .dm-download-item{
+    grid-template-columns:1rem 3.8rem minmax(8rem,2fr) minmax(4.2rem,.68fr) minmax(5.5rem,1fr) minmax(4.8rem,.76fr) 4.2rem;
+    gap:.42rem;
+    padding-inline:.55rem;
+  }
+  .dm-command-center .dm-download-area>header{
+    grid-template-columns:minmax(12rem,2fr) minmax(4.2rem,.68fr) minmax(5.5rem,1fr) minmax(4.8rem,.76fr) 4.2rem;
+    gap:.42rem;
+    padding-left:4.55rem;
+    padding-right:.55rem;
+  }
+  .dm-command-center .dm-item-actions{min-width:0}
+  .dm-command-center .dm-item-actions .dm-icon-button{width:2.35rem;height:2.35rem}
+}
+
+/* Phase 20 · unified live workspace and YouTube-like predictive search. */
+.dm-command-main:has(.has-integrated-workspace),
+.dm-zen-main:has(.has-integrated-workspace){grid-template-rows:auto minmax(0,1fr)!important;gap:.78rem!important}
+.dm-command-content.has-integrated-workspace,
+.dm-zen-content.has-integrated-workspace{min-height:0;height:100%;overflow:hidden;padding:0!important;background:transparent!important}
+.dm-command-content.has-integrated-workspace{grid-row:auto!important}
+.dm-zen-content.has-integrated-workspace{display:block!important}
+
+.dm-unified-input-wrap{
+  min-height:4rem;height:4rem;padding:.36rem .4rem .36rem 1.05rem;
+  border:1px solid var(--dm-border)!important;outline:0!important;
+  box-shadow:0 .55rem 1.65rem rgba(0,0,0,.1)!important;
+}
+.dm-unified-input-wrap:focus-within{
+  border-color:color-mix(in srgb,var(--dm-accent) 78%,var(--dm-border))!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--dm-accent) 16%,transparent),0 .8rem 2rem rgba(0,0,0,.14)!important;
+}
+.dm-unified-input-wrap input,
+.dm-unified-input-wrap input:hover,
+.dm-unified-input-wrap input:focus,
+.dm-unified-input-wrap input:focus-visible{
+  min-height:0!important;height:100%!important;padding:0!important;border:0!important;outline:0!important;
+  box-shadow:none!important;background:transparent!important;background-image:none!important;
+  font-size:1.04rem!important;font-weight:560!important;
+}
+.dm-unified-submit{min-height:3.25rem!important;padding-inline:1.15rem!important;border-radius:.72rem!important;font-size:.82rem!important}
+.dm-unified-clear{width:2.6rem!important;height:2.6rem!important}
+.dm-unified-detection{margin-top:.38rem!important;font-size:.62rem!important}
+.dm-unified-suggestions{
+  top:calc(100% + .45rem);width:min(47rem,100%);max-height:min(34rem,72vh);
+  border-radius:1rem;overflow:auto;overscroll-behavior:contain;
+  background:color-mix(in srgb,var(--dm-surface) 98%,transparent);
+  box-shadow:0 1.5rem 4rem rgba(0,0,0,.38),0 0 0 1px color-mix(in srgb,var(--dm-accent) 5%,transparent);
+}
+.dm-unified-suggestions header{position:sticky;top:0;z-index:2;min-height:2.8rem;padding:.6rem 1rem;background:var(--dm-surface);font-size:.64rem}
+.dm-suggestion-refresh{display:inline-flex;align-items:center;gap:.4rem;color:var(--dm-muted);font-size:.58rem;font-weight:600;letter-spacing:0;text-transform:none}
+.dm-suggestion-refresh i{width:.78rem!important;height:.78rem!important}
+.dm-unified-suggestions>button{
+  min-height:4.75rem;grid-template-columns:4.75rem minmax(0,1fr) auto;gap:.85rem;padding:.58rem 1rem;
+  transition:background .1s ease;
+}
+.dm-unified-suggestions>button:hover,
+.dm-unified-suggestions>button:focus-visible,
+.dm-unified-suggestions>button.is-active{background:color-mix(in srgb,var(--dm-accent) 11%,var(--dm-surface-2))!important}
+.dm-suggestion-visual{width:4.35rem!important;height:3rem!important;border-radius:.62rem!important}
+.dm-unified-suggestions strong{font-size:.9rem!important;line-height:1.25}
+.dm-unified-suggestions>button>span:nth-child(2)>small{margin-top:.23rem!important;font-size:.67rem!important}
+.dm-unified-suggestions footer{position:sticky;bottom:0;display:flex;justify-content:space-between;gap:1rem;padding:.68rem 1rem;background:var(--dm-surface);font-size:.58rem}
+
+@media(max-width:900px){
+  .dm-unified-input-wrap{height:3.7rem;min-height:3.7rem}
+  .dm-unified-submit span{display:none}
+  .dm-unified-submit{width:3rem;padding:0!important}
+  .dm-unified-suggestions{width:100%;max-height:65vh}
+}
+
+/* ========================================================================== 
+   HOTFIX 19 · Sistema de iconos semántico, armónico y sin fallbacks silenciosos
+   ========================================================================== */
+.dm-icon{
+  display:block;
+  flex:none;
+  overflow:visible;
+  vector-effect:non-scaling-stroke;
+  shape-rendering:geometricPrecision;
+}
+button>.dm-icon,
+.dm-workspace-icon>.icon,
+.analysis-v2-badges .icon,
+.playlist-option-summary .icon{
+  transform:translateZ(0);
+}
+.dm-workspace-icon>.icon{width:1.55rem;height:1.55rem}
+.analysis-v2-badges .icon,.playlist-option-summary .icon{width:1rem;height:1rem}
+.dm-job-file.file-pdf,.dm-file-glyph.file-pdf{color:#f16975;background:linear-gradient(145deg,color-mix(in srgb,#e94f5f 16%,var(--dm-surface-2)),var(--dm-surface-3))}
+.dm-job-file.file-sheet,.dm-file-glyph.file-sheet{color:#4dcc91;background:linear-gradient(145deg,color-mix(in srgb,#2dbb7d 15%,var(--dm-surface-2)),var(--dm-surface-3))}
+.dm-job-file.file-presentation,.dm-file-glyph.file-presentation{color:#ef985d;background:linear-gradient(145deg,color-mix(in srgb,#eb7f3e 15%,var(--dm-surface-2)),var(--dm-surface-3))}
+.dm-job-file.file-playlist,.dm-file-glyph.file-playlist{color:#a58aff;background:linear-gradient(145deg,color-mix(in srgb,#8668ef 17%,var(--dm-surface-2)),var(--dm-surface-3))}
+.dm-job-file.file-torrent,.dm-file-glyph.file-magnet{color:#66cdbb;background:linear-gradient(145deg,color-mix(in srgb,#45bca7 15%,var(--dm-surface-2)),var(--dm-surface-3))}
+.dm-playlist-stack .dm-icon[data-icon="video"]{opacity:.7}
+.dm-unified-detection.is-playlist .dm-icon,
+.dm-helper-chips button:has(.dm-icon[data-icon="playlist"]) .dm-icon,
+.dm-section-heading .dm-icon[data-icon="playlist"]{color:#a58aff}
+.dm-minimal-footer .dm-icon[data-icon="database"]{color:color-mix(in srgb,var(--dm-accent) 70%,var(--dm-muted))}
+
+/* HOTFIX 20 · Search responsiveness and unmistakable semantic playlist icons. */
+.dm-suggestion-visual>.dm-icon[data-icon="video"]{color:#ff6675}
+.dm-suggestion-visual>.dm-icon[data-icon="audio"]{color:#bb8cff}
+.dm-suggestion-visual>.dm-icon[data-icon="playlist"]{color:#9a82ff}
+.dm-suggestion-visual>.dm-icon[data-icon="search"]{color:var(--dm-muted)}
+.dm-playlist-stack i>.dm-icon[data-icon="playlist"]{color:#a58aff;opacity:.9}
+.dm-icon[data-icon="playlist"]{stroke-width:1.9}
+
+/* ========================================================================== 
+   CDM 0.20.2 · Command Center propio, Zen estable y geometría adaptable
+   ========================================================================== */
+.dm-host{
+  text-rendering:geometricPrecision;
+  -webkit-font-smoothing:antialiased;
+  font-kerning:normal;
+}
+
+/* Command Center follows the dense control-room mockups: a rail, a command
+   band and a crisp transfer table. It deliberately does not borrow Zen cards. */
+.dm-command-center{
+  --dm-window:#050a10;
+  --dm-surface:#09111a;
+  --dm-surface-2:#0d1722;
+  --dm-surface-3:#122030;
+  --dm-border:#26384b;
+  --dm-border-soft:#172536;
+  background:
+    linear-gradient(90deg,color-mix(in srgb,var(--dm-accent) 3%,transparent) 1px,transparent 1px) 0 0/3rem 3rem,
+    #050a10;
+}
+.dm-command-center .dm-command-main{
+  grid-template-rows:auto auto minmax(0,1fr);
+  gap:.72rem;
+  background:linear-gradient(180deg,#07101a 0,#050a10 13rem)!important;
+}
+.dm-command-sidebar{
+  border-right-color:color-mix(in srgb,var(--dm-accent) 25%,var(--dm-border-soft));
+  background:linear-gradient(180deg,#091522,#060c13 68%,#07111c);
+  box-shadow:inset -1px 0 color-mix(in srgb,var(--dm-accent) 8%,transparent)!important;
+}
+.dm-command-sidebar .dm-brand-logo,.dm-command-sidebar .dm-brand-mark{
+  width:2.7rem;
+  height:2.7rem;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.dm-command-sidebar nav button{border:1px solid transparent;border-left:1px solid transparent;border-radius:.42rem}
+.dm-command-sidebar nav button.is-active{
+  border-color:color-mix(in srgb,var(--dm-accent) 34%,transparent);
+  border-left-color:var(--dm-accent);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--dm-accent) 21%,#091522),#0b1621);
+}
+.dm-command-rail-label{display:block;margin:.7rem auto 0;color:var(--dm-faint);font-size:.46rem;font-weight:800;letter-spacing:.18em;white-space:nowrap}
+.dm-command-sidebar.is-collapsed .dm-command-rail-label{writing-mode:vertical-rl;margin-top:1rem;letter-spacing:.14em}
+.dm-command-top{grid-template-columns:auto minmax(19rem,1fr) auto;align-items:center;gap:1rem;padding-bottom:.05rem}
+.dm-command-heading{min-width:9.8rem;display:grid!important;gap:.12rem!important}
+.dm-command-heading span{color:var(--dm-accent);font-size:.5rem;font-weight:850;letter-spacing:.16em}
+.dm-command-heading strong{font-size:1.05rem;line-height:1.1;letter-spacing:.01em}
+.dm-command-center .dm-unified-input-wrap{
+  border-radius:.42rem!important;
+  border-color:#26384b!important;
+  background:#08111b!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.01),0 .55rem 1.6rem rgba(0,0,0,.22)!important;
+}
+.dm-command-center .dm-unified-submit{border-radius:.36rem!important;box-shadow:none!important}
+.dm-command-center .dm-compact-stats,.dm-command-center .dm-top-settings{border-radius:.42rem!important;background:#09131e!important}
+.dm-command-action-band{
+  min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:1rem;
+  min-height:3.55rem;padding:.48rem .62rem;border:1px solid #17283a;border-radius:.46rem;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--dm-accent) 9%,#0a141f),#08111a 54%);
+}
+.dm-command-action-band>div:first-child{display:grid;gap:.1rem;padding-right:1rem;border-right:1px solid var(--dm-border-soft)}
+.dm-command-action-band>div:first-child span{color:var(--dm-accent);font-size:.48rem;font-weight:850;letter-spacing:.16em}
+.dm-command-action-band>div:first-child strong{font-size:.66rem;white-space:nowrap}
+.dm-command-action-band .dm-helper-chips{justify-content:flex-end;padding:0}
+.dm-command-action-band .dm-helper-chips button{
+  min-height:2.45rem;border-radius:.35rem;border-color:#26394d;background:#0b1621;font-size:.62rem;
+}
+.dm-command-action-band .dm-helper-chips button:hover{background:color-mix(in srgb,var(--dm-accent) 14%,#0b1621)}
+.dm-command-center .dm-primary-workspace{gap:.48rem;padding:0;border:1px solid #172637;border-radius:.48rem;background:#07101a}
+.dm-command-center .dm-workspace-toolbar{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.75rem;min-height:3.15rem;padding:.38rem .52rem!important;
+  border-bottom:1px solid #172637;background:#09131d;
+}
+.dm-command-table-heading{min-width:8.4rem;display:grid!important;gap:.08rem!important}
+.dm-command-table-heading span{color:var(--dm-accent);font-size:.48rem;font-weight:850;letter-spacing:.14em}
+.dm-command-table-heading strong{color:var(--dm-muted);font-size:.55rem;font-weight:600}
+.dm-command-center .dm-filter-row{justify-self:end;justify-content:flex-end;min-width:0}
+.dm-command-center .dm-filter{border-radius:.3rem;background:#07101a}
+.dm-command-center .dm-filter.is-active{box-shadow:inset 0 -2px var(--dm-accent);background:color-mix(in srgb,var(--dm-accent) 12%,#0a1520)}
+.dm-command-center .dm-download-area{border:0;border-radius:0;background:#060d15}
+.dm-command-center .dm-download-area>header{
+  min-height:2.8rem;border-bottom-color:#203044;background:#08121d;color:#6f8399;font-weight:780;letter-spacing:.1em;text-transform:uppercase;
+}
+.dm-command-center .dm-download-item{min-height:5.2rem;border-left:2px solid transparent;border-bottom-color:#152333;background:#070f18}
+.dm-command-center .dm-download-item:nth-child(even){background:#08111b}
+.dm-command-center .dm-download-item:hover{background:#0b1723}
+.dm-command-center .dm-download-item.is-selected{border-left-color:var(--dm-accent);background:linear-gradient(90deg,color-mix(in srgb,var(--dm-accent) 14%,#0a1621),#09131e 45%)}
+.dm-command-center .dm-job-thumb,.dm-command-center .dm-job-file,.dm-command-center .dm-playlist-stack{border-radius:.34rem}
+.dm-command-center .dm-item-status>span{padding:.22rem .42rem;border:1px solid var(--dm-border-soft);border-radius:999px;background:#0b1722;font-size:.57rem}
+.dm-command-center .dm-item-actions:empty:after{content:"Clic derecho";color:var(--dm-faint);font-size:.46rem;white-space:nowrap}
+
+/* Zen remains calm and spacious, with soft cards and generous breathing room. */
+.dm-zen-sidebar .dm-zen-main{gap:1rem;padding:1.15rem 1.3rem .95rem}
+.dm-zen-sidebar .dm-unified-input-wrap{border-radius:1.05rem!important;background:color-mix(in srgb,var(--dm-surface) 94%,transparent)!important}
+.dm-zen-sidebar .dm-download-scroll{display:grid;align-content:start;gap:.52rem;padding:.55rem;background:color-mix(in srgb,var(--dm-window) 76%,var(--dm-surface))}
+.dm-zen-sidebar .dm-download-item{min-height:5.8rem;border:1px solid var(--dm-border-soft)!important;border-radius:.9rem!important;background:var(--dm-surface)!important}
+.dm-zen-sidebar .dm-download-item:hover,.dm-zen-sidebar .dm-download-item.is-selected{background:color-mix(in srgb,var(--dm-accent) 6%,var(--dm-surface))!important}
+
+/* Never let the top stats float over analysis/search controls. */
+@media(max-width:1240px){
+  .dm-command-heading{display:none!important}
+  .dm-command-top{grid-template-columns:minmax(18rem,1fr) auto}
+  .dm-command-table-heading{display:none!important}
+  .dm-command-center .dm-workspace-toolbar{grid-template-columns:minmax(0,1fr) auto}
+  .dm-command-center .dm-filter-row{width:100%;max-width:100%;justify-self:stretch}
+  .dm-command-center .dm-filter{flex:1 1 auto;min-width:0;justify-content:center;gap:.2rem;padding-inline:.38rem;font-size:.72rem}
+  .dm-command-center .dm-filter b{display:none}
+}
+@media(max-width:980px){
+  .dm-command-top,.dm-zen-top{align-items:center}
+  .dm-top-right,.dm-zen-head-actions{position:static!important;right:auto!important;top:auto!important;justify-self:end}
+  .dm-helper-chips{padding-top:0!important}
+  .dm-command-top{grid-template-columns:minmax(0,1fr)}
+  .dm-command-top .dm-top-right{grid-row:2;width:100%;justify-content:flex-end}
+  .dm-command-action-band{grid-template-columns:1fr}
+  .dm-command-action-band>div:first-child{display:none}
+  .dm-command-action-band .dm-helper-chips{justify-content:flex-start}
+  .dm-command-center .dm-workspace-toolbar{grid-template-columns:minmax(0,1fr) auto}
+  .dm-command-center .dm-filter-row{justify-content:flex-end}
+  .dm-zen-top{grid-template-columns:minmax(0,1fr) auto}
+}
+@media(max-width:820px){
+  .dm-command-main{grid-template-rows:auto auto minmax(0,1fr)!important}
+  .dm-command-top{grid-template-columns:3.25rem minmax(0,1fr)!important}
+  .dm-command-top .dm-top-right{display:none}
+  .dm-command-action-band{min-height:auto;padding:.4rem}
+  .dm-command-action-band .dm-helper-chips{width:100%;justify-content:flex-end}
+  .dm-command-center .dm-workspace-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;flex-direction:initial!important}
+  .dm-command-center .dm-workspace-toolbar>.dm-filter-row{justify-self:end;justify-content:flex-end;align-self:center;overflow:auto}
+  .dm-command-center .dm-workspace-toolbar>div:last-child{align-self:center}
+  .dm-command-center .dm-download-item{min-height:7.5rem}
+  .dm-command-center .dm-item-actions:empty:after{display:none}
+}
+@media(max-width:620px){
+  .dm-command-action-band .dm-helper-chips button:nth-child(4){display:none}
+  .dm-command-center .dm-workspace-toolbar{grid-template-columns:1fr!important}
+  .dm-command-center .dm-workspace-toolbar>.dm-filter-row{width:100%;justify-content:flex-end;order:1}
+  .dm-command-center .dm-workspace-toolbar>div:last-child{justify-self:end;order:2}
+}
+
+/* 0.23.1 polish: larger Zen content without enlarging the search results. */
+.dm-root{font-size:16px;line-height:1.42}
+.dm-root button,.dm-root input,.dm-root select{font-size:16px!important}
+.dm-root small,.dm-root .dm-faint,.dm-root .dm-muted{font-size:14px!important}
+.dm-zen-sidebar .dm-download-item{
+  min-height:7.35rem;
+  grid-template-columns:5.25rem minmax(13rem,2fr) minmax(7rem,.72fr) minmax(10rem,1.05fr) minmax(8rem,.82fr) 5.4rem;
+  gap:.95rem;padding:.9rem 1rem;
+}
+.dm-zen-sidebar .dm-job-thumb,.dm-zen-sidebar .dm-job-file,.dm-zen-sidebar .dm-playlist-stack{width:5.25rem;height:4.05rem}
+.dm-zen-sidebar .dm-item-name>strong{font-size:1.02rem}
+.dm-zen-sidebar .dm-item-name small,.dm-zen-sidebar .dm-item-meta,.dm-zen-sidebar .dm-item-status,.dm-zen-sidebar .dm-item-size{font-size:.84rem!important}
+.dm-zen-sidebar .dm-item-progress .dm-progress{height:.58rem}
+.dm-zen-sidebar .dm-item-actions .dm-icon-button{width:2.75rem;height:2.75rem}
+.dm-zen-nav nav button svg,.dm-zen-nav>footer button svg{width:26px;height:26px}
+.dm-update-dot{position:absolute;right:.28rem;top:.2rem;width:.48rem;height:.48rem;border-radius:50%;background:#39d98a;box-shadow:0 0 .55rem rgba(57,217,138,.75);pointer-events:none}
+.dm-settings-entry{position:relative}
+.dm-settings-popover{width:min(36rem,calc(100% - 1.5rem));padding:1.25rem;gap:1rem;border-radius:1rem;max-height:calc(100% - 4.8rem)}
+.dm-settings-popover>header{align-items:flex-start;padding-bottom:.8rem;border-bottom:1px solid var(--dm-border-soft)}
+.dm-settings-popover>header>div{display:grid;gap:.12rem;min-width:0}.dm-settings-popover>header small{color:var(--dm-accent);font-size:.68rem!important;font-weight:800;letter-spacing:.12em}.dm-settings-popover>header strong{font-size:1.18rem}.dm-settings-popover>header span{color:var(--dm-muted);font-size:.78rem!important}
+.dm-settings-section{display:grid;gap:.7rem;padding:.9rem;border:1px solid var(--dm-border-soft);border-radius:.82rem;background:color-mix(in srgb,var(--dm-surface-2) 62%,transparent)}
+.dm-settings-section-title{display:flex;align-items:center;gap:.65rem}.dm-settings-section-title>span{width:2.25rem;height:2.25rem;display:grid;place-items:center;border-radius:.62rem;color:var(--dm-accent);background:color-mix(in srgb,var(--dm-accent) 13%,var(--dm-surface))}.dm-settings-section-title>div{display:grid;gap:.08rem}.dm-settings-section-title strong{font-size:.88rem}.dm-settings-section-title small{color:var(--dm-muted);font-size:.7rem!important}
+.dm-settings-section>.dm-scale-setting{padding-top:.2rem}.dm-settings-section label{font-size:.82rem!important}.dm-settings-section .dm-switch-row{padding:.65rem .7rem;border:1px solid var(--dm-border-soft);border-radius:.62rem;background:var(--dm-surface)}
+.dm-startup-setting{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important}.dm-startup-setting span{display:grid;gap:.1rem}.dm-startup-setting span strong{font-size:.82rem}.dm-startup-setting span small{color:var(--dm-muted);font-size:.7rem!important;line-height:1.35}
+.dm-settings-local-note{display:flex;align-items:center;gap:.55rem;padding:.7rem;color:var(--dm-muted);border-top:1px solid var(--dm-border-soft)}.dm-settings-local-note>svg{color:var(--dm-success)}.dm-settings-local-note span{display:grid;gap:.08rem}.dm-settings-local-note strong{color:var(--dm-text);font-size:.78rem}.dm-settings-local-note small{font-size:.68rem!important}
+.dm-progress.is-indeterminate i{width:28%!important;animation:dm-indeterminate 1.15s linear infinite}
+@keyframes dm-indeterminate{0%{transform:translateX(-145%)}100%{transform:translateX(430%)}}
+@media(max-width:1320px) and (min-width:821px){.dm-zen-sidebar .dm-download-item{grid-template-columns:4.85rem minmax(11rem,2fr) minmax(6rem,.7fr) minmax(8.5rem,1fr) 4.9rem}.dm-zen-sidebar .dm-job-thumb,.dm-zen-sidebar .dm-job-file,.dm-zen-sidebar .dm-playlist-stack{width:4.85rem;height:3.7rem}}
+@media(max-width:820px){.dm-zen-sidebar .dm-download-item{min-height:6.8rem;grid-template-columns:4.65rem minmax(10rem,1fr) 4.8rem}.dm-zen-sidebar .dm-job-thumb,.dm-zen-sidebar .dm-job-file,.dm-zen-sidebar .dm-playlist-stack{width:4.65rem;height:3.55rem}.dm-root button,.dm-root input,.dm-root select{font-size:15px!important}}
+
+/* 0.23.4: compact-window layout keeps the primary action on the right. */
+@media (max-width: 980px) and (min-width: 821px) {
+  .dm-zen-sidebar .dm-download-item {
+    grid-template-columns: 4.25rem minmax(0, 1fr) auto;
+    grid-template-areas: "visual name actions" "visual status actions" "visual progress size";
+    grid-template-rows: auto auto auto;
+    min-height: 6.5rem;
+  }
+  .dm-zen-sidebar .dm-job-thumb,
+  .dm-zen-sidebar .dm-job-file,
+  .dm-zen-sidebar .dm-playlist-stack { grid-area: visual; }
+  .dm-zen-sidebar .dm-item-name { grid-area: name; }
+  .dm-zen-sidebar .dm-item-status { grid-area: status; }
+  .dm-zen-sidebar .dm-item-progress { grid-area: progress; }
+  .dm-zen-sidebar .dm-item-size { grid-area: size; text-align: right; }
+  .dm-zen-sidebar .dm-item-actions { grid-area: actions; align-self: center; }
+}
+@media (max-width: 820px) {
+  .dm-zen-sidebar .dm-download-item {
+    grid-template-columns: 4.1rem minmax(0, 1fr) auto;
+    grid-template-areas: "visual name actions" "visual status actions" "visual progress size";
+    grid-template-rows: auto auto auto;
+    min-width: 0;
+  }
+  .dm-zen-sidebar .dm-item-status { display: flex; }
+  .dm-zen-sidebar .dm-item-actions { grid-area: actions; align-self: center; }
+}
+@media (max-width: 700px) {
+  /* Keep the card readable; secondary actions remain available in its menu. */
+  .dm-zen-sidebar .dm-item-actions { display: none; }
+}
+
+/* Settings are intentionally more generous than the compact download rows. */
+.dm-settings-popover { font-size: 1rem; }
+.dm-settings-popover>header strong { font-size: 1.3rem!important; line-height: 1.25; }
+.dm-settings-popover>header span { font-size: .9rem!important; line-height: 1.45; }
+.dm-settings-section-title strong { font-size: 1rem!important; }
+.dm-settings-section-title small { font-size: .82rem!important; line-height: 1.4; }
+.dm-settings-section label,
+.dm-settings-section .dm-switch-row strong { font-size: .95rem!important; line-height: 1.35; }
+.dm-settings-section .dm-switch-row small,
+.dm-settings-feature-head small,
+.dm-settings-message,
+.dm-settings-local-note small { font-size: .8rem!important; line-height: 1.45; }
+.dm-settings-feature-head strong { font-size: 1rem!important; }
+.dm-settings-feature-head>i { font-size: .7rem!important; }
+.dm-settings-feature-actions button { min-height: 2.75rem; padding-inline: .85rem; font-size: .82rem!important; }
+.dm-settings-section .dm-scale-setting output { font-size: 1rem!important; }
+
+/* 0.23.4: readable metadata and safe advanced source details. */
+.dm-item-name{min-width:0}.dm-item-name>strong{font-size:17px!important;line-height:1.28!important}.dm-item-name small,.dm-item-status,.dm-item-size{font-size:14px!important;line-height:1.35!important}.dm-item-name small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dm-source-address{min-width:0}.dm-source-address code{display:block;max-width:100%;overflow:auto;white-space:nowrap}.dm-source-empty{margin:.75rem 0;color:var(--dm-muted);font-size:14px}.dm-inspector-tabs button{min-height:2.55rem;font-size:14px!important}
+
+/* Vertical scrolling is sufficient: rows must contract with the viewport. */
+.dm-download-area>header,.dm-download-item{width:100%;max-width:100%;box-sizing:border-box}
+.dm-download-scroll{overflow-x:hidden}
+.dm-zen-sidebar .dm-download-item,.dm-command-center .dm-download-item{min-width:0}
+.dm-zen-sidebar .dm-inline-recovery,.dm-command-center .dm-inline-recovery{min-width:0}
+@media(max-height:720px) and (min-width:821px){
+  .dm-command-action-band .dm-helper-chips{display:flex!important}
+}
+
+/* CDM 0.20.2 · nitidez tipográfica sin zoom y resultados multimedia amplios. */
+.dm-root{line-height:1.35;text-rendering:geometricPrecision;-webkit-font-smoothing:antialiased}
+.dm-root button,.dm-root input,.dm-root select{font-size:15px!important}
+.dm-root small,.dm-root .dm-faint,.dm-root .dm-muted{font-size:13px!important}
+.dm-root .dm-unified-detection,.dm-root .dm-filter b,.dm-root .dm-download-area>header,.dm-root .dm-item-index,.dm-root .dm-item-status,.dm-root .dm-progress-wrap strong,.dm-root .dm-item-size,.dm-root .dm-item-meta>span,.dm-root .dm-minimal-footer{font-size:13px!important}
+.dm-root .dm-item-size strong{font-size:13px!important}
+.dm-command-center :is(.dm-command-rail-label,.dm-command-heading span,.dm-command-table-heading span,.dm-command-table-heading strong,.dm-item-status>span){font-size:13px!important}
+.dm-command-center .dm-command-action-band>div:first-child span{font-size:13px!important}
+.dm-command-center .dm-command-action-band>div:first-child strong{font-size:15px!important}
+.dm-unified-suggestions{width:min(50rem,calc(100vw - 6rem));max-height:min(38rem,76vh)}
+.dm-unified-suggestions>button{min-height:6rem;grid-template-columns:8rem minmax(0,1fr) auto;gap:1rem;padding:.7rem 1rem}
+.dm-suggestion-visual{width:8rem!important;height:auto!important;aspect-ratio:16/9;border-radius:.62rem!important}
+.dm-unified-suggestions strong{font-size:15px!important;white-space:normal!important;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3}
+.dm-unified-suggestions>button>span:nth-child(2)>small{font-size:13px!important}
+.dm-unified-suggestions header,.dm-unified-suggestions footer,.dm-suggestion-refresh{font-size:13px!important}
+.dm-suggestion-skeletons{display:grid;border-top:1px solid var(--dm-border-soft)}
+.dm-suggestion-skeletons>i{min-height:5.6rem;display:grid;grid-template-columns:8rem minmax(0,1fr);align-items:center;gap:1rem;padding:.65rem 1rem;font-style:normal}
+.dm-suggestion-skeletons>i+ i{border-top:1px solid var(--dm-border-soft)}
+.dm-suggestion-skeletons b,.dm-suggestion-skeletons em{display:block;border-radius:.4rem;background:linear-gradient(90deg,var(--dm-surface-3),color-mix(in srgb,var(--dm-surface-3) 55%,var(--dm-border)),var(--dm-surface-3));background-size:220% 100%;animation:dm-skeleton 1.15s ease-in-out infinite}
+.dm-suggestion-skeletons b{width:8rem;aspect-ratio:16/9}.dm-suggestion-skeletons span{display:grid;gap:.55rem}.dm-suggestion-skeletons em{height:.75rem}.dm-suggestion-skeletons em:last-child{width:58%}
+@keyframes dm-skeleton{to{background-position:-220% 0}}
+
+/* El modo claro de Command conserva su estructura de centro de control, sin superficies oscuras heredadas. */

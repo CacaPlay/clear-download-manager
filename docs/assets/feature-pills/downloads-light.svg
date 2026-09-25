@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="36" viewBox="0 0 128 36" role="img" aria-label="Downloads">
+  <title>Downloads</title>
+  <rect x="0.5" y="0.5" width="127" height="35" rx="17.5" fill="#f6f8fa" stroke="#cfd4da"/>
+  <g transform="translate(14 9.0) scale(0.75)" fill="none" stroke="#0b8a83" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 11l4.5 4.5 4.5-4.5"/><path d="M5 19.5h14"/></g>
+  <text x="40" y="23.0" font-family="'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="600" fill="#1f2328">Downloads</text>
+</svg>

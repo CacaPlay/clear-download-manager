@@ -1,0 +1,8 @@
+{
+  "id": "aonppfnabjnicjjeoofkfjofolfibggp",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlKtTg66nihdMwuXnjH4GzPgAU9Iy8Gytl71BW3N5cYx7EnAWJDapXHxUj+U7Bv0Bwihwx3oNW9YuhqtYi7aagaJ72TPHK4gEo6wvQhpP0gBFYJOhVdiq6i4g/6moIDzjStkHZhzJfFOpOpLGT2LzVguQylPoWphPZ8/VlQ3usj9wKvqPJKO4ZoXYJJh5SsPSH0Xz0P0XmYIVEeL1HHwzp6lGyVNx1nvw1CCtmLDm8HQ5SlS3ybxjPtqA4M23SVzitYwjy1dEoxArl7nSwZtP5FqbnapmAkFDRKJ/4kDMxYnPO9WdIo+0c7EfGsh8uk85XuRYp9RZHUYHUOtHGy5ReQIDAQAB",
+  "source": "https://clients2.google.com/service/update2/crx?response=redirect&prodversion=145.0.0.0&acceptformat=crx3&x=id%3Daonppfnabjnicjjeoofkfjofolfibggp%26uc",
+  "crxSha256": "db8d2ad8e99035aa34adc127777d8edb2391020a001efc39829efe6ada214d96",
+  "fetchedAt": "2026-09-05T16:39:13.889Z",
+  "note": "Public identity key only; no private key. Recovered from the historical QA build artifact."
+}

@@ -1,0 +1,600 @@
+  .result-kind,
+  .analysis-v2-ready>span,
+  .analysis-v2-badges span,
+  .playlist-match-note,
+  .selected-format .icon,
+  .dialog-detection,
+  .playlist-persistent-badge
+){color:var(--accent-detail)!important}
+
+:is(
+  .url-field,
+  .dialog-unified-entry,
+  .analysis-v2-hero,
+  .analysis-v2-options,
+  .playlist-v2-summary,
+  .playlist-v2-list,
+  .playlist-v2-options,
+  .settings-card,
+  .appearance-preview
+){border-color:color-mix(in srgb,var(--accent-base) 22%,var(--line))!important}
+
+:is(
+  .url-field:hover,
+  .dialog-unified-entry:focus-within,
+  .analysis-v2-options:focus-within,
+  .settings-card:focus-within
+){border-color:var(--accent-outline)!important}
+
+:is(
+  .analysis-format-chips>button.selected,
+  .playlist-v2-list .playlist-select-item.selected,
+  .palette-option.active,
+  .selected-format
+){
+  border-color:var(--accent-base)!important;
+  box-shadow:inset 2px 0 var(--accent-base)!important;
+}
+
+:is(
+  .analysis-format-chips>button.selected,
+  .playlist-v2-list .playlist-select-item.selected,
+  .palette-option.active,
+  .selected-format
+){background:color-mix(in srgb,var(--accent-base) 7%,var(--panel))!important}
+
+:is(
+  .analyze-button,
+  .confirm-download,
+  .dialog-primary,
+  .playlist-start-download,
+  .playlist-use-best,
+  .settings-save,
+  .module-primary,
+  .download-new,
+  .new-download-top
+){
+  color:var(--accent-ink)!important;
+  border-color:color-mix(in srgb,var(--accent-base) 78%,var(--line))!important;
+  background:var(--accent-button)!important;
+}
+
+:is(.progress span,.current-progress i,.playlist-overall>div i,.storage span i){
+  background:var(--accent-gradient)!important;
+}
+
+/* Los componentes interactivos cambian borde, no tamaño, al pasar el mouse. */
+:is(.url-field,.dm-unified-input-wrap,.dm-download-item,.dm-command-row,.settings-card,.analysis-v2-hero){
+  transition:border-color .14s ease,background-color .14s ease,box-shadow .14s ease!important;
+}
+:is(.url-field input,.dm-unified-input-wrap input),
+:is(.url-field input,.dm-unified-input-wrap input):hover,
+:is(.url-field input,.dm-unified-input-wrap input):focus{
+  transform:none!important;
+  font-size:inherit!important;
+  letter-spacing:inherit!important;
+}
+
+/* Mantiene estable el contenido durante actualizaciones parciales. */
+.dm-floating-workspace .dialog-body,
+.dm-settings-popover,
+.dm-download-scroll{
+  overflow-anchor:none!important;
+  scroll-behavior:auto!important;
+}
+.dm-floating-workspace :is(.analysis-v2-hero,.analysis-v2-options,.analysis-format-chips,.playlist-v2-layout),
+.dm-download-item,
+.dm-command-row{
+  animation:none!important;
+  backface-visibility:hidden!important;
+}
+
+/* 0.24.1 · Hotfix 5 — armonía, lectura y subventanas estables. */
+:root{
+  --hf5-icon-surface:var(--panel);
+  --hf5-icon-surface-2:var(--panel-2);
+}
+
+/* El acento vive en el borde y el símbolo; nunca rellena el marco. */
+:is(
+  .dm-workspace-icon,
+  .settings-card-title>.icon,
+  .settings-card-title>svg,
+  .playlist-summary-icon,
+  .playlist-options-icon,
+  .analysis-v2-preview:not(:has(img)),
+  .playlist-terminal-art:not(:has(img))
+){
+  color:var(--accent-base)!important;
+  border-color:color-mix(in srgb,var(--accent-base) 72%,var(--line))!important;
+  background:var(--hf5-icon-surface)!important;
+  box-shadow:none!important;
+}
+:is(.dm-workspace-icon,.settings-card-title>.icon,.settings-card-title>svg) .icon,
+:is(.dm-workspace-icon,.settings-card-title>.icon,.settings-card-title>svg) svg{
+  color:var(--accent-base)!important;
+  stroke:currentColor!important;
+}
+
+/* La barra posee un solo marco. */
+.dm-workspace-sourcebar .url-field{
+  border-color:color-mix(in srgb,var(--accent-base) 38%,var(--line))!important;
+  background:var(--panel)!important;
+}
+.dm-workspace-sourcebar .url-field:hover,
+.dm-workspace-sourcebar .url-field:focus-within{
+  border-color:var(--accent-base)!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent-base) 13%,transparent)!important;
+}
+.dm-workspace-sourcebar .url-field input,
+.dm-workspace-sourcebar .url-field input:hover,
+.dm-workspace-sourcebar .url-field input:focus,
+.dm-workspace-sourcebar .url-field input:focus-visible{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+}
+
+/* Cabecera, barra y pie más compactos. */
+.dm-floating-workspace>.dialog-header{
+  min-height:3.8rem!important;
+  padding:.62rem .95rem!important;
+}
+.dm-floating-workspace .dm-workspace-icon{width:2.65rem!important;height:2.65rem!important;border-radius:.68rem!important}
+.dm-floating-workspace .dm-workspace-title{gap:.72rem!important}
+.dm-floating-workspace .dm-workspace-title h2{font-size:1.08rem!important;line-height:1.15!important}
+.dm-floating-workspace .dm-workspace-title small{margin-top:.1rem!important;font-size:var(--font-xs)!important}
+.dm-floating-window-controls button{width:2.48rem!important;height:2.48rem!important}
+.dm-workspace-sourcebar{min-height:3.75rem!important;padding:.48rem .85rem!important}
+.dm-floating-workspace>.dialog-footer{min-height:3.25rem!important;padding:.48rem .85rem!important}
+.dm-floating-workspace>.dialog-footer>span{font-size:var(--font-sm)!important}
+
+/* Minimizar subventana mantiene un encabezado útil y estable. */
+.dm-floating-workspace.is-minimized{
+  width:min(34rem,calc(100vw - 1.5rem))!important;
+  height:4rem!important;
+  min-height:4rem!important;
+  max-height:4rem!important;
+  left:auto!important;
+  right:.75rem!important;
+  top:auto!important;
+  bottom:.75rem!important;
+  overflow:hidden!important;
+}
+.dm-floating-workspace.is-minimized :is(.dm-workspace-sourcebar,.dialog-body,.dialog-footer,.dm-floating-resizer){display:none!important}
+.dm-floating-workspace.is-minimized>.dialog-header{height:4rem!important;border-bottom:0!important}
+
+/* Resultado individual: menos altura, más información visible. */
+.analysis-v2-hero{
+  grid-template-columns:minmax(8.3rem,9.2rem) minmax(0,1fr)!important;
+  min-height:6.75rem!important;
+  gap:.8rem!important;
+  padding:.72rem .85rem!important;
+  align-items:center!important;
+}
+.analysis-v2-preview{width:100%!important;height:5.25rem!important;min-height:5.25rem!important;margin:0!important}
+.analysis-v2-copy{align-self:center!important;gap:.24rem!important}
+.analysis-v2-copy h3{font-size:1.08rem!important;line-height:1.2!important;margin:0!important}
+.analysis-v2-copy>p{font-size:var(--font-sm)!important;line-height:1.35!important;margin:0!important}
+.analysis-v2-chips{margin-top:.24rem!important;gap:.35rem!important}
+.analysis-v2-chips>:not(:first-child){display:none!important}
+.analysis-v2-chips>*{min-height:1.75rem!important;padding:.23rem .52rem!important;font-size:var(--font-xs)!important;background:transparent!important}
+.analysis-v2-ready{display:none!important}
+
+/* Resumen de playlist compacto, sin tarjetas informativas redundantes. */
+.playlist-v2-summary{
+  grid-template-columns:7rem minmax(0,1fr) auto!important;
+  min-height:6.6rem!important;
+  gap:.8rem!important;
+  padding:.7rem .85rem!important;
+}
+.playlist-v2-summary-art{width:7rem!important;height:4.8rem!important}
+.playlist-v2-summary-copy{gap:.18rem!important}
+.playlist-v2-summary-copy h3{font-size:1.04rem!important;line-height:1.18!important}
+.playlist-v2-summary-copy>p{font-size:var(--font-sm)!important;margin:0!important}
+.playlist-v2-summary .playlist-v2-summary-badges{display:none!important}
+.playlist-v2-summary-count{min-width:5.2rem!important;padding-left:.7rem!important;font-size:var(--font-sm)!important}
+
+/* Tamaño de texto afecta solo lectura media/pequeña. Los títulos conservan geometría. */
+.settings-card :is(label,button,select,input,output),
+.dm-floating-workspace :is(label,button,select,input,textarea,output),
+.dm-floating-workspace :is(p,small,em),
+.dialog-footer,
+.workspace-note{
+  font-size:var(--font-sm)!important;
+}
+.settings-card :is(p,small),
+.dm-floating-workspace small{font-size:var(--font-xs)!important}
+/* El color personalizado se aplica en vivo a los controles visibles. */
+:is(
+  .settings-card-title>.icon,
+  .settings-card-title>svg,
+  .dm-workspace-title>div>span,
+  .playlist-v2-summary-kicker,
+  .result-kind,
+  .range-setting output,
+  .control-total-label
+){color:var(--accent-base)!important}
+:is(.settings-card,.analysis-v2-options,.playlist-v2-options,.playlist-v2-list){border-color:color-mix(in srgb,var(--accent-base) 24%,var(--line))!important}
+
+/* Sin reflujo ni parpadeo en actualizaciones parciales. */
+.dm-floating-workspace,
+.dm-floating-workspace :is(.analysis-v2-hero,.playlist-v2-summary,.analysis-v2-options,.playlist-v2-layout),
+.playlist-select-item{
+  transform:none!important;
+  animation:none!important;
+  transition:border-color .14s ease,background-color .14s ease,box-shadow .14s ease!important;
+  overflow-anchor:none!important;
+  backface-visibility:hidden!important;
+}
+
+@media(max-width:780px){
+  .analysis-v2-hero{grid-template-columns:7.2rem minmax(0,1fr)!important;gap:.62rem!important;padding:.62rem!important}
+  .analysis-v2-preview{height:4.55rem!important;min-height:4.55rem!important}
+  .playlist-v2-summary{grid-template-columns:5.8rem minmax(0,1fr)!important}
+  .playlist-v2-summary-art{width:5.8rem!important;height:4rem!important}
+  .playlist-v2-summary-count{grid-column:2!important;padding:0!important;border:0!important;text-align:left!important}
+}
+
+/* Hotfix 5 · resumen real de playlist compacto. */
+.playlist-v2-hero{
+  grid-template-columns:6.6rem minmax(0,1fr) minmax(4.8rem,auto)!important;
+  min-height:6.45rem!important;
+  gap:.72rem!important;
+  padding:.68rem .82rem!important;
+}
+.playlist-v2-stack{width:6.6rem!important;height:4.7rem!important}
+.playlist-v2-identity{min-width:0!important}
+.playlist-v2-identity h3{margin:.2rem 0 .16rem!important;font-size:1.05rem!important;line-height:1.16!important}
+.playlist-v2-identity p{margin:0!important;font-size:var(--font-sm)!important;line-height:1.35!important}
+.playlist-v2-count{min-width:4.8rem!important;padding-left:.62rem!important}
+.playlist-v2-count strong{font-size:.92rem!important}
+.playlist-v2-count span,.playlist-v2-count small{font-size:var(--font-xs)!important}
+@media(max-width:760px){
+  .playlist-v2-hero{grid-template-columns:5.4rem minmax(0,1fr)!important}
+  .playlist-v2-stack{width:5.4rem!important;height:3.85rem!important}
+  .playlist-v2-count{grid-column:2!important;display:flex!important;gap:.3rem!important;align-items:center!important;padding:0!important;border:0!important}
+}
+
+/* 0.24.1 · Hotfix 7 — playlist estable y subventanas compactas. */
+.dm-floating-workspace>.dialog-header{
+  min-height:3.18rem!important;
+  padding:.42rem .72rem!important;
+}
+.dm-floating-workspace .dm-workspace-icon{
+  width:2.2rem!important;
+  height:2.2rem!important;
+  border-radius:.55rem!important;
+}
+.dm-floating-workspace .dm-workspace-title{gap:.58rem!important}
+.dm-floating-workspace .dm-workspace-title>div>span{
+  font-size:max(11px,var(--font-xs))!important;
+  letter-spacing:.085em!important;
+}
+.dm-floating-workspace .dm-workspace-title h2{
+  margin:.05rem 0 0!important;
+  font-size:clamp(1rem,1.55vw,1.22rem)!important;
+  line-height:1.08!important;
+}
+.dm-floating-workspace .dm-workspace-title small{
+  display:none!important;
+}
+.dm-floating-window-controls{gap:.28rem!important}
+.dm-floating-window-controls>button{
+  width:2.12rem!important;
+  height:2.12rem!important;
+  border-radius:.48rem!important;
+}
+.dm-floating-window-controls>button>span .icon,
+.dm-floating-window-controls>button>.icon{
+  width:.92rem!important;
+  height:.92rem!important;
+}
+.dm-floating-workspace .dialog-unified-entry{
+  min-height:3.25rem!important;
+  padding:.4rem .72rem!important;
+}
+.dm-floating-workspace .dialog-unified-entry .url-field{
+  min-height:2.48rem!important;
+}
+.dm-floating-workspace>.dialog-footer{
+  min-height:2.72rem!important;
+  padding:.32rem .72rem!important;
+}
+.dm-floating-workspace>.dialog-footer button{
+  min-height:2.05rem!important;
+  padding:.32rem .72rem!important;
+}
+.dm-floating-workspace>.dialog-footer>div:first-child{
+  font-size:max(12px,var(--font-xs))!important;
+}
+
+/* El texto operativo de las subventanas crece más que la página principal. */
+#app .download-dialog-v2 .dialog-body :is(p,small,label,em,output),
+#app .download-dialog-v2 .dialog-body :is(button,input,select,textarea){
+  font-size:max(14px,var(--font-sm))!important;
+}
+#app .download-dialog-v2 .dialog-body :is(strong,b,span):not(.result-kind):not(.current-status){
+  font-size:max(14px,var(--font-sm))!important;
+}
+#app .download-dialog-v2 .dialog-body .result-kind,
+#app .download-dialog-v2 .dialog-body .current-status{
+  font-size:max(11px,var(--font-xs))!important;
+}
+
+/* Preparación: solamente spinner y estado. */
+.analysis-loading-v2{
+  min-height:12rem!important;
+  gap:.75rem!important;
+}
+.analysis-loading-v2>svg,
+.analysis-loading-v2>.icon,
+.analysis-loading-v2>span{display:none!important}
+.analysis-loading-v2>strong{
+  font-size:max(15px,var(--font-md))!important;
+}
+.analysis-error-state{
+  min-height:10rem;
+  display:grid;
+  place-content:center;
+  gap:.55rem;
+  padding:1rem;
+  text-align:center;
+  border:1px solid color-mix(in srgb,var(--red) 42%,var(--dl-line));
+  border-radius:.75rem;
+  background:color-mix(in srgb,var(--red) 6%,var(--dl-panel));
+}
+.analysis-error-state strong{color:var(--red);font-size:max(15px,var(--font-md))!important}
+.analysis-error-state span{color:var(--dl-muted)}
+
+/* Se elimina el resumen/barra global de playlist; el contenido útil ocupa el espacio. */
+.playlist-queue-view,
+.playlist-queue-view.has-recovery-side{
+  grid-template-areas:"main side"!important;
+  grid-template-columns:minmax(0,1fr) minmax(16rem,22rem)!important;
+  align-items:start!important;
+}
+.playlist-queue-view:not(.has-recovery-side){
+  grid-template-areas:"main"!important;
+  grid-template-columns:minmax(0,1fr)!important;
+}
+.playlist-summary-card{display:none!important}
+.playlist-main-column{grid-area:main!important}
+.playlist-queue-side{grid-area:side!important}
+
+/* Minimizado: chip pequeño, restaurable y sin ocupar media pantalla. */
+.dm-floating-workspace.is-minimized{
+  width:min(25rem,calc(100vw - 1rem))!important;
+  height:3.15rem!important;
+  min-height:3.15rem!important;
+  max-height:3.15rem!important;
+  right:.5rem!important;
+  bottom:.5rem!important;
+}
+.dm-floating-workspace.is-minimized>.dialog-header{
+  height:3.15rem!important;
+  min-height:3.15rem!important;
+  padding:.38rem .52rem!important;
+}
+.dm-floating-workspace.is-minimized .dm-workspace-icon{
+  width:1.95rem!important;
+  height:1.95rem!important;
+}
+.dm-floating-workspace.is-minimized .dm-workspace-title>div>span,
+.dm-floating-workspace.is-minimized .dm-floating-window-controls>[data-dialog-minimize]{display:none!important}
+.dm-floating-workspace.is-minimized .dm-workspace-title h2{
+  font-size:.92rem!important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.dm-floating-workspace.is-minimized .dm-floating-window-controls>button{
+  width:1.95rem!important;
+  height:1.95rem!important;
+}
+
+@media(max-width:860px){
+  .playlist-queue-view,
+  .playlist-queue-view.has-recovery-side{
+    grid-template-areas:"main" "side"!important;
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
+
+/* 0.24.1 · Hotfix 8 — estabilidad de playlist, controles sobrios y memoria visual. */
+.dm-floating-workspace-layer{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.dm-floating-window-controls{gap:.42rem!important}
+.dm-floating-window-controls>button{
+  width:2.85rem!important;height:2.85rem!important;min-width:2.85rem!important;
+  border:1px solid #34465a!important;border-radius:.62rem!important;
+  color:#dce6f1!important;background:#172331!important;box-shadow:none!important;
+  transform:none!important;
+}
+.dm-floating-window-controls>button:hover{color:#fff!important;border-color:#60758c!important;background:#223244!important;transform:none!important}
+.dm-floating-window-controls>button:active{background:#111c28!important;transform:none!important}
+.dm-floating-window-controls>.dialog-close:hover{color:#fff!important;border-color:#a94b55!important;background:#8f303b!important}
+.dm-dialog-theme-light .dm-floating-window-controls>button{color:#263547!important;border-color:#c3ceda!important;background:#edf2f7!important}
+.dm-dialog-theme-light .dm-floating-window-controls>button:hover{color:#0e1a29!important;border-color:#8fa0b3!important;background:#e1e8f0!important}
+.dm-dialog-theme-light .dm-floating-window-controls>.dialog-close:hover{color:#fff!important;border-color:#ad4652!important;background:#c34250!important}
+
+/* El cuerpo completo de la cola es el único área desplazable; el pie permanece accesible. */
+.dm-floating-workspace.is-queue>.dialog-body{display:block!important;overflow:auto!important;overscroll-behavior:contain!important;padding:.8rem 1rem 1rem!important}
+.dm-floating-workspace.is-queue .playlist-queue-view{display:block!important;min-height:0!important;overflow:visible!important}
+.dm-floating-workspace.is-queue .playlist-main-column{display:grid!important;grid-template-rows:auto auto!important;gap:.75rem!important;min-height:0!important;overflow:visible!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-card{display:grid!important;grid-template-rows:auto auto!important;min-height:10rem!important;overflow:visible!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-list{max-height:none!important;min-height:0!important;overflow:visible!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row{content-visibility:auto;contain-intrinsic-size:6rem}
+.dm-floating-workspace.is-queue .playlist-upcoming-empty{min-height:8.5rem!important}
+
+/* Métricas de playlist legibles y sin cajas de acento innecesarias. */
+.dm-floating-workspace.is-queue .current-status i{background:#43d28c!important;box-shadow:0 0 0 3px rgba(67,210,140,.12)!important}
+.dm-floating-workspace.is-queue [data-playlist-current-percent]{color:#fff!important;font-size:.88rem!important;font-weight:800!important}
+.dm-dialog-theme-light.dm-floating-workspace.is-queue [data-playlist-current-percent]{color:#101b2b!important}
+.dm-floating-workspace.is-queue .playlist-current-copy>small{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:.28rem!important;color:var(--dl-muted)!important}
+.dm-floating-workspace.is-queue .selected-format{
+  display:inline-flex!important;align-items:center!important;gap:.42rem!important;width:max-content!important;max-width:100%!important;
+  margin-top:.42rem!important;padding:0!important;border:0!important;border-radius:0!important;
+  color:var(--dl-muted)!important;background:transparent!important;box-shadow:none!important;
+}
+.dm-floating-workspace.is-queue .selected-format .icon{color:var(--dm-accent)!important}
+
+/* Resultado multimedia: miniatura + título aprovechan todo el ancho. */
+.dm-floating-workspace:not(.is-queue) .analysis-v2-hero{grid-template-columns:minmax(14rem,19rem) minmax(0,1fr)!important;gap:1.15rem!important}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-copy{align-self:center!important;min-width:0!important;padding-right:.35rem!important}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-copy h3{max-width:none!important;-webkit-line-clamp:2!important;line-clamp:2!important}
+.analysis-v2-badges.is-compact{display:flex!important;max-width:100%!important}
+.analysis-v2-badges.is-compact>span{
+  display:inline-flex!important;align-items:center!important;gap:.45rem!important;width:max-content!important;max-width:100%!important;
+  min-height:2.25rem!important;padding:.42rem .72rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  color:var(--green)!important;border-color:color-mix(in srgb,var(--green) 52%,var(--dl-line))!important;background:color-mix(in srgb,var(--green) 7%,var(--dl-panel-2))!important;
+}
+.analysis-v2-badges.is-compact>span .icon{flex:none;color:var(--green)!important}
+
+/* Portadas finales agrupadas cerca del resumen y centradas como un solo bloque. */
+.playlist-terminal-card{width:min(100%,64rem)!important;margin-inline:auto!important;grid-template-columns:10.4rem minmax(0,1fr) auto!important;gap:.78rem!important;align-items:center!important}
+.playlist-terminal-art{width:10.4rem!important;height:8.2rem!important;justify-self:center!important}
+.playlist-terminal-card>div:nth-child(2){align-self:center!important}
+
+@media(max-width:900px){
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-hero{grid-template-columns:minmax(10rem,15rem) minmax(0,1fr)!important}
+  .playlist-terminal-card{grid-template-columns:8.6rem minmax(0,1fr)!important}.playlist-terminal-art{width:8.6rem!important;height:7rem!important}.playlist-terminal-actions{grid-column:1/-1!important}
+}
+@media(max-width:640px){
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-hero{grid-template-columns:1fr!important}
+  .analysis-v2-badges.is-compact>span{width:100%!important;justify-content:center!important}
+  .playlist-terminal-card{grid-template-columns:1fr!important}.playlist-terminal-art{width:min(100%,15rem)!important;height:auto!important;aspect-ratio:1.25!important}.playlist-terminal-card>div:nth-child(2){text-align:center!important}
+}
+
+/* Restablece únicamente la personalización cromática; escala y densidad se conservan. */
+.settings-reset-colors{margin-top:.72rem;justify-content:center;width:100%;color:var(--text)!important;background:var(--panel-2)!important;border-color:var(--line)!important}
+.settings-reset-colors .icon{color:var(--accent-base)!important}
+.settings-reset-colors:hover{border-color:var(--accent-border)!important;background:var(--panel-3)!important}
+
+/* La barra de URL usa las superficies reales del tema claro. */
+.dm-dialog-theme-light .dm-workspace-sourcebar .url-field{background:var(--dl-panel)!important;border-color:var(--dl-line)!important}
+.dm-dialog-theme-light .dm-workspace-sourcebar .url-field input{color:var(--dl-text)!important}
+.dm-dialog-theme-light .dm-workspace-sourcebar .url-field input::placeholder{color:var(--dl-faint)!important}
+.dm-dialog-theme-light .dm-workspace-sourcebar .url-field>.icon{color:var(--dl-muted)!important}
+
+/* “Ver en Descargas” usa el acento solo en borde e icono, sin relleno de color. */
+.dm-floating-workspace .playlist-open-downloads{color:var(--dm-text)!important;border-color:var(--dm-accent)!important;background:var(--dm-surface-2)!important;box-shadow:none!important}
+.dm-floating-workspace .playlist-open-downloads .icon{color:var(--dm-accent)!important}
+
+
+/* Phase 2 · real media-size states */
+.analysis-format-chips button {
+  min-width: 0;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.25;
+}
+.playlist-item-size {
+  color: var(--text-secondary, #aab4c2);
+  font-variant-numeric: tabular-nums;
+}
+.playlist-v2-count [data-playlist-size-summary] {
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+[data-theme="light"] .playlist-item-size,
+.dm-host[data-dm-theme="light"] .playlist-item-size {
+  color: #4f5d6d;
+}
+
+/* Phase 3 · audio source fidelity */
+.analysis-technical-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:13px;background:color-mix(in srgb,var(--panel) 88%,transparent)}
+.analysis-technical-grid>span{display:grid;gap:3px;min-width:0;padding:9px 10px;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);border-radius:9px;background:color-mix(in srgb,var(--window) 58%,transparent)}
+.analysis-technical-grid small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.analysis-technical-grid strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--text)}
+.analysis-technical-grid p{grid-column:1/-1;margin:2px 1px 0;color:var(--muted);font-size:11px;line-height:1.5}
+.analysis-technical-grid p b{color:var(--text)}
+@media(max-width:760px){.analysis-technical-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 0.24.2 · Correcciones visuales previas a Fase 4. */
+.analysis-technical{
+  margin-top:.68rem;
+  border:1px solid var(--dm-border,var(--line));
+  border-radius:.65rem;
+  color:var(--dm-text,var(--text));
+  background:var(--dm-surface-2,var(--panel-2));
+  overflow:hidden;
+}
+.analysis-technical>summary{
+  min-height:2.7rem;
+  display:grid;
+  grid-template-columns:minmax(0,auto) minmax(0,1fr);
+  align-items:center;
+  gap:.65rem;
+  padding:.55rem .7rem;
+  cursor:pointer;
+  list-style:none;
+}
+.analysis-technical>summary::-webkit-details-marker{display:none}
+.analysis-technical>summary>span{display:inline-flex;align-items:center;gap:.42rem;font-size:.68rem;font-weight:720;color:var(--dm-text,var(--text))}
+.analysis-technical>summary>small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:var(--dm-muted,var(--muted));font-size:.58rem}
+.analysis-technical[open]>summary{border-bottom:1px solid var(--dm-border-soft,var(--line-soft))}
+.analysis-technical .analysis-technical-grid{margin:0;padding:.65rem;border:0;border-radius:0;background:transparent}
+.analysis-format-chips button.selected{
+  color:var(--dm-text,var(--text))!important;
+  border-color:color-mix(in srgb,var(--dm-accent,var(--accent-base)) 42%,var(--dm-border,var(--line)))!important;
+  background:var(--dm-surface-2,var(--panel-2))!important;
+  box-shadow:inset 2px 0 var(--dm-accent,var(--accent-base))!important;
+}
+.analysis-format-chips button.is-best{
+  color:var(--green,#35c982)!important;
+  border-color:color-mix(in srgb,var(--green,#35c982) 38%,var(--dm-border,var(--line)))!important;
+}
+.analysis-format-chips button.is-best.selected{
+  color:var(--green,#35c982)!important;
+  background:color-mix(in srgb,var(--green,#35c982) 6%,var(--dm-surface-2,var(--panel-2)))!important;
+  box-shadow:inset 2px 0 var(--green,#35c982)!important;
+}
+.analysis-v2-badges.is-compact>span{
+  width:auto!important;
+  max-width:100%;
+  white-space:normal!important;
+  line-height:1.35!important;
+  text-align:left;
+}
+.dm-floating-workspace.is-queue>.dialog-footer>div:last-child{margin-left:auto}
+@media(max-height:860px){
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-hero{
+    min-height:6.9rem!important;
+    grid-template-columns:7.5rem minmax(0,1fr) 7.5rem!important;
+    padding:.65rem!important;
+  }
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-stack{width:7rem!important;height:4.8rem!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-identity h3{font-size:1.05rem!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-identity p{font-size:.68rem!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-layout{gap:.6rem!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list,
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-options{padding:.68rem!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list>div{max-height:18rem!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{
+    min-height:4.55rem!important;
+    grid-template-columns:auto 1.45rem 5.4rem minmax(0,1fr) auto!important;
+    gap:.58rem!important;
+    padding:.42rem .55rem!important;
+  }
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:5.4rem!important;height:3.4rem!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy strong{font-size:.76rem!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy small{font-size:.62rem!important}
+}
+@media(max-width:640px){
+  .analysis-technical>summary{grid-template-columns:1fr}
+  .analysis-technical>summary>small{text-align:left}
+  .analysis-v2-badges.is-compact>span{width:auto!important;justify-content:flex-start!important}
+}
+
+
+/* 0.24.2 · cierre real de Fase 3 según documento final. */
+.dm-floating-workspace .dialog-unified-entry,
+.dm-integrated-workspace .dialog-unified-entry{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+.dm-floating-workspace.is-queue,
+.dm-integrated-workspace.is-queue,
+.download-dialog-v2.is-queue{
+  grid-template-rows:auto minmax(0,1fr)!important;
+}

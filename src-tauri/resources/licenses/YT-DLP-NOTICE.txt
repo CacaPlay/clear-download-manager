@@ -1,0 +1,11 @@
+﻿CacaTools Download Manager includes yt-dlp as a local component.
+Version: 2026.08.19
+Official source: https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe
+Official checksums: https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/SHA2-256SUMS
+SHA-256: 66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a
+Official release metadata: https://api.github.com/repos/yt-dlp/yt-dlp/releases/tags/2026.08.19
+Third-party licenses source commit: 3a08beaf031ab68f966401ead017ac81fe8486cf
+Third-party licenses source: https://raw.githubusercontent.com/yt-dlp/yt-dlp/3a08beaf031ab68f966401ead017ac81fe8486cf/THIRD_PARTY_LICENSES.txt
+Third-party licenses pinned SHA-256: 472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7
+The verified source file is included as YT-DLP-THIRD-PARTY-LICENSES.txt.
+yt-dlp itself is distributed under The Unlicense: https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/LICENSE.

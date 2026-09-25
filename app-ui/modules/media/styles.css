@@ -1,0 +1,25 @@
+.analysis-empty, .analysis-loading { min-height: 20rem; display: grid; place-content: center; justify-items: center; gap: .55rem; color: #7388a0; text-align: center; }
+.analysis-empty strong, .analysis-loading strong { color: #e6ecf5; }
+.analysis-empty span, .analysis-loading span { max-width: 32rem; font-size: .68rem; line-height: 1.5; }
+.analysis-loading > i { width: 3.3rem; height: 3.3rem; border: .2rem solid #263d59; border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.analysis-result { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: 1.15rem; padding: 1rem; border: 1px solid #1e3853; border-radius: .82rem; background: rgba(8, 22, 38, .55); }
+.media-thumbnail { position: relative; aspect-ratio: 16 / 9; overflow: hidden; align-self: start; border-radius: .72rem; background: #040b12; }
+.media-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+.media-thumbnail-fallback { position: absolute; inset: 0; display: none; place-items: center; color: #a7bbd2; background: radial-gradient(circle at 52% 38%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 44%), linear-gradient(145deg, #10263d, #07111e); }
+.media-thumbnail.thumbnail-load-failed .media-thumbnail-fallback { display: grid; }
+.duration-pill { position: absolute; right: .4rem; bottom: .4rem; padding: .2rem .35rem; border-radius: .28rem; color: white; background: rgba(0, 0, 0, .75); font-size: .56rem; }
+.media-summary { min-width: 0; }
+.result-kind { color: #9c8cff; font-size: .59rem; font-weight: 850; letter-spacing: .11em; }
+.media-summary h3 { margin: .5rem 0 .25rem; font-size: 1.08rem; }
+.media-summary p { margin: 0; color: #8094ac; font-size: .65rem; }
+.format-pills, .direct-meta { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .8rem; }
+.format-pills button, .direct-meta span { min-height: 2rem; padding: 0 .65rem; border: 1px solid #2b4664; border-radius: .5rem; color: #9cafc3; background: #0d2137; font-size: .58rem; }
+.format-pills button.selected { color: #e9e7ff; border-color: var(--accent-border); background: color-mix(in srgb, var(--accent-base) 22%, transparent); }
+.download-options { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; padding-top: 1rem; border-top: 1px solid #1b334d; }
+.download-options label { display: grid; gap: .35rem; color: #7d91a8; font-size: .59rem; }
+.download-options label.wide { grid-column: 1 / -1; }
+.download-options select, .download-options input { width: 100%; min-height: 2.7rem; padding: 0 .75rem; border: 1px solid #2a4663; border-radius: .58rem; color: #e5ebf3; background: #091b2e; }
+
+.direct-file-preview { min-height: 9rem; display: grid; place-content: center; justify-items: center; gap: .4rem; border-radius: .75rem; color: #b4b7ff; background: linear-gradient(145deg, #213562, #172448); }
+.direct-file-preview span { font-size: .65rem; font-weight: 850; letter-spacing: .1em; }

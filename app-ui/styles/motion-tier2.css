@@ -1,0 +1,346 @@
+/* Clear Download Manager · Final Motion signatures
+   CSS-first, local and interruptible. Positioning roots, hitboxes and
+   determinate progress remain owned by the existing application code. */
+:root {
+  --motion-nav-duration: 220ms;
+  --motion-theme-duration: 350ms;
+  --motion-progress-duration: 200ms;
+  --motion-selection-duration: 170ms;
+  --motion-button-press-duration: 105ms;
+  --motion-button-release-duration: 145ms;
+  --motion-toggle-duration: 190ms;
+  --motion-settings-duration: 300ms;
+  --motion-ease-signature: cubic-bezier(.22, .61, .36, 1);
+  --motion-theme-ease: cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Main ↔ Settings keeps the protected document-level transition. */
+.dm-zen-content,
+#app > .module-page,
+#app > .settings-view {
+  view-transition-name: cdm-section-surface;
+}
+::view-transition-group(cdm-section-surface) {
+  animation-duration: 250ms;
+  animation-timing-function: var(--motion-ease-signature);
+}
+::view-transition-old(cdm-section-surface) { animation: cdm-motion-section-old 150ms ease-out both; }
+::view-transition-new(cdm-section-surface) { animation: cdm-motion-section-new 250ms var(--motion-ease-signature) both; }
+@keyframes cdm-motion-section-old {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes cdm-motion-section-new {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Settings category navigation is a distinct named surface. */
+.settings-workspace-content { view-transition-name: cdm-settings-panel; }
+html[data-settings-transitioning="true"]::view-transition-group(cdm-section-surface),
+html[data-settings-transitioning="true"]::view-transition-old(cdm-section-surface),
+html[data-settings-transitioning="true"]::view-transition-new(cdm-section-surface) { animation: none !important; }
+html[data-settings-direction="down"]::view-transition-old(cdm-settings-panel) { animation: cdm-settings-panel-old-down var(--motion-settings-duration) var(--motion-ease-signature) both; }
+html[data-settings-direction="down"]::view-transition-new(cdm-settings-panel) { animation: cdm-settings-panel-new-down var(--motion-settings-duration) var(--motion-ease-signature) both; }
+html[data-settings-direction="up"]::view-transition-old(cdm-settings-panel) { animation: cdm-settings-panel-old-up var(--motion-settings-duration) var(--motion-ease-signature) both; }
+html[data-settings-direction="up"]::view-transition-new(cdm-settings-panel) { animation: cdm-settings-panel-new-up var(--motion-settings-duration) var(--motion-ease-signature) both; }
+@keyframes cdm-settings-panel-old-down { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-11px); } }
+@keyframes cdm-settings-panel-new-down { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cdm-settings-panel-old-up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(11px); } }
+@keyframes cdm-settings-panel-new-up { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Theme transition: the existing coordinator owns the atomic commit and
+   origin. The old snapshot contracts toward the trigger while the committed
+   theme stays underneath. */
+html[data-theme-transitioning="true"] #app,
+html[data-theme-transitioning="true"] #app *,
+html[data-theme-transitioning="true"] #app *::before,
+html[data-theme-transitioning="true"] #app *::after {
+  transition-property: none !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+html[data-theme-transitioning="true"] #app[data-motion-navigation="true"] .desktop-shell > .workspace > *,
+html[data-theme-transitioning="true"] #app[data-motion-navigation="true"] > .dm-host > .dm-root > .dm-zen-main > .dm-zen-content,
+html[data-theme-transitioning="true"] #app[data-motion-navigation="true"] > .module-page,
+html[data-theme-transitioning="true"] #app[data-motion-navigation="true"] > .settings-view {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+html[data-theme-transitioning="true"]::view-transition-old(cdm-section-surface),
+html[data-theme-transitioning="true"]::view-transition-new(cdm-section-surface),
+html[data-theme-transitioning="true"]::view-transition-group(cdm-section-surface) {
+  animation: none !important;
+}
+html[data-theme-transitioning="true"]::view-transition-group(root) { isolation: isolate; }
+html[data-theme-transitioning="true"]::view-transition-old(root) {
+  z-index: 2;
+  animation: cdm-motion-theme-collapse var(--motion-theme-duration) var(--motion-theme-ease) both;
+  clip-path: circle(150vmax at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh));
+}
+html[data-theme-transitioning="true"]::view-transition-new(root) {
+  z-index: 1;
+  animation: none;
+  clip-path: none;
+}
+@keyframes cdm-motion-theme-collapse {
+  from { clip-path: circle(150vmax at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh)); opacity: 1; }
+  to { clip-path: circle(0 at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh)); opacity: 1; }
+}
+.motion-theme-fallback-overlay {
+  position: fixed;
+  z-index: 20000;
+  inset: 0;
+  pointer-events: none;
+  opacity: 1;
+  clip-path: none;
+}
+.motion-theme-fallback-overlay.is-radial {
+  clip-path: circle(150vmax at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh));
+}
+.motion-theme-fallback-overlay.is-radial.is-revealing {
+  animation: cdm-motion-theme-fallback-collapse var(--motion-theme-duration) var(--motion-theme-ease) both;
+}
+.motion-theme-fallback-overlay.is-crossfade.is-revealing {
+  animation: cdm-motion-theme-fallback-crossfade var(--motion-theme-duration) var(--motion-theme-ease) both;
+}
+@keyframes cdm-motion-theme-fallback-collapse {
+  from { clip-path: circle(150vmax at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh)); opacity: 1; }
+  to { clip-path: circle(0 at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh)); opacity: 1; }
+}
+@keyframes cdm-motion-theme-fallback-crossfade {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Determinate fill authority: this existing data path is preserved exactly. */
+.dm-host .dm-item-progress .dm-progress i {
+  width: 100% !important;
+  transform: scaleX(var(--dm-progress-ratio, 1));
+  transform-origin: left center;
+  transition-property: transform, background-color;
+  transition-duration: var(--dm-progress-duration, var(--motion-progress-duration));
+  transition-timing-function: linear;
+}
+.dm-host .dm-download-item[data-dm-state="completed"] .dm-item-progress .dm-progress i { transition-duration: 120ms; }
+.dm-host .dm-progress.is-indeterminate i { width: 28% !important; transform-origin: left center; }
+
+/* Local navbar activation: each target remains a 72×72 hitbox. The selected
+   component mirrors Novedades: local surface plus a thin accent rail. */
+.dm-zen-nav > nav > button {
+  position: relative;
+  isolation: isolate;
+  width: 72px !important;
+  min-width: 72px !important;
+  height: 72px !important;
+  min-height: 72px !important;
+  margin-inline: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 13.824px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  color: var(--dm-muted) !important;
+}
+.dm-zen-nav > nav > button::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  top: 16%;
+  width: 3px;
+  height: 68%;
+  border-radius: 999px;
+  background: var(--dm-accent);
+  opacity: 0;
+  transform: scaleY(.7);
+  transform-origin: center;
+  transition-property: opacity, transform;
+  transition-duration: var(--motion-nav-duration);
+  transition-timing-function: var(--motion-ease-signature);
+}
+.dm-zen-nav > nav > button.is-active {
+  color: var(--dm-accent-detail) !important;
+  background: var(--dm-surface-2) !important;
+}
+#app .dm-host.dm-host .dm-zen-nav nav button.is-active {
+  border-radius: 13.824px !important;
+  background: var(--dm-surface-2) !important;
+  overflow: visible !important;
+}
+.dm-zen-nav > nav > button.is-active::before { opacity: 1; transform: scaleY(1); }
+.dm-zen-nav > nav > button > .dm-icon,
+.dm-zen-nav > nav > button > svg {
+  position: relative;
+  z-index: 3;
+  transition-property: color, opacity, transform;
+  transition-duration: var(--motion-nav-duration);
+  transition-timing-function: var(--motion-ease-signature);
+}
+.dm-zen-nav > nav > button.is-active > .dm-icon,
+.dm-zen-nav > nav > button.is-active > svg {
+  color: var(--dm-accent-detail) !important;
+  animation: cdm-nav-glyph-settle var(--motion-nav-duration) var(--motion-ease-signature) both;
+}
+#app .dm-host.dm-host .dm-zen-nav nav button.is-active > * { z-index: 3 !important; }
+@keyframes cdm-nav-glyph-settle {
+  from { opacity: .68; transform: translateY(1px) scale(.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Segmented controls own their fill; option rectangles never change. */
+html[data-motion-mode="on"] #app :is(.settings-choice-options label, .segmented button, [role="tab"]),
+html[data-motion-mode="system"][data-reduced-motion="false"] #app :is(.settings-choice-options label, .segmented button, [role="tab"]) {
+  position: relative;
+  isolation: isolate;
+  transition-property: color, border-color, box-shadow;
+  transition-duration: var(--motion-selection-duration);
+  transition-timing-function: var(--motion-ease-signature);
+}
+.settings-choice-options label::before,
+.segmented button::before,
+[role="tab"]::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 1px;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--accent) 9%, var(--settings-elevated, var(--dm-surface-2)));
+  opacity: 0;
+  clip-path: inset(0 100% 0 0 round 8px);
+  transition-property: opacity, clip-path;
+  transition-duration: 200ms;
+  transition-timing-function: var(--motion-ease-signature);
+}
+.settings-choice-options label:has(input:checked)::before,
+.segmented button[aria-selected="true"]::before,
+[role="tab"][aria-selected="true"]::before { opacity: 1; clip-path: inset(0 0 0 0 round 8px); }
+
+/* Download rows remain surface-only; refresh/progress patches do not replay
+   page entry or scale complete cards. */
+html[data-motion-mode="on"] #app .dm-host :is(.dm-download-item, .dm-command-row, .dm-zen-row),
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-host :is(.dm-download-item, .dm-command-row, .dm-zen-row) {
+  transition-property: color, background-color, border-color, box-shadow, opacity !important;
+  transition-duration: var(--motion-selection-duration) !important;
+  transition-timing-function: var(--motion-ease-signature) !important;
+}
+.dm-host .dm-download-item.is-visually-selected,
+.dm-host .dm-download-item.is-batch-selected {
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: var(--motion-selection-duration);
+  transition-timing-function: var(--motion-ease-signature);
+}
+
+/* Button depth collapse: only the control surface responds; layout and
+   pointer geometry remain unchanged. */
+html[data-motion-mode="on"] #app :is(button, [role="button"]),
+html[data-motion-mode="system"][data-reduced-motion="false"] #app :is(button, [role="button"]) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--motion-button-release-duration);
+  transition-timing-function: var(--motion-ease-signature);
+}
+html[data-motion-mode="on"] #app :is(button, [role="button"]):active:not(.dm-zen-nav nav button),
+html[data-motion-mode="system"][data-reduced-motion="false"] #app :is(button, [role="button"]):active:not(.dm-zen-nav nav button) {
+  transition-duration: var(--motion-button-press-duration);
+  transform: translateY(1.5px) scale(.985);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent, var(--dm-accent)) 26%, transparent), 0 1px 2px rgba(0, 0, 0, .18);
+}
+.dm-icon-button > .dm-icon,
+.dm-row-menu-trigger > .dm-icon,
+.dm-zen-nav header button > .dm-icon,
+.settings-stepper button > .dm-icon,
+.settings-accent-swatch > .dm-icon {
+  transform-origin: center;
+  transition-property: color, opacity, transform;
+  transition-duration: var(--motion-button-release-duration);
+  transition-timing-function: var(--motion-ease-signature);
+}
+html[data-motion-mode="on"] #app :is(.dm-icon-button, .dm-row-menu-trigger, .dm-zen-nav header button, .settings-stepper button, .settings-accent-swatch):active > .dm-icon,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app :is(.dm-icon-button, .dm-row-menu-trigger, .dm-zen-nav header button, .settings-stepper button, .settings-accent-swatch):active > .dm-icon {
+  transform: translateY(1px) scale(.94);
+  transition-duration: var(--motion-button-press-duration);
+}
+
+/* Floating UI protection: roots remain measurable and interactive. */
+.floating-position-root,
+.floating-position-root:hover,
+.floating-position-root:focus-within { transform: none !important; }
+.floating-position-root > .motion-inner {
+  /* Keep the menu usable before the motion coordinator applies its mode. */
+  transform: none;
+  opacity: 1;
+  transform-origin: top center;
+}
+html[data-motion-mode="on"] .floating-position-root > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="false"] .floating-position-root > .motion-inner {
+  animation: cdm-motion-floating-enter 170ms var(--motion-ease-signature) both;
+}
+@keyframes cdm-motion-floating-enter {
+  from { opacity: 0; transform: translateY(4px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Dialog/backdrop and toast are surface-only. */
+.dm-modal-backdrop { transition-property: opacity, background-color; transition-duration: 220ms; transition-timing-function: var(--motion-ease-signature); }
+.dm-modal-backdrop > .motion-inner { transform: scale(.97); opacity: 0; }
+html[data-motion-mode="on"] .dm-modal-backdrop > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="false"] .dm-modal-backdrop > .motion-inner { animation: cdm-motion-dialog-enter 220ms var(--motion-ease-signature) both; }
+@keyframes cdm-motion-dialog-enter { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
+html[data-motion-mode="on"] .app-toast,
+html[data-motion-mode="system"][data-reduced-motion="false"] .app-toast { animation: cdm-motion-toast-enter 180ms var(--motion-ease-signature) both; }
+@keyframes cdm-motion-toast-enter { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Status feedback is localized to the status lane. */
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="completed"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="completed"] .dm-item-status > i { animation: cdm-motion-status-complete 250ms var(--motion-ease-signature) both; }
+html[data-motion-mode="on"] #app .dm-download-item[data-status-transition="error"] .dm-item-status > i,
+html[data-motion-mode="system"][data-reduced-motion="false"] #app .dm-download-item[data-status-transition="error"] .dm-item-status > i { animation: cdm-motion-status-error 205ms var(--motion-ease-signature) both; }
+@keyframes cdm-motion-status-complete { from { opacity: .45; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes cdm-motion-status-error { from { opacity: .5; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+
+/* Processing is a sibling indeterminate segment, never determinate fill. */
+#app .dm-host .dm-item-progress.is-processing .dm-progress-processing > i {
+  width: 28% !important;
+  animation: cdm-processing-travel .9s linear infinite !important;
+}
+
+/* Subwindow/player entry remains WebView-only. */
+html[data-subwindow] body.subwindow-ready #subwindow-root > .app-window { animation: cdm-motion-subwindow-enter 250ms var(--motion-ease-signature) both; }
+@keyframes cdm-motion-subwindow-enter { from { opacity: 0; transform: translateY(14px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Reduced/off retains the functional state update but removes travel, scale
+   and loops. */
+html[data-motion-mode="reduced"] #app :is(button, [role="button"]):active,
+html[data-motion-mode="off"] #app :is(button, [role="button"]):active,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app :is(button, [role="button"]):active,
+html[data-motion-mode="reduced"] #app .floating-position-root > .motion-inner,
+html[data-motion-mode="off"] #app .floating-position-root > .motion-inner,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app .floating-position-root > .motion-inner {
+  transform: none !important;
+  opacity: 1 !important;
+  animation: none !important;
+  transition-duration: 1ms !important;
+}
+html[data-motion-mode="reduced"] #app .dm-host .dm-item-progress.is-processing .dm-progress-processing > i,
+html[data-motion-mode="off"] #app .dm-host .dm-item-progress.is-processing .dm-progress-processing > i,
+html[data-motion-mode="system"][data-reduced-motion="true"] #app .dm-host .dm-item-progress.is-processing .dm-progress-processing > i {
+  animation: none !important;
+  transform: translateX(0) !important;
+  opacity: .88;
+}
+html[data-motion-mode="reduced"]::view-transition-old(root),
+html[data-motion-mode="reduced"]::view-transition-new(root),
+html[data-motion-mode="off"]::view-transition-old(root),
+html[data-motion-mode="off"]::view-transition-new(root),
+html[data-motion-mode="system"][data-reduced-motion="true"]::view-transition-old(root),
+html[data-motion-mode="system"][data-reduced-motion="true"]::view-transition-new(root) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion-mode="system"] #app .floating-position-root > .motion-inner,
+  html[data-motion-mode="system"] #app .dm-host .dm-item-progress.is-processing .dm-progress-processing > i {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1;
+  }
+}

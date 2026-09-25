@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="129" height="36" viewBox="0 0 129 36" role="img" aria-label="Direct links">
+  <title>Direct links</title>
+  <rect x="0.5" y="0.5" width="128" height="35" rx="17.5" fill="#f6f8fa" stroke="#cfd4da"/>
+  <g transform="translate(14 9.0) scale(0.75)" fill="none" stroke="#0b8a83" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g>
+  <text x="40" y="23.0" font-family="'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="600" fill="#1f2328">Direct links</text>
+</svg>

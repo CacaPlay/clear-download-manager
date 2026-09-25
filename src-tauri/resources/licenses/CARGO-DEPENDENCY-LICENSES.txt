@@ -1,0 +1,365 @@
+Clear Download Manager — resolved Rust dependency license inventory
+Generated from both desktop and native-host Cargo.lock files with cargo metadata --locked --all-features --filter-platform x86_64-pc-windows-msvc.
+License expressions are declarations from each upstream Cargo package; OR means alternatives and AND means combined terms.
+Resolved registry packages: 359
+
+PROJECT | PACKAGE | VERSION | DECLARED LICENSE
+desktop | adler2 | 2.0.1 | 0BSD OR MIT OR Apache-2.0
+desktop | ahash | 0.8.12 | MIT OR Apache-2.0
+desktop | aho-corasick | 1.1.4 | Unlicense OR MIT
+desktop | alloc-no-stdlib | 2.0.4 | BSD-3-Clause
+desktop | alloc-stdlib | 0.2.4 | BSD-3-Clause
+desktop | anyhow | 1.0.104 | MIT OR Apache-2.0
+desktop | async-compression | 0.4.43 | MIT OR Apache-2.0
+desktop | atomic-waker | 1.1.2 | Apache-2.0 OR MIT
+desktop | autocfg | 1.5.1 | Apache-2.0 OR MIT
+desktop | base64 | 0.22.1 | MIT OR Apache-2.0
+desktop | base64ct | 1.8.3 | Apache-2.0 OR MIT
+desktop | bit-set | 0.8.0 | Apache-2.0 OR MIT
+desktop | bit-vec | 0.8.0 | Apache-2.0 OR MIT
+desktop | bitflags | 1.3.2 | MIT/Apache-2.0
+desktop | bitflags | 2.13.1 | MIT OR Apache-2.0
+desktop | block-buffer | 0.10.4 | MIT OR Apache-2.0
+desktop | brotli | 8.0.4 | BSD-3-Clause AND MIT
+desktop | brotli-decompressor | 5.0.3 | BSD-3-Clause/MIT
+desktop | bs58 | 0.5.1 | MIT/Apache-2.0
+desktop | bytemuck | 1.25.2 | Zlib OR Apache-2.0 OR MIT
+desktop | byteorder | 1.5.0 | Unlicense OR MIT
+desktop | byteorder-lite | 0.1.0 | Unlicense OR MIT
+desktop | bytes | 1.12.1 | MIT
+desktop | camino | 1.2.5 | MIT OR Apache-2.0
+desktop | cargo_metadata | 0.19.2 | MIT
+desktop | cargo_toml | 0.22.3 | Apache-2.0 OR MIT
+desktop | cargo-platform | 0.1.9 | MIT OR Apache-2.0
+desktop | cc | 1.4.0 | MIT OR Apache-2.0
+desktop | cfb | 0.7.3 | MIT
+desktop | cfg_aliases | 0.2.2 | MIT
+desktop | cfg-if | 1.0.4 | MIT OR Apache-2.0
+desktop | chacha20 | 0.10.2 | MIT OR Apache-2.0
+desktop | chrono | 0.4.45 | MIT OR Apache-2.0
+desktop | compression-codecs | 0.4.38 | MIT OR Apache-2.0
+desktop | compression-core | 0.4.32 | MIT OR Apache-2.0
+desktop | const-oid | 0.9.6 | Apache-2.0 OR MIT
+desktop | cookie | 0.18.1 | MIT OR Apache-2.0
+desktop | cpufeatures | 0.2.17 | MIT OR Apache-2.0
+desktop | cpufeatures | 0.3.0 | MIT OR Apache-2.0
+desktop | crc32fast | 1.5.0 | MIT OR Apache-2.0
+desktop | crossbeam-channel | 0.5.16 | MIT OR Apache-2.0
+desktop | crossbeam-utils | 0.8.22 | MIT OR Apache-2.0
+desktop | crypto-common | 0.1.7 | MIT OR Apache-2.0
+desktop | cssparser | 0.36.0 | MPL-2.0
+desktop | cssparser-macros | 0.6.1 | MPL-2.0
+desktop | ctor | 0.8.0 | Apache-2.0 OR MIT
+desktop | ctor-proc-macro | 0.0.7 | Apache-2.0 OR MIT
+desktop | curve25519-dalek | 4.1.3 | BSD-3-Clause
+desktop | curve25519-dalek-derive | 0.1.1 | MIT/Apache-2.0
+desktop | darling | 0.23.0 | MIT
+desktop | darling_core | 0.23.0 | MIT
+desktop | darling_macro | 0.23.0 | MIT
+desktop | der | 0.7.10 | Apache-2.0 OR MIT
+desktop | deranged | 0.5.8 | MIT OR Apache-2.0
+desktop | derive_more | 2.1.1 | MIT
+desktop | derive_more-impl | 2.1.1 | MIT
+desktop | digest | 0.10.7 | MIT OR Apache-2.0
+desktop | dirs | 6.0.0 | MIT OR Apache-2.0
+desktop | dirs-sys | 0.5.0 | MIT OR Apache-2.0
+desktop | displaydoc | 0.2.7 | MIT OR Apache-2.0
+desktop | dom_query | 0.27.0 | MIT
+desktop | dpi | 0.1.2 | Apache-2.0 AND MIT
+desktop | dtoa | 1.0.11 | MIT OR Apache-2.0
+desktop | dtoa-short | 0.3.5 | MPL-2.0
+desktop | dtor | 0.3.0 | Apache-2.0 OR MIT
+desktop | dtor-proc-macro | 0.0.6 | Apache-2.0 OR MIT
+desktop | dunce | 1.0.5 | CC0-1.0 OR MIT-0 OR Apache-2.0
+desktop | dyn-clone | 1.0.20 | MIT OR Apache-2.0
+desktop | ed25519 | 2.2.3 | Apache-2.0 OR MIT
+desktop | ed25519-dalek | 2.2.0 | BSD-3-Clause
+desktop | embed-resource | 3.0.11 | MIT
+desktop | equivalent | 1.0.2 | Apache-2.0 OR MIT
+desktop | erased-serde | 0.4.10 | MIT OR Apache-2.0
+desktop | fallible-iterator | 0.3.0 | MIT/Apache-2.0
+desktop | fallible-streaming-iterator | 0.1.9 | MIT/Apache-2.0
+desktop | fastrand | 2.5.0 | Apache-2.0 OR MIT
+desktop | fdeflate | 0.3.7 | MIT OR Apache-2.0
+desktop | find-msvc-tools | 0.1.9 | MIT OR Apache-2.0
+desktop | flate2 | 1.1.9 | MIT OR Apache-2.0
+desktop | fnv | 1.0.7 | Apache-2.0 / MIT
+desktop | foldhash | 0.2.0 | Zlib
+desktop | form_urlencoded | 1.2.2 | MIT OR Apache-2.0
+desktop | fs2 | 0.4.3 | MIT/Apache-2.0
+desktop | futures-channel | 0.3.33 | MIT OR Apache-2.0
+desktop | futures-core | 0.3.33 | MIT OR Apache-2.0
+desktop | futures-io | 0.3.33 | MIT OR Apache-2.0
+desktop | futures-macro | 0.3.33 | MIT OR Apache-2.0
+desktop | futures-sink | 0.3.33 | MIT OR Apache-2.0
+desktop | futures-task | 0.3.33 | MIT OR Apache-2.0
+desktop | futures-util | 0.3.33 | MIT OR Apache-2.0
+desktop | generic-array | 0.14.7 | MIT
+desktop | getrandom | 0.2.17 | MIT OR Apache-2.0
+desktop | getrandom | 0.3.4 | MIT OR Apache-2.0
+desktop | getrandom | 0.4.3 | MIT OR Apache-2.0
+desktop | glob | 0.3.4 | MIT OR Apache-2.0
+desktop | hashbrown | 0.12.3 | MIT OR Apache-2.0
+desktop | hashbrown | 0.14.5 | MIT OR Apache-2.0
+desktop | hashbrown | 0.17.1 | MIT OR Apache-2.0
+desktop | hashlink | 0.9.1 | MIT OR Apache-2.0
+desktop | heck | 0.5.0 | MIT OR Apache-2.0
+desktop | hex | 0.4.3 | MIT OR Apache-2.0
+desktop | html5ever | 0.38.0 | MIT OR Apache-2.0
+desktop | http | 1.5.0 | MIT OR Apache-2.0
+desktop | http-body | 1.1.0 | MIT
+desktop | http-body-util | 0.1.4 | MIT
+desktop | http-range | 0.1.5 | MIT
+desktop | httparse | 1.10.1 | MIT OR Apache-2.0
+desktop | hyper | 1.11.0 | MIT
+desktop | hyper-rustls | 0.27.9 | Apache-2.0 OR ISC OR MIT
+desktop | hyper-util | 0.1.20 | MIT
+desktop | ico | 0.5.0 | MIT
+desktop | icu_collections | 2.2.0 | Unicode-3.0
+desktop | icu_locale_core | 2.2.0 | Unicode-3.0
+desktop | icu_normalizer | 2.2.0 | Unicode-3.0
+desktop | icu_normalizer_data | 2.2.0 | Unicode-3.0
+desktop | icu_properties | 2.2.0 | Unicode-3.0
+desktop | icu_properties_data | 2.2.0 | Unicode-3.0
+desktop | icu_provider | 2.2.0 | Unicode-3.0
+desktop | ident_case | 1.0.1 | MIT/Apache-2.0
+desktop | idna | 1.1.0 | MIT OR Apache-2.0
+desktop | idna_adapter | 1.2.2 | Apache-2.0 OR MIT
+desktop | image | 0.25.10 | MIT OR Apache-2.0
+desktop | indexmap | 1.9.3 | Apache-2.0 OR MIT
+desktop | indexmap | 2.14.0 | Apache-2.0 OR MIT
+desktop | infer | 0.19.0 | MIT
+desktop | ipnet | 2.12.0 | MIT OR Apache-2.0
+desktop | itoa | 1.0.18 | MIT OR Apache-2.0
+desktop | json-patch | 3.0.1 | MIT/Apache-2.0
+desktop | jsonptr | 0.6.3 | MIT OR Apache-2.0
+desktop | keyboard-types | 0.7.0 | MIT OR Apache-2.0
+desktop | libc | 0.2.189 | MIT OR Apache-2.0
+desktop | libsqlite3-sys | 0.30.1 | MIT
+desktop | litemap | 0.8.2 | Unicode-3.0
+desktop | lock_api | 0.4.14 | MIT OR Apache-2.0
+desktop | log | 0.4.33 | MIT OR Apache-2.0
+desktop | lru-slab | 0.1.2 | MIT OR Apache-2.0 OR Zlib
+desktop | markup5ever | 0.38.0 | MIT OR Apache-2.0
+desktop | memchr | 2.8.3 | Unlicense OR MIT
+desktop | mime | 0.3.17 | MIT OR Apache-2.0
+desktop | minisign-verify | 0.2.5 | MIT
+desktop | miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0
+desktop | mio | 1.2.2 | MIT
+desktop | moxcms | 0.8.1 | BSD-3-Clause OR Apache-2.0
+desktop | muda | 0.19.3 | Apache-2.0 OR MIT
+desktop | new_debug_unreachable | 1.0.6 | MIT
+desktop | notify-rust | 4.18.0 | MIT OR Apache-2.0
+desktop | num-conv | 0.2.2 | MIT OR Apache-2.0
+desktop | num-traits | 0.2.19 | MIT OR Apache-2.0
+desktop | once_cell | 1.21.4 | MIT OR Apache-2.0
+desktop | open | 5.4.0 | MIT
+desktop | option-ext | 0.2.0 | MPL-2.0
+desktop | parking_lot | 0.12.5 | MIT OR Apache-2.0
+desktop | parking_lot_core | 0.9.12 | MIT OR Apache-2.0
+desktop | percent-encoding | 2.3.2 | MIT OR Apache-2.0
+desktop | phf | 0.13.1 | MIT
+desktop | phf_codegen | 0.13.1 | MIT
+desktop | phf_generator | 0.13.1 | MIT
+desktop | phf_macros | 0.13.1 | MIT
+desktop | phf_shared | 0.13.1 | MIT
+desktop | pin-project-lite | 0.2.17 | Apache-2.0 OR MIT
+desktop | pkcs8 | 0.10.2 | Apache-2.0 OR MIT
+desktop | pkg-config | 0.3.33 | MIT OR Apache-2.0
+desktop | plist | 1.10.0 | MIT
+desktop | png | 0.17.16 | MIT OR Apache-2.0
+desktop | png | 0.18.1 | MIT OR Apache-2.0
+desktop | potential_utf | 0.1.5 | Unicode-3.0
+desktop | powerfmt | 0.2.0 | MIT OR Apache-2.0
+desktop | ppv-lite86 | 0.2.21 | MIT OR Apache-2.0
+desktop | precomputed-hash | 0.1.1 | MIT
+desktop | proc-macro2 | 1.0.107 | MIT OR Apache-2.0
+desktop | pxfm | 0.1.30 | BSD-3-Clause OR Apache-2.0
+desktop | quick-xml | 0.41.0 | MIT
+desktop | quinn | 0.11.11 | MIT OR Apache-2.0
+desktop | quinn-proto | 0.11.16 | MIT OR Apache-2.0
+desktop | quinn-udp | 0.5.15 | MIT OR Apache-2.0
+desktop | quote | 1.0.47 | MIT OR Apache-2.0
+desktop | rand | 0.10.2 | MIT OR Apache-2.0
+desktop | rand | 0.9.5 | MIT OR Apache-2.0
+desktop | rand_chacha | 0.9.0 | MIT OR Apache-2.0
+desktop | rand_core | 0.10.1 | MIT OR Apache-2.0
+desktop | rand_core | 0.6.4 | MIT OR Apache-2.0
+desktop | rand_core | 0.9.5 | MIT OR Apache-2.0
+desktop | rand_pcg | 0.10.2 | MIT OR Apache-2.0
+desktop | raw-window-handle | 0.6.2 | MIT OR Apache-2.0 OR Zlib
+desktop | ref-cast | 1.0.26 | MIT OR Apache-2.0
+desktop | ref-cast-impl | 1.0.26 | MIT OR Apache-2.0
+desktop | regex | 1.13.1 | MIT OR Apache-2.0
+desktop | regex-automata | 0.4.16 | MIT OR Apache-2.0
+desktop | regex-syntax | 0.8.11 | MIT OR Apache-2.0
+desktop | reqwest | 0.12.28 | MIT OR Apache-2.0
+desktop | reqwest | 0.13.4 | MIT OR Apache-2.0
+desktop | rfd | 0.16.0 | MIT
+desktop | ring | 0.17.14 | Apache-2.0 AND ISC
+desktop | rusqlite | 0.32.1 | MIT
+desktop | rustc_version | 0.4.1 | MIT OR Apache-2.0
+desktop | rustc-hash | 2.1.3 | Apache-2.0 OR MIT
+desktop | rustls | 0.23.45 | Apache-2.0 OR ISC OR MIT
+desktop | rustls-pki-types | 1.15.1 | MIT OR Apache-2.0
+desktop | rustls-platform-verifier | 0.7.0 | MIT OR Apache-2.0
+desktop | rustls-webpki | 0.103.15 | ISC
+desktop | ryu | 1.0.23 | Apache-2.0 OR BSL-1.0
+desktop | same-file | 1.0.6 | Unlicense/MIT
+desktop | schemars | 0.8.22 | MIT
+desktop | schemars | 0.9.0 | MIT
+desktop | schemars | 1.2.2 | MIT
+desktop | schemars_derive | 0.8.22 | MIT
+desktop | scopeguard | 1.2.0 | MIT OR Apache-2.0
+desktop | selectors | 0.36.1 | MPL-2.0
+desktop | semver | 1.0.28 | MIT OR Apache-2.0
+desktop | serde | 1.0.229 | MIT OR Apache-2.0
+desktop | serde_core | 1.0.229 | MIT OR Apache-2.0
+desktop | serde_derive | 1.0.229 | MIT OR Apache-2.0
+desktop | serde_derive_internals | 0.29.1 | MIT OR Apache-2.0
+desktop | serde_json | 1.0.151 | MIT OR Apache-2.0
+desktop | serde_repr | 0.1.21 | MIT OR Apache-2.0
+desktop | serde_spanned | 1.1.1 | MIT OR Apache-2.0
+desktop | serde_urlencoded | 0.7.1 | MIT/Apache-2.0
+desktop | serde_with | 3.21.0 | MIT OR Apache-2.0
+desktop | serde_with_macros | 3.21.0 | MIT OR Apache-2.0
+desktop | serde-untagged | 0.1.9 | MIT OR Apache-2.0
+desktop | serialize-to-javascript | 0.1.2 | MIT OR Apache-2.0
+desktop | serialize-to-javascript-impl | 0.1.2 | MIT OR Apache-2.0
+desktop | servo_arc | 0.4.3 | MIT OR Apache-2.0
+desktop | sha2 | 0.10.9 | MIT OR Apache-2.0
+desktop | shlex | 2.0.1 | MIT OR Apache-2.0
+desktop | signature | 2.2.0 | Apache-2.0 OR MIT
+desktop | simd-adler32 | 0.3.10 | MIT
+desktop | siphasher | 1.0.3 | MIT/Apache-2.0
+desktop | slab | 0.4.12 | MIT
+desktop | smallvec | 1.15.2 | MIT OR Apache-2.0
+desktop | socket2 | 0.6.5 | MIT OR Apache-2.0
+desktop | softbuffer | 0.4.8 | MIT OR Apache-2.0
+desktop | spki | 0.7.3 | Apache-2.0 OR MIT
+desktop | stable_deref_trait | 1.2.1 | MIT OR Apache-2.0
+desktop | string_cache | 0.9.0 | MIT OR Apache-2.0
+desktop | string_cache_codegen | 0.6.1 | MIT OR Apache-2.0
+desktop | strsim | 0.11.1 | MIT
+desktop | subtle | 2.6.1 | BSD-3-Clause
+desktop | syn | 2.0.119 | MIT OR Apache-2.0
+desktop | syn | 3.0.3 | MIT OR Apache-2.0
+desktop | sync_wrapper | 1.0.2 | Apache-2.0
+desktop | synstructure | 0.13.2 | MIT
+desktop | tao | 0.35.3 | Apache-2.0
+desktop | tauri | 2.11.6 | Apache-2.0 OR MIT
+desktop | tauri-build | 2.6.3 | Apache-2.0 OR MIT
+desktop | tauri-codegen | 2.6.3 | Apache-2.0 OR MIT
+desktop | tauri-macros | 2.6.3 | Apache-2.0 OR MIT
+desktop | tauri-plugin | 2.6.3 | Apache-2.0 OR MIT
+desktop | tauri-plugin-dialog | 2.7.2 | Apache-2.0 OR MIT
+desktop | tauri-plugin-fs | 2.5.1 | Apache-2.0 OR MIT
+desktop | tauri-plugin-notification | 2.3.3 | Apache-2.0 OR MIT
+desktop | tauri-plugin-opener | 2.5.4 | Apache-2.0 OR MIT
+desktop | tauri-plugin-updater | 2.10.1 | Apache-2.0 OR MIT
+desktop | tauri-runtime | 2.11.3 | Apache-2.0 OR MIT
+desktop | tauri-runtime-wry | 2.11.4 | Apache-2.0 OR MIT
+desktop | tauri-utils | 2.9.3 | Apache-2.0 OR MIT
+desktop | tauri-winres | 0.3.6 | MIT
+desktop | tauri-winrt-notification | 0.7.3 | MIT OR Apache-2.0
+desktop | tempfile | 3.27.0 | MIT OR Apache-2.0
+desktop | tendril | 0.5.1 | MIT OR Apache-2.0
+desktop | thiserror | 1.0.69 | MIT OR Apache-2.0
+desktop | thiserror | 2.0.19 | MIT OR Apache-2.0
+desktop | thiserror-impl | 1.0.69 | MIT OR Apache-2.0
+desktop | thiserror-impl | 2.0.19 | MIT OR Apache-2.0
+desktop | time | 0.3.55 | MIT OR Apache-2.0
+desktop | time-core | 0.1.9 | MIT OR Apache-2.0
+desktop | time-macros | 0.2.32 | MIT OR Apache-2.0
+desktop | tinystr | 0.8.3 | Unicode-3.0
+desktop | tinyvec | 1.12.0 | Zlib OR Apache-2.0 OR MIT
+desktop | tinyvec_macros | 0.1.1 | MIT OR Apache-2.0 OR Zlib
+desktop | tokio | 1.53.1 | MIT
+desktop | tokio-rustls | 0.26.4 | MIT OR Apache-2.0
+desktop | tokio-util | 0.7.19 | MIT
+desktop | toml | 0.9.12+spec-1.1.0 | MIT OR Apache-2.0
+desktop | toml | 1.1.4+spec-1.1.0 | MIT OR Apache-2.0
+desktop | toml_datetime | 0.7.5+spec-1.1.0 | MIT OR Apache-2.0
+desktop | toml_datetime | 1.1.1+spec-1.1.0 | MIT OR Apache-2.0
+desktop | toml_parser | 1.1.3+spec-1.1.0 | MIT OR Apache-2.0
+desktop | toml_writer | 1.1.2+spec-1.1.0 | MIT OR Apache-2.0
+desktop | tower | 0.5.3 | MIT
+desktop | tower-http | 0.6.11 | MIT
+desktop | tower-layer | 0.3.3 | MIT
+desktop | tower-service | 0.3.3 | MIT
+desktop | tracing | 0.1.44 | MIT
+desktop | tracing-attributes | 0.1.31 | MIT
+desktop | tracing-core | 0.1.36 | MIT
+desktop | tray-icon | 0.24.2 | MIT OR Apache-2.0
+desktop | try-lock | 0.2.5 | MIT
+desktop | typeid | 1.0.3 | MIT OR Apache-2.0
+desktop | typenum | 1.20.1 | MIT OR Apache-2.0
+desktop | unic-char-property | 0.9.0 | MIT/Apache-2.0
+desktop | unic-char-range | 0.9.0 | MIT/Apache-2.0
+desktop | unic-common | 0.9.0 | MIT/Apache-2.0
+desktop | unic-ucd-ident | 0.9.0 | MIT/Apache-2.0
+desktop | unic-ucd-version | 0.9.0 | MIT/Apache-2.0
+desktop | unicode-ident | 1.0.24 | (MIT OR Apache-2.0) AND Unicode-3.0
+desktop | unicode-segmentation | 1.13.3 | MIT OR Apache-2.0
+desktop | untrusted | 0.9.0 | ISC
+desktop | url | 2.5.8 | MIT OR Apache-2.0
+desktop | urlpattern | 0.3.0 | MIT
+desktop | utf8_iter | 1.0.4 | Apache-2.0 OR MIT
+desktop | uuid | 1.24.0 | Apache-2.0 OR MIT
+desktop | vcpkg | 0.2.15 | MIT/Apache-2.0
+desktop | version_check | 0.9.5 | MIT/Apache-2.0
+desktop | vswhom | 0.1.0 | MIT
+desktop | vswhom-sys | 0.1.3 | MIT
+desktop | walkdir | 2.5.0 | Unlicense/MIT
+desktop | want | 0.3.1 | MIT
+desktop | web_atoms | 0.2.5 | MIT OR Apache-2.0
+desktop | webpki-roots | 1.0.9 | CDLA-Permissive-2.0
+desktop | webview2-com | 0.38.2 | MIT
+desktop | webview2-com-macros | 0.8.1 | MIT
+desktop | webview2-com-sys | 0.38.2 | MIT
+desktop | winapi | 0.3.9 | MIT/Apache-2.0
+desktop | winapi-util | 0.1.11 | Unlicense OR MIT
+desktop | window-vibrancy | 0.6.0 | Apache-2.0 OR MIT
+desktop | windows | 0.61.3 | MIT OR Apache-2.0
+desktop | windows_x86_64_msvc | 0.52.6 | MIT OR Apache-2.0
+desktop | windows_x86_64_msvc | 0.53.1 | MIT OR Apache-2.0
+desktop | windows-collections | 0.2.0 | MIT OR Apache-2.0
+desktop | windows-core | 0.61.2 | MIT OR Apache-2.0
+desktop | windows-future | 0.2.1 | MIT OR Apache-2.0
+desktop | windows-implement | 0.60.2 | MIT OR Apache-2.0
+desktop | windows-interface | 0.59.3 | MIT OR Apache-2.0
+desktop | windows-link | 0.1.3 | MIT OR Apache-2.0
+desktop | windows-link | 0.2.1 | MIT OR Apache-2.0
+desktop | windows-numerics | 0.2.0 | MIT OR Apache-2.0
+desktop | windows-result | 0.3.4 | MIT OR Apache-2.0
+desktop | windows-strings | 0.4.2 | MIT OR Apache-2.0
+desktop | windows-sys | 0.59.0 | MIT OR Apache-2.0
+desktop | windows-sys | 0.60.2 | MIT OR Apache-2.0
+desktop | windows-sys | 0.61.2 | MIT OR Apache-2.0
+desktop | windows-targets | 0.52.6 | MIT OR Apache-2.0
+desktop | windows-targets | 0.53.5 | MIT OR Apache-2.0
+desktop | windows-threading | 0.1.0 | MIT OR Apache-2.0
+desktop | windows-version | 0.1.7 | MIT OR Apache-2.0
+desktop | winnow | 0.7.15 | MIT
+desktop | winnow | 1.0.4 | MIT
+desktop | winreg | 0.55.0 | MIT
+desktop | writeable | 0.6.3 | Unicode-3.0
+desktop | wry | 0.55.1 | Apache-2.0 OR MIT
+desktop | yoke | 0.8.3 | Unicode-3.0
+desktop | yoke-derive | 0.8.2 | Unicode-3.0
+desktop | zerocopy | 0.8.55 | BSD-2-Clause OR Apache-2.0 OR MIT
+desktop | zerofrom | 0.1.8 | Unicode-3.0
+desktop | zerofrom-derive | 0.1.7 | Unicode-3.0
+desktop | zeroize | 1.9.0 | Apache-2.0 OR MIT
+desktop | zerotrie | 0.2.4 | Unicode-3.0
+desktop | zerovec | 0.11.6 | Unicode-3.0
+desktop | zerovec-derive | 0.11.3 | Unicode-3.0
+desktop | zip | 4.6.1 | MIT
+desktop | zmij | 1.0.23 | MIT
+native-host | fs2 | 0.4.3 | MIT/Apache-2.0
+native-host | itoa | 1.0.18 | MIT OR Apache-2.0
+native-host | memchr | 2.8.3 | Unlicense OR MIT
+native-host | serde_core | 1.0.229 | MIT OR Apache-2.0
+native-host | serde_json | 1.0.151 | MIT OR Apache-2.0
+native-host | winapi | 0.3.9 | MIT/Apache-2.0
+native-host | zmij | 1.0.23 | MIT

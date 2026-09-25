@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "repo_id": "clear-download-manager-source",
+  "canonical_remote": "https://github.com/CacaPlay/clear-download-manager.git",
+  "branch": "main",
+  "app_version": "0.95.0",
+  "protected_identifiers": {
+    "tauri": "lat.cacaplay.cacatools.downloadmanager",
+    "extension": "aonppfnabjnicjjeoofkfjofolfibggp"
+  },
+  "build_identity": {
+    "schema": 1,
+    "required_fields": [
+      "repo_id",
+      "commit",
+      "version",
+      "artifact",
+      "artifact_sha256",
+      "built_at_utc",
+      "toolchain"
+    ]
+  }
+}

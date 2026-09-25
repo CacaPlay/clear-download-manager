@@ -1,0 +1,49 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Rust
+        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master 2026-09-24
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+      - name: Frontend gates
+        shell: pwsh
+        run: |
+          npm ci --no-audit --no-fund
+          npm run check:release
+          npm run build:web
+      - name: Rust gates
+        shell: pwsh
+        run: |
+          npm run prepare:windows-binaries
+          npm run verify:binaries
+          cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+          cargo check --manifest-path src-tauri/Cargo.toml --locked --all-targets
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --lib
+          cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings

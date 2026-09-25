@@ -1,0 +1,48 @@
+name: Check yt-dlp update
+
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Compare pinned and latest yt-dlp
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $script = Get-Content scripts/prepare-windows-binaries.ps1 -Raw
+          $match = [regex]::Match($script, '\$YtDlpVersion\s*=\s*"(?<version>[^"]+)"')
+          if (-not $match.Success) { throw 'No se pudo leer YtDlpVersion desde prepare-windows-binaries.ps1.' }
+          $pinned = $match.Groups['version'].Value
+          $latest = Invoke-RestMethod -Uri 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest' -Headers @{ 'User-Agent' = 'CacaTools-yt-dlp-update-check'; 'Accept' = 'application/vnd.github+json' }
+          $latestVersion = [string]$latest.tag_name
+          Write-Host "Pinned yt-dlp: $pinned"
+          Write-Host "Latest yt-dlp: $latestVersion"
+          if ($pinned -eq $latestVersion) { exit 0 }
+
+          $title = "yt-dlp update available: $latestVersion"
+          $existing = gh issue list --state all --search "in:title $title" --json number --jq 'length'
+          if ([int]$existing -eq 0) {
+            $body = @"
+          The pinned yt-dlp version is **$pinned**, while the latest official release is **$latestVersion**.
+
+          Release: https://github.com/yt-dlp/yt-dlp/releases/tag/$latestVersion
+          Update `scripts/prepare-windows-binaries.ps1`, refresh the immutable commit/license hash, run the Windows binary gate, and record real YouTube regression evidence.
+          "@
+            gh issue create --title $title --body $body
+          } else {
+            Write-Host "A tracking issue already exists for $latestVersion."
+          }

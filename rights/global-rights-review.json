@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-09-25",
+  "status": "PASS",
+  "targetLicense": "GPL-3.0-or-later",
+  "targetLicenseScope": "Project-authored source code; Clear marks and artwork remain separately licensed or reserved unless the rights holder grants otherwise.",
+  "findings": [
+    {
+      "id": "human-contributions",
+      "classification": "CLEAR",
+      "finding": "The public contributor history and local commit-name aliases show substantive human commits attributed to the repository owner account; no separate external human contributor was found in the reviewed history.",
+      "limitation": "Account attribution and owner statements are provenance evidence, not independent legal proof of title to every historical line."
+    },
+    {
+      "id": "bot-contributions",
+      "classification": "CLEAR",
+      "finding": "Three Dependabot commits are mechanical dependency/workflow updates; no substantive bot-authored application feature remains. Devin PR #4 surviving changes are cleanup/build text and manifest metadata; PR #5 is tracked separately.",
+      "limitation": "A bot sign-off is not a human contributor attestation."
+    },
+    {
+      "id": "vendored-lucide-icons",
+      "classification": "THIRD_PARTY_COMPATIBLE",
+      "finding": "The vendored Lucide subset has the upstream ISC license and the MIT exception for Feather-derived icons. The ambiguous music vector has been replaced with the official list-music paths, pinned to an upstream commit.",
+      "evidence": "app-ui/assets/icons/LICENSE; app-ui/assets/icons/NOTICE.md",
+      "limitation": "The original snapshot for the complete helper is not pinned; only the replacement list-music path was independently matched in this pass. These icon licenses do not clear any first-party brand or product artwork."
+    },
+    {
+      "id": "generated-code-artifacts",
+      "classification": "CLEAR",
+      "finding": "Generated dependency inventories and SBOM are generated metadata, not executable product code. Tauri schema/build outputs under src-tauri/gen/ are excluded from the authored source manifest and source archive."
+    },
+    {
+      "id": "public-test-only-signing-fixture",
+      "classification": "CLEAR",
+      "finding": "src-tauri/tools/catalog-test-vectors/v1/test-private-key.base64 is explicitly documented beside its paired public key as a public TEST ONLY vector, not a production secret or credential. The README forbids bundling it in an app/runtime; it remains in the source archive only as a public test fixture.",
+      "evidence": "src-tauri/tools/catalog-test-vectors/v1/README.md"
+    },
+    {
+      "id": "copied-snippets-and-conflicting-headers",
+      "classification": "CLEAR",
+      "finding": "The reviewed source search found no additional vendored source/snippet set or conflicting Apache/proprietary first-party source header beyond the separately recorded Lucide subset.",
+      "limitation": "Repository text search cannot establish the origin of every line by itself."
+    },
+    {
+      "id": "clear-brand-assets-distribution",
+      "classification": "CLEAR",
+      "finding": "The owner explicitly approved distribution of the 62 retained Clear brand, extension identity, and installer-art files on 2026-09-25. Clear branding remains outside GPL.",
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "licenseTreatment": "EXCLUDED_FROM_GPL",
+      "register": "rights/asset-provenance.json"
+    },
+    {
+      "id": "generated-tauri-icons-distribution",
+      "classification": "CLEAR",
+      "assetCount": 8,
+      "finding": "The owner explicitly approved distribution of the 8 retained platform and Store icon files on 2026-09-25; check:asset-provenance verifies the grouped attestation. Five obsolete purple logos from early app versions were removed at the owner's direction; current Tauri/MSIX configuration does not consume them. The generation command/tool version is not recorded, but the owner's rights declaration covers distribution of these outputs.",
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "register": "rights/asset-provenance.json"
+    },
+    {
+      "id": "clear-product-art-distribution",
+      "classification": "CLEAR",
+      "assetCount": 95,
+      "finding": "The owner explicitly approved distribution of the 95 retained file-type, news/support, player-control, and documentation artwork files on 2026-09-25. Two obsolete placeholders and five obsolete purple platform logos were removed.",
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "register": "rights/asset-provenance.json"
+    },
+    {
+      "id": "unknown-asset-provenance-crosscut",
+      "classification": "CLEAR",
+      "finding": "The owner approved distribution rights for the 165 retained images in a grouped declaration dated 2026-09-25; the SHA-256 is verified by check:asset-provenance. This is a cross-cutting union, not an additional family.",
+      "assetCount": 165,
+      "notAdditive": true,
+      "register": "rights/asset-provenance.json"
+    },
+    {
+      "id": "removed-assets",
+      "classification": "CLEAR",
+      "finding": "All 73 graphics with REMOVE dispositions are confirmed absent from the current tree; two related Android XML support files were also removed.",
+      "evidence": "docs/ASSET-MARKS-AUDIT.md"
+    },
+    {
+      "id": "license-metadata-and-legacy-headers",
+      "classification": "CLEAR",
+      "finding": "The code-license metadata, full COPYING text, NOTICE, TRADEMARKS, and contribution metadata are consistent about GPL applying to project-authored source code and Clear marks being outside that grant. Asset clearance verifies distribution permission separately."
+    },
+    {
+      "id": "pr5-devin-output",
+      "classification": "CLEAR_FOR_REVIEWED_DIFF",
+      "investigationStatus": "SUFFICIENTLY_SUPPORTED_CLOSED_FOR_FURTHER_INVESTIGATION",
+      "finding": "The public PR/session chain and exact diff are recorded. The rights holder directly declared the account to be personal self-service, denied any owner-known Enterprise MSA/Order Form/custom modification, declared continued use after the 30-day transition, and approved GPL distribution of code the owner has rights to license. Cognition Platform Terms 2026-06-30 §§1.2, 1.5, 3.1 and 12.4 support the ownership/applicability basis.",
+      "limitation": "The account classification and absence of separate agreements rely on the direct owner declaration; no account-specific click-through timestamp/log or independent legal opinion is represented. The PR #5 owner review is recorded and hash-checked in rights/release-rights.json.",
+      "evidenceRegister": "rights/pr5-evidence-register.json",
+      "formalOwnerReviewDraft": "rights/pr5-owner-review-draft.md"
+    }
+  ],
+  "releaseDecision": "PASS",
+  "blockingItems": []
+}

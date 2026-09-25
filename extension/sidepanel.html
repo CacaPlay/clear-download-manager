@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="system">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clear Download Manager</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body data-theme="dark">
+  <header class="topbar">
+    <div class="brand-mark"><img id="brand-logo" src="assets/brand/clear-download-manager-celeste.png" alt="Clear Download Manager" width="45" height="45"></div>
+    <div class="brand-copy"><strong>Clear Download Manager</strong><small>Captura segura del navegador</small></div>
+    <span id="connection" class="status" role="status" data-state="checking" title="Comprobando conexión con Clear Download Manager">Comprobando…</span>
+  </header>
+
+  <main>
+    <section class="quick-bar" aria-label="Preferencias rápidas">
+      <label class="quick-field"><span>Calidad</span>
+        <select id="quick-preset" aria-label="Calidad o formato predeterminado">
+          <option value="auto">Mejor calidad</option>
+          <option value="1080p">Siempre 1080p</option>
+          <option value="720p">Siempre 720p</option>
+          <option value="mp3">Siempre MP3</option>
+          <option value="m4a">Siempre M4A</option>
+        </select>
+        <small class="quality-hint">Sin límite fijo: 4K o más, si está disponible.</small>
+      </label>
+      <label class="quick-field window-field"><span>Al enviar</span>
+        <select id="window-mode" aria-label="Comportamiento de la ventana de Clear Download Manager">
+          <option value="background">Mantener app en segundo plano</option>
+          <option value="foreground">Abrir app en primer plano</option>
+        </select>
+      </label>
+      <button id="open-app" class="quiet-button" type="button">Abrir Clear Download Manager</button>
+    </section>
+
+    <section class="capture-settings" aria-label="Captura de descargas">
+      <div><strong>Capturar descargas del navegador</strong><small>La app ejecuta y conserva todas las tareas.</small></div>
+      <select id="capture-mode" aria-label="Modo de captura">
+        <option value="automatic">Automático</option>
+        <option value="ask">Avisar</option>
+        <option value="disabled">Desactivado</option>
+      </select>
+    </section>
+
+    <section id="extension-update" class="extension-update" hidden>
+      <div><strong>Actualización de la extensión lista</strong><small id="extension-update-version"></small></div>
+      <button id="apply-extension-update" type="button">Aplicar</button>
+    </section>
+
+    <section class="detected-panel primary-section" aria-labelledby="detected-title">
+      <div class="toolbar">
+        <div><span class="eyebrow">PESTAÑA ACTUAL</span><h1 id="detected-title">Contenido detectado</h1><p id="message" class="message">Automático en YouTube, Pinterest y TikTok; en otros sitios se inicia al abrir el panel o pulsar ↻.</p></div>
+        <div class="toolbar-actions"><button id="refresh" class="icon-button" type="button" title="Actualizar detección" aria-label="Actualizar detección">↻</button><button id="retry" class="quiet-button" type="button">Reintentar</button></div>
+      </div>
+      <div id="list" class="list" aria-live="polite"></div>
+      <div class="send-actions" aria-label="Acciones de envío">
+        <label class="select-all"><input id="select-all" type="checkbox"> <span>Seleccionar todo</span></label>
+        <div class="send-buttons"><button id="send-current" class="primary" type="button" disabled>Enviar vídeo actual</button></div>
+      </div>
+    </section>
+
+    <section class="compact-panel downloads-panel" data-panel="downloads">
+      <div class="section-heading panel-heading">
+        <div><span class="eyebrow">SINCRONIZADO CON LA APP</span><h2>Descargas</h2><small id="download-summary">Sin actividad</small></div>
+        <button class="panel-toggle" data-toggle-panel="downloads" type="button" aria-expanded="true">Ocultar</button>
+      </div>
+      <div class="panel-body" data-panel-body="downloads">
+        <p id="bridge-actions-note" class="message" role="status"></p>
+        <div id="downloads-list" class="downloads-list"><p class="muted">Abre Clear Download Manager o inicia una descarga.</p></div>
+        <button id="show-all-downloads" class="downloads-more" type="button" hidden>Ver más</button>
+      </div>
+    </section>
+
+    <div id="download-context-menu" class="download-context-menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-download-action="open">Abrir en Clear Download Manager</button>
+      <button type="button" role="menuitem" data-download-action="play">Reproducir en Clear Download Manager</button>
+      <button type="button" role="menuitem" data-download-action="pause">Pausar</button>
+      <button type="button" role="menuitem" data-download-action="resume">Reanudar</button>
+      <button type="button" role="menuitem" data-download-action="retry">Reintentar</button>
+      <button type="button" role="menuitem" data-download-action="cancel">Cancelar</button>
+      <button type="button" role="menuitem" data-download-action="reveal_file">Mostrar archivo</button>
+      <button type="button" role="menuitem" data-download-action="open_file">Abrir archivo</button>
+      <button type="button" role="menuitem" data-download-action="delete_history">Eliminar del historial</button>
+      <button type="button" role="menuitem" data-download-action="delete_file">Eliminar archivo y registro</button>
+    </div>
+
+    <section class="compact-panel links-panel" data-panel="links">
+      <div class="section-heading panel-heading">
+        <div><span class="eyebrow">COLECCIONES MANUALES</span><h2>Enlaces</h2><small id="links-summary">Pega uno o varios enlaces</small></div>
+        <button class="panel-toggle" data-toggle-panel="links" type="button" aria-expanded="true">Ocultar</button>
+      </div>
+      <div class="panel-body" data-panel-body="links">
+        <div class="collection-toolbar">
+          <label><span>Carpeta activa</span><select id="collection-select" aria-label="Carpeta o playlist activa"></select></label>
+          <div><button id="new-collection" type="button">Nueva playlist</button><button id="leave-collection" type="button" class="quiet-button">Salir</button></div>
+        </div>
+        <div class="manual-entry">
+          <textarea id="manual-links-input" rows="2" placeholder="Pega aquí un enlace o varios enlaces" spellcheck="false" aria-label="Añadir enlaces automáticamente a la playlist"></textarea>
+        </div>
+        <div id="manual-links-list" class="manual-links-list"></div>
+        <div class="collection-actions"><button id="clear-current-links" class="quiet-button" type="button">Vaciar</button><button id="send-current-collection" class="primary" type="button" disabled>Enviar playlist</button></div>
+      </div>
+    </section>
+
+    <details class="appearance-panel">
+      <summary>Apariencia de la extensión</summary>
+      <label><span>Colores</span><select id="appearance-mode"><option value="follow-app">Seguir Clear Download Manager</option><option value="custom">Personalizada</option></select></label>
+      <label><span>Tema</span><select id="custom-theme"><option value="dark">Oscuro</option><option value="light">Claro</option></select></label>
+      <label><span>Color principal</span><input id="custom-accent" type="color" value="#00ff2a"></label>
+      <p id="progress-sync-note" class="message"></p>
+      <p class="message">Para ensanchar el panel, arrastra su borde hacia el centro del navegador.</p>
+      <label class="locale-control" title="Idioma"><span>Idioma</span><select id="extension-locale" aria-label="Idioma"><option value="system">Sistema</option><option value="es">Español</option><option value="en">English</option></select></label>
+    </details>
+  </main>
+
+  <footer><span id="count">0 elementos detectados</span><span id="sync-state">Sincronizando…</span></footer>
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

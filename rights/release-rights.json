@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "status": "READY",
+  "targetLicense": "GPL-3.0-or-later",
+  "readinessScope": "Formal GPL source relicensing clearance for project-authored code contributions. Brand, marks, and artwork are not required to be GPL-licensed; their separate distribution permission is tracked by the asset provenance gate.",
+  "items": [
+    {
+      "id": "pr5-devin-output",
+      "status": "APPROVED",
+      "investigationStatus": "SUFFICIENTLY_SUPPORTED_CLOSED_FOR_FURTHER_INVESTIGATION",
+      "formalClearanceStatus": "APPROVED",
+      "scope": "Original +22/-7 source changes from merged PR #5, commit 78ceb49a8ff2e870fbeb604e586f6e7212e5c5d2",
+      "currentFiles": [
+        "src-tauri/src/app/runtime.rs",
+        "src-tauri/src/extension_bridge.rs",
+        "src-tauri/src/tools/download.rs",
+        "src-tauri/src/tools/manifest.rs"
+      ],
+      "evidencePath": "rights/pr5-owner-review-draft.md",
+      "evidenceSha256": "4731b18b79f9eea9012ff43220feab30a0b23ca3672b414a7cfcc6eb86ee813f",
+      "reviewedBy": "Julio Angel / CacaPlay",
+      "reviewedAt": "2026-09-25",
+      "rightsBasis": "Direct owner declaration of personal self-service account, no owner-known negotiated MSA/Order Form/custom modification, continued use after the 30-day terms transition, and authorization of code the owner has rights to license; public Platform Terms §§1.2, 1.5, 3.1, 12.4. No click-through timestamp is claimed."
+    }
+  ],
+  "formalActionRequired": {
+    "id": "pr5-devin-output",
+    "ownerApprovalStatus": "APPROVED",
+    "draftPath": "rights/pr5-owner-review-draft.md",
+    "requiredEvidence": [
+      "SATISFIED: Owner identified Cognition Platform Terms of Service, 2026-06-30, §§1.2, 1.5, 3.1 and 12.4, with applicability based on direct declaration of personal self-service and continued use after the 30-day transition; no account-specific click-through record is claimed.",
+      "SATISFIED: Owner confirmed requesting/authorizing and reviewing the exact PR #5 diff, and authorized GPL distribution of code the owner has rights to license; local diff inspection identified no vendored file or copied third-party source block."
+    ],
+    "doNotAutoApprove": true,
+    "ownerApprovalEvidencePath": "rights/pr5-owner-review-draft.md",
+    "ownerApprovalEvidenceSha256": "4731b18b79f9eea9012ff43220feab30a0b23ca3672b414a7cfcc6eb86ee813f"
+  },
+  "assetDistributionReview": {
+    "status": "APPROVED",
+    "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+    "registry": "rights/asset-provenance.json",
+    "draftAttestation": "rights/owner-asset-rights-attestation.md",
+    "ownerStatementStatus": "APPROVED",
+    "ownerStatementEvidencePath": "rights/owner-asset-rights-attestation.md",
+    "ownerStatementEvidenceSha256": "740f969109a2db404f1b1d588db4bb84a3dc712f347d2de689b7df804c98d0c5",
+    "groups": [
+      {
+        "id": "clear-brand-assets",
+        "assetCount": 62,
+        "status": "APPROVED",
+        "licenseTreatment": "EXCLUDED_FROM_GPL"
+      },
+      {
+        "id": "generated-tauri-platform-icons",
+        "assetCount": 8,
+        "status": "APPROVED"
+      },
+      {
+        "id": "clear-product-art",
+        "assetCount": 95,
+        "status": "APPROVED"
+      }
+    ],
+    "unknownProvenanceAssetCount": 0,
+    "unknownProvenanceIsCrossCutting": false
+  },
+  "resolvedAssetDispositions": [
+    {
+      "id": "custom-music-vector",
+      "status": "REPLACED",
+      "replacement": "Official Lucide list-music icon; see rights/asset-provenance.json and app-ui/assets/icons/NOTICE.md."
+    },
+    {
+      "id": "removed-28-assets",
+      "status": "CLEAR",
+      "assetCount": 28,
+      "evidencePath": "docs/ASSET-MARKS-AUDIT.md"
+    },
+    {
+      "id": "removed-marked-legacy-assets",
+      "status": "CLEAR",
+      "assetCount": 40,
+      "supportingFileCount": 2,
+      "evidencePath": "docs/ASSET-MARKS-AUDIT.md"
+    },
+    {
+      "id": "removed-obsolete-purple-platform-logos",
+      "status": "CLEAR",
+      "assetCount": 5,
+      "evidencePath": "docs/ASSET-MARKS-AUDIT.md"
+    }
+  ]
+}

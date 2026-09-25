@@ -1,0 +1,100 @@
+{
+  "messages": [
+    {
+      "id": "clear-download-manager-v0-95-4-news",
+      "type": "release",
+      "version": "0.95.4",
+      "platform": "windows",
+      "locale": "all",
+      "title": "Clear Download Manager 0.95.4",
+      "summary": "La versión 0.95.4 mejora la integración con la extensión y la gestión de descargas, y ya se distribuye desde el repositorio principal. Consulta el release oficial para ver el instalador y sus hashes.",
+      "published_at": "2026-09-22T22:20:14Z",
+      "details": [
+        "Mejoras de estabilidad y controles más claros en la gestión de descargas.",
+        "Panel de la extensión con traducciones completas y sincronización con CDM.",
+        "El canal legacy mantiene compatibilidad mientras las nuevas versiones se publican en el repositorio principal."
+      ],
+      "translations": {
+        "es": {
+          "title": "Clear Download Manager 0.95.4",
+          "summary": "La versión 0.95.4 mejora la integración con la extensión y la gestión de descargas, y ya se distribuye desde el repositorio principal. Consulta el release oficial para ver el instalador y sus hashes.",
+          "details": [
+            "Mejoras de estabilidad y controles más claros en la gestión de descargas.",
+            "Panel de la extensión con traducciones completas y sincronización con CDM.",
+            "El canal legacy mantiene compatibilidad mientras las nuevas versiones se publican en el repositorio principal."
+          ],
+          "actionLabel": "Ver release"
+        },
+        "en": {
+          "title": "Clear Download Manager 0.95.4",
+          "summary": "Version 0.95.4 improves extension integration and download management, and is now distributed from the main repository. Visit the official release for the installer and its checksums.",
+          "details": [
+            "Stability improvements and clearer download-management controls.",
+            "The extension panel now has complete translations and synchronization with CDM.",
+            "The legacy channel remains compatible while new versions move to the main repository."
+          ],
+          "actionLabel": "View release"
+        }
+      },
+      "priority": 100,
+      "dismissible": false,
+      "action_required": false,
+      "action": {
+        "type": "open-url",
+        "url": "https://github.com/CacaPlay/clear-download-manager/releases/tag/v0.95.4",
+        "label": "Ver release"
+      }
+    },
+    {
+      "id": "clear-download-manager-v0-95-0-novedades",
+      "type": "release",
+      "version": "0.95.0",
+      "platform": "windows",
+      "locale": "all",
+      "title": "Clear Download Manager 0.95.0",
+      "summary": "Una actualización importante con mejoras de estabilidad, descargas y experiencia de uso.",
+      "published_at": "2026-09-15T05:23:04Z",
+      "details": [
+        "Sistema de animaciones y transiciones renovado.",
+        "Iconos y etiquetas según el formato real del archivo.",
+        "Temas y colores sincronizados entre CDM y la extensión.",
+        "Limitador global de ancho de banda y prioridades de descarga.",
+        "Mejoras en HTTP, multimedia, reproductor local y extensión de Chrome."
+      ],
+      "translations": {
+        "es": {
+          "title": "Clear Download Manager 0.95.0",
+          "summary": "Una actualización importante con mejoras de estabilidad, descargas y experiencia de uso.",
+          "details": [
+            "Sistema de animaciones y transiciones renovado.",
+            "Iconos y etiquetas según el formato real del archivo.",
+            "Temas y colores sincronizados entre CDM y la extensión.",
+            "Limitador global de ancho de banda y prioridades de descarga.",
+            "Mejoras en HTTP, multimedia, reproductor local y extensión de Chrome."
+          ],
+          "actionLabel": "Ver release"
+        },
+        "en": {
+          "title": "Clear Download Manager 0.95.0",
+          "summary": "A major update with improvements to stability, downloads, and everyday use.",
+          "details": [
+            "Renewed animation and transition system.",
+            "Icons and labels based on the actual file format.",
+            "Themes and colors synchronized between CDM and the extension.",
+            "Global bandwidth limit and download priorities.",
+            "Improvements to HTTP, media, local player, and Chrome extension workflows."
+          ],
+          "actionLabel": "View release"
+        }
+      },
+      "priority": 100,
+      "dismissible": true,
+      "action_required": false,
+      "action": {
+        "type": "open-url",
+        "url": "https://github.com/CacaPlay/clear-download-manager-releases/releases/tag/v0.95.0",
+        "label": "Ver release"
+      }
+    }
+  ]
+}

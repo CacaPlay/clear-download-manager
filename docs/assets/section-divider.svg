@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="2" viewBox="0 0 900 2" role="img" aria-labelledby="title desc">
+  <title id="title">Separador de sección</title>
+  <desc id="desc">Línea horizontal sutil entre la presentación y las descargas.</desc>
+  <line x1="0" y1="1" x2="900" y2="1" stroke="#57606a" stroke-width="1"/>
+</svg>

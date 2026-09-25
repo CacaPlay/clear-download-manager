@@ -1,0 +1,9 @@
+pub(crate) mod clipboard;
+pub(crate) mod downloads;
+pub(crate) mod media;
+pub(crate) mod news;
+pub(crate) mod settings;
+pub(crate) mod subwindows;
+pub(crate) mod system;
+pub(crate) mod tools;
+pub(crate) mod torrents;

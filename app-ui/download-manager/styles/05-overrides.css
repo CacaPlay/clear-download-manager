@@ -1,0 +1,393 @@
+.dm-zen-nav>footer .dm-update-entry{
+  width:2.8rem!important;
+  min-width:2.8rem!important;
+  max-width:2.8rem!important;
+  height:2.8rem!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:visible!important;
+  border-radius:.68rem!important;
+  justify-content:center!important;
+  color:var(--dm-accent)!important;
+  background:color-mix(in srgb,var(--dm-accent) 13%,var(--dm-surface))!important;
+  border-color:color-mix(in srgb,var(--dm-accent) 48%,var(--dm-border-soft))!important;
+  box-shadow:0 0 0 0 color-mix(in srgb,var(--dm-accent) 30%,transparent)!important;
+  transition-property:background-color,border-color,transform,box-shadow!important;
+  transition-duration:.18s!important;
+  transition-timing-function:ease!important;
+}
+.dm-zen-nav>footer .dm-update-entry span{display:none!important}
+.dm-zen-nav>footer .dm-update-entry:hover,.dm-zen-nav>footer .dm-update-entry:focus-visible,.dm-zen-nav>footer .dm-update-entry.is-busy{
+  width:2.8rem!important;max-width:2.8rem!important;transform:translateY(-1px)!important;
+  background:color-mix(in srgb,var(--dm-accent) 20%,var(--dm-surface))!important;
+}
+.dm-zen-nav>footer .dm-update-entry::after{
+  content:"";position:absolute;right:4px;top:4px;width:7px;height:7px;border-radius:50%;
+  background:var(--dm-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--dm-accent) 18%,transparent);
+}
+
+/* The active navigation/category state is persistent, not a notification.
+   Do not replay a settle animation every time a live render refreshes it. */
+.dm-zen-nav>nav>button.is-active>svg,
+.dm-zen-nav>nav>button.is-active>.dm-icon{
+  animation:none!important;
+  opacity:1!important;
+  transform:none!important;
+}
+
+/* Exact visual centering for generic file glyphs. Extension badge stays in the corner. */
+.dm-job-file>.dm-icon{
+  position:absolute!important;left:50%!important;top:50%!important;
+  margin:0!important;transform:translate(-50%,-50%)!important;
+}
+
+/* Center the entire play affordance in the thumbnail rather than relying on a
+   translated corner coordinate. This remains stable when a live row is patched. */
+.dm-job-thumb>.dm-player-overlay,.dm-job-file>.dm-player-overlay,
+.dm-playlist-player-trigger>.dm-player-overlay{
+  inset:0!important;margin:auto!important;
+  left:0!important;right:0!important;top:0!important;bottom:0!important;
+  transform:none!important;
+}
+.dm-player-trigger:hover .dm-player-overlay,.dm-player-trigger:focus-visible .dm-player-overlay{
+  transform:none!important;
+}
+.dm-player-overlay::before{margin-left:1px!important}
+.dm-playlist-player-trigger{line-height:0!important}
+
+/* Multi-selection is opt-in and does not reflow the normal row layout. */
+.dm-zen-toolbar-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:.5rem!important;min-width:0}
+.dm-selection-toggle,.dm-selection-tools>button{
+  min-height:2.45rem!important;width:auto!important;min-width:2.45rem!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:.38rem!important;
+  padding:.4rem .65rem!important;border:1px solid var(--dm-border)!important;border-radius:.58rem!important;
+  background:var(--dm-surface)!important;color:var(--dm-text)!important;font-size:.78rem!important;white-space:nowrap!important;
+}
+.dm-selection-tools{display:flex;align-items:center;gap:.42rem}
+.dm-selection-tools>button.is-danger{color:var(--dm-danger)!important;border-color:color-mix(in srgb,var(--dm-danger) 45%,var(--dm-border))!important}
+.dm-selection-tools>button:disabled{opacity:.45;cursor:not-allowed}
+.dm-row-select{
+  position:absolute;z-index:7;left:.48rem;top:.48rem;width:1.45rem;height:1.45rem;display:grid;place-items:center;
+  border:1px solid color-mix(in srgb,var(--dm-border) 88%,transparent);border-radius:.42rem;
+  background:color-mix(in srgb,var(--dm-window) 88%,transparent);box-shadow:0 4px 12px rgba(0,0,0,.18);cursor:pointer;
+}
+.dm-row-select input{position:absolute;opacity:0;pointer-events:none}
+.dm-row-select i{width:.72rem;height:.72rem;border:1px solid var(--dm-muted);border-radius:.22rem;background:transparent}
+.dm-row-select input:checked+i{border-color:var(--dm-accent);background:var(--dm-accent);box-shadow:inset 0 0 0 2px var(--dm-window)}
+.dm-download-item.is-batch-selected{border-color:var(--dm-border-soft)!important;background:var(--dm-surface-2)!important}
+.dm-bulk-delete-list{display:grid;gap:.38rem;margin:.85rem 0;padding:.65rem;border:1px solid var(--dm-border-soft);border-radius:.62rem;background:var(--dm-window)}
+.dm-bulk-delete-list>span{min-width:0;display:grid;grid-template-columns:1.2rem minmax(0,1fr) auto;align-items:center;gap:.48rem}
+.dm-bulk-delete-list strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dm-text)}
+.dm-bulk-delete-list small,.dm-bulk-delete-list em{color:var(--dm-muted);font-size:.72rem;font-style:normal}
+.dm-selection-tools select{min-height:2.25rem;border:1px solid var(--dm-border-soft);border-radius:.52rem;background:var(--dm-surface-2);color:var(--dm-text);padding:0 .55rem;font:inherit}
+.dm-priority-menu{display:grid;grid-template-columns:1fr;gap:.08rem;margin:.24rem 0;padding:.34rem 0;border-block:1px solid var(--dm-border-soft)}
+.dm-priority-menu>small{padding:.2rem .72rem;color:var(--dm-muted);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.dm-priority-menu>button{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.dm-priority-badge{display:inline-flex;align-items:center;margin-left:.48rem;padding:.1rem .38rem;border:1px solid var(--dm-border-soft);border-radius:999px;font-size:.63rem;font-weight:750;line-height:1.15;vertical-align:middle}
+.dm-priority-badge.is-high{color:var(--dm-warning);border-color:color-mix(in srgb,var(--dm-warning) 42%,var(--dm-border-soft));background:color-mix(in srgb,var(--dm-warning) 9%,transparent)}
+.dm-priority-badge.is-low{color:var(--dm-muted);background:var(--dm-surface-2)}
+.dm-row-menu-floating{max-height:calc(100vh - 16px);overflow-y:auto}
+
+@media(max-width:980px){
+  .dm-selection-toggle span,.dm-selection-tools>button span{display:none}
+  .dm-selection-toggle,.dm-selection-tools>button{padding:.4rem!important}
+}
+
+.dm-download-item.has-selection>.dm-item-index{opacity:0!important}
+
+/* Fase 11.6 · cabecera compacta y responsive canónico del gestor Zen.
+   Este bloque consolida el comportamiento final de los tres estados de ancho;
+   las funciones de entrada siguen siendo las mismas y solo cambia su ubicación. */
+.dm-zen-main{
+  grid-template-rows:auto minmax(0,1fr)!important;
+  gap:.62rem!important;
+  padding:.72rem .86rem .62rem!important;
+}
+.dm-zen-top{
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:.5rem!important;
+}
+.dm-zen-head-actions{
+  min-width:0!important;
+  max-width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:.34rem!important;
+  overflow:hidden!important;
+}
+.dm-zen-head-actions .dm-helper-chips{
+  min-width:0!important;
+  flex:0 1 auto!important;
+  gap:.24rem!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
+.dm-zen-head-actions .dm-helper-chips button{
+  min-height:2.45rem!important;
+  padding:.34rem .58rem!important;
+  gap:.3rem!important;
+  font-size:.74rem!important;
+}
+.dm-zen-head-actions .dm-compact-stats{flex:0 0 auto!important;height:2.45rem!important}
+.dm-zen-head-actions>.dm-zen-settings,
+.dm-zen-head-actions>button:last-child{
+  flex:0 0 2.45rem!important;
+  width:2.45rem!important;
+  height:2.45rem!important;
+}
+.dm-zen-workspace{gap:.5rem!important}
+.dm-zen-toolbar{
+  min-height:2.72rem!important;
+  gap:.45rem!important;
+  padding:.18rem .25rem!important;
+  border:1px solid var(--dm-border-soft)!important;
+  border-radius:.68rem!important;
+  background:color-mix(in srgb,var(--dm-surface) 72%,transparent)!important;
+}
+.dm-zen-filter-slot{min-width:0!important;flex:1 1 auto!important;overflow:hidden!important}
+.dm-zen-filter-row{gap:.25rem!important;overflow:hidden!important}
+.dm-zen-filter-row .dm-filter{
+  min-height:2.28rem!important;
+  padding:.28rem .58rem!important;
+  font-size:.78rem!important;
+  white-space:nowrap!important;
+}
+.dm-zen-filter-row .dm-filter span{font-size:.82rem!important;font-weight:600!important}
+.dm-zen-filter-row .dm-filter b{font-size:.68rem!important;margin-left:.2rem!important}
+.dm-zen-toolbar-actions{
+  flex:0 0 auto!important;
+  gap:.32rem!important;
+}
+.dm-zen-toolbar-actions select{
+  min-width:10.6rem!important;
+  max-width:16rem!important;
+  min-height:2.28rem!important;
+  padding:.28rem .55rem!important;
+  font-size:.74rem!important;
+}
+.dm-zen-toolbar-actions>button,
+.dm-selection-toggle,.dm-selection-tools>button{
+  min-height:2.28rem!important;
+}
+
+@media (max-width:1100px){
+  .dm-zen-head-actions .dm-compact-stats{display:none!important}
+  .dm-zen-head-actions .dm-helper-chips button{padding-inline:.48rem!important;font-size:.7rem!important}
+  .dm-zen-top{gap:.4rem!important}
+}
+
+@media (max-width:820px){
+  .dm-zen-main{grid-template-rows:auto minmax(0,1fr)!important;gap:.5rem!important;padding:.56rem!important}
+  .dm-zen-top{
+    grid-template-columns:2.55rem minmax(0,1fr)!important;
+    align-items:center!important;
+  }
+  .dm-zen-top>.dm-unified-search{grid-column:2!important;min-width:0!important}
+  .dm-zen-head-actions{
+    grid-column:1/-1!important;
+    grid-row:2!important;
+    position:static!important;
+    justify-self:stretch!important;
+    min-width:0!important;
+    display:flex!important;
+    overflow:hidden!important;
+  }
+  .dm-zen-head-actions .dm-helper-chips{flex:1 1 auto!important;overflow:auto!important;scrollbar-width:none}
+  .dm-zen-head-actions .dm-helper-chips button{min-height:2.25rem!important}
+  .dm-zen-head-actions>button:last-child{flex:0 0 2.25rem!important;width:2.25rem!important;height:2.25rem!important}
+  .dm-zen-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important}
+  .dm-zen-filter-slot{grid-column:1/-1!important;grid-row:1!important;width:100%!important}
+  .dm-zen-toolbar-actions{grid-column:1/-1!important;grid-row:2!important;justify-content:flex-end!important}
+  .dm-zen-toolbar-actions select{min-width:0!important;max-width:none!important;flex:1 1 auto!important}
+}
+
+@media (max-width:680px){
+  .dm-zen-top{grid-template-columns:2.35rem minmax(0,1fr)!important}
+  .dm-zen-head-actions .dm-helper-chips{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:.22rem!important;
+    overflow:visible!important;
+  }
+  .dm-zen-head-actions .dm-helper-chips button{
+    min-width:0!important;
+    min-height:2.28rem!important;
+    justify-content:center!important;
+    padding:.28rem .2rem!important;
+    font-size:.64rem!important;
+  }
+  .dm-zen-head-actions .dm-helper-chips button span{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  .dm-zen-toolbar{padding:.16rem .2rem!important}
+  .dm-zen-filter-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;overflow:visible!important}
+  .dm-zen-filter-row .dm-filter{min-width:0!important;justify-content:center!important;padding-inline:.22rem!important}
+  .dm-zen-filter-row .dm-filter span{overflow:hidden!important;text-overflow:ellipsis!important}
+  .dm-zen-toolbar-actions{width:100%!important}
+  .dm-zen-toolbar-actions select{flex:1 1 auto!important}
+}
+
+@container download-center (min-width:861px){
+  .dm-download-item,.dm-zen-sidebar .dm-download-item{min-height:4.65rem!important;padding-block:.5rem!important}
+  .dm-item-body{grid-template-columns:minmax(13rem,1.05fr) minmax(16rem,1.15fr)!important;gap:1rem!important}
+  .dm-item-transfer{grid-template-columns:minmax(14rem,1fr) minmax(10rem,auto)!important;gap:.8rem!important}
+}
+@container download-center (min-width:681px) and (max-width:860px){
+  .dm-download-item,.dm-zen-sidebar .dm-download-item{min-height:4.65rem!important;padding:.5rem .72rem!important}
+  .dm-item-body{grid-template-columns:minmax(0,1fr)!important;gap:.48rem!important}
+  .dm-item-transfer{grid-template-columns:minmax(0,1fr) minmax(8.4rem,auto)!important;gap:.65rem!important}
+}
+@container download-center (max-width:680px){
+  .dm-download-item,.dm-zen-sidebar .dm-download-item{min-height:7.15rem!important;grid-template-columns:4.55rem minmax(0,1fr) 2.75rem!important;gap:.62rem!important;padding:.64rem!important}
+  .dm-job-thumb,.dm-job-file,.dm-playlist-stack{width:4.55rem!important;height:3.5rem!important}
+  .dm-item-body{grid-template-columns:minmax(0,1fr)!important;gap:.38rem!important}
+  .dm-item-transfer{grid-template-columns:minmax(0,1fr)!important;gap:.3rem!important}
+  .dm-item-size{display:flex!important;align-items:baseline!important;gap:.3rem!important;text-align:left!important}
+}
+@container download-center (max-width:480px){
+  .dm-download-item,.dm-zen-sidebar .dm-download-item{min-height:7.3rem!important;grid-template-columns:4.1rem minmax(0,1fr) 2.55rem!important;gap:.5rem!important;padding:.56rem!important}
+  .dm-job-thumb,.dm-job-file,.dm-playlist-stack{width:4.1rem!important;height:3.15rem!important}
+}
+
+/* Fase 11 hotfix: el buscador mantiene la primera linea y las acciones pasan a la segunda. */
+.dm-zen-top{
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-areas:'search head' 'secondary secondary'!important;
+  align-items:center!important;
+}
+.dm-zen-top>.dm-mobile-menu{grid-area:menu}
+.dm-zen-top>.dm-unified-search{grid-area:search!important;width:100%!important;min-width:0!important}
+.dm-zen-head-actions{grid-area:head!important}
+.dm-zen-secondary-actions{grid-area:secondary!important;min-width:0!important;width:100%!important;display:flex!important;align-items:center!important;overflow:auto!important;scrollbar-width:none!important}
+.dm-zen-secondary-actions .dm-helper-chips{width:100%;padding:0!important}
+.dm-zen-toolbar{justify-content:flex-end!important}
+.dm-zen-toolbar-actions{width:100%!important;justify-content:flex-end!important}
+.dm-zen-toolbar-actions select{min-width:13rem!important;flex:0 1 18rem!important}
+@media(max-width:820px){
+  .dm-zen-top{
+    grid-template-columns:2.55rem minmax(0,1fr) auto!important;
+    grid-template-areas:'menu search head' 'secondary secondary secondary'!important;
+  }
+  .dm-zen-top>.dm-unified-search{grid-column:auto!important}
+  .dm-zen-secondary-actions{grid-area:secondary!important}
+  .dm-zen-toolbar{display:flex!important}
+  .dm-zen-toolbar-actions{width:100%!important}
+  .dm-zen-toolbar-actions select{min-width:0!important;max-width:none!important;flex:1 1 auto!important}
+}
+@media(max-width:680px){
+  .dm-zen-top{grid-template-columns:2.35rem minmax(0,1fr) auto!important}
+  .dm-zen-secondary-actions .dm-helper-chips{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:.22rem!important;overflow:visible!important}
+  .dm-zen-secondary-actions .dm-helper-chips button{min-width:0!important;min-height:2.28rem!important;justify-content:center!important;padding:.28rem .2rem!important;font-size:.64rem!important}
+  .dm-zen-secondary-actions .dm-helper-chips button span{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+}
+
+/* R3 bis / R6 bis · the second header row is one flex band with two explicit
+   action groups. Keeping both groups in the same row prevents the inspector
+   controls from drifting into a third, unrelated toolbar. */
+.dm-zen-secondary-row{
+  grid-area:secondary!important;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+  padding-top:.08rem;
+}
+.dm-zen-secondary-row>.dm-zen-secondary-actions{
+  min-width:0;
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+}
+.dm-zen-secondary-row>.dm-zen-secondary-actions .dm-helper-chips{
+  min-width:0;
+  width:auto;
+  flex:0 1 auto;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  padding:0!important;
+}
+.dm-zen-secondary-row>.dm-zen-toolbar-actions{
+  min-width:0;
+  flex:0 0 auto;
+  margin-left:auto;
+  justify-content:flex-end;
+}
+
+/* Human review stabilization: keep priority choices on one compact row and
+   expose the current value as quiet metadata instead of a pill. */
+.dm-priority-menu{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.12rem;
+}
+.dm-priority-menu>small{grid-column:1/-1}
+.dm-priority-menu>button{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:0!important;
+  gap:.2rem!important;
+  padding:.38rem .3rem!important;
+  white-space:nowrap!important;
+}
+.dm-priority-menu>button>span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.dm-priority-menu>button>svg{flex:0 0 auto;width:14px;height:14px}
+.dm-speed-menu{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:.2rem;
+  margin:.24rem 0;
+  padding:.34rem 0;
+  border-block:1px solid var(--dm-border-soft);
+}
+.dm-inspector-actions>.dm-speed-menu{grid-column:1/-1;width:100%;margin:.05rem 0 .2rem}
+.dm-speed-menu>small{padding:.2rem .72rem;color:var(--dm-muted);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.dm-speed-custom{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.3rem;padding:0 .5rem}
+.dm-speed-custom>input{min-width:0;border:1px solid var(--dm-border);border-radius:.35rem;background:var(--dm-surface-2);color:var(--dm-text);padding:.36rem .42rem;font:inherit;font-size:.8rem}
+.dm-speed-custom>input:focus{outline:2px solid color-mix(in srgb,var(--dm-accent) 55%,transparent);outline-offset:1px}
+.dm-speed-unit{color:var(--dm-muted);font-size:.78rem;white-space:nowrap}
+.dm-speed-custom>button{display:flex!important;align-items:center!important;justify-content:center!important;padding:.36rem .62rem!important;white-space:nowrap!important}
+.dm-priority-meta{
+  display:inline-flex;
+  align-items:center;
+  gap:.16rem;
+  min-width:0;
+  flex:0 0 auto;
+  color:var(--dm-muted);
+  font-size:.75rem;
+  font-weight:500;
+  line-height:1.3;
+  white-space:nowrap;
+}
+.dm-priority-meta.is-high{color:var(--dm-warning)}
+.dm-priority-meta.is-low{color:var(--dm-faint)}
+.dm-priority-marker{font-size:.78rem;font-weight:700;line-height:1}
+.dm-priority-meta>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-priority-badge{display:none!important}
+
+/* CDM is an application surface, not a document editor. Prevent accidental
+   text highlighting in rows, menus and dialogs; retain native text editing in
+   controls where users enter URLs, names, search terms, or settings. */
+html,body,body *{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+input,textarea,[contenteditable="true"],[role="textbox"]{-webkit-user-select:text;user-select:text}
+img{-webkit-user-drag:none;user-drag:none}
+
+/* The Advanced Details view is a compact utility dialog, not a full-width
+   dashboard. */
+.dm-modal-backdrop[data-dm-modal="rename"]{padding:.75rem}
+.dm-modal-backdrop[data-dm-modal="rename"]>.dm-modal{width:min(40rem,100%);max-height:min(22rem,calc(100dvh - 1.5rem));border-radius:.78rem}
+.dm-modal-backdrop[data-dm-modal="rename"]>.dm-modal>header{min-height:3.1rem;padding:.5rem .8rem}
+.dm-modal-backdrop[data-dm-modal="rename"]>.dm-modal>.dm-modal-body{padding:.7rem .8rem}
+.dm-modal-backdrop[data-dm-modal="rename"]>.dm-modal>footer{padding:.5rem .8rem}
+.dm-modal-backdrop[data-dm-modal="rename"] .dm-rename-form{max-width:none;margin:0}
+.dm-rename-form{display:grid;gap:.45rem;max-width:32rem;margin:0 auto}
+.dm-rename-form>label{font-size:.82rem;font-weight:650;color:var(--dm-text)}
+.dm-rename-form>input{min-width:0;min-height:2.7rem;padding:.6rem .75rem;border:1px solid var(--dm-border);border-radius:.55rem;background:var(--dm-surface-2);color:var(--dm-text);font:inherit;user-select:text;-webkit-user-select:text}
+.dm-rename-form>small{color:var(--dm-faint);font-size:.73rem;line-height:1.45}

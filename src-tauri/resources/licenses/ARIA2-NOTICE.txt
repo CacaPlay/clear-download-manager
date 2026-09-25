@@ -1,0 +1,12 @@
+﻿CacaTools Download Manager includes aria2c as a local download engine.
+Version output: aria2 version 1.37.0
+Official release asset: https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip
+Archive SHA-256: 67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288
+Executable SHA-256: be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2
+
+aria2 is distributed under GPL-2.0-or-later. Keep this notice and the verified release COPYING text as
+ARIA2-COPYING.txt. The same release includes LICENSE.OpenSSL, preserved as ARIA2-OPENSSL-LICENSE.txt;
+it contains the upstream OpenSSL linking-exception notice and license text. Keep the corresponding-source
+offer or source distribution required for the exact binary shipped.
+Official source repository: https://github.com/aria2/aria2
+Release source tag: release-1.37.0

@@ -1,0 +1,1135 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "clear-download-manager@0.95.4",
+  "documentNamespace": "http://spdx.org/spdxdocs/clear-download-manager-0.95.4-f13f1bf5-abeb-43ac-af1b-0de9056ee358",
+  "creationInfo": {
+    "created": "2026-09-24T21:56:58.711Z",
+    "creators": [
+      "Tool: npm/cli-11.16.0"
+    ]
+  },
+  "documentDescribes": [
+    "SPDXRef-Package-clear-download-manager-0.95.4"
+  ],
+  "packages": [
+    {
+      "name": "clear-download-manager",
+      "SPDXID": "SPDXRef-Package-clear-download-manager-0.95.4",
+      "versionInfo": "0.95.4",
+      "packageFileName": "",
+      "primaryPackagePurpose": "APPLICATION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/clear-download-manager@0.95.4"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/aix-ppc64",
+      "SPDXID": "SPDXRef-Package-esbuild.aix-ppc64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/aix-ppc64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/aix-ppc64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4af97bb6af24ff4f3ea7a0973e94634357ca5fed68747fc141b6f8f1f57a7e3dc258786ca083a863cef0d681d79b4a84a6420add97d5829d2179ddd7057cd731"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/android-arm",
+      "SPDXID": "SPDXRef-Package-esbuild.android-arm-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/android-arm",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/android-arm@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d24d85d76f57762a354dd25fcc9f2ccb5438eef503d8d9f07618807fb76b50dd440537cf7f886c142b66320bbfea6f094b3b01ae59958ee74c050a8e7c6f2eb1"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/android-arm64",
+      "SPDXID": "SPDXRef-Package-esbuild.android-arm64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/android-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/android-arm64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "df810611b088020a2c633ea0a0b728a57e8ca3b3721aff6d7f010cdbfec27b655c551939ebc892be788659c517232ef0103475c33a2573172b88556b59873006"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/android-x64",
+      "SPDXID": "SPDXRef-Package-esbuild.android-x64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/android-x64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/android-x64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "75bc18ee5b523035ac45ab5c4690a7112e05fa29bcf0e094806663cb9dac842ec6a87444fdc625c4d6c1e19e14a49b30a5c738431776a04fee7ccd29eb520a9e"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/darwin-arm64",
+      "SPDXID": "SPDXRef-Package-esbuild.darwin-arm64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/darwin-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/darwin-arm64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4d96d691063b92f4c05db5d44fbb9500247970c1ec0e24b3f73ed92805ff453abf589124dd0c91af4c19a4d8410d7fbfd02b5da9420994e8a875072d6bab58dd"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/darwin-x64",
+      "SPDXID": "SPDXRef-Package-esbuild.darwin-x64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/darwin-x64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/darwin-x64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "cdf77380af400813592c8fc2c874cec7cd52c8d6cce985e7eebc52817f7b563ca23e5f56d62e0a6b87e0284084a0508a1a9bc18f9a80ad62068108cec2482c91"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/freebsd-arm64",
+      "SPDXID": "SPDXRef-Package-esbuild.freebsd-arm64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/freebsd-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/freebsd-arm64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c06d8403c10d744234aa191264c8dfaab758fb38826023cc9ad6638c8c0e9971639b2cc41e7f94531939a1ff9262c8ed7ecdd5a67942ed02f3488e6163face03"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/freebsd-x64",
+      "SPDXID": "SPDXRef-Package-esbuild.freebsd-x64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/freebsd-x64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/freebsd-x64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "8bb759f6f4209ef482ce2feb6025cd82d17f53e78a64d241ceedde4d06d18079cceed3528b32ce911140977ab355cfcea7fbb96241c76b8a5fff70ce607b612d"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-arm",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-arm-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-arm",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-arm@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a955c1387412f9de58ef6d86c09cc952d38b957ee49b70ab68e686a2b985d690ed3ddd82fe5d521d13e08cbba72c67b9d5287961858a3050f25784b180c4184d"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-arm64",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-arm64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-arm64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c87b3ed2e73cfa7bc401f01fc6b59028ae6979237305ce0f7a070c3b4109da14fbd6e03bbc1f08860d9eefb4763fb486e6e6233db1e52cb9af7b82cb2d109fd2"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-ia32",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-ia32-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-ia32",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-ia32@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "775cf866e3f46a3adfcff161193e2fbf6efcad7f0a9cf3c9c7c8b9f80b4aed361bc7d2def45d61cb3bab669904ca39066bd7541a1428c380b5366786beac4ddb"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-loong64",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-loong64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-loong64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-loong64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "339b118d4559ae49b53803d1ddd94e63336637e96864a1958b5554406af0baa2dc6d1eaa780cfe7da98c863012787dd854abd9cfecd3d63961fe4782dd18ff96"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-mips64el",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-mips64el-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-mips64el",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-mips64el@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "99139b0597878763b170114f584fc58f296446065d62e893477bda4e8ceab8218e1f5e223fda0de31e067bcd42a080d842b5e6231a45ba6241bb932d6699d025"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-ppc64",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-ppc64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-ppc64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-ppc64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b2549c06c3006f71850dc76b0a02f066d3d84681f61ffca8bafd744226724639ac3f8f1fce7a2f796cad4a0088fd1d19714829734661214131e8b1edb3ccab7d"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-riscv64",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-riscv64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-riscv64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-riscv64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "930d28c24d68d061444d42725b48dcd06e18cecd011d99f424367c2514f4f3cbe32585fbefb040b357c31b1002faaf37d6a3acd834c2f7a98db06da8a5d7f2c9"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-s390x",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-s390x-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-s390x",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-s390x@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "fe50088d7f1a605441ca187a2f9ad8b4f10346a6bd75eff857f8ee39772d6b97eb8efcd73b8feca84b72cadb1ed20df3645b96bb97033743242f3daa4430f602"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/linux-x64",
+      "SPDXID": "SPDXRef-Package-esbuild.linux-x64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/linux-x64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/linux-x64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "bbf6a73581769a654e103c0bb67435c0eaf7119f6c4cd18b5abb18198c075b3180dd28bce083a41d795b5930f5341fbdff595c9f079828ee78ba1c59c9d3737c"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/netbsd-arm64",
+      "SPDXID": "SPDXRef-Package-esbuild.netbsd-arm64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/netbsd-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/netbsd-arm64/-/netbsd-arm64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/netbsd-arm64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a24b340d86cbc1632669a913b026feccbe04f9a1d154ba26f48259380b6131010f8909b27571e4ce2604b06611c74b8d57f22310a18057de352731f4da97e5ab"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/netbsd-x64",
+      "SPDXID": "SPDXRef-Package-esbuild.netbsd-x64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/netbsd-x64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/netbsd-x64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "69e2fa9409cdf3d1f3e373258751bc0116ac6eea18bd22130c4c74b478796fb8c99c772cb2a823cbd631e37d060e99826ba3b2acaa12d1a3518caba77518b31a"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/openbsd-arm64",
+      "SPDXID": "SPDXRef-Package-esbuild.openbsd-arm64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/openbsd-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/openbsd-arm64/-/openbsd-arm64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/openbsd-arm64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3041497b90b747ca705dd679636d68a3a9bb78f892d1df695ae727f7d3bfc2fc896428682102ab403c4aac6796f05e7e4f4a244c77ac0260de8870d322ad15fd"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/openbsd-x64",
+      "SPDXID": "SPDXRef-Package-esbuild.openbsd-x64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/openbsd-x64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/openbsd-x64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "8bf64b20e69f13467c708fd700d2408b1a092ffb910284b6c4e037adbd3137e28ad0ad7bedc300b10624cc7b41aed31700ab8073b1c681c5a267fb110b537183"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/openharmony-arm64",
+      "SPDXID": "SPDXRef-Package-esbuild.openharmony-arm64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/openharmony-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/openharmony-arm64/-/openharmony-arm64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/openharmony-arm64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "81ef99ec45c536dd813b5a0032c569890f04c27755f62d715deac079320aec0b4fb376ca15740cee7951c4348850831eb9e47508d5f1ab3b4bcdd35e45e28126"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/sunos-x64",
+      "SPDXID": "SPDXRef-Package-esbuild.sunos-x64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/sunos-x64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/sunos-x64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0448e0b440a42f7bd8f9269243a9f355f8802d4785c696b0ca9f0999fe4fb5885fd54838d0dd61fe1c6586db3e7f516f4af6ab12281dc52dc1952308d8f24b71"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/win32-arm64",
+      "SPDXID": "SPDXRef-Package-esbuild.win32-arm64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/win32-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/win32-arm64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "942bfd78afc7e992566c4edb8769f0e78099f4cda7ba907125c4ec764fd04275a47528ca1aec66987f3f196ae54f578c9997e7e1d19c0a346d7b7f7b5aa7d05c"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/win32-ia32",
+      "SPDXID": "SPDXRef-Package-esbuild.win32-ia32-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/win32-ia32",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/win32-ia32@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "cef6ff981d9b482a093a9a0206060a2a95fa60cea624194151552d563e350e564954407aff408a9516313f9c169750b520b882a00539c19678ab53f7a9e4ba12"
+        }
+      ]
+    },
+    {
+      "name": "@esbuild/win32-x64",
+      "SPDXID": "SPDXRef-Package-esbuild.win32-x64-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/@esbuild/win32-x64",
+      "downloadLocation": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40esbuild/win32-x64@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6e6e0ca30aeff865cc969597fbe11c5f0fe22f2775a37f9b2640b60e4597615be0642a83fdb4a3f5cb59780302ddc2318234554760ee7da8aee183f1af9816d4"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli/-/cli-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "61b789ead72d368a38d29bab3b8bb711ea37455aa6b2326bd0da0a411bbee29bcee2030bce48ed6bbc7493de92c522e6c7ead0fbcba6d5384e970f872e9805ba"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-darwin-arm64",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-darwin-arm64-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-darwin-arm64",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-darwin-arm64/-/cli-darwin-arm64-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-darwin-arm64@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b6080e8953a88632077621256e37817c1e35b3a7267ecabe650d0f5f47c4b4276c0dd67d7028b9e1ee6034aeed74f6d1e896dd0deed103891b41dcb2054524fd"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-darwin-x64",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-darwin-x64-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-darwin-x64",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-darwin-x64/-/cli-darwin-x64-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-darwin-x64@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4ab3be2826eabc6d48bd53dd973417e06106651403212ae60d8f5b19c5baf032d5141082d3a1fe2e8cfaa32519113531b12311e81e280dfbdb415803e21c6ca9"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-linux-arm-gnueabihf",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-linux-arm-gnueabihf-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-linux-arm-gnueabihf",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-linux-arm-gnueabihf/-/cli-linux-arm-gnueabihf-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-linux-arm-gnueabihf@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a8bace6826bc84b0f94153d0463020397be195314a5e64e589517bef71a0bc00d87166527669dc9c5e7304502476ed6e40af0a7d06c3941530a90619a817c145"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-linux-arm64-gnu",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-linux-arm64-gnu-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-linux-arm64-gnu",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-linux-arm64-gnu/-/cli-linux-arm64-gnu-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-linux-arm64-gnu@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4eadf6c6942389011d22bbf00eaee5c078577a69f4ef409759d6c2bebf6b762f6bb2ff4d1536d0ea2cd54887cd13ee7d41a7abc6ec2d52d6792310cd59aa1807"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-linux-arm64-musl",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-linux-arm64-musl-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-linux-arm64-musl",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-linux-arm64-musl@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f8e7562a3e40abe0bc1d7ca9438b7ddba57c72956773465c2487614d75a354024791a36ea3c12e411e8a4592875886c926029d30f083a2cbf0cc815a041a8729"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-linux-riscv64-gnu",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-linux-riscv64-gnu-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-linux-riscv64-gnu",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-linux-riscv64-gnu/-/cli-linux-riscv64-gnu-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-linux-riscv64-gnu@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "434576863a659720d6f1d590652b084ee4037dc63d069059ba15e431ad93e4014b6409fe1493d7412caf9f158d571468c1d439f579f4415b469ba1c41cd504bf"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-linux-x64-gnu",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-linux-x64-gnu-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-linux-x64-gnu",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-linux-x64-gnu@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5f3d6cf3b8058d925931028084b6bbed87a208933ac95a20ddff4ec4381577f2b10c8a01d5d039576c4e9cc33e49190e1a4f63bb0201a9eb150235749140740c"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-linux-x64-musl",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-linux-x64-musl-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-linux-x64-musl",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-linux-x64-musl@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e80f3cc2a0195d91e031a06b1a2cbf0696b81a05277ed5cceeeaae28e78e5c2b8aefcfd7741c4410289c2bfd681e0ad3d7bf5704539a03a950107cac8d19868a"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-win32-arm64-msvc",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-win32-arm64-msvc-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-win32-arm64-msvc",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-win32-arm64-msvc/-/cli-win32-arm64-msvc-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-win32-arm64-msvc@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b111a017f39b45f2dc4b73ed51dc936c9b641aadc4f8f3594e49ef01447030d52d1f0f4353f045e92e6c8b8df2f654b9c843bd6d624203e18662f9e7e9ca6143"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-win32-ia32-msvc",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-win32-ia32-msvc-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-win32-ia32-msvc",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-win32-ia32-msvc/-/cli-win32-ia32-msvc-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-win32-ia32-msvc@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6c73afff2c6a7caa48ee2a081508b9c0e7d9ee391b3f3243fd4857639d88fe1ae6137a8d87bd5ca2120fcaa641e46427dcb65e25674250eaa6220ff0e975fe5a"
+        }
+      ]
+    },
+    {
+      "name": "@tauri-apps/cli-win32-x64-msvc",
+      "SPDXID": "SPDXRef-Package-tauri-apps.cli-win32-x64-msvc-2.11.5",
+      "versionInfo": "2.11.5",
+      "packageFileName": "node_modules/@tauri-apps/cli-win32-x64-msvc",
+      "downloadLocation": "https://registry.npmjs.org/@tauri-apps/cli-win32-x64-msvc/-/cli-win32-x64-msvc-2.11.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40tauri-apps/cli-win32-x64-msvc@2.11.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "bda68e99abea742792ee83226f66da9c165e9a0ac2e6fe78b52930a0157e6f1ad741985066b3b013610eda2e31f821cdb6f41433fe9b4acde2ca664c02cc9c5a"
+        }
+      ]
+    },
+    {
+      "name": "esbuild",
+      "SPDXID": "SPDXRef-Package-esbuild-0.28.1",
+      "versionInfo": "0.28.1",
+      "packageFileName": "node_modules/esbuild",
+      "downloadLocation": "https://registry.npmjs.org/esbuild/-/esbuild-0.28.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/esbuild@0.28.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1eb26bbd9bf96b2c41ccf7f0a613a837393338822589fce4d0a26b18ad9cf11e3e2caa4cb6960b41e51d8e7c235affcb665907da569993ee30efca62f7d0f857"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-0.95.4",
+      "relationshipType": "DESCRIBES"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-0.95.4",
+      "relationshipType": "DEV_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-0.95.4",
+      "relationshipType": "DEV_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-darwin-arm64-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-darwin-x64-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-linux-arm-gnueabihf-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-linux-arm64-gnu-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-linux-arm64-musl-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-linux-riscv64-gnu-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-linux-x64-gnu-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-linux-x64-musl-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-win32-arm64-msvc-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-win32-ia32-msvc-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tauri-apps.cli-win32-x64-msvc-2.11.5",
+      "relatedSpdxElement": "SPDXRef-Package-tauri-apps.cli-2.11.5",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.aix-ppc64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.android-arm-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.android-arm64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.android-x64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.darwin-arm64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.darwin-x64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.freebsd-arm64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.freebsd-x64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-arm-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-arm64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-ia32-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-loong64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-mips64el-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-ppc64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-riscv64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-s390x-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.linux-x64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.netbsd-arm64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.netbsd-x64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.openbsd-arm64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.openbsd-x64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.openharmony-arm64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.sunos-x64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.win32-arm64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.win32-ia32-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-esbuild.win32-x64-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-esbuild-0.28.1",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
+    }
+  ]
+}

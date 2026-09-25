@@ -1,0 +1,597 @@
+.dm-external-download-workspace .playlist-thumb,
+.dm-external-download-workspace .playlist-upcoming-row .playlist-thumb,
+.dm-external-download-workspace .playlist-current-card .playlist-thumb.large{
+  border-radius:.35rem!important;clip-path:inset(0 round .35rem);
+}
+.dm-external-download-workspace .playlist-thumb img{display:block;width:100%;height:100%;object-fit:cover;border-radius:0!important}
+.dm-external-download-workspace .playlist-upcoming-row{border-radius:.5rem!important}
+.dm-external-download-workspace .playlist-option-summary,
+.dm-external-download-workspace .playlist-selection-note,
+.dm-external-download-workspace .playlist-info-note,
+.dm-external-download-workspace .playlist-side-history,
+.dm-external-download-workspace .analysis-queue-preview,
+.dm-external-download-workspace .analysis-alternatives.is-empty{display:none!important}
+
+@media(max-width:960px){
+  .dm-external-download-workspace .analysis-v2-grid{grid-template-columns:1fr!important}
+  .dm-external-download-workspace .analysis-alternatives{grid-column:1!important}
+  .dm-external-download-workspace .playlist-v2-layout{grid-template-columns:1fr!important}
+  .dm-external-download-workspace .playlist-queue-view.has-recovery-side{grid-template-columns:1fr!important;grid-template-areas:"summary" "main" "side"!important}
+  .dm-external-download-workspace .playlist-queue-view:not(.has-recovery-side) .playlist-main-column{grid-template-columns:1fr;grid-template-rows:auto auto}
+}
+@media(max-width:720px){
+  .download-workspace-window-shell{padding:0}
+  .download-workspace-window-shell>.dm-external-download-workspace{border:0!important;border-radius:0!important}
+}
+
+/* CDM 0.20.2 · subventanas internas nítidas, persistentes y ajustables. */
+:root{
+  --cdm-type-secondary:.78rem;
+  --cdm-type-body:.88rem;
+  --cdm-type-control:.88rem;
+  --cdm-control-height:2.65rem;
+  --cdm-window-radius:.85rem;
+  --cdm-window-edge:.7rem;
+  --cdm-window-shadow:0 1.6rem 4.5rem rgba(0,0,0,.48),0 0 0 1px rgba(255,255,255,.035);
+}
+.dm-floating-workspace-layer{
+  position:fixed;z-index:240;inset:0;pointer-events:none;overflow:hidden;
+  background:rgba(2,7,13,.42);backdrop-filter:blur(.18rem);
+}
+.dm-floating-workspace{
+  position:fixed!important;inset:auto!important;display:grid!important;
+  grid-template-rows:auto auto minmax(0,1fr) auto!important;
+  min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;
+  margin:0!important;resize:none!important;transform:none!important;animation:none!important;
+  pointer-events:auto;overflow:hidden!important;border:1px solid var(--dl-line)!important;
+  border-radius:var(--cdm-window-radius)!important;background:var(--dl-bg)!important;
+  box-shadow:var(--cdm-window-shadow)!important;contain:layout paint;
+}
+.dm-floating-workspace.is-maximized{border-radius:.55rem!important}
+.dm-floating-workspace>.dialog-header{
+  min-height:4.45rem!important;padding:.7rem .85rem .7rem 1rem!important;cursor:grab!important;
+  user-select:none;touch-action:none;border-bottom:1px solid var(--dl-line-soft)!important;
+  background:color-mix(in srgb,var(--dl-panel) 94%,var(--dl-bg))!important;
+}
+.dm-floating-workspace.is-dragging>.dialog-header{cursor:grabbing!important}
+.dm-floating-workspace.is-dragging,.dm-floating-workspace.is-resizing{box-shadow:0 1.9rem 5.4rem rgba(0,0,0,.58),0 0 0 1px var(--accent-border)!important}
+.dm-floating-workspace .dm-workspace-title{min-width:0;display:flex;align-items:center;gap:.72rem}
+.dm-floating-workspace .dm-workspace-title>div{min-width:0}
+.dm-floating-workspace .dm-workspace-title>div>span{font-size:var(--cdm-type-secondary)!important;letter-spacing:.11em}
+.dm-floating-workspace .dm-workspace-title h2{margin:.12rem 0 0;font-size:1.15rem!important;line-height:1.2}
+.dm-floating-workspace .dm-workspace-title small{display:block;margin-top:.14rem;color:var(--dl-muted);font-size:var(--cdm-type-secondary)!important;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dm-floating-window-controls{display:flex!important;align-items:center;gap:.38rem!important}
+.dm-floating-window-controls>button{
+  width:2.55rem!important;height:2.55rem!important;display:grid!important;place-items:center!important;
+  padding:0!important;border:1px solid var(--dl-line)!important;border-radius:.55rem!important;
+  color:var(--dl-muted)!important;background:var(--dl-panel-2)!important;font-size:1.2rem!important;
+}
+.dm-floating-window-controls>button:hover{color:var(--dl-text)!important;border-color:var(--accent-border)!important;background:color-mix(in srgb,var(--accent-base) 9%,var(--dl-panel-2))!important}
+.dm-floating-workspace .dialog-unified-entry{min-height:4.2rem!important;padding:.62rem 1rem!important}
+.dm-floating-workspace .dialog-unified-entry .url-field{min-height:3rem!important}
+.dm-floating-workspace .dialog-unified-entry input,.dm-floating-workspace button,.dm-floating-workspace select,.dm-floating-workspace input{font-size:var(--cdm-type-control)!important}
+.dm-floating-workspace .dialog-body{min-height:0!important;padding:.9rem 1rem!important;overflow:auto!important;overscroll-behavior:contain;scrollbar-gutter:stable}
+.dm-floating-workspace .dialog-body small,.dm-floating-workspace .dialog-body p,.dm-floating-workspace .dialog-body em{font-size:var(--cdm-type-secondary)!important;line-height:1.42}
+.dm-floating-workspace .dialog-body label,.dm-floating-workspace .dialog-body strong,.dm-floating-workspace .dialog-body span{line-height:1.35}
+.dm-floating-workspace>.dialog-footer{min-height:4rem!important;padding:.6rem 1rem!important;border-top:1px solid var(--dl-line-soft)!important}
+.dm-floating-workspace>.dialog-footer>div:first-child{font-size:var(--cdm-type-secondary)!important}
+.dm-floating-workspace>.dialog-footer button{min-height:var(--cdm-control-height)!important;padding:.55rem .9rem!important}
+.dm-floating-resize-handle{position:absolute;z-index:8;display:block!important;background:transparent}
+.dm-floating-resize-handle.is-n,.dm-floating-resize-handle.is-s{left:var(--cdm-window-edge);right:var(--cdm-window-edge);height:.55rem;cursor:ns-resize}
+.dm-floating-resize-handle.is-n{top:-.2rem}.dm-floating-resize-handle.is-s{bottom:-.2rem}
+.dm-floating-resize-handle.is-e,.dm-floating-resize-handle.is-w{top:var(--cdm-window-edge);bottom:var(--cdm-window-edge);width:.55rem;cursor:ew-resize}
+.dm-floating-resize-handle.is-e{right:-.2rem}.dm-floating-resize-handle.is-w{left:-.2rem}
+.dm-floating-resize-handle.is-ne,.dm-floating-resize-handle.is-se,.dm-floating-resize-handle.is-sw,.dm-floating-resize-handle.is-nw{width:1rem;height:1rem}
+.dm-floating-resize-handle.is-ne{right:-.15rem;top:-.15rem;cursor:nesw-resize}.dm-floating-resize-handle.is-se{right:-.15rem;bottom:-.15rem;cursor:nwse-resize}
+.dm-floating-resize-handle.is-sw{left:-.15rem;bottom:-.15rem;cursor:nesw-resize}.dm-floating-resize-handle.is-nw{left:-.15rem;top:-.15rem;cursor:nwse-resize}
+.dm-floating-workspace.is-maximized .dm-floating-resize-handle{display:none!important}
+.dm-floating-workspace .analysis-empty-v2{min-height:15rem}
+.dm-floating-workspace .playlist-select-item{min-height:4.7rem}
+.dm-floating-workspace .playlist-thumb{border-radius:.45rem!important;clip-path:none!important}
+.dm-floating-workspace .playlist-thumb img{width:100%;height:100%;object-fit:cover}
+.dm-dialog-theme-light.dm-floating-workspace{--dl-bg:#f3f6fa;--dl-panel:#fff;--dl-panel-2:#edf2f7;--dl-line:#c8d2df;--dl-line-soft:#dce3eb;--dl-text:#101b2b;--dl-muted:#4d5d72;--dl-faint:#718096;--dl-shadow:0 1.4rem 4rem rgba(30,48,70,.25)}
+@media(max-width:760px){
+  .dm-floating-workspace .dm-workspace-title small{display:none}
+  .dm-floating-workspace>.dialog-header{min-height:4rem!important}
+  .dm-floating-workspace .dialog-unified-entry{grid-template-columns:1fr!important}
+  .dm-floating-workspace .dialog-detection{display:none!important}
+  .dm-floating-workspace>.dialog-footer>div:first-child{display:none}
+  .dm-floating-workspace>.dialog-footer{justify-content:flex-end}
+}
+
+/* 0.20.2: readable native-size dialog typography; no zoom or raster scaling. */
+#app .download-dialog-v2 :is(span,small,p,label,strong,b,em,output){font-size:13px!important}
+#app .download-dialog-v2 :is(button,input,select,textarea){font-size:15px!important}
+#app .download-dialog-v2 :is(h2,h3){font-size:clamp(1.08rem,2.2vw,1.45rem)!important}
+
+/* 0.20.3 · correcciones visuales de las subventanas. */
+.dm-floating-workspace .dm-workspace-icon{
+  display:grid!important;place-items:center!important;align-content:center!important;
+  line-height:0!important;overflow:hidden!important;
+}
+.dm-floating-workspace .dm-workspace-icon .icon{display:block!important;margin:0!important;transform:none!important}
+.dm-floating-window-controls>button>span{display:grid;place-items:center;line-height:0}
+.dm-floating-window-controls>button>span .icon{display:block;width:1.05rem;height:1.05rem;margin:0}
+.dm-floating-workspace .dialog-unified-entry .analyze-button{
+  min-width:6.8rem!important;height:2.35rem!important;min-height:2.35rem!important;
+  padding-inline:.72rem!important;border-radius:.5rem!important;box-shadow:none!important;font-size:.68rem!important;
+}
+.dm-floating-workspace>.dialog-footer{min-height:3.15rem!important;padding:.38rem .8rem!important}
+.dm-floating-workspace>.dialog-footer button{min-height:2.35rem!important;padding-block:.38rem!important}
+
+/* La tarjeta activa nunca permite que el título se colapse carácter por carácter. */
+.dm-floating-workspace.is-queue .playlist-queue-view{min-width:0!important;width:100%!important}
+.dm-floating-workspace.is-queue .playlist-main-column{min-width:0!important;width:100%!important;grid-template-columns:minmax(0,1fr)!important}
+.dm-floating-workspace.is-queue .playlist-current-card,
+.dm-floating-workspace.is-queue .playlist-terminal-card{
+  min-width:0!important;width:100%!important;
+  grid-template-columns:minmax(10rem,clamp(10rem,25%,17rem)) minmax(12rem,1fr) minmax(6.4rem,8rem)!important;
+  gap:clamp(.55rem,1vw,1rem)!important;
+}
+.dm-floating-workspace.is-queue .playlist-current-copy{min-width:12rem!important;width:auto!important}
+.dm-floating-workspace.is-queue .playlist-current-copy h4,
+.dm-floating-workspace.is-queue .playlist-current-copy p,
+.dm-floating-workspace.is-queue .playlist-current-copy>small,
+.dm-floating-workspace.is-queue .selected-format{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-floating-workspace.is-queue .playlist-current-copy>small{white-space:normal;overflow-wrap:anywhere}
+.dm-floating-workspace.is-queue .playlist-current-actions{min-width:6.4rem!important;width:100%!important}
+.dm-floating-workspace.is-queue .playlist-current-actions button{width:100%;min-width:0!important;padding-inline:.45rem!important}
+.dm-floating-workspace.is-queue .playlist-queue-view:not(.has-recovery-side) .playlist-main-column{grid-template-columns:minmax(0,1fr)!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-card{width:100%!important;min-width:0!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row{min-width:0!important;grid-template-columns:4.8rem 1.3rem minmax(0,1fr) auto!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row>div{min-width:0!important}
+.dm-floating-workspace.is-queue .playlist-summary-card{min-width:0!important}
+.dm-floating-workspace.is-queue .playlist-summary-copy{min-width:0!important}
+.dm-floating-workspace.is-queue .playlist-summary-copy h3,
+.dm-floating-workspace.is-queue .playlist-summary-copy p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.playlist-select-item.is-unresolved{opacity:.58;filter:saturate(.65)}
+.playlist-select-item.is-unresolved em{color:#e4ae57!important;background:rgba(228,174,87,.1)!important}
+
+@media(max-width:760px){
+  .dm-floating-workspace.is-queue .playlist-current-card,
+  .dm-floating-workspace.is-queue .playlist-terminal-card{grid-template-columns:1fr!important}
+  .dm-floating-workspace.is-queue .playlist-current-copy{min-width:0!important}
+  .dm-floating-workspace.is-queue .playlist-current-actions{width:100%!important;min-width:0!important}
+  .dm-floating-workspace.is-queue .playlist-current-actions button{width:auto}
+}
+
+/* 0.20.4 final cascade: these rules intentionally come after the historical phase layers. */
+.dm-floating-window-controls{gap:.5rem!important}
+.dm-floating-window-controls>button{width:3.25rem!important;height:3.25rem!important;min-width:3.25rem!important;border-radius:.78rem!important;border-color:color-mix(in srgb,var(--accent-base) 24%,var(--dl-line))!important;color:var(--dl-text)!important;background:color-mix(in srgb,var(--accent-base) 7%,var(--dl-panel-2))!important;box-shadow:0 .28rem .8rem rgba(0,0,0,.14)!important}
+.dm-floating-window-controls>button:hover{background:color-mix(in srgb,var(--accent-base) 17%,var(--dl-panel-2))!important;transform:translateY(-1px)}
+.dm-floating-window-controls>button:active{transform:translateY(0) scale(.97)}
+.dm-floating-window-controls>button>span .icon{width:1.38rem!important;height:1.38rem!important;stroke-width:1.8}
+.dm-floating-workspace .dialog-body{padding:1.05rem 1.2rem 1.2rem!important}
+.dm-floating-workspace .dialog-body :is(p,small,label,em){font-size:.76rem!important;line-height:1.48}
+.dm-floating-workspace .dialog-body :is(strong,h3,h4){font-size:1rem!important}
+.dm-floating-workspace.is-queue .playlist-queue-view:not(.has-recovery-side){grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"summary" "note" "main"!important}
+.dm-floating-workspace.is-queue .playlist-main-column{width:100%!important;max-width:none!important}
+.dm-floating-workspace.is-queue .playlist-current-card{min-height:17rem!important;grid-template-columns:minmax(15rem,24%) minmax(0,1fr) minmax(8rem,10rem)!important;gap:1.15rem!important;padding:1.05rem!important}
+.dm-floating-workspace.is-queue .playlist-current-card .playlist-thumb.large{height:13rem!important}
+.dm-floating-workspace.is-queue .playlist-current-copy h4{font-size:1.32rem!important;line-height:1.25!important}
+.dm-floating-workspace.is-queue .playlist-current-copy p{font-size:.78rem!important}.dm-floating-workspace.is-queue .playlist-current-copy>small{font-size:.72rem!important}
+.dm-floating-workspace.is-queue .playlist-current-actions button{min-height:3.5rem!important;font-size:.76rem!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-list{max-height:26rem!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row{min-height:5.35rem!important;grid-template-columns:6.6rem 1.8rem minmax(0,1fr) auto!important;gap:.78rem!important;padding:.58rem .7rem!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row .playlist-thumb{width:6.6rem!important;height:4.1rem!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row strong{font-size:.82rem!important}.dm-floating-workspace.is-queue .playlist-upcoming-row small{font-size:.68rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-hero{min-height:9.2rem!important;grid-template-columns:10rem minmax(0,1fr) 10rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-stack{width:9.2rem!important;height:6.4rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-identity h3{font-size:1.35rem!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-identity p{font-size:.76rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{min-height:5.8rem!important;grid-template-columns:auto 1.7rem 7rem minmax(0,1fr) auto!important;gap:.78rem!important;padding:.62rem .76rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:7rem!important;height:4.4rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy strong{font-size:.86rem!important;line-height:1.35!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy small{font-size:.68rem!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-select-item>em{font-size:.65rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy .playlist-match-note{color:color-mix(in srgb,var(--dm-accent) 76%,var(--dm-text))!important;font-size:.58rem!important}
+html[data-motion="on"] #app :where(button,a,.panel,.utility-tile,.playlist-select-item,.playlist-upcoming-row,.dm-media-card){transition:transform .16s ease,background-color .16s ease,border-color .16s ease,box-shadow .16s ease,color .16s ease}
+html[data-motion="on"] #app :where(button,.utility-tile,.playlist-select-item,.playlist-upcoming-row,.dm-media-card):active{transform:translateY(1px) scale(.992)}
+html[data-motion="on"] .dm-floating-workspace{animation:cdm-workspace-enter .2s cubic-bezier(.2,.75,.25,1) both!important}
+@keyframes cdm-workspace-enter{from{opacity:0;transform:translateY(.35rem) scale(.985)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce),html[data-motion="off"]{.dm-floating-workspace{animation:none!important}}
+@media(max-width:960px){
+  .dm-floating-workspace.is-queue .playlist-current-card{grid-template-columns:14rem minmax(0,1fr)!important}.dm-floating-workspace.is-queue .playlist-current-actions{grid-column:2!important;justify-self:start!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{grid-template-columns:auto 1.7rem 6rem minmax(0,1fr) auto!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:6rem!important;height:3.8rem!important}
+}
+@media(max-width:720px){
+  .dm-floating-window-controls>button{width:2.8rem!important;height:2.8rem!important;min-width:2.8rem!important}.dm-floating-workspace.is-queue .playlist-current-card{grid-template-columns:1fr!important}.dm-floating-workspace.is-queue .playlist-current-actions{grid-column:1!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{grid-template-columns:auto 1.5rem 5.4rem minmax(0,1fr) auto!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:5.4rem!important;height:3.4rem!important}
+}
+
+/* 0.21.0 · escala visual legible, cola compacta y controles nativos. */
+.dm-floating-window-controls>button{width:3.35rem!important;height:3.35rem!important;min-width:3.35rem!important;border-radius:.72rem!important}
+.dm-floating-window-controls>button>span .icon{width:1.52rem!important;height:1.52rem!important;stroke-width:1.9!important}
+.dm-floating-window-controls>button:first-child>span{transform:none!important}
+.dm-floating-workspace>.dialog-footer{min-height:4rem!important;height:4rem!important;padding:.55rem 1rem!important}
+.dm-floating-workspace.is-queue>.dialog-body{display:flex!important;min-height:0!important;overflow:hidden!important;padding:.8rem 1rem 1rem!important}
+.dm-floating-workspace.is-queue .playlist-queue-view{flex:1 1 auto;min-height:0!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr)!important;grid-template-areas:"summary" "main"!important;gap:.7rem!important;overflow:hidden!important}
+.dm-floating-workspace.is-queue .playlist-queue-side,.dm-floating-workspace.is-queue .playlist-queue-view:after{display:none!important}
+.dm-floating-workspace.is-queue .playlist-summary-card{grid-area:summary!important;min-height:6.8rem!important;max-height:8rem!important}
+.dm-floating-workspace.is-queue .playlist-main-column{grid-area:main!important;display:grid!important;grid-template-rows:auto minmax(0,1fr)!important;min-height:0!important;overflow:hidden!important}
+.dm-floating-workspace.is-queue .playlist-current-card{min-height:10.8rem!important;max-height:14rem!important;grid-template-columns:minmax(12rem,22%) minmax(0,1fr) minmax(7.5rem,9rem)!important;gap:1rem!important;padding:.8rem!important}
+.dm-floating-workspace.is-queue .playlist-current-card .playlist-thumb.large{width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:16/9!important;object-fit:cover!important}
+.dm-floating-workspace.is-queue .playlist-current-copy h4{font-size:1.2rem!important;line-height:1.28!important}
+.dm-floating-workspace.is-queue .playlist-current-copy p{font-size:.8rem!important}
+.dm-floating-workspace.is-queue .playlist-current-copy>small{font-size:.74rem!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-card{min-height:0!important;display:grid!important;grid-template-rows:auto minmax(0,1fr)!important;overflow:hidden!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-list{min-height:0!important;max-height:none!important;overflow:auto!important;overscroll-behavior:contain!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row{min-height:6.2rem!important;grid-template-columns:8.4rem 1.8rem minmax(0,1fr) auto!important;gap:.85rem!important;padding:.62rem .75rem!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row .playlist-thumb{width:8.4rem!important;height:5.1rem!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row strong{font-size:1rem!important;line-height:1.28!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-row small{font-size:.78rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{min-height:6.35rem!important;grid-template-columns:auto 1.8rem 9.6rem minmax(0,1fr) auto!important;gap:.85rem!important;padding:.7rem .82rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:9.6rem!important;height:6rem!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy strong{font-size:1rem!important;line-height:1.34!important;white-space:normal!important;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy small{font-size:.78rem!important;line-height:1.35!important;white-space:normal!important}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-select-item>em{font-size:.72rem!important}
+.playlist-terminal-card{grid-template-columns:8.4rem minmax(0,1fr) auto!important;min-height:8.6rem!important;padding:.8rem!important;gap:1rem!important}
+.playlist-terminal-art{width:8.4rem;height:7rem;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:.24rem;padding:.24rem;border-radius:.72rem;background:var(--dl-panel-2);overflow:hidden}
+.playlist-terminal-art span{display:grid;place-items:center;min-width:0;min-height:0;overflow:hidden;border-radius:.42rem;background:var(--dl-surface-3,var(--dl-panel))}
+.playlist-terminal-art img{width:100%;height:100%;object-fit:cover;display:block}
+.playlist-terminal-art .is-empty{color:var(--dl-faint)}
+.playlist-terminal-card .terminal-icon{display:none!important}
+.playlist-terminal-card h4{font-size:1.12rem!important}
+.playlist-terminal-card p{font-size:.76rem!important}
+.playlist-terminal-card small{font-size:.7rem!important}
+@media(max-width:960px){
+  .dm-floating-workspace.is-queue .playlist-current-card{grid-template-columns:13rem minmax(0,1fr)!important;max-height:none!important}
+  .dm-floating-workspace.is-queue .playlist-current-actions{grid-column:2!important;justify-self:start!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{grid-template-columns:auto 1.6rem 8rem minmax(0,1fr) auto!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:8rem!important;height:5rem!important}
+}
+@media(max-width:720px){
+  .dm-floating-window-controls>button{width:3rem!important;height:3rem!important;min-width:3rem!important}
+  .dm-floating-workspace.is-queue .playlist-current-card{grid-template-columns:1fr!important;max-height:none!important}
+  .dm-floating-workspace.is-queue .playlist-current-actions{grid-column:1!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{grid-template-columns:auto 1.4rem 6.8rem minmax(0,1fr)!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:6.8rem!important;height:4.25rem!important}
+  .playlist-terminal-card{grid-template-columns:1fr!important}
+  .playlist-terminal-art{width:100%;max-width:15rem;height:auto;aspect-ratio:1.2}
+  .playlist-terminal-actions{justify-content:stretch!important}
+}
+
+/* 0.22.1: miniaturas nítidas y control de pausa compacto en ventanas reducidas. */
+.playlist-thumb{aspect-ratio:16/10;overflow:hidden;position:relative;background:var(--dl-panel-2,var(--dm-surface-2))}
+.playlist-thumb img{display:block;width:100%;height:100%;object-fit:cover;image-rendering:auto}
+.playlist-thumb.large{aspect-ratio:16/9}
+.dm-floating-workspace.is-queue .playlist-current-actions{width:auto!important;min-width:0!important;justify-self:end!important;align-self:center!important}
+.dm-floating-workspace.is-queue .playlist-current-actions button{width:auto!important;min-width:6.4rem!important;max-width:12rem!important;height:2.55rem!important;min-height:2.55rem!important;padding:0 1rem!important;white-space:nowrap!important}
+.dm-floating-workspace.is-queue .playlist-current-card{min-height:0!important}
+.dm-floating-workspace.is-queue .playlist-upcoming-card{min-height:0!important}
+@media(max-width:960px){
+  .dm-floating-workspace.is-queue .playlist-current-actions{grid-column:2!important;justify-self:start!important}
+}
+@media(max-width:720px){
+  .dm-floating-workspace.is-queue .playlist-current-actions{grid-column:1!important;justify-self:end!important;width:auto!important}
+  .dm-floating-workspace.is-queue .playlist-current-actions button{min-width:6.2rem!important;max-width:11rem!important}
+}
+
+/* 0.23.1: keep the ready state inside its card at every width. */
+.analysis-v2-hero{min-width:0!important}.analysis-v2-copy{min-width:0!important}.analysis-v2-copy h3,.analysis-v2-copy p{overflow-wrap:anywhere}.analysis-v2-ready{min-width:8.2rem!important;max-width:12rem!important;justify-items:center!important;text-align:center!important;overflow-wrap:anywhere}.analysis-v2-ready>span,.analysis-v2-ready>strong{max-width:100%;overflow-wrap:anywhere}
+.analysis-v2-preview img{image-rendering:auto;backface-visibility:hidden}
+@media(max-width:1050px){.analysis-v2-ready{grid-column:1/-1;max-width:none!important;justify-content:space-between;text-align:left!important;justify-items:start!important}}
+
+/* 0.23.4: premium density without raster scaling or fractional text transforms. */
+:root{--font-xs:14px;--font-sm:15px;--font-md:16px;--font-lg:18px;--font-xl:22px;--font-2xl:27px;--font-3xl:32px}
+body,#app{font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;text-rendering:geometricPrecision;-webkit-font-smoothing:antialiased}
+.settings-card{min-width:0}.settings-card h2{font-size:clamp(18px,1.1vw,22px);line-height:1.2}.settings-card p,.settings-card label,.settings-card button{font-size:var(--font-sm);line-height:1.4}
+.select-setting{display:grid;grid-template-columns:minmax(0,1fr) minmax(9rem,1fr);align-items:center;gap:.65rem;padding:.62rem 0;border-bottom:1px solid #1a3049;color:#91a3b8;font-size:var(--font-sm)}
+.select-setting select{min-width:0;min-height:2.45rem;padding:0 .65rem;border:1px solid #29425f;border-radius:.55rem;color:var(--text);background:var(--panel-2)}
+.repair-windows-integration{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:2.55rem;margin-top:.85rem;padding:0 .9rem;border:1px solid color-mix(in srgb,var(--accent-base) 48%,#29425f);border-radius:.6rem;color:var(--text);background:color-mix(in srgb,var(--accent-base) 12%,var(--panel-2))}
+.repair-windows-integration:hover{background:color-mix(in srgb,var(--accent-base) 22%,var(--panel-2))}
+.window-behavior-note{margin:.45rem 0 .25rem}.window-actions{margin-top:.7rem;flex-wrap:wrap}.window-actions button{flex:1 1 10.5rem;justify-content:center}.window-exit-app{border-color:color-mix(in srgb,#ef6666 48%,var(--line,#29425f))!important;background:color-mix(in srgb,#ef6666 9%,var(--panel-2))!important}.window-exit-app:hover{background:color-mix(in srgb,#ef6666 16%,var(--panel-2))!important}
+@media(max-width:640px){.select-setting{grid-template-columns:1fr}.select-setting select{width:100%}.window-actions{display:grid;grid-template-columns:1fr}.window-actions button{width:100%}}
+body{font-size:1rem;}
+html[data-motion="off"] *,html[data-motion="off"] *::before,html[data-motion="off"] *::after{animation-duration:0.001ms!important;animation-iteration-count:1!important;transition-duration:0.001ms!important;scroll-behavior:auto!important}
+.playlist-thumb.large{width:calc(21rem * var(--thumbnail-scale,1));}
+.dm-floating-workspace .playlist-thumb.large{width:calc(14rem * var(--thumbnail-scale,1))!important}
+.visual-diagnostics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;margin-top:.85rem}.visual-diagnostics-grid span{display:grid;gap:.18rem;min-width:0;padding:.65rem .72rem;border:1px solid color-mix(in srgb,var(--line,#1f3852) 78%,transparent);border-radius:.6rem;background:color-mix(in srgb,var(--panel,#0f1c2b) 80%,transparent)}.visual-diagnostics-grid b{font-size:13px;color:var(--muted,#8da0b6)}.visual-diagnostics-grid i{font-size:15px;font-style:normal;color:var(--text,#e8eef6);overflow-wrap:anywhere}.copy-visual-diagnostics{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;margin-top:.8rem;min-height:2.55rem;padding:0 1rem;border:1px solid color-mix(in srgb,var(--accent,#3398ff) 58%,#1f3852);border-radius:.62rem;color:var(--text,#e8eef6);background:color-mix(in srgb,var(--accent,#3398ff) 12%,var(--panel,#0f1c2b));cursor:pointer}.copy-visual-diagnostics:hover{background:color-mix(in srgb,var(--accent,#3398ff) 20%,var(--panel,#0f1c2b))}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{min-height:7rem!important;grid-template-columns:auto 1.8rem 10.8rem minmax(0,1fr) auto!important;gap:.9rem!important;padding:.76rem .88rem!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:10.8rem!important;height:6.75rem!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy strong{font-size:1.08rem!important;line-height:1.28!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy small{font-size:.86rem!important;line-height:1.4!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy .playlist-match-note{font-size:.78rem!important}
+.dm-zen-sidebar .dm-item-name>strong{font-size:1.1rem!important;line-height:1.25}.dm-zen-sidebar .dm-item-name small,.dm-zen-sidebar .dm-item-status,.dm-zen-sidebar .dm-item-size{font-size:.9rem!important;line-height:1.35}
+@media(max-width:980px){.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{grid-template-columns:auto 1.6rem 8.7rem minmax(0,1fr) auto!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:8.7rem!important;height:5.45rem!important}}
+@media(max-width:720px){.visual-diagnostics-grid{grid-template-columns:1fr}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{grid-template-columns:auto 1.4rem 6.8rem minmax(0,1fr)!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{width:6.8rem!important;height:4.25rem!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy strong{font-size:1rem!important}.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-item-copy small{font-size:.8rem!important}}
+
+/* 0.24.1 · Ajustes precisos, legibles y persistentes. */
+.settings-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start}
+.settings-card{overflow:visible}
+.settings-card-title{margin-bottom:.8rem}
+
+/* 0.24.1 · Fase 5: el color principal perfila; no rellena iconos ni tarjetas. */
+.dm-workspace-icon,.playlist-summary-icon,.analysis-v2-preview:not(:has(img)),.playlist-terminal-art:not(:has(img)){
+  color:var(--dm-icon-text,var(--text))!important;
+  border:1px solid color-mix(in srgb,var(--dm-accent,var(--accent-base)) 52%,var(--dm-border,var(--line)))!important;
+  background:var(--dm-icon-surface,var(--panel-2))!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dm-accent,var(--accent-base)) 7%,transparent)!important;
+}
+.playlist-summary-card,.dm-workspace-card,.dm-workspace-surface{background:var(--dm-section-surface,var(--panel))!important}
+.analysis-format-chips button.selected,.playlist-v2-list .playlist-select-item.selected{background:var(--dm-section-selected,var(--panel-2))!important;border-color:var(--dm-accent,var(--accent-base))!important}
+.download-dialog-v2 .dialog-primary,.playlist-use-best,.playlist-start-download{color:var(--accent-ink,#fff)!important}
+
+/* 0.24.1 · Fase 6 final: selector de calidad, playlists y menús sin espacios muertos. */
+.dm-floating-workspace:not(.is-queue)>.dialog-body{overflow:auto!important}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-grid{
+  width:100%!important;
+  min-height:0!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-areas:"hero" "options" "alternatives" "preview"!important;
+  align-content:start!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-hero{
+  width:100%!important;
+  min-height:8.5rem!important;
+  grid-template-columns:minmax(10rem,14rem) minmax(0,1fr) auto!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-options,
+.dm-floating-workspace:not(.is-queue) .analysis-alternatives,
+.dm-floating-workspace:not(.is-queue) .analysis-queue-preview{width:100%!important;min-width:0!important}
+.dm-floating-workspace:not(.is-queue) .analysis-option-grid{
+  grid-template-columns:repeat(auto-fit,minmax(13rem,1fr))!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-format-chips{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr))!important;
+  gap:.45rem!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-format-chips>button{width:100%!important;min-width:0!important}
+
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-selection{
+  min-height:0!important;
+  grid-template-rows:auto minmax(0,1fr) auto!important;
+}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-layout{
+  min-height:0!important;
+  grid-template-columns:minmax(0,1.55fr) minmax(18rem,.72fr)!important;
+}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list{
+  min-height:0!important;
+  display:grid!important;
+  grid-template-rows:auto minmax(0,1fr)!important;
+}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list>div{
+  min-height:0!important;
+  max-height:none!important;
+  overflow:auto!important;
+}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{
+  min-height:4.05rem!important;
+  grid-template-columns:auto 1.35rem 4.7rem minmax(0,1fr) auto!important;
+  padding:.42rem .52rem!important;
+}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-thumb{
+  width:4.7rem!important;height:2.94rem!important;background:var(--dl-panel-2)!important;
+}
+.dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item.selected{
+  border-color:color-mix(in srgb,var(--accent-base) 45%,var(--dl-line))!important;
+  background:color-mix(in srgb,var(--accent-base) 5%,var(--dl-panel))!important;
+}
+
+.dm-floating-workspace.is-queue .playlist-queue-view{min-width:0!important;width:100%!important}
+.dm-floating-workspace.is-queue .playlist-current-card,
+.dm-floating-workspace.is-queue .playlist-terminal-card{
+  min-height:10.5rem!important;
+  grid-template-columns:minmax(10.5rem,14rem) minmax(0,1fr) minmax(6.4rem,7.5rem)!important;
+}
+.dm-floating-workspace.is-queue .playlist-current-card .playlist-thumb.large{
+  width:100%!important;height:auto!important;aspect-ratio:16/9!important;background:var(--dl-panel-2)!important;
+}
+.dm-floating-workspace.is-queue .playlist-next-strip{
+  min-width:0!important;
+  grid-template-columns:auto 4.7rem minmax(8rem,.75fr) minmax(9rem,1fr) auto!important;
+}
+.dm-floating-workspace.is-queue :is(.current-progress,.playlist-overall>i,.playlist-next-strip>i){
+  overflow:hidden!important;border-radius:999px!important;background:var(--dl-panel-2)!important;
+}
+.dm-floating-workspace.is-queue :is(.current-progress,.playlist-overall>i,.playlist-next-strip>i)>i{
+  background:var(--accent-base)!important;transition:width .25s linear!important;
+}
+.dm-floating-workspace .dm-row-menu-floating,.context-menu{
+  max-width:min(17rem,calc(100vw - 1rem))!important;
+  max-height:min(26rem,calc(100vh - 1rem))!important;
+  overflow:auto!important;
+  border-color:var(--dl-line)!important;
+  color:var(--dl-text)!important;
+  background:var(--dl-panel)!important;
+}
+
+@media(max-width:900px){
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-hero{grid-template-columns:10rem minmax(0,1fr)!important}
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-ready{grid-column:1/-1;justify-items:start;padding:.65rem 0 0;border-left:0;border-top:1px solid var(--dl-line-soft)}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-layout{grid-template-columns:1fr!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-options{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-options>header,
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-options>.analysis-alternatives{grid-column:1/-1!important}
+  .dm-floating-workspace.is-queue .playlist-current-card,
+  .dm-floating-workspace.is-queue .playlist-terminal-card{grid-template-columns:minmax(9rem,12rem) minmax(0,1fr)!important}
+  .dm-floating-workspace.is-queue .playlist-current-actions{grid-column:1/-1;display:flex!important;justify-content:flex-end!important}
+}
+@media(max-width:680px){
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-hero{grid-template-columns:1fr!important}
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-preview{width:100%!important;max-width:18rem!important}
+  .dm-floating-workspace:not(.is-queue) .analysis-option-grid{grid-template-columns:1fr!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-options{grid-template-columns:1fr!important}
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item{
+    grid-template-columns:auto 4.25rem minmax(0,1fr)!important;
+  }
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item>.playlist-index,
+  .dm-floating-workspace.playlist-dialog:not(.is-queue) .playlist-v2-list .playlist-select-item>em{display:none!important}
+  .dm-floating-workspace.is-queue .playlist-current-card,
+  .dm-floating-workspace.is-queue .playlist-terminal-card{grid-template-columns:1fr!important}
+  .dm-floating-workspace.is-queue .playlist-current-card .playlist-thumb.large{max-width:22rem!important}
+  .dm-floating-workspace.is-queue .playlist-next-strip{grid-template-columns:auto 4.3rem minmax(0,1fr)!important}
+  .dm-floating-workspace.is-queue .playlist-next-strip>small,
+  .dm-floating-workspace.is-queue .playlist-next-strip>span:last-child{grid-column:2/-1!important}
+}
+
+/* 0.24.1 · Hotfix 3: escala legible, diálogos estables y acento coherente. */
+.numeric-stepper{
+  grid-template-columns:2.55rem minmax(5.2rem,7rem) 2.55rem!important;
+  gap:.45rem!important;
+}
+.numeric-stepper output{display:none!important}
+.settings-view,.settings-layout,.settings-card{overflow-anchor:none!important}
+.settings-card{
+  border-color:color-mix(in srgb,var(--accent-base) 24%,var(--line))!important;
+  background:var(--panel)!important;
+}
+.settings-card-title>div>h2{font-size:1.16rem!important}
+.settings-card-title>div>p,.settings-card :is(label,button,select,input){font-size:.91rem!important}
+.settings-card :is(small,p){font-size:.82rem!important;line-height:1.48!important}
+.settings-card :is(input,select):focus{
+  border-color:var(--accent-base)!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent-base) 14%,transparent)!important;
+}
+
+.dm-floating-workspace,
+.dm-floating-workspace *{
+  backface-visibility:hidden;
+}
+.dm-floating-workspace{
+  animation:none!important;
+  transform:none!important;
+  contain:layout paint;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-grid{
+  overflow-anchor:none!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-hero{
+  grid-template-columns:minmax(16.5rem,20.5rem) minmax(0,1fr) minmax(8.5rem,10.5rem)!important;
+  gap:.9rem!important;
+  min-height:12rem!important;
+  padding:1rem 1.1rem!important;
+  border-color:color-mix(in srgb,var(--accent-base) 24%,var(--dl-line))!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-preview{
+  width:100%!important;
+  max-width:20.5rem!important;
+  height:auto!important;
+  aspect-ratio:16/9!important;
+  justify-self:center!important;
+  border:1px solid color-mix(in srgb,var(--accent-base) 48%,var(--dl-line))!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-copy{
+  align-self:center!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-copy>p{font-size:.88rem!important;line-height:1.5!important}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-copy .result-kind,
+.dm-floating-workspace:not(.is-queue) .analysis-v2-badges span,
+.dm-floating-workspace:not(.is-queue) .analysis-v2-ready>span{
+  color:var(--accent-detail,var(--accent-base))!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-options{
+  border-color:color-mix(in srgb,var(--accent-base) 23%,var(--dl-line))!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-options header strong{font-size:1rem!important}
+.dm-floating-workspace:not(.is-queue) .analysis-v2-options header small{font-size:.82rem!important;line-height:1.45!important}
+.dm-floating-workspace:not(.is-queue) .analysis-option-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:.8rem!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-option-grid label{
+  font-size:.82rem!important;
+  gap:.4rem!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-option-grid :is(select,input,.folder-field){
+  min-height:3.2rem!important;
+  font-size:.91rem!important;
+  border-color:color-mix(in srgb,var(--accent-base) 22%,var(--dl-line))!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-option-grid :is(select,input):focus,
+.dm-floating-workspace:not(.is-queue) .analysis-option-grid .folder-field:focus-within{
+  border-color:var(--accent-base)!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent-base) 14%,transparent)!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-format-chips>button{
+  min-height:2.75rem!important;
+  font-size:.8rem!important;
+  transition:border-color .14s ease,background-color .14s ease,color .14s ease!important;
+  transform:none!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-format-chips>button:hover{
+  border-color:color-mix(in srgb,var(--accent-base) 68%,var(--dl-line))!important;
+  transform:none!important;
+}
+.dm-floating-workspace:not(.is-queue) .analysis-format-chips>button.selected{
+  color:var(--accent-ink,#07111d)!important;
+  border-color:var(--accent-base)!important;
+  background:var(--accent-base)!important;
+}
+.dm-floating-workspace .dialog-primary,
+.dm-floating-workspace .playlist-start-download,
+.dm-floating-workspace .playlist-use-best{
+  color:var(--accent-ink,#07111d)!important;
+  background:var(--accent-base)!important;
+}
+
+@media(max-width:1050px){
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-hero{
+    grid-template-columns:minmax(12rem,15rem) minmax(0,1fr)!important;
+  }
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-preview{max-width:15rem!important}
+}
+@media(max-width:720px){
+  .numeric-stepper{grid-template-columns:2.55rem minmax(5rem,1fr) 2.55rem!important}
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-hero{grid-template-columns:1fr!important}
+  .dm-floating-workspace:not(.is-queue) .analysis-v2-preview{max-width:min(22rem,92%)!important}
+  .dm-floating-workspace:not(.is-queue) .analysis-option-grid{grid-template-columns:1fr!important}
+}
+
+
+/* 0.24.1 · Hotfix 3 final: el color principal gobierna todas las acciones. */
+:root{
+  --accent-action:var(--accent-button);
+  --accent-focus:color-mix(in srgb,var(--accent-base) 76%,white);
+}
+:is(input[type="range"],input[type="checkbox"],input[type="radio"]){accent-color:var(--accent-base)}
+:is(.analyze-button,.confirm-download,.module-primary,.settings-save,.playlist-start-download,.playlist-use-best,.dialog-primary,.download-new,.new-download-top){
+  color:var(--accent-ink)!important;
+  border-color:color-mix(in srgb,var(--accent-base) 72%,var(--line))!important;
+  background:var(--accent-action)!important;
+  box-shadow:0 .45rem 1.35rem color-mix(in srgb,var(--accent-base) 18%,transparent)!important;
+}
+:is(.analyze-button,.confirm-download,.module-primary,.settings-save,.playlist-start-download,.playlist-use-best,.dialog-primary,.download-new,.new-download-top):hover:not(:disabled){
+  filter:brightness(1.06)!important;
+  box-shadow:0 .55rem 1.55rem color-mix(in srgb,var(--accent-base) 24%,transparent)!important;
+}
+:is(.dm-workspace-title>div>span,.result-kind,.playlist-v2-summary-kicker,.playlist-item-copy .playlist-match-note,.analysis-v2-ready>span,.settings-card-title>svg,.settings-card-title>.icon){
+  color:var(--accent-detail)!important;
+}
+:is(.analysis-format-chips>button.selected,.palette-option.active,.playlist-v2-list .playlist-select-item.selected){
+  border-color:var(--accent-base)!important;
+}
+:is(.url-field,.folder-field,.select-setting select,.range-setting input,.custom-color-row input,.settings-card input,.settings-card select):focus-within,
+:is(.url-field input,.settings-card input,.settings-card select):focus-visible{
+  border-color:var(--accent-base)!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent-base) 14%,transparent)!important;
+}
+.dm-floating-workspace .dialog-unified-entry,
+.dm-floating-workspace :is(.analysis-v2-hero,.analysis-v2-options,.playlist-v2-summary,.playlist-v2-list,.playlist-v2-options){
+  border-color:color-mix(in srgb,var(--accent-base) 22%,var(--dl-line))!important;
+}
+.dm-floating-workspace :is(.analysis-v2-copy p,.analysis-option-grid label,.analysis-option-grid select,.analysis-option-grid input,.folder-field){
+  font-size:max(.9rem,var(--font-sm))!important;
+}
+.dm-floating-workspace .analysis-v2-copy h3{max-width:100%;text-wrap:balance}
+.dm-floating-workspace .analysis-v2-preview{margin-inline:auto!important}
+
+/* Preserve geometry and eliminate hover/re-render shimmer. */
+.dm-floating-workspace,
+.dm-download-item,
+.dm-command-row,
+.dm-settings-popover{
+  overflow-anchor:none!important;
+}
+.dm-floating-workspace :is(select,input,button),
+.dm-download-item,
+.dm-command-row{
+  transform:none!important;
+}
+
+/* 0.24.1 · Hotfix 3 final review: acento global sin teñir superficies. */
+:root{
+  --accent-detail:color-mix(in srgb,var(--accent-base) 76%,white);
+  --accent-outline:color-mix(in srgb,var(--accent-base) 58%,var(--line));
+}
+:is(
+  .settings-header>div>span,
+  .settings-card-title>.icon,
+  .settings-card-title>svg,
+  .dm-workspace-title>div>span,
+  .playlist-v2-summary-kicker,
