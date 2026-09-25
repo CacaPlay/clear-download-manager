@@ -5,101 +5,300 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
-  release:
+  validate-release-ref:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Require a v* tag ref
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" != "tag" || ! "$GITHUB_REF_NAME" =~ ^v[^/]+$ ]]; then
+            echo "Release workflows only run from a v* tag; received $GITHUB_REF_TYPE:$GITHUB_REF_NAME." >&2
+            exit 1
+          fi
+
+  preflight-release:
+    needs: validate-release-ref
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Refuse an existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        shell: pwsh
+        run: |
+          $encodedTag = [Uri]::EscapeDataString($env:RELEASE_TAG)
+          $releasePath = "repos/$($env:REPOSITORY)/releases/tags/$encodedTag"
+          $result = gh api $releasePath 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            throw "Release $($env:RELEASE_TAG) already exists; existing releases are never overwritten."
+          }
+          if (($result -join "`n") -notmatch '(?i)not found|HTTP 404') {
+            throw "Could not confirm that release $($env:RELEASE_TAG) is absent. Refusing to continue."
+          }
+          Write-Host "OK: no existing release for $($env:RELEASE_TAG)."
+
+  build-test:
+    needs:
+      - validate-release-ref
+      - preflight-release
     runs-on: windows-latest
+    permissions:
+      contents: read
+    outputs:
+      source_archive_artifact_id: ${{ steps.source_artifact.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with: { node-version: 22, cache: npm }
-      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master 2026-09-24
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # stable toolchain action
         with:
           toolchain: stable
           targets: x86_64-pc-windows-msvc
           components: rustfmt, clippy
-      - name: Instalar dependencias visuales de Python
+      - name: Install visual validation dependencies and Chromium
         shell: pwsh
         run: |
-          python -m pip install --disable-pip-version-check --no-input pillow==12.3.0
-      - name: Instalar dependencias
+          python -m pip install --disable-pip-version-check --no-input pillow==12.3.0 playwright==1.62.0
+          if ($LASTEXITCODE -ne 0) { throw 'Visual validation dependency installation failed.' }
+          python -m playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Playwright Chromium installation failed.' }
+      - name: Install Node dependencies
         run: npm ci --no-audit --no-fund
-      - name: Gate de versión y fuente
+      - name: Check local Tauri build command
+        run: npm run check:local-build
+      - name: Build web frontend
+        run: npm run build:web
+      - name: Check source manifest and version
+        shell: pwsh
         run: |
           python scripts/build-nsis-artwork.py
           npm run check:manifest
           npm run version:check
-          npm run check:release
-          npm run build:web
-      - name: Resolver repositorio de releases
+      - name: Run the complete project release gate
+        run: npm run check:release
+      - name: Test release artifact contracts
+        run: npm run test:release-artifacts
+      - name: Run Rust format, check, tests, and clippy
+        shell: pwsh
+        run: |
+          cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+          if ($LASTEXITCODE -ne 0) { throw 'cargo fmt failed.' }
+          cargo check --manifest-path src-tauri/Cargo.toml --locked --all-targets
+          if ($LASTEXITCODE -ne 0) { throw 'cargo check failed.' }
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --lib
+          if ($LASTEXITCODE -ne 0) { throw 'cargo test failed.' }
+          cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+          if ($LASTEXITCODE -ne 0) { throw 'cargo clippy failed.' }
+      - name: Create and validate the exact source archive
+        shell: pwsh
+        run: |
+          $sourceOutput = npm run source:archive --silent
+          if ($LASTEXITCODE -ne 0) { throw 'Source archive creation failed.' }
+          $sourceInfo = ($sourceOutput -join "`n") | ConvertFrom-Json
+          $sourceArchive = [string]$sourceInfo.archive
+          if ([string]::IsNullOrWhiteSpace($sourceArchive) -or -not (Test-Path -LiteralPath $sourceArchive -PathType Leaf)) {
+            throw 'Source archive command did not return an existing archive.'
+          }
+          New-Item -ItemType Directory -Force -Path output/source-release | Out-Null
+          $sourceArchivePath = Join-Path $PWD 'output/source-release/clear-download-manager-source.tar'
+          Copy-Item -LiteralPath $sourceArchive -Destination $sourceArchivePath -Force
+          npm run check:source-release -- --archive $sourceArchivePath
+          if ($LASTEXITCODE -ne 0) { throw 'Source archive release gate failed.' }
+      - name: Upload source archive input for the package job
+        id: source_artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cdm-source-archive-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/source-release/clear-download-manager-source.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  package-sign:
+    needs: build-test
+    runs-on: windows-latest
+    environment:
+      name: release
+    permissions:
+      contents: read
+    outputs:
+      release_artifact_id: ${{ steps.release_artifact.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # stable toolchain action
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+      - name: Install visual build dependency
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check --no-input pillow==12.3.0
+      - name: Install Node dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Download the source archive produced by build-test
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build-test.outputs.source_archive_artifact_id }}
+          path: source-input
+      - name: Validate updater target for latest.json
         shell: pwsh
         run: |
           $cfg = Get-Content src-tauri/resources/updater/updater-config.json -Raw | ConvertFrom-Json
           if (-not $cfg.enabled -or [string]::IsNullOrWhiteSpace($cfg.repository)) {
-            throw 'El updater no tiene un repositorio de releases válido.'
+            throw 'The updater does not have a valid release repository.'
           }
-          "RELEASES_REPO=$($cfg.repository)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "Repositorio de releases: $($cfg.repository)"
-      - name: Preparar runtimes para el gate Rust
-        run: npm run prepare:windows-binaries
-      - name: Gate Rust
-        shell: pwsh
-        run: |
-          cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
-          cargo check --manifest-path src-tauri/Cargo.toml --locked --all-targets
-          cargo test --manifest-path src-tauri/Cargo.toml --locked --lib
-          cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
-      - name: Compilar artefactos Tauri firmados
+          $releaseRepository = [string]$cfg.repository
+          if ($releaseRepository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -or
+              -not [StringComparer]::OrdinalIgnoreCase.Equals($releaseRepository, $env:GITHUB_REPOSITORY)) {
+            throw 'The updater release repository must match GITHUB_REPOSITORY.'
+          }
+      - name: Build and sign the Windows package once
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.RELEASE_TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.RELEASE_TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         shell: pwsh
         run: |
-          $cfg = Get-Content src-tauri/resources/updater/updater-config.json -Raw | ConvertFrom-Json
-          if (-not $cfg.enabled -or [string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) { throw 'El updater no está configurado o falta TAURI_SIGNING_PRIVATE_KEY.' }
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY) -or
+              [string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD)) {
+            throw 'The release environment is missing one or both Tauri signing secrets.'
+          }
           npm run build:windows:final
-      - name: Preparar latest.json y hashes
+          if ($LASTEXITCODE -ne 0) { throw 'The signed Windows package build failed.' }
+      - name: Prepare final update files and checksums
         shell: pwsh
         run: |
-          ./scripts/prepare-update-release.ps1 -Clean -ReleaseNotes "Release $env:GITHUB_REF_NAME"
-          function Get-Sha256Hex([string]$Path) {
-            $Hasher = [Security.Cryptography.SHA256]::Create()
-            try {
-              $Bytes = [IO.File]::ReadAllBytes($Path)
-              return ([BitConverter]::ToString($Hasher.ComputeHash($Bytes)) -replace '-', '').ToLowerInvariant()
-            }
-            finally { $Hasher.Dispose() }
-          }
-          Get-ChildItem output/update-release -File | ForEach-Object {
-            "$((Get-Sha256Hex $_.FullName))  $($_.Name)"
-          } | Set-Content output/update-release/SHA256SUMS.txt
-      - name: Publicar GitHub Release
+          ./scripts/prepare-update-release.ps1 -Clean -Tag $env:GITHUB_REF_NAME -ReleaseNotes "Release $env:GITHUB_REF_NAME"
+          if ($LASTEXITCODE -ne 0) { throw 'Preparing latest.json and updater files failed.' }
+          $sourceArchives = @(Get-ChildItem source-input -File -Filter 'clear-download-manager-source.tar')
+          if ($sourceArchives.Count -ne 1) { throw 'Expected exactly one source archive artifact from build-test.' }
+          Copy-Item -LiteralPath $sourceArchives[0].FullName -Destination output/update-release/clear-download-manager-source.tar -Force
+          $checksumPath = Join-Path $PWD 'output/update-release/SHA256SUMS.txt'
+          $checksumLines = @(Get-ChildItem output/update-release -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
+            "$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"
+          })
+          if ($checksumLines.Count -eq 0) { throw 'The final release package contains no files.' }
+          $checksumLines | Set-Content -LiteralPath $checksumPath -Encoding ASCII
+          node scripts/validation/verify-release-artifact.mjs --directory output/update-release
+          if ($LASTEXITCODE -ne 0) { throw 'The final release artifact failed its checksum inventory.' }
+      - name: Upload immutable signed release artifact
+        id: release_artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cdm-release-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/update-release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  verify-binary-release:
+    needs: package-sign
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Node dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Download exactly the package-sign artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.package-sign.outputs.release_artifact_id }}
+          path: output/update-release
+      - name: Verify the downloaded artifact inventory and SHA-256 values
+        run: node scripts/validation/verify-release-artifact.mjs --directory output/update-release
+      - name: Prepare runtime hashes and notices for inspection
+        run: |
+          npm run prepare:windows-binaries
+          if ($LASTEXITCODE -ne 0) { throw 'Preparing runtime hashes for binary inspection failed.' }
+          npm run prepare:third-party-notices
+          if ($LASTEXITCODE -ne 0) { throw 'Preparing third-party notices for binary inspection failed.' }
+      - name: Inspect the exact signed package and enforce the binary gate
         shell: pwsh
+        run: |
+          $packages = @(Get-ChildItem output/update-release -File -Filter '*.nsis.zip')
+          $sourceArchives = @(Get-ChildItem output/update-release -File -Filter 'clear-download-manager-source.tar')
+          if ($packages.Count -ne 1) { throw 'Expected exactly one signed NSIS updater package in the downloaded artifact.' }
+          if ($sourceArchives.Count -ne 1) { throw 'Expected exactly one source archive in the downloaded artifact.' }
+          $inspection = Join-Path $PWD 'output/binary-package-inspection'
+          New-Item -ItemType Directory -Force -Path $inspection | Out-Null
+          Expand-Archive -LiteralPath $packages[0].FullName -DestinationPath $inspection -Force
+          npm run check:binary-release -- --source-archive $sourceArchives[0].FullName --package $packages[0].FullName --inspection-dir $inspection
+          if ($LASTEXITCODE -ne 0) { throw 'The final binary release gate did not pass; publication is blocked.' }
+
+  publish:
+    needs:
+      - validate-release-ref
+      - preflight-release
+      - package-sign
+      - verify-binary-release
+    if: ${{ needs.validate-release-ref.result == 'success' && needs.preflight-release.result == 'success' && needs.package-sign.result == 'success' && needs.verify-binary-release.result == 'success' }}
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Download the same artifact verified by verify-binary-release
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.package-sign.outputs.release_artifact_id }}
+          path: output/update-release
+      - name: Recheck SHA256SUMS.txt inventory before publication
+        run: node scripts/validation/verify-release-artifact.mjs --directory output/update-release
+      - name: Publish the already verified files without rebuilding or resigning
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
-            throw 'GitHub Actions no proporcionó GITHUB_TOKEN.'
-          }
           $tag = $env:GITHUB_REF_NAME
-          $releaseExists = gh release view $tag --repo $env:RELEASES_REPO 2>$null
+          $encodedTag = [Uri]::EscapeDataString($tag)
+          $releasePath = "repos/$($env:GITHUB_REPOSITORY)/releases/tags/$encodedTag"
+          $existing = gh api $releasePath 2>&1
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag --repo $env:RELEASES_REPO output/update-release/* --clobber
-          } else {
-            gh release create $tag --repo $env:RELEASES_REPO --title "Clear Download Manager $tag" --generate-notes output/update-release/*
+            throw "Release $tag already exists; refusing to alter it or upload with --clobber."
           }
-      - name: Verificar endpoint del updater
+          if (($existing -join "`n") -notmatch '(?i)not found|HTTP 404') {
+            throw "Could not confirm that release $tag is absent. Refusing to publish."
+          }
+          $releaseFiles = @(Get-ChildItem output/update-release -File | Sort-Object Name | ForEach-Object { $_.FullName })
+          if ($releaseFiles.Count -lt 2) { throw 'The verified release artifact is incomplete.' }
+          gh release create $tag --verify-tag --repo $env:GITHUB_REPOSITORY --title "Clear Download Manager $tag" --generate-notes @releaseFiles
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation failed.' }
+      - name: Verify updater endpoint
         shell: pwsh
         run: |
           $releaseTag = [Uri]::EscapeDataString($env:GITHUB_REF_NAME)
-          $latestUrl = "https://github.com/$env:RELEASES_REPO/releases/download/$releaseTag/latest.json"
-          $latest = Invoke-RestMethod -Uri $latestUrl -Headers @{ 'User-Agent' = 'CacaTools-Release-Gate' }
+          $latestUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$releaseTag/latest.json"
+          $latest = Invoke-RestMethod -Uri $latestUrl -Headers @{ 'User-Agent' = 'Clear-Download-Manager-Release-Gate' }
           $platform = $latest.platforms.'windows-x86_64'
-          if ([string]::IsNullOrWhiteSpace($platform.url)) { throw 'latest.json no contiene la URL de Windows.' }
-          $asset = Invoke-WebRequest -Uri $platform.url -Method Head -MaximumRedirection 5 -Headers @{ 'User-Agent' = 'CacaTools-Release-Gate' }
-          if ($asset.StatusCode -lt 200 -or $asset.StatusCode -ge 400) { throw "El artefacto del updater devolvio HTTP $($asset.StatusCode)." }
-          Write-Host "OK: latest.json y artefacto del updater responden correctamente." -ForegroundColor Green
+          if ([string]::IsNullOrWhiteSpace($platform.url)) { throw 'latest.json does not contain the Windows updater URL.' }
+          $asset = Invoke-WebRequest -Uri $platform.url -Method Head -MaximumRedirection 5 -Headers @{ 'User-Agent' = 'Clear-Download-Manager-Release-Gate' }
+          if ($asset.StatusCode -lt 200 -or $asset.StatusCode -ge 400) { throw "The updater artifact returned HTTP $($asset.StatusCode)." }
+          Write-Host 'OK: latest.json and its Windows updater artifact respond correctly.' -ForegroundColor Green

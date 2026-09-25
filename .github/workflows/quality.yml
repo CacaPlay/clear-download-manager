@@ -32,19 +32,38 @@ jobs:
           toolchain: stable
           targets: x86_64-pc-windows-msvc
           components: rustfmt, clippy
+      - name: Install Playwright Chromium for visual release checks
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check --no-input playwright==1.62.0
+          if ($LASTEXITCODE -ne 0) { throw 'Playwright installation failed.' }
+          python -m playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Playwright Chromium installation failed.' }
       - name: Frontend gates
         shell: pwsh
         run: |
           npm ci --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'npm ci failed.' }
           npm run check:local-build
-          npm run check:release
+          if ($LASTEXITCODE -ne 0) { throw 'check:local-build failed.' }
+          npm run test:release-artifacts
+          if ($LASTEXITCODE -ne 0) { throw 'release artifact tests failed.' }
+          npm run check:quality
+          if ($LASTEXITCODE -ne 0) { throw 'check:quality failed.' }
           npm run build:web
+          if ($LASTEXITCODE -ne 0) { throw 'build:web failed.' }
       - name: Rust gates
         shell: pwsh
         run: |
           npm run prepare:windows-binaries
+          if ($LASTEXITCODE -ne 0) { throw 'prepare:windows-binaries failed.' }
           npm run verify:binaries
+          if ($LASTEXITCODE -ne 0) { throw 'verify:binaries failed.' }
           cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+          if ($LASTEXITCODE -ne 0) { throw 'cargo fmt failed.' }
           cargo check --manifest-path src-tauri/Cargo.toml --locked --all-targets
+          if ($LASTEXITCODE -ne 0) { throw 'cargo check failed.' }
           cargo test --manifest-path src-tauri/Cargo.toml --locked --lib
+          if ($LASTEXITCODE -ne 0) { throw 'cargo test failed.' }
           cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+          if ($LASTEXITCODE -ne 0) { throw 'cargo clippy failed.' }
