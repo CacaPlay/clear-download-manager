@@ -36,6 +36,21 @@ function ConvertTo-MsysPath {
   return $converted
 }
 
+function Get-PackageRelativePath {
+  param(
+    [Parameter(Mandatory = $true)][string] $BaseDirectory,
+    [Parameter(Mandatory = $true)][string] $Path
+  )
+
+  $basePath = [IO.Path]::GetFullPath($BaseDirectory).TrimEnd([char[]]@('\', '/'))
+  $directoryPrefix = $basePath + [IO.Path]::DirectorySeparatorChar
+  $targetPath = [IO.Path]::GetFullPath($Path)
+  if (-not $targetPath.StartsWith($directoryPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Package file is outside the package root: $Path"
+  }
+  return $targetPath.Substring($directoryPrefix.Length).Replace('\', '/')
+}
+
 $manifest = Get-Content -LiteralPath (Join-Path $toolRoot 'source-inputs.json') -Raw | ConvertFrom-Json
 $stage = "$outputFull.staging"
 if (Test-Path -LiteralPath $stage) { throw "Staging directory already exists: $stage" }
@@ -73,17 +88,39 @@ foreach ($component in $manifest.components) {
 
 $files = Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Sort-Object FullName
 $sumLines = foreach ($file in $files) {
-  $relative = [IO.Path]::GetRelativePath($packageRoot.FullName, $file.FullName).Replace('\', '/')
+  $relative = Get-PackageRelativePath -BaseDirectory $packageRoot.FullName -Path $file.FullName
   $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
   "$hash  $relative"
 }
-Set-Content -LiteralPath (Join-Path $packageRoot 'SHA256SUMS.txt') -Value $sumLines -Encoding ascii
+$sumManifest = [string]::Join("`n", $sumLines) + "`n"
+[IO.File]::WriteAllText((Join-Path $packageRoot 'SHA256SUMS.txt'), $sumManifest, [Text.Encoding]::ASCII)
 $contentRecords = foreach ($file in (Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Sort-Object FullName)) {
-  $relative = [IO.Path]::GetRelativePath($packageRoot.FullName, $file.FullName).Replace('\', '/')
+  $relative = Get-PackageRelativePath -BaseDirectory $packageRoot.FullName -Path $file.FullName
   [ordered]@{ path = $relative; bytes = $file.Length; sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
 }
-[ordered]@{ schemaVersion = 1; archiveName = [IO.Path]::GetFileName($outputFull); files = $contentRecords } |
-  ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packageRoot 'PACKAGE-CONTENTS.json') -Encoding utf8
+$archiveName = [IO.Path]::GetFileName($outputFull)
+if ($archiveName -notmatch '^[A-Za-z0-9._-]+$') { throw "Archive name contains unsupported characters: $archiveName" }
+$contentJsonLines = [Collections.Generic.List[string]]::new()
+[void]$contentJsonLines.Add('{')
+[void]$contentJsonLines.Add('  "schemaVersion": 1,')
+[void]$contentJsonLines.Add(('  "archiveName": "{0}",' -f $archiveName))
+[void]$contentJsonLines.Add('  "files": [')
+for ($index = 0; $index -lt $contentRecords.Count; $index++) {
+  $record = $contentRecords[$index]
+  if ($record.path -notmatch '^[A-Za-z0-9._/-]+$') { throw "Package path contains unsupported characters: $($record.path)" }
+  if ($record.sha256 -notmatch '^[0-9a-f]{64}$') { throw "Invalid package file SHA-256: $($record.path)" }
+  $bytes = ([Int64]$record.bytes).ToString([Globalization.CultureInfo]::InvariantCulture)
+  $suffix = if ($index -lt ($contentRecords.Count - 1)) { ',' } else { '' }
+  [void]$contentJsonLines.Add('    {')
+  [void]$contentJsonLines.Add(('      "path": "{0}",' -f $record.path))
+  [void]$contentJsonLines.Add(('      "bytes": {0},' -f $bytes))
+  [void]$contentJsonLines.Add(('      "sha256": "{0}"' -f $record.sha256))
+  [void]$contentJsonLines.Add(('    }' + $suffix))
+}
+[void]$contentJsonLines.Add('  ]')
+[void]$contentJsonLines.Add('}')
+$contentJson = [string]::Join("`n", $contentJsonLines)
+[IO.File]::WriteAllText((Join-Path $packageRoot 'PACKAGE-CONTENTS.json'), ($contentJson + "`n"), [Text.UTF8Encoding]::new($false))
 
 $previousXz = $env:XZ_OPT
 try {

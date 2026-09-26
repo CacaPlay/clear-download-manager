@@ -13,6 +13,18 @@
     "CFLAGS": "-O2 -I$BUILD_PREFIX/lame/include -I$BUILD_PREFIX/x264/include -I$BUILD_PREFIX/dav1d/include",
     "LDFLAGS": "-L$BUILD_PREFIX/lame/lib -L$BUILD_PREFIX/x264/lib -L$BUILD_PREFIX/dav1d/lib"
   },
+  "deterministicBuild": {
+    "sourceDateEpoch": 1784011149,
+    "sourceDateEpochUtc": "2026-07-14T06:39:09Z",
+    "sourceDateEpochSource": "dav1d commit 54706fc6bc0cdecab7e9593974a4039cc038fca7 committer timestamp",
+    "locale": "C",
+    "timezone": "UTC",
+    "compilerPrefixMaps": [
+      "$BUILD_ROOT=/safe-lean/build",
+      "$SOURCE_ROOT=/safe-lean/sources"
+    ],
+    "peLinkerOption": "--no-insert-timestamp"
+  },
   "ffmpegConfigureOptions": [
     "--prefix=/ffmpeg-safe-lean-av1",
     "--target-os=mingw32",
@@ -38,7 +50,7 @@
     "--enable-libmp3lame",
     "--enable-libdav1d",
     "--extra-cflags=-O2",
-    "--extra-ldflags=-static",
+    "--extra-ldflags=-static -Wl,--no-insert-timestamp",
     "--pkg-config-flags=--static",
     "--pkg-config=pkg-config"
   ],

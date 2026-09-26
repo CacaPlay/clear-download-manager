@@ -38,6 +38,14 @@ build_dir="$build_parent/$(basename -- "$build_dir")"
 output_dir="$out_parent/$(basename -- "$output_dir")"
 [[ $build_dir != "$sources"* && $output_dir != "$sources"* ]] || die 'build and output paths must be outside the source archive directory.'
 
+# A fixed timestamp and locale make compiler-generated date/time strings stable.
+# The epoch is the committer timestamp of the latest pinned source commit.
+export SOURCE_DATE_EPOCH=1784011149
+export LC_ALL=C
+export LANG=C
+export TZ=UTC
+export PYTHONHASHSEED=0
+
 export PATH="/ucrt64/bin:/usr/bin${PATH:+:$PATH}"
 for command_name in bash make gcc pkg-config python pacman tar sha256sum awk sed tee; do
   command -v "$command_name" >/dev/null 2>&1 || die "required command is missing: $command_name"
@@ -92,6 +100,7 @@ prefix="$build_dir/prefix"
 x264_prefix="$prefix/x264"
 lame_prefix="$prefix/lame"
 dav1d_prefix="$prefix/dav1d"
+compiler_prefix_maps="-ffile-prefix-map=$build_dir=/safe-lean/build -ffile-prefix-map=$sources=/safe-lean/sources"
 
 (
   cd -- "$x264_source"
@@ -141,12 +150,14 @@ python -m mesonbuild.mesonmain install -C "$build_dir/build/dav1d" \
   2>&1 | tee "$build_dir/logs/dav1d-install.log"
 
 export PKG_CONFIG_PATH="$x264_prefix/lib/pkgconfig:$lame_prefix/lib/pkgconfig:$dav1d_prefix/lib/pkgconfig"
+dav1d_version=$(pkg-config --modversion dav1d)
+[[ $dav1d_version == 1.5.4 ]] || die "unexpected dav1d source version: $dav1d_version"
 (
   cd -- "$ffmpeg_source"
   # FFmpeg's legacy --enable-libmp3lame check does not consume pkg-config
   # include/library flags. Keep the dependency search rooted only in the
   # freshly built prefixes, as in the validated SAFE LEAN prototype.
-  export CFLAGS="-O2 -I$lame_prefix/include -I$x264_prefix/include -I$dav1d_prefix/include"
+  export CFLAGS="-O2 -I$lame_prefix/include -I$x264_prefix/include -I$dav1d_prefix/include $compiler_prefix_maps"
   export LDFLAGS="-L$lame_prefix/lib -L$x264_prefix/lib -L$dav1d_prefix/lib"
   ./configure \
     --prefix=/ffmpeg-safe-lean-av1 \
@@ -156,7 +167,7 @@ export PKG_CONFIG_PATH="$x264_prefix/lib/pkgconfig:$lame_prefix/lib/pkgconfig:$d
     --disable-autodetect --disable-x86asm --disable-indevs --disable-outdevs --disable-devices --disable-hwaccels \
     --enable-schannel --enable-ffmpeg --enable-ffprobe --enable-network \
     --enable-libx264 --enable-libmp3lame --enable-libdav1d \
-    --extra-cflags=-O2 --extra-ldflags=-static \
+    --extra-cflags=-O2 --extra-ldflags="-static -Wl,--no-insert-timestamp" \
     --pkg-config-flags=--static --pkg-config=pkg-config
   make -j4
 ) 2>&1 | tee "$build_dir/logs/ffmpeg-build.log"
@@ -172,8 +183,18 @@ cat > "$output_dir/build-config.json" <<JSON
   "candidate": "SAFE LEAN",
   "target": "Windows x64",
   "ffmpegVersion": "9.0.2",
+  "dav1dVersion": "$dav1d_version",
   "sourceCommit": "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
   "effectiveBuildLicense": "GPL-3.0-or-later",
+  "deterministicBuild": {
+    "sourceDateEpoch": 1784011149,
+    "sourceDateEpochUtc": "2026-07-14T06:39:09Z",
+    "sourceDateEpochSource": "dav1d commit 54706fc6bc0cdecab7e9593974a4039cc038fca7 committer timestamp",
+    "locale": "C",
+    "timezone": "UTC",
+    "compilerPrefixMaps": ["\$BUILD_ROOT=/safe-lean/build", "\$SOURCE_ROOT=/safe-lean/sources"],
+    "peLinkerOption": "--no-insert-timestamp"
+  },
   "buildToolchain": {
     "gcc": "$gcc_version",
     "gnuMake": "$make_version",
@@ -194,7 +215,7 @@ cat > "$output_dir/build-config.json" <<JSON
     "--disable-autodetect", "--disable-x86asm", "--disable-indevs", "--disable-outdevs",
     "--disable-devices", "--disable-hwaccels", "--enable-schannel", "--enable-ffmpeg",
     "--enable-ffprobe", "--enable-network", "--enable-libx264", "--enable-libmp3lame",
-    "--enable-libdav1d", "--extra-cflags=-O2", "--extra-ldflags=-static",
+    "--enable-libdav1d", "--extra-cflags=-O2", "--extra-ldflags=-static -Wl,--no-insert-timestamp",
     "--pkg-config-flags=--static", "--pkg-config=pkg-config"
   ],
   "dependencyBuildOptions": {

@@ -88,6 +88,30 @@ test('build option record remains aligned with the SAFE LEAN selection', () => {
   assert.deepEqual(options.outputs, ['ffmpeg.exe', 'ffprobe.exe', 'build-config.json']);
 });
 
+test('SAFE LEAN build options lock deterministic date, locale, path and PE timestamp inputs', () => {
+  const options = JSON.parse(fs.readFileSync(buildOptions, 'utf8'));
+  const deterministic = options.deterministicBuild;
+  assert.deepEqual(deterministic, {
+    sourceDateEpoch: 1784011149,
+    sourceDateEpochUtc: '2026-07-14T06:39:09Z',
+    sourceDateEpochSource: 'dav1d commit 54706fc6bc0cdecab7e9593974a4039cc038fca7 committer timestamp',
+    locale: 'C',
+    timezone: 'UTC',
+    compilerPrefixMaps: ['$BUILD_ROOT=/safe-lean/build', '$SOURCE_ROOT=/safe-lean/sources'],
+    peLinkerOption: '--no-insert-timestamp',
+  });
+
+  const buildScript = fs.readFileSync(packageFile('build-safe-lean.sh'), 'utf8');
+  assert.match(buildScript, /SOURCE_DATE_EPOCH=1784011149/);
+  assert.match(buildScript, /LC_ALL=C/);
+  assert.match(buildScript, /TZ=UTC/);
+  assert.match(buildScript, /-ffile-prefix-map=/);
+  assert.match(buildScript, /--no-insert-timestamp/);
+  assert.match(buildScript, /"deterministicBuild"/);
+  assert.match(buildScript, /\\\$BUILD_ROOT=\/safe-lean\/build/);
+  assert.match(buildScript, /\\\$SOURCE_ROOT=\/safe-lean\/sources/);
+});
+
 test('toolchain lock fixes every package and wheel digest', () => {
   const lock = JSON.parse(fs.readFileSync(toolchainLock, 'utf8'));
   assert.equal(lock.packageCount, 57);
@@ -120,4 +144,30 @@ test('source packager converts Windows paths before passing them to MSYS2 tar', 
   assert.match(text, /cygpath\.exe/);
   assert.match(text, /& \$CygpathExe -u \$Path/);
   assert.match(text, /-J --create --file \$tarOutputPath --directory \$tarPackagePath/);
+});
+
+test('source packager writes GNU-compatible SHA256SUMS line endings', { skip: !fs.existsSync(packageFile('package-source.ps1')) }, () => {
+  const script = packageFile('package-source.ps1');
+  const text = fs.readFileSync(script, 'utf8');
+
+  assert.match(text, /\[IO\.File\]::WriteAllText\(/);
+  assert.match(text, /\[string\]::Join\("`n", \$sumLines\) \+ "`n"/);
+});
+
+test('source packager computes relative paths without requiring .NET Core APIs', { skip: !fs.existsSync(packageFile('package-source.ps1')) }, () => {
+  const text = fs.readFileSync(packageFile('package-source.ps1'), 'utf8');
+
+  assert.match(text, /function Get-PackageRelativePath/);
+  assert.match(text, /\$targetPath\.StartsWith\(\$directoryPrefix, \[StringComparison\]::OrdinalIgnoreCase\)/);
+  assert.match(text, /Get-PackageRelativePath -BaseDirectory \$packageRoot\.FullName -Path \$file\.FullName/);
+  assert.doesNotMatch(text, /\[IO\.Path\]::GetRelativePath/);
+});
+
+test('source package manifest uses canonical JSON, UTF-8 without BOM, and LF newlines', { skip: !fs.existsSync(packageFile('package-source.ps1')) }, () => {
+  const text = fs.readFileSync(packageFile('package-source.ps1'), 'utf8');
+
+  assert.match(text, /\$contentJsonLines = \[Collections\.Generic\.List\[string\]\]::new\(\)/);
+  assert.match(text, /\$contentJson = \[string\]::Join\("`n", \$contentJsonLines\)/);
+  assert.match(text, /\[IO\.File\]::WriteAllText\(\(Join-Path \$packageRoot 'PACKAGE-CONTENTS\.json'\), \(\$contentJson \+ "`n"\), \[Text\.UTF8Encoding\]::new\(\$false\)\)/);
+  assert.doesNotMatch(text, /ConvertTo-Json -Depth 5/);
 });

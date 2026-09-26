@@ -37,6 +37,16 @@ Ensure UCRT64 tools precede MSYS tools in `PATH`. `verify-toolchain.py` checks t
 
 The lock describes the observed build environment. It does not claim that all MSYS2 package archives were cached or that an offline toolchain bootstrap has been demonstrated. The package hashes and cache coverage are recorded as observed evidence.
 
+## Deterministic build settings
+
+The build script pins `SOURCE_DATE_EPOCH=1784011149` (`2026-07-14T06:39:09Z`), the committer timestamp of the latest pinned source commit, dav1d `54706fc6bc0cdecab7e9593974a4039cc038fca7`. It also pins `LC_ALL=C`, `LANG=C`, `TZ=UTC`, and `PYTHONHASHSEED=0`. GCC therefore expands any `__DATE__` and `__TIME__` macros against one documented UTC instant.
+
+The FFmpeg compile flags map the physical build root and source-archive root to `/safe-lean/build` and `/safe-lean/sources` with GCC `-ffile-prefix-map`. The final PE link uses GNU ld `--no-insert-timestamp`, which zeroes both the COFF timestamp and the export-directory timestamp in `.edata`; the PE checksum is consequently stable once the remaining bytes are stable. The selected MSYS2 GNU `ar` produces deterministic static archives, confirmed by byte-for-byte comparisons of x264, LAME, and dav1d archives from separate clean build roots.
+
+The pinned dav1d source archive is the exact locked source commit and has no `.git` directory. Its upstream `meson.build` declares version `1.5.4`; the build script checks that version through the freshly installed `dav1d.pc` and records it alongside the full commit and source archive hash. The `-0-g<commit>` suffix seen in an earlier Git checkout came from `git describe` metadata that is absent from the corresponding source archive; it is not used or fabricated by this build.
+
+These settings define the canonical SAFE LEAN build inputs. Each output's `build-config.json` records the fixed epoch, normalized path maps, linker option, source identity, dependency versions, toolchain versions, configure options, and executable hashes. The source package contains this build script and configuration.
+
 ## Build from extracted candidate package
 
 From the extracted package directory, in an MSYS2 UCRT64 shell with the pinned Meson Python wheel and Ninja executable installed:
@@ -58,6 +68,8 @@ No existing prototype objects, installed prototype libraries, or previous FFmpeg
 ## Corresponding source contents
 
 The package includes the exact upstream source archives and SHA-256 lock, this script, the hash verifier, toolchain package inventory, FFmpeg configure options, and a license/notice inventory. It excludes compiled FFmpeg binaries, dependency libraries, intermediate objects, and caches.
+
+Repository maintainers can create the archive with `tools/ffmpeg-safe-lean/package-source.ps1`, passing the verified source directory and an output path outside the repository. The packager supports Windows PowerShell 5.1 and PowerShell 7 and writes canonical LF/UTF-8 manifests so the archive hash is stable across those shells.
 
 ## Review status
 
