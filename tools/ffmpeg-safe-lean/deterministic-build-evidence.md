@@ -29,6 +29,19 @@ The new pair is **not** bit-identical to those original executables, so this arc
 
 The rebuilt pair passed the same synthetic media profile checks: FFmpeg/FFprobe version, MP4 H.264/AAC probe and decode, WebM VP9/Opus probe and decode, AV1/Opus remux/probe/decode, MP4 merge/probe/decode, MP3, M4A/AAC, FLAC, and H.264/AAC fallback encode/probe/decode (**28 checks passed**). These are local synthetic fixtures, not a live YouTube test. This supports functional equivalence for the exercised profile; it does not prove bit identity or every possible behavior.
 
+## Live YouTube smoke
+
+**Captured:** 2026-09-26. Tests used the canonical binaries listed above, yt-dlp `2026.08.19`, Deno `2.9.7`, the public 19-second YouTube sample `jNQXAC9IVRw`, no cookies or login, and yt-dlp's 3 MiB maximum-file-size limit. The selected source formats were each under 315 KiB. All four yt-dlp operations exited successfully; FFmpeg completed each merge/extraction without reported warnings or errors, and FFprobe accepted every final output with the expected codecs and a positive duration.
+
+| Case | yt-dlp format IDs | Output | Final codecs | Bytes | Duration | yt-dlp / FFmpeg | FFprobe |
+| --- | --- | --- | --- | ---: | ---: | --- | --- |
+| H.264 + AAC merge | `134+140` | MP4 | H.264 + AAC | 633,710 | 19.060 s | PASS / merged | PASS |
+| VP9 + Opus merge | `242+251` | WebM | VP9 + Opus | 545,382 | 19.020 s | PASS / merged | PASS |
+| AV1 + Opus merge | `395+251` | Matroska | AV1 + Opus | 474,561 | 19.020 s | PASS / merged | PASS |
+| Audio extraction to MP3 | `140` | MP3 | MP3 | 117,028 | 19.060 s | PASS / extracted | PASS |
+
+FFprobe used the canonical `ffprobe.exe` and confirmed each container and codec set shown above. No output media was added to the repository. This is a small live smoke of these paths, not a general compatibility guarantee.
+
 ## Corresponding-source candidate package
 
 The candidate archive is:
@@ -40,7 +53,7 @@ The candidate archive is:
 
 It contains the exact FFmpeg 9.0.2 commit `946fcce07b6dcd0331c8cc609192aeff5e1924f8`, x264 commit `b35605ace3ddf7c1a5d67a2eb553f034aef41d55`, LAME 3.100 source, and dav1d 1.5.4 commit `54706fc6bc0cdecab7e9593974a4039cc038fca7`; source archive hashes, build scripts/options, toolchain lock, and upstream license files are included. `SHA256SUMS.txt` validates 14 package files. `PACKAGE-CONTENTS.json` records byte counts and hashes for 15 files, including `SHA256SUMS.txt`.
 
-The final archive was extracted into a clean directory. Its TAR listing contained 21 entries including directories and no `.exe` files. Its listed source hashes were checked, its package contents were checked, its tooling tests reported 7 pass and 4 intentional skips (the maintainer packager is not part of the redistributable source archive), and the FFmpeg pair was rebuilt from that extracted copy with the same hashes shown above. The package includes source and build inputs, not FFmpeg runtime binaries or compiled dependency libraries.
+The final archive was extracted into a clean directory. Its TAR listing contained 21 entries including directories and no `.exe` files. Its listed source hashes were checked, its package contents were checked, and its package-local test subset reported 7 pass and 4 intentional skips (the maintainer packager is not part of the redistributable source archive). Separately, the full repository tooling test command reports 11/11 passed. The FFmpeg pair was rebuilt from the extracted copy with the same hashes shown above. The package includes source and build inputs, not FFmpeg runtime binaries or compiled dependency libraries.
 
 The toolchain lock records the observed 57-package MSYS2 UCRT64 closure, exact package versions, upstream repository URLs, sizes and SHA-256 digests, plus pinned Meson/Ninja wheels. Running the included verifier from the documented UCRT64 shell confirmed all 57 locked package versions. It does **not** bundle those toolchain packages, and a fully offline toolchain bootstrap was not demonstrated. The source package is therefore reproducible with the documented pinned toolchain inputs, but is not a self-contained offline build environment.
 
