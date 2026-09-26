@@ -1,6 +1,6 @@
 # SAFE LEAN FFmpeg 9.0.2 corresponding source candidate
 
-This tooling reconstructs the isolated SAFE LEAN Windows x64 FFmpeg/FFprobe pair selected for technical evaluation. It does not replace CDM's current runtime, alter product behavior, or connect to the production preparation script. The corresponding-source package is a candidate for review; it is not an approval to distribute binaries.
+This tooling reconstructs the isolated SAFE LEAN Windows x64 FFmpeg/FFprobe pair selected for technical evaluation and approved by the distributor for integration. It does not replace CDM's current runtime, alter product behavior, or connect to the production preparation script. The approval is limited to this candidate pair and its exact corresponding-source package; binary release remains blocked until a separate runtime-replacement change activates the pair and all other GPL runtimes are cleared.
 
 ## Fixed source inputs
 
@@ -73,4 +73,4 @@ Repository maintainers can create the archive with `tools/ffmpeg-safe-lean/packa
 
 ## Review status
 
-Human distributor review remains `PENDING`. This package must not change `third-party-source/corresponding-source.json`, `runtime-manifest.json`, or any release gate. Binary release remains fail-closed until the distributor approves the exact archive and the project gate records that review.
+Human distributor review is `APPROVED` for the exact candidate pair and archive. The review record and hash are in `third-party-source/reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md`. The registry records this approval through a candidate-only metadata selector; the active Gyan runtime and production preparation flow remain unchanged. A separate runtime-replacement PR must activate SAFE LEAN and revalidate exact packaged hashes. aria2 and yt-dlp remain pending, so global GPL source readiness and binary release remain fail-closed.

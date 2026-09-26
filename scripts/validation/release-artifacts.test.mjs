@@ -342,11 +342,28 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
     assert.match(entry.sourceCommit, /^[a-f0-9]{40}$/);
     assert.ok(entry.sourceVersion);
     assert.match(entry.binarySha256, /^[a-f0-9]{64}$/);
-    assert.match(entry.binaryArchiveSha256, /^[a-f0-9]{64}$/);
     assert.match(entry.releaseAssetName, /^[a-z0-9.-]+\.tar\.xz$/);
     assert.equal(entry.humanReview.required, true);
-    assert.equal(entry.humanReview.status, 'PENDING');
-    assert.equal(entry.distributionMethod, null);
+    if (id === 'ffmpeg') {
+      assert.equal(entry.runtimeManifestKey, 'ffmpegSafeLeanCandidate');
+      assert.equal(entry.releaseAssetName, 'ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz');
+      assert.equal(entry.binarySha256, 'e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f');
+      assert.equal(entry.ffprobeSha256, '787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3');
+      assert.equal(entry.humanReview.status, 'APPROVED');
+      assert.equal(entry.distributionMethod, 'corresponding-source-archive');
+      assert.equal(entry.releaseAssetSha256, 'b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58');
+      assert.equal(entry.sourceArchiveSha256, entry.releaseAssetSha256);
+      assert.match(entry.sourceArchivePath, /^third-party-source\//);
+      assert.match(entry.buildInputsPath, /^third-party-source\//);
+      assert.match(entry.humanReview.reviewRecordPath, /^third-party-source\//);
+      assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
+      assert.equal(entry.binarySourceUrl, null, 'a locally built candidate must not claim the old upstream binary URL');
+      assert.equal(entry.binaryArchiveSha256, null, 'a locally built candidate has no upstream binary archive digest');
+    } else {
+      assert.equal(entry.humanReview.status, 'PENDING');
+      assert.equal(entry.distributionMethod, null);
+      assert.match(entry.binaryArchiveSha256, /^[a-f0-9]{64}$/);
+    }
     for (const runtimeFile of entry.runtimeFiles) {
       assert.match(runtimeFile.sha256, /^[a-f0-9]{64}$/);
       assert.equal(runtimeFile.correspondingSourceAsset, entry.releaseAssetName);
@@ -357,9 +374,20 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   assert.deepEqual(byId.get('aria2').runtimeFiles.map((file) => file.name), ['aria2c.exe']);
   assert.deepEqual(byId.get('ffmpeg').runtimeFiles.map((file) => file.name), ['ffmpeg.exe', 'ffprobe.exe']);
   const runtime = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'src-tauri/resources/bin/runtime-manifest.json'), 'utf8').replace(/^\uFEFF/, ''));
+  assert.equal(runtime.ffmpeg.ffmpegSha256, '3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec', 'the production Gyan runtime stays unchanged in this preparation PR');
+  assert.equal(runtime.ffmpegSafeLeanCandidate.ffmpegSha256, byId.get('ffmpeg').binarySha256);
+  assert.equal(runtime.ffmpegSafeLeanCandidate.ffprobeSha256, byId.get('ffmpeg').ffprobeSha256);
+  assert.equal(runtime.ffmpegSafeLeanCandidate.sourceArchiveSha256, byId.get('ffmpeg').sourceArchiveSha256);
+  assert.equal(runtime.ffmpegSafeLeanCandidate.humanReviewSha256, byId.get('ffmpeg').humanReview.reviewRecordSha256);
   const issues = validateCorrespondingSourceRegistry(manifest, runtime, repositoryRoot);
   assert.deepEqual(issues.failures, []);
-  assert.ok(issues.pending.length > 0);
+  assert.ok(issues.pending.some((issue) => issue.startsWith('aria2:')));
+  assert.ok(issues.pending.some((issue) => issue.startsWith('yt-dlp:')));
+  assert.ok(issues.pending.some((issue) => issue.includes('SAFE LEAN candidate is approved but not the active FFmpeg runtime')));
+  const reviewRecord = fs.readFileSync(path.join(repositoryRoot, byId.get('ffmpeg').humanReview.reviewRecordPath), 'utf8');
+  assert.match(reviewRecord, /“Apruebo el par canónico SAFE LEAN y su corresponding-source package para integrarlos en CDM\. Autoriza registrar la revisión humana y continuar con PR #16, sin tag ni release\.”/);
+  assert.match(reviewRecord, /aria2.*PENDING/s);
+  assert.match(reviewRecord, /yt-dlp.*PENDING/s);
   assert.match(runtime.aria2.sourceCommit, /^[a-f0-9]{40}$/);
   assert.match(runtime.ffmpeg.sourceCommit, /^[a-f0-9]{40}$/);
   const prepareScript = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-windows-binaries.ps1'), 'utf8');
@@ -377,6 +405,25 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   badLinkManifest.runtimes.find((entry) => entry.id === 'ffmpeg').runtimeFiles[0].correspondingSourceAsset = 'ffmpeg-any-source.tar.xz';
   const badLink = validateCorrespondingSourceRegistry(badLinkManifest, runtime, repositoryRoot);
   assert.match(badLink.failures.join('\n'), /exact runtime filenames, hashes, and corresponding-source asset links/);
+
+  const badSafeLeanAssetManifest = structuredClone(manifest);
+  badSafeLeanAssetManifest.runtimes.find((entry) => entry.id === 'ffmpeg').releaseAssetName = 'ffmpeg-9.0.2-essentials-win64-corresponding-source.tar.xz';
+  const badSafeLeanAsset = validateCorrespondingSourceRegistry(badSafeLeanAssetManifest, runtime, repositoryRoot);
+  assert.match(badSafeLeanAsset.failures.join('\n'), /must be exactly ffmpeg-9\.0\.2-safe-lean-win64-corresponding-source\.tar\.xz/);
+
+  const badCandidateHashManifest = structuredClone(manifest);
+  const badCandidateHashEntry = badCandidateHashManifest.runtimes.find((entry) => entry.id === 'ffmpeg');
+  const badCandidateHashRuntime = structuredClone(runtime);
+  badCandidateHashRuntime.ffmpegSafeLeanCandidate.ffmpegSha256 = 'a'.repeat(64);
+  badCandidateHashEntry.binarySha256 = 'a'.repeat(64);
+  badCandidateHashEntry.runtimeFiles[0].sha256 = 'a'.repeat(64);
+  const badCandidateHash = validateCorrespondingSourceRegistry(badCandidateHashManifest, badCandidateHashRuntime, repositoryRoot);
+  assert.match(badCandidateHash.failures.join('\n'), /canonical executable hashes do not match the approved runtime pair/);
+
+  const badReviewLinkRuntime = structuredClone(runtime);
+  badReviewLinkRuntime.ffmpegSafeLeanCandidate.humanReviewPath = 'third-party-source/README.md';
+  const badReviewLink = validateCorrespondingSourceRegistry(manifest, badReviewLinkRuntime, repositoryRoot);
+  assert.match(badReviewLink.failures.join('\n'), /review record path and SHA-256 must exactly match runtime-manifest\.json/);
 
   const reviewDisabledManifest = structuredClone(manifest);
   reviewDisabledManifest.runtimes.find((entry) => entry.id === 'aria2').humanReview.required = false;

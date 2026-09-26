@@ -37,7 +37,7 @@ const REQUIRED = {
 };
 
 const ALLOWED_ENTRY_KEYS = new Set([
-  'id', 'version', 'sourceRepository', 'sourceVersion', 'sourceCommit', 'license',
+  'id', 'runtimeManifestKey', 'version', 'sourceRepository', 'sourceVersion', 'sourceCommit', 'license',
   'binarySha256', 'ffprobeSha256', 'binarySourceUrl', 'binaryArchiveSha256', 'binaryAssetSha256',
   'buildConfigurationEvidence', 'runtimeFiles', 'distributionMethod',
   'sourceArchivePath', 'sourceArchiveSha256', 'buildInputsPath', 'buildInputsSha256',
@@ -50,9 +50,10 @@ const commitPattern = /^[a-f0-9]{40}$/;
 
 const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const validSha256 = value => typeof value === 'string' && sha256Pattern.test(value);
-const expectedSourceAssetName = (id, version) => {
+const expectedSourceAssetName = (id, version, runtimeManifestKey) => {
   if (id === 'aria2') return `aria2-${version}-win64-corresponding-source.tar.xz`;
   if (id === 'yt-dlp') return `yt-dlp-${version}-win64-corresponding-source.tar.xz`;
+  if (runtimeManifestKey === 'ffmpegSafeLeanCandidate') return `ffmpeg-${version}-safe-lean-win64-corresponding-source.tar.xz`;
   return `ffmpeg-${version}-essentials-win64-corresponding-source.tar.xz`;
 };
 
@@ -126,7 +127,12 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
 
   for (const [id, spec] of Object.entries(REQUIRED)) {
     const entry = entriesById.get(id);
-    const runtimeRecord = runtime?.[spec.runtimeKey || id];
+    const runtimeManifestKey = entry.runtimeManifestKey || spec.runtimeKey || id;
+    const safeLeanCandidate = id === 'ffmpeg' && runtimeManifestKey === 'ffmpegSafeLeanCandidate';
+    if (entry.runtimeManifestKey != null && !safeLeanCandidate) {
+      issues.failures.push(`${id}.runtimeManifestKey: unsupported runtime metadata selector.`);
+    }
+    const runtimeRecord = runtime?.[runtimeManifestKey];
     if (!runtimeRecord) {
       issues.failures.push(`${id}: runtime manifest record is missing.`);
       continue;
@@ -144,24 +150,37 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
     if (!commitPattern.test(entry.sourceCommit || '') || entry.sourceCommit !== spec.sourceCommit || runtimeRecord.sourceCommit !== spec.sourceCommit) {
       issues.failures.push(`${id}.sourceCommit: the full pinned 40-character source commit matching runtime-manifest.json is required.`);
     }
-    if (entry.license !== spec.license || (id === 'yt-dlp' && runtimeRecord.effectiveLicense !== spec.license)) {
+    if (entry.license !== spec.license || (id === 'yt-dlp' && runtimeRecord.effectiveLicense !== spec.license)
+      || (safeLeanCandidate && runtimeRecord.license !== spec.license)) {
       issues.failures.push(`${id}.license: does not match the verified runtime license metadata.`);
     }
-    if (!/^https:\/\//.test(entry.binarySourceUrl || '') || entry.binarySourceUrl !== runtimeRecord.source) {
-      issues.failures.push(`${id}.binarySourceUrl: must exactly match the pinned runtime source URL.`);
+    if (safeLeanCandidate) {
+      if (runtimeRecord.profile !== 'SAFE LEAN') issues.failures.push('ffmpeg SAFE LEAN candidate: profile must be exactly SAFE LEAN.');
+      if (entry.binarySourceUrl != null || entry.binaryArchiveSha256 != null) {
+        issues.failures.push('ffmpeg SAFE LEAN candidate: upstream binary URL/archive fields must remain null for this source-built pair.');
+      }
+    } else {
+      if (!/^https:\/\//.test(entry.binarySourceUrl || '') || entry.binarySourceUrl !== runtimeRecord.source) {
+        issues.failures.push(`${id}.binarySourceUrl: must exactly match the pinned runtime source URL.`);
+      }
+      const assetHashField = spec.distributionAssetHashField || 'binaryArchiveSha256';
+      const expectedAssetHash = spec.distributionAssetHash ? spec.distributionAssetHash(runtime) : runtimeRecord.archiveSha256;
+      if (!validSha256(entry[assetHashField]) || entry[assetHashField] !== expectedAssetHash) {
+        issues.failures.push(`${id}.${assetHashField}: a full SHA-256 matching the exact upstream distribution asset in runtime-manifest.json is required.`);
+      }
+      if (assetHashField !== 'binaryAssetSha256' && entry.binaryAssetSha256 != null) {
+        issues.failures.push(`${id}.binaryAssetSha256: is only valid for a directly distributed executable asset.`);
+      }
+      if (assetHashField !== 'binaryArchiveSha256' && entry.binaryArchiveSha256 != null) {
+        issues.failures.push(`${id}.binaryArchiveSha256: is only valid for an upstream archive asset.`);
+      }
     }
-    const assetHashField = spec.distributionAssetHashField || 'binaryArchiveSha256';
-    const expectedAssetHash = spec.distributionAssetHash ? spec.distributionAssetHash(runtime) : runtimeRecord.archiveSha256;
-    if (!validSha256(entry[assetHashField]) || entry[assetHashField] !== expectedAssetHash) {
-      issues.failures.push(`${id}.${assetHashField}: a full SHA-256 matching the exact upstream distribution asset in runtime-manifest.json is required.`);
-    }
-    if (assetHashField !== 'binaryAssetSha256' && entry.binaryAssetSha256 != null) {
-      issues.failures.push(`${id}.binaryAssetSha256: is only valid for a directly distributed executable asset.`);
-    }
-    if (assetHashField !== 'binaryArchiveSha256' && entry.binaryArchiveSha256 != null) {
-      issues.failures.push(`${id}.binaryArchiveSha256: is only valid for an upstream archive asset.`);
-    }
-    const expectedFiles = spec.expectedFiles(runtime);
+    const expectedFiles = safeLeanCandidate
+      ? [
+        { name: 'ffmpeg.exe', sha256: runtimeRecord.ffmpegSha256 },
+        { name: 'ffprobe.exe', sha256: runtimeRecord.ffprobeSha256 },
+      ]
+      : spec.expectedFiles(runtime);
     if (id === 'aria2' && entry.binarySha256 !== expectedFiles[0].sha256) {
       issues.failures.push('aria2.binarySha256: must match the aria2c.exe runtime hash.');
     }
@@ -174,9 +193,16 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
     if (!validSha256(entry.binarySha256)) issues.failures.push(`${id}.binarySha256: a full SHA-256 is required.`);
     if (id === 'ffmpeg' && !validSha256(entry.ffprobeSha256)) issues.failures.push('ffmpeg.ffprobeSha256: a full SHA-256 is required.');
 
-    const expectedName = expectedSourceAssetName(id, entry.version);
+    const expectedName = expectedSourceAssetName(id, entry.version, runtimeManifestKey);
     if (entry.releaseAssetName !== expectedName || /[\\/]/.test(entry.releaseAssetName || '')) {
       issues.failures.push(`${id}.releaseAssetName: must be exactly ${expectedName}.`);
+    }
+    if (safeLeanCandidate && (runtimeRecord.sourceArchiveName !== expectedName
+      || runtimeRecord.sourceArchivePath !== entry.sourceArchivePath
+      || runtimeRecord.sourceArchiveSha256 !== entry.sourceArchiveSha256
+      || runtimeRecord.buildInputsPath !== entry.buildInputsPath
+      || runtimeRecord.buildInputsSha256 !== entry.buildInputsSha256)) {
+      issues.failures.push('ffmpeg SAFE LEAN candidate: source archive and build-input paths/hashes must exactly match the reviewed registry entry.');
     }
     const expectedRuntimeFiles = expectedFiles.map(file => ({
       name: file.name,
@@ -193,6 +219,10 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
     } else if (review.status !== 'APPROVED') {
       issues.pending.push(`${id}: distributor human review is still required.`);
     } else {
+      if (safeLeanCandidate && (runtimeRecord.humanReviewPath !== review.reviewRecordPath
+        || runtimeRecord.humanReviewSha256 !== review.reviewRecordSha256)) {
+        issues.failures.push('ffmpeg SAFE LEAN candidate: review record path and SHA-256 must exactly match runtime-manifest.json.');
+      }
       if (typeof review.reviewRecordPath !== 'string' || !review.reviewRecordPath) {
         issues.failures.push(`${id}: an approved human review must reference its review record.`);
       } else {
@@ -202,7 +232,41 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
 
     if (entry.distributionMethod === 'corresponding-source-archive') {
       const sourceHash = addFileState(issues, root, entry.sourceArchivePath, entry.sourceArchiveSha256, `${id}.sourceArchive`);
-      addFileState(issues, root, entry.buildInputsPath, entry.buildInputsSha256, `${id}.buildInputs`);
+      const buildInputsHash = addFileState(issues, root, entry.buildInputsPath, entry.buildInputsSha256, `${id}.buildInputs`);
+      if (safeLeanCandidate && buildInputsHash) {
+        try {
+          const buildInputs = JSON.parse(fs.readFileSync(path.resolve(root, entry.buildInputsPath), 'utf8'));
+          const buildRuntime = buildInputs.runtime;
+          if (buildInputs.schemaVersion !== 1
+            || buildRuntime?.id !== 'ffmpeg'
+            || buildRuntime?.version !== entry.version
+            || buildRuntime?.profile !== 'SAFE LEAN'
+            || buildRuntime?.sourceRepository !== entry.sourceRepository
+            || buildRuntime?.sourceVersion !== entry.sourceVersion
+            || buildRuntime?.sourceCommit !== entry.sourceCommit
+            || buildRuntime?.effectiveLicense !== entry.license) {
+            issues.failures.push('ffmpeg SAFE LEAN build-input record: pinned runtime identity, commit, profile, or license does not match the registry.');
+          }
+          const outputs = new Map((buildInputs.canonicalOutputs || []).map(file => [file.name, file.sha256]));
+          if (outputs.size !== 2 || outputs.get('ffmpeg.exe') !== entry.binarySha256
+            || outputs.get('ffprobe.exe') !== entry.ffprobeSha256) {
+            issues.failures.push('ffmpeg SAFE LEAN build-input record: canonical executable hashes do not match the approved runtime pair.');
+          }
+          const archive = buildInputs.correspondingSourceArchive;
+          if (archive?.assetName !== entry.releaseAssetName
+            || archive?.path !== entry.sourceArchivePath
+            || archive?.sha256 !== entry.sourceArchiveSha256) {
+            issues.failures.push('ffmpeg SAFE LEAN build-input record: exact source archive name, path, and hash do not match the registry.');
+          }
+          if (buildInputs.reproducibility?.independentBuildsIdentical !== 4
+            || buildInputs.reproducibility?.originalPrototypeBinariesReproduced !== false
+            || buildInputs.reproducibility?.completeOfflineToolchainBundled !== false) {
+            issues.failures.push('ffmpeg SAFE LEAN build-input record: reproducibility and offline-toolchain evidence is incomplete or inconsistent.');
+          }
+        } catch (error) {
+          issues.failures.push(`ffmpeg SAFE LEAN build-input record: invalid JSON (${error.message}).`);
+        }
+      }
       if (entry.releaseAssetSha256 == null) {
         issues.pending.push(`${id}: release asset SHA-256 is not recorded.`);
       } else if (!validSha256(entry.releaseAssetSha256) || sourceHash && entry.releaseAssetSha256 !== sourceHash) {
@@ -219,6 +283,20 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
       issues.pending.push(`${id}: distributor has not selected an approved distribution method.`);
     } else {
       issues.failures.push(`${id}.distributionMethod: must be corresponding-source-archive or written-offer.`);
+    }
+
+    if (safeLeanCandidate) {
+      const active = runtime?.ffmpeg;
+      const isActiveCandidate = active?.approvedCandidateKey === runtimeManifestKey
+        && active?.profile === 'SAFE LEAN'
+        && active?.sourceRepository === runtimeRecord.sourceRepository
+        && active?.sourceVersion === runtimeRecord.sourceVersion
+        && active?.sourceCommit === runtimeRecord.sourceCommit
+        && active?.ffmpegSha256 === runtimeRecord.ffmpegSha256
+        && active?.ffprobeSha256 === runtimeRecord.ffprobeSha256;
+      if (!isActiveCandidate) {
+        issues.pending.push('ffmpeg: SAFE LEAN candidate is approved but not the active FFmpeg runtime; a separate runtime-replacement PR is required.');
+      }
     }
   }
   if (manifest.status === 'PENDING') issues.pending.push('overall corresponding-source status is PENDING.');

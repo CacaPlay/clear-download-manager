@@ -38,33 +38,39 @@
       "sourceVersion": "n9.0.2",
       "sourceCommit": "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
       "license": "GPL-3.0-or-later",
-      "binarySha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
-      "ffprobeSha256": "f0d36ecbbdd3bcfac3efa078c96c7271c2e68b3810595552ac3b7f17e9a65c52",
-      "binarySourceUrl": "https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-essentials_build.zip",
-      "binaryArchiveSha256": "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
-      "buildConfigurationEvidence": "src-tauri/resources/licenses/FFMPEG-BUILD-README.txt",
+      "binarySha256": "e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f",
+      "ffprobeSha256": "787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3",
+      "binarySourceUrl": null,
+      "binaryArchiveSha256": null,
+      "buildConfigurationEvidence": "third-party-source/reviews/ffmpeg-9.0.2-safe-lean-build-inputs.json",
       "runtimeFiles": [
         {
           "name": "ffmpeg.exe",
-          "sha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
-          "correspondingSourceAsset": "ffmpeg-9.0.2-essentials-win64-corresponding-source.tar.xz"
+          "sha256": "e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f",
+          "correspondingSourceAsset": "ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz"
         },
         {
           "name": "ffprobe.exe",
-          "sha256": "f0d36ecbbdd3bcfac3efa078c96c7271c2e68b3810595552ac3b7f17e9a65c52",
-          "correspondingSourceAsset": "ffmpeg-9.0.2-essentials-win64-corresponding-source.tar.xz"
+          "sha256": "787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3",
+          "correspondingSourceAsset": "ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz"
         }
       ],
-      "distributionMethod": null,
-      "sourceArchivePath": null,
-      "sourceArchiveSha256": null,
-      "buildInputsPath": null,
-      "buildInputsSha256": null,
-      "releaseAssetName": "ffmpeg-9.0.2-essentials-win64-corresponding-source.tar.xz",
-      "releaseAssetSha256": null,
+      "distributionMethod": "corresponding-source-archive",
+      "sourceArchivePath": "third-party-source/ffmpeg/ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz",
+      "sourceArchiveSha256": "b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58",
+      "buildInputsPath": "third-party-source/reviews/ffmpeg-9.0.2-safe-lean-build-inputs.json",
+      "buildInputsSha256": "235df607cd1631110221e6272b9f35347ba32391ec304f600fdba2f3b517f8f0",
+      "releaseAssetName": "ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz",
+      "releaseAssetSha256": "b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58",
       "writtenOfferPath": null,
       "writtenOfferSha256": null,
-      "humanReview": { "required": true, "status": "PENDING", "reviewRecordPath": null, "reviewRecordSha256": null }
+      "humanReview": {
+        "required": true,
+        "status": "APPROVED",
+        "reviewRecordPath": "third-party-source/reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md",
+        "reviewRecordSha256": "c09b218561033019939b2b076fca72cee253f743ec583467044b0d796fe1e0c9"
+      },
+      "runtimeManifestKey": "ffmpegSafeLeanCandidate"
     },
     {
       "id": "yt-dlp",
