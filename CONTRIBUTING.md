@@ -7,10 +7,10 @@ project's [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 ## Contribution rights and third-party material
 
 - The project intends to distribute project-authored source under
-  GPL-3.0-or-later, but rights clearance for historical PR #5 changes is still
-  pending. See `LICENSE.md` and `docs/OPEN-SOURCE-RIGHTS-REVIEW.md`; do not
-  interpret this checkout as a public release or as evidence that the pending
-  rights question is resolved.
+  GPL-3.0-or-later. The PR #5 owner review is recorded in
+  `rights/release-rights.json`; see `docs/OPEN-SOURCE-RIGHTS-REVIEW.md` for the
+  evidence limits and review history. Binary runtime distribution has its own
+  gate and remains pending for aria2 and yt-dlp.
 - The project proposes a lightweight DCO sign-off for future contributions.
   DCO enforcement is not enabled. Until the rights review is closed, contact
   the maintainer before preparing a contribution intended for public release.

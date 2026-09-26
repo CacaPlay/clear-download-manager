@@ -1355,7 +1355,7 @@ function bindEvents() {
   });
   const toolRepositories = {
     'yt-dlp': 'https://github.com/yt-dlp/yt-dlp',
-    ffmpeg: 'https://github.com/GyanD/codexffmpeg',
+    ffmpeg: 'https://github.com/FFmpeg/FFmpeg',
     deno: 'https://github.com/denoland/deno',
     aria2: 'https://github.com/aria2/aria2'
   };

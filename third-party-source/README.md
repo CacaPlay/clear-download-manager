@@ -1,64 +1,56 @@
 # Corresponding source for distributed GPL runtimes
 
-This directory is the controlled intake point for the exact corresponding
-source materials of GPL binaries distributed by Clear Download Manager. The
-canonical SAFE LEAN FFmpeg/FFprobe candidate and its source archive have been
-reproduced and approved for integration. The active production FFmpeg runtime
-is still the Gyan build until a separate runtime-replacement change activates
-SAFE LEAN. aria2 and yt-dlp remain pending.
+This directory holds exact corresponding-source materials for GPL runtimes
+that Clear Download Manager prepares and may distribute. The active FFmpeg and
+FFprobe runtime is the distributor-approved SAFE LEAN 9.0.2 build. Its exact
+complete source package, build inputs, executable hashes, and review record are
+linked in `corresponding-source.json`. aria2 and yt-dlp remain PENDING, so overall GPL
+source readiness and binary release remain blocked.
 
-The release gate reads `corresponding-source.json`. Keep every downloaded
-archive, build script, patch, dependency source manifest, license/notice, hash
-record, and human review record under this directory. Do not substitute a
-generic upstream source URL or a nearby version. Match the exact binary version,
-configuration, linked libraries, and source package to the artifact being
-distributed. For FFmpeg this includes the enabled external libraries shown in
-`docs/THIRD-PARTY-RUNTIMES.md`, not only the FFmpeg core tree.
+The release gate requires each runtime's exact version, source commit, runtime
+hashes, corresponding-source archive, build-input record, matching release
+asset name/hash, and required distributor review. Do not substitute a generic
+upstream source URL or nearby version.
 
-## Distributor work still required
+## Active FFmpeg/FFprobe SAFE LEAN runtime
 
-1. Obtain the exact source package and build inputs from the upstream
-   distributor/build provider for each binary. For aria2, identify the exact
-   Windows build recipe and linked libraries. For FFmpeg, obtain the complete
-   source for the Gyan build and every linked library, plus its build
-   scripts/configuration and patches. The SAFE LEAN FFmpeg candidate package
-   and build inputs are recorded in `corresponding-source.json` and the
-   distributor review under `reviews/`; before distribution, a separate PR
-   must activate those exact binaries and package inspection must confirm
-   their hashes. For yt-dlp, the PyInstaller Windows
-   executable is identified upstream as a GPLv3+ combined work; obtain the
-   exact source of its included GPL components (including the bundled Mutagen
-   version) and the build/packaging inputs. The yt-dlp source tarball alone is
-   not sufficient evidence: upstream says that tarball contains only
-   Unlicense-licensed code.
-2. Record immutable upstream references and SHA-256 values; preserve the
-   unmodified source archives and all additional scripts/files required to
-   build and install the executables.
-3. Have the distributor or counsel review that these are the complete,
-   corresponding sources for the precise distributed binaries and select the
-   lawful delivery method. The automated gate can check file presence and
-   hashes; it cannot decide legal sufficiency.
-4. For network downloads, publish the exact corresponding-source archive from
-   the same release page/channel with equivalent access to the binary. If the
-   source must live elsewhere, put clear instructions beside each binary and
-   keep the source available for as long as that binary is distributed.
-5. A written offer is a separate compliance route, not a URL placeholder. It
-   must accompany the binary and be reviewed against that runtime's GPL version
-   and the actual distribution method. For example, GPLv2 section 3(b)
-   specifies an offer valid for at least three years; GPLv3 section 6 has
-   distinct methods, including a network-source route and a physical-product
-   written-offer route. Do not assume the physical-product offer applies to a
-   downloaded MSI/MSIX. Record the selected legal basis and fulfillment owner.
-6. Verify the source/offer assets beside the binaries before the release is
-   published. Preserve the complete source inputs and keep fulfillment/source
-   access active for the applicable period.
+- Runtime outputs: `ffmpeg.exe` and `ffprobe.exe` with the canonical hashes in
+  `corresponding-source.json`.
+- Corresponding source: `ffmpeg/ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz`.
+- The archive preserves FFmpeg, x264, LAME, and dav1d source inputs, their
+  hashes, build scripts/options, the pinned MSYS2 UCRT64 toolchain inventory,
+  and upstream license files.
+- `scripts/prepare-safe-lean-ffmpeg.ps1` validates the source archive and
+  distributor review, rebuilds the pair from those inputs, and rejects outputs
+  whose byte count or SHA-256 differs from the approved pair.
+- The active Tauri preparation script uses these rebuilt executables. It does
+  not download Gyan binaries or include Gyan files in the installer notices.
+- Human approval is recorded in
+  `reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md`. The gate verifies its
+  digest; it does not make an independent legal determination.
 
-If the exact corresponding source cannot be obtained, do not distribute the
-affected Windows bundle. Keep the existing license texts, SBOM, dependency
-license inventory, and `THIRD_PARTY_NOTICES.txt`; they are useful notices but
-are not a substitute for corresponding source.
+The corresponding-source archive does not contain compiled executables or the
+binary toolchain packages. Windows builds require the exact pinned MSYS2
+UCRT64 package closure plus the locked Meson and Ninja wheels. Build output is
+verified against the recorded canonical hashes before packaging.
 
-References: [GNU GPL v2, section 3](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html),
-[GNU GPL v3, section 6](https://www.gnu.org/licenses/gpl-3.0.en.html),
-[GNU licensing FAQ on source distribution](https://www.gnu.org/licenses/gpl-faq.en.html), and
-[FFmpeg licensing](https://ffmpeg.org/legal.html).
+## Remaining distributor work
+
+1. For aria2 1.37.0, complete the exact Windows build/source package, linked
+   OpenSSL materials, and review. Do not infer build flags or dependencies.
+2. For yt-dlp 2026.08.19, complete the corresponding source/build materials
+   for its GPL combined executable, including bundled third-party components.
+3. Keep the release-asset inspection fail-closed. The exact approved source
+   archives must accompany their matching binary release assets before a
+   binary release gate can pass.
+4. Preserve each archive, build script, patches, dependency source, notices,
+   hashes, and review record in this directory. A written offer is a separate
+   reviewed distribution method, not a generic URL.
+
+The archived Gyan build records under `reviews/` are historical evidence only.
+They are excluded from active runtime notices and are not eligible as a
+corresponding-source mapping for the SAFE LEAN binaries.
+
+References: [FFmpeg licensing](https://ffmpeg.org/legal.html),
+[GNU GPL v2, section 3](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html),
+and [GNU GPL v3, section 6](https://www.gnu.org/licenses/gpl-3.0.en.html).

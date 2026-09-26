@@ -62,7 +62,7 @@ pub(crate) fn component_policy(id: ToolId) -> ComponentPolicy {
         },
         ToolId::Ffmpeg | ToolId::Ffprobe => ComponentPolicy {
             authority: SourceAuthority::FfmpegProvider,
-            repository: "GyanD/codexffmpeg",
+            repository: "FFmpeg/FFmpeg",
             max_size_bytes: 512 * MIB,
             eligibility: UpdateEligibility::AppReleaseManaged,
             family: Some(ToolchainFamily::FfmpegSet),
@@ -98,6 +98,11 @@ mod tests {
         assert_eq!(
             component_policy(ToolId::Ffmpeg).eligibility,
             UpdateEligibility::AppReleaseManaged
+        );
+        assert_eq!(component_policy(ToolId::Ffmpeg).repository, "FFmpeg/FFmpeg");
+        assert_eq!(
+            component_policy(ToolId::Ffprobe).repository,
+            "FFmpeg/FFmpeg"
         );
         assert_eq!(
             component_policy(ToolId::Ffprobe).family,

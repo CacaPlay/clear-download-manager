@@ -1,7 +1,7 @@
 # SAFE LEAN deterministic build evidence
 
 **Captured:** 2026-09-26
-**Status:** Candidate prepared for distributor review. No production runtime, runtime manifest, corresponding-source registry, release workflow, or release gate was changed.
+**Status:** Historical SAFE LEAN preparation evidence, captured before runtime integration. The canonical pair and source archive described here are now the active FFmpeg preparation inputs; the production runtime manifest and gates map to these exact hashes.
 
 ## Result summary
 
@@ -64,12 +64,12 @@ PE import inspection found only Windows system/UCRT imports (`CRYPT32`, `KERNEL3
 Simulation used copies of the registry, runtime manifest, contract, and release-asset directory under the system temporary directory. The production registry and gates were not edited.
 
 - With the current production exact-name/runtime contract, the SAFE LEAN candidate correctly fails the existing FFmpeg asset-name and runtime-file identity rules.
-- In a copied contract with only the FFmpeg asset-name rule changed from `essentials` to `safe-lean`, the candidate produces no validation failures. The gate remains `PENDING` for the required human distributor review and for aria2/yt-dlp requirements.
+- At capture time, the candidate was tested in a copied contract because the production registry still described Gyan. The integration now activates SAFE LEAN in the production runtime manifest and uses the exact `safe-lean` corresponding-source asset name. aria2 and yt-dlp remain pending.
 - A deliberately wrong source archive hash is rejected.
 - A false `humanReview: APPROVED` without a review record is rejected.
 
-The real corresponding-source and runtime registries remain unchanged. Binary release remains fail-closed.
+The source archive remains the exact corresponding source for the approved SAFE LEAN pair. Binary release remains fail-closed while aria2 and yt-dlp requirements and exact release asset inspection remain pending.
 
 ## Human decision before production use
 
-The distributor must decide whether the newly reproducible pair is the SAFE LEAN runtime candidate to adopt. If approved, the production runtime hashes and exact corresponding-source asset mapping must be updated together, then revalidated. The original prototype hashes cannot be claimed as reconstructed by this package. Human review of the GPL distribution materials remains pending, and aria2/yt-dlp remain independent binary-release blockers.
+The distributor approved the exact SAFE LEAN pair and corresponding-source package for integration. The original prototype hashes cannot be claimed as reconstructed by this package. The approval is recorded in the distributor review; it does not clear aria2 or yt-dlp, nor does it itself confirm legal sufficiency for every distribution channel.

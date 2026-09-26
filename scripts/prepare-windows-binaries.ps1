@@ -3,7 +3,6 @@
   [string]$YtDlpCommit = "3a08beaf031ab68f966401ead017ac81fe8486cf",
   [string]$YtDlpLicensesSha256 = "472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7",
   [string]$FfmpegVersion = "9.0.2",
-  [string]$FfmpegSha256 = "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
   [string]$FfmpegSourceCommit = "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
   [string]$Aria2Version = "1.37.0",
   [string]$Aria2SourceCommit = "02f2d0d8472b3c38c29b4dba8c75ebd5fdd2899a",
@@ -202,48 +201,30 @@ $Aria2OpenSslLicense = Get-ChildItem $Aria2Extracted -Recurse -File |
 if (-not $Aria2OpenSslLicense) { throw "The verified aria2 archive does not contain its upstream LICENSE.OpenSSL notice." }
 Copy-Item $Aria2OpenSslLicense.FullName (Join-Path $LicenseDir "ARIA2-OPENSSL-LICENSE.txt") -Force
 
-$FfmpegAssetName = "ffmpeg-$FfmpegVersion-essentials_build.zip"
-$FfmpegReleaseApi = "https://api.github.com/repos/GyanD/codexffmpeg/releases/tags/$FfmpegVersion"
-$FfmpegHeaders = @{ "User-Agent" = "CacaTools-Desktop-Build"; "Accept" = "application/vnd.github+json" }
-$FfmpegExpected = $FfmpegSha256.Trim().ToLowerInvariant()
-if (-not $FfmpegExpected) {
-  throw "A trusted SHA-256 is required for FFmpeg."
-}
-$FfmpegApiSha256 = Get-GitHubAssetSha256 -ReleaseApi $FfmpegReleaseApi -AssetName $FfmpegAssetName -Headers $FfmpegHeaders
-if ($FfmpegApiSha256 -and $FfmpegApiSha256 -ne $FfmpegExpected) {
-  throw "The pinned FFmpeg SHA-256 does not match the official GitHub asset digest."
-}
-$FfmpegUrl = "https://github.com/GyanD/codexffmpeg/releases/download/$FfmpegVersion/$FfmpegAssetName"
-$FfmpegZip = Join-Path $CacheDir "ffmpeg-$FfmpegVersion-essentials.zip"
-Write-Host "Preparing FFmpeg $FfmpegVersion..."
-Ensure-VerifiedCache -Path $FfmpegZip -ExpectedSha256 $FfmpegExpected -Download { Invoke-DownloadFile -Uri $FfmpegUrl -OutFile $FfmpegZip }
-$FfmpegActual = (Get-FileHash $FfmpegZip -Algorithm SHA256).Hash.ToLowerInvariant()
-
-$Extracted = Join-Path $Work "ffmpeg"
-Expand-Archive -Path $FfmpegZip -DestinationPath $Extracted -Force
-$FfmpegExe = Get-ChildItem $Extracted -Recurse -Filter ffmpeg.exe | Select-Object -First 1
-$FfprobeExe = Get-ChildItem $Extracted -Recurse -Filter ffprobe.exe | Select-Object -First 1
-if (-not $FfmpegExe -or -not $FfprobeExe) {
-  throw "The downloaded archive does not contain ffmpeg.exe and ffprobe.exe."
-}
-Copy-Item $FfmpegExe.FullName (Join-Path $BinDir "ffmpeg.exe") -Force
-Copy-Item $FfprobeExe.FullName (Join-Path $BinDir "ffprobe.exe") -Force
-$FfmpegLicense = Get-ChildItem $Extracted -Recurse -File |
-  Where-Object { $_.Name -match "^(LICENSE|COPYING)(\.txt)?$" } |
-  Sort-Object FullName |
-  Select-Object -First 1
-if (-not $FfmpegLicense) {
-  throw "The verified FFmpeg archive does not contain a license file."
-}
-Copy-Item $FfmpegLicense.FullName (Join-Path $LicenseDir "FFMPEG-LICENSE.txt") -Force
-$FfmpegReadme = Get-ChildItem $Extracted -Recurse -File |
-  Where-Object { $_.Name -match "^README(\.txt|\.md)?$" } |
-  Sort-Object FullName |
-  Select-Object -First 1
-if ($FfmpegReadme) { Copy-Item $FfmpegReadme.FullName (Join-Path $LicenseDir "FFMPEG-BUILD-README.txt") -Force }
-
+$FfmpegSourceArchiveName = "ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz"
+$FfmpegSourceArchivePath = Join-Path $Root "third-party-source\ffmpeg\$FfmpegSourceArchiveName"
+$FfmpegSourceArchiveSha256 = "b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58"
+$FfmpegBuildInputsPath = "third-party-source/reviews/ffmpeg-9.0.2-safe-lean-build-inputs.json"
+$FfmpegBuildInputsSha256 = "235df607cd1631110221e6272b9f35347ba32391ec304f600fdba2f3b517f8f0"
+$FfmpegReviewPath = "third-party-source/reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md"
+$FfmpegReviewSha256 = "c09b218561033019939b2b076fca72cee253f743ec583467044b0d796fe1e0c9"
+$FfmpegStage = Join-Path $Work "safe-lean-ffmpeg"
+Write-Host "Rebuilding canonical SAFE LEAN FFmpeg $FfmpegVersion from its pinned corresponding-source archive..."
+& (Join-Path $PSScriptRoot "prepare-safe-lean-ffmpeg.ps1") -OutputDirectory $FfmpegStage
+if ($LASTEXITCODE -ne 0 -or -not $?) { throw "The canonical SAFE LEAN FFmpeg build failed." }
 $FfmpegPath = Join-Path $BinDir "ffmpeg.exe"
 $FfprobePath = Join-Path $BinDir "ffprobe.exe"
+Copy-Item (Join-Path $FfmpegStage "ffmpeg.exe") $FfmpegPath -Force
+Copy-Item (Join-Path $FfmpegStage "ffprobe.exe") $FfprobePath -Force
+Copy-Item (Join-Path $FfmpegStage "FFMPEG-LICENSE.txt") (Join-Path $LicenseDir "FFMPEG-LICENSE.txt") -Force
+Copy-Item (Join-Path $FfmpegStage "FFMPEG-BUILD-README.txt") (Join-Path $LicenseDir "FFMPEG-BUILD-README.txt") -Force
+$FfmpegActual = (Get-FileHash -LiteralPath $FfmpegSourceArchivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($FfmpegActual -ne $FfmpegSourceArchiveSha256) { throw "The FFmpeg corresponding-source archive SHA-256 is invalid." }
+$FfmpegBuildInputsActual = (Get-FileHash -LiteralPath (Join-Path $Root $FfmpegBuildInputsPath) -Algorithm SHA256).Hash.ToLowerInvariant()
+$FfmpegReviewActual = (Get-FileHash -LiteralPath (Join-Path $Root $FfmpegReviewPath) -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($FfmpegBuildInputsActual -ne $FfmpegBuildInputsSha256 -or $FfmpegReviewActual -ne $FfmpegReviewSha256) {
+  throw "The SAFE LEAN build-input record or distributor review does not match its approved SHA-256."
+}
 
 $DenoAssetName = "deno-x86_64-pc-windows-msvc.zip"
 $DenoReleaseApi = "https://api.github.com/repos/denoland/deno/releases/tags/v$DenoVersion"
@@ -287,6 +268,7 @@ $Aria2VersionActual = (($Aria2VersionOutput | Select-Object -First 1) | Out-Stri
 $FfmpegVersionOutput = & $FfmpegPath -version
 if ($LASTEXITCODE -ne 0) { throw "ffmpeg failed with exit code $LASTEXITCODE." }
 $FfmpegVersionActual = (($FfmpegVersionOutput | Select-Object -First 1) | Out-String).Trim()
+if ($FfmpegVersionActual -notmatch "9\.0\.2") { throw "SAFE LEAN FFmpeg version mismatch: $FfmpegVersionActual" }
 
 $FfprobeVersionOutput = & $FfprobePath -version
 if ($LASTEXITCODE -ne 0) { throw "ffprobe failed with exit code $LASTEXITCODE." }
@@ -320,6 +302,39 @@ $FfmpegBuildConfig = (($FfmpegBuildConfigParts -join [Environment]::NewLine)).Tr
 if (-not $FfmpegBuildConfig) {
   throw "ffmpeg -buildconf returned no configuration output."
 }
+$FfmpegExecutableSha256 = (Get-FileHash -LiteralPath $FfmpegPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$FfprobeExecutableSha256 = (Get-FileHash -LiteralPath $FfprobePath -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($FfmpegExecutableSha256 -ne "e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f" -or
+    $FfprobeExecutableSha256 -ne "787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3") {
+  throw "Prepared FFmpeg/FFprobe do not match the distributor-approved SAFE LEAN pair."
+}
+
+$FfmpegSourceArchiveRelativePath = "third-party-source/ffmpeg/$FfmpegSourceArchiveName"
+$FfmpegLicenseSha256 = (Get-FileHash -LiteralPath (Join-Path $LicenseDir "FFMPEG-LICENSE.txt") -Algorithm SHA256).Hash.ToLowerInvariant()
+$FfmpegRuntimeRecord = [ordered]@{
+  profile = "SAFE LEAN"
+  approvedCandidateKey = "ffmpegSafeLeanCandidate"
+  version = $FfmpegVersionActual
+  ffprobeVersion = $FfprobeVersionActual
+  sourceRepository = "https://github.com/FFmpeg/FFmpeg"
+  sourceVersion = "n$FfmpegVersion"
+  sourceCommit = $FfmpegSourceCommit.ToLowerInvariant()
+  source = $FfmpegSourceArchiveRelativePath
+  license = "GPL-3.0-or-later"
+  effectiveLicense = "GPL-3.0-or-later"
+  sourceArchiveName = $FfmpegSourceArchiveName
+  sourceArchivePath = $FfmpegSourceArchiveRelativePath
+  sourceArchiveSha256 = $FfmpegActual
+  buildInputsPath = $FfmpegBuildInputsPath
+  buildInputsSha256 = $FfmpegBuildInputsActual
+  buildConfigurationEvidence = $FfmpegBuildInputsPath
+  humanReviewPath = $FfmpegReviewPath
+  humanReviewSha256 = $FfmpegReviewActual
+  ffmpegSha256 = $FfmpegExecutableSha256
+  ffprobeSha256 = $FfprobeExecutableSha256
+  licenseSha256 = $FfmpegLicenseSha256
+  buildConfiguration = $FfmpegBuildConfig
+}
 
 $Manifest = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("o")
@@ -347,6 +362,10 @@ $Manifest = [ordered]@{
     executableSha256 = (Get-FileHash $DenoPath -Algorithm SHA256).Hash.ToLowerInvariant()
     jsRuntime = "deno"
   }
+  spotify = [ordered]@{
+    enabled = $false
+    runtime = "omitted"
+  }
   aria2 = [ordered]@{
     version = $Aria2VersionActual
     sourceRepository = "https://github.com/aria2/aria2"
@@ -358,21 +377,8 @@ $Manifest = [ordered]@{
     archiveSha256 = $Aria2Actual
     executableSha256 = (Get-FileHash $Aria2Path -Algorithm SHA256).Hash.ToLowerInvariant()
   }
-  ffmpeg = [ordered]@{
-    version = $FfmpegVersionActual
-    ffprobeVersion = $FfprobeVersionActual
-    sourceRepository = "https://github.com/FFmpeg/FFmpeg"
-    sourceVersion = "n$FfmpegVersion"
-    source = $FfmpegUrl
-    releaseApi = $FfmpegReleaseApi
-    officialAssetSha256 = $FfmpegApiSha256
-    sourceCommit = $FfmpegSourceCommit.ToLowerInvariant()
-    archiveSha256 = $FfmpegActual
-    ffmpegSha256 = (Get-FileHash $FfmpegPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    ffprobeSha256 = (Get-FileHash $FfprobePath -Algorithm SHA256).Hash.ToLowerInvariant()
-    licenseSha256 = (Get-FileHash (Join-Path $LicenseDir "FFMPEG-LICENSE.txt") -Algorithm SHA256).Hash.ToLowerInvariant()
-    buildConfiguration = $FfmpegBuildConfig
-  }
+  ffmpeg = $FfmpegRuntimeRecord
+  ffmpegSafeLeanCandidate = $FfmpegRuntimeRecord
 }
 $Manifest | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $BinDir "runtime-manifest.json") -Encoding UTF8
 
@@ -388,6 +394,10 @@ Third-party licenses source: $YtDlpLicensesUrl
 Third-party licenses pinned SHA-256: $YtDlpLicensesExpected
 The verified source file is included as YT-DLP-THIRD-PARTY-LICENSES.txt.
 yt-dlp itself is distributed under The Unlicense: https://github.com/yt-dlp/yt-dlp/blob/$YtDlpVersion/LICENSE.
+
+The standalone Windows executable is a combined PyInstaller distribution and does not have the same effective license as the yt-dlp source repository. The README at the exact release tag describes the bundled executable as GPL-3.0-or-later; the pinned THIRD_PARTY_LICENSES.txt identifies Mutagen as GPL-2.0-or-later. See https://github.com/yt-dlp/yt-dlp/blob/$YtDlpVersion/README.md#licensing and the included YT-DLP-THIRD-PARTY-LICENSES.txt.
+
+Clear records yt-dlp.exe as GPL-3.0-or-later for release gating. Corresponding source/build inputs or a reviewed alternative remain PENDING. Do not distribute the binary until the GPL source gate passes.
 "@ | Set-Content (Join-Path $LicenseDir "YT-DLP-NOTICE.txt") -Encoding UTF8
 
 @"
@@ -407,12 +417,16 @@ Release source tag: release-$Aria2Version
 
 @"
 CacaTools Download Manager uses FFmpeg and FFprobe as external executables to combine and convert audio and video.
-Build: $FfmpegVersionActual
-Binary source: $FfmpegUrl
-Source commit reported by the provider: $FfmpegSourceCommit
-Archive SHA-256: $FfmpegActual
+Build: $FfmpegVersionActual (SAFE LEAN; GPL-3.0-or-later)
+Corresponding-source archive: $FfmpegSourceArchiveName
+Corresponding-source SHA-256: $FfmpegActual
+Source commit: $FfmpegSourceCommit
+ffmpeg.exe SHA-256: $FfmpegExecutableSha256
+ffprobe.exe SHA-256: $FfprobeExecutableSha256
+Build-input record: $FfmpegBuildInputsPath (SHA-256 $FfmpegBuildInputsActual)
+Distributor review: $FfmpegReviewPath (SHA-256 $FfmpegReviewActual)
 
-Before public distribution, keep this notice and provide the applicable source code and build configuration required by the license of the distributed binary.
+The exact corresponding source archive and build inputs accompany the source and release assets. The source archive contains the pinned FFmpeg, x264, LAME, and dav1d source archives and the build tooling. The canonical binaries were rebuilt from that package and their hashes are checked before packaging.
 
 Configuration reported by ffmpeg -buildconf:
 $FfmpegBuildConfig

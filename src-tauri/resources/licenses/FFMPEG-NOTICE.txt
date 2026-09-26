@@ -1,77 +1,50 @@
 ﻿CacaTools Download Manager uses FFmpeg and FFprobe as external executables to combine and convert audio and video.
-Build: ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers
-Binary source: https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-essentials_build.zip
-Source commit reported by the provider: 946fcce07b
-Archive SHA-256: 60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba
+Build: ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers (SAFE LEAN; GPL-3.0-or-later)
+Corresponding-source archive: ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz
+Corresponding-source SHA-256: b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58
+Source commit: 946fcce07b6dcd0331c8cc609192aeff5e1924f8
+ffmpeg.exe SHA-256: e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f
+ffprobe.exe SHA-256: 787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3
+Build-input record: third-party-source/reviews/ffmpeg-9.0.2-safe-lean-build-inputs.json (SHA-256 235df607cd1631110221e6272b9f35347ba32391ec304f600fdba2f3b517f8f0)
+Distributor review: third-party-source/reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md (SHA-256 c09b218561033019939b2b076fca72cee253f743ec583467044b0d796fe1e0c9)
 
-Before public distribution, keep this notice and provide the applicable source code and build configuration required by the license of the distributed binary.
+The exact corresponding source archive and build inputs accompany the source and release assets. The source archive contains the pinned FFmpeg, x264, LAME, and dav1d source archives and the build tooling. The canonical binaries were rebuilt from that package and their hashes are checked before packaging.
 
 Configuration reported by ffmpeg -buildconf:
 configuration:
+    --prefix=/ffmpeg-safe-lean-av1
+    --target-os=mingw32
+    --arch=x86_64
     --enable-gpl
     --enable-version3
     --enable-static
-    --disable-w32threads
+    --disable-shared
+    --disable-debug
+    --disable-doc
+    --disable-ffplay
     --disable-autodetect
-    --enable-cairo
-    --enable-fontconfig
-    --enable-iconv
-    --enable-gnutls
-    --enable-libxml2
-    --enable-gmp
-    --enable-bzlib
-    --enable-lzma
-    --enable-zlib
-    --enable-libsrt
-    --enable-libssh
-    --enable-libzmq
-    --enable-avisynth
-    --enable-sdl2
-    --enable-libwebp
+    --disable-x86asm
+    --disable-indevs
+    --disable-outdevs
+    --disable-devices
+    --disable-hwaccels
+    --enable-schannel
+    --enable-ffmpeg
+    --enable-ffprobe
+    --enable-network
     --enable-libx264
-    --enable-libx265
-    --enable-libxvid
-    --enable-libaom
-    --enable-libopenjpeg
-    --enable-libvpx
-    --enable-mediafoundation
-    --enable-libass
-    --enable-libfreetype
-    --enable-libfribidi
-    --enable-libharfbuzz
-    --enable-libvidstab
-    --enable-libvmaf
-    --enable-libzimg
-    --enable-amf
-    --enable-cuda-llvm
-    --enable-cuvid
-    --enable-dxva2
-    --enable-d3d11va
-    --enable-d3d12va
-    --enable-ffnvcodec
-    --enable-libvpl
-    --enable-nvdec
-    --enable-nvenc
-    --enable-vaapi
-    --enable-openal
-    --enable-libgme
-    --enable-libopenmpt
-    --enable-libopencore-amrwb
     --enable-libmp3lame
-    --enable-libtheora
-    --enable-libvo-amrwbenc
-    --enable-libgsm
-    --enable-libopencore-amrnb
-    --enable-libopus
-    --enable-libspeex
-    --enable-libvorbis
-    --enable-librubberband
+    --enable-libdav1d
+    --extra-cflags=-O2
+    --extra-ldflags='-static -Wl,--no-insert-timestamp'
+    --pkg-config-flags=--static
+    --pkg-config=pkg-config
 
 Exiting with exit code 0
 
-ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers
-  built with gcc 16.2.0 (Rev3, Built by MSYS2 project)
-  configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-cairo --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-bzlib --enable-lzma --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-sdl2 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-mediafoundation --enable-libass --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-ffnvcodec --enable-libvpl --enable-nvdec --enable-nvenc --enable-vaapi --enable-openal --enable-libgme --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libtheora --enable-libvo-amrwbenc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-librubberband
+ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers
+  built with gcc 15.2.0 (Rev8, Built by MSYS2 project)
+  configuration: --prefix=/ffmpeg-safe-lean-av1 --target-os=mingw32 --arch=x86_64 --enable-gpl --enable-version3 --enable-static --disable-shared --disable-debug --disable-doc --disable-ffplay --disable-autodetect --disable-x86asm --disable-indevs --disable-outdevs --disable-devices --disable-hwaccels --enable-schannel --enable-ffmpeg --enable-ffprobe --enable-network --enable-libx264 --enable-libmp3lame --enable-libdav1d --extra-cflags=-O2 --extra-ldflags='-static -Wl,--no-insert-timestamp' --pkg-config-flags=--static --pkg-config=pkg-config
   libavutil      61.  1.102 / 61.  1.102
   libavcodec     63.  1.102 / 63.  1.102
   libavformat    63.  1.102 / 63.  1.102
