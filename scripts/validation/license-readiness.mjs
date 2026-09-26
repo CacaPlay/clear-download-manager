@@ -66,7 +66,7 @@ requireText('third-party-source/corresponding-source.json', 'aria2');
 requireText('third-party-source/corresponding-source.json', 'ffmpeg');
 requireText('third-party-source/corresponding-source.json', '"id": "yt-dlp"', 'The bundled yt-dlp.exe GPL combined work must be included in the corresponding-source registry.');
 requireText('src-tauri/resources/licenses/YT-DLP-NOTICE.txt', 'GPL-3.0-or-later', 'The yt-dlp executable notice must state the effective upstream GPL license expression.');
-requireText('src-tauri/resources/licenses/YT-DLP-NOTICE.txt', 'mutagen', 'The yt-dlp executable notice must identify its included GPL dependency.');
+requireText('src-tauri/resources/licenses/YT-DLP-NOTICE.txt', 'Mutagen', 'The yt-dlp executable notice must identify its included GPL dependency.');
 requireText('src-tauri/resources/licenses/YT-DLP-THIRD-PARTY-LICENSES.txt', 'mutagen | GPL-2.0-or-later', 'The pinned yt-dlp third-party inventory must retain Mutagen license evidence.');
 requireText('src-tauri/resources/licenses/DENO-LICENSE.txt', 'MIT License', 'The Deno runtime notice must preserve its MIT license text.');
 requireText('third-party-source/README.md', 'complete source');

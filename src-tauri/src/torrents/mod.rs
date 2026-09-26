@@ -686,9 +686,8 @@ pub(crate) fn queue_torrent_download(
     state: State<'_, LocalState>,
 ) -> Result<DownloadQueueReceipt, String> {
     let aria2_path = state
-        .aria2_path
-        .clone()
-        .ok_or_else(|| "aria2c no está disponible en esta instalación".to_string())?;
+        .aria2_path()
+        .ok_or_else(crate::components::torrent_engine_required_error)?;
     let (source, source_kind, label) = normalize_torrent_source(&source)?;
     let downloads_dir = current_downloads_dir(&state)?.join("Torrents");
     fs::create_dir_all(&downloads_dir).map_err(|error| error.to_string())?;

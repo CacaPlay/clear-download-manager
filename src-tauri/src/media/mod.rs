@@ -419,7 +419,7 @@ pub(crate) fn advance_playlist_batch(
 }
 
 pub(crate) fn media_runtime_status(state: State<'_, LocalState>) -> MediaRuntimeSnapshot {
-    match &state.media_runtime {
+    match state.media_runtime() {
         Some(runtime) => {
             let ffmpeg = runtime.ffmpeg_dir.join(if cfg!(windows) {
                 "ffmpeg.exe"

@@ -2,6 +2,7 @@ node_modules/
 dist/
 dist-store/
 src-tauri/target/
+src-tauri/target-component-tests/
 src-tauri/target-native-host/
 extension/native-host/target/
 src-tauri/target-store-*/

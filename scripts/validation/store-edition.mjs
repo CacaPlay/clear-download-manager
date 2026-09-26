@@ -51,7 +51,7 @@ assert.ok(storeUpdater.includes('store_managed: true') && storeUpdater.includes(
 assert.ok(githubUpdater.includes('store_managed: false'), 'La edición GitHub debe seguir exponiendo su propio actualizador.');
 
 assert.equal(storeConfig.build.frontendDist, '../dist-store');
-assert.deepEqual(storeConfig.bundle.resources, ['resources/bin/*', 'resources/licenses/*', 'resources/extension/*']);
+assert.deepEqual(storeConfig.bundle.resources, ['resources/licenses/*', 'resources/extension/*']);
 assert.equal(storeConfig.bundle.createUpdaterArtifacts, false);
 assert.deepEqual(storeConfig.plugins.updater.endpoints, [], 'El Store overlay no debe incluir endpoints del updater GitHub.');
 assert.ok(appManifest.bundle.resources.includes('resources/updater/*'), 'El build GitHub debe conservar sus recursos updater.');

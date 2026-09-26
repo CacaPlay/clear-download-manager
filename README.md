@@ -34,6 +34,7 @@ The [latest Windows release](https://github.com/CacaPlay/clear-download-manager/
 - **Already have CDM:** install only the extension if you want to send content from your browser.
 
 ## What it does
+- Core HTTP/HTTPS downloads work without optional runtimes. Media and torrent features use separately managed local components.
 - HTTP/HTTPS downloads with resume, persistent queue and real progress.
 - Video, audio and playlist downloads through yt-dlp.
 - Torrents and magnet links through aria2c.

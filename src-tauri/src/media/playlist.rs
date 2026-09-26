@@ -23,9 +23,9 @@ pub(crate) fn queue_playlist_selection(
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<PlaylistQueueReceipt, String> {
-    let runtime = state.media_runtime.clone().ok_or_else(|| {
-        "El motor multimedia local aún no está instalado en esta compilación".to_string()
-    })?;
+    let runtime = state
+        .media_runtime()
+        .ok_or_else(crate::components::media_tools_required_error)?;
     let title = playlist_title.trim();
     if title.is_empty() {
         return Err("La playlist necesita un título".into());
@@ -157,9 +157,8 @@ pub(crate) fn set_playlist_batch_paused(
     state: State<'_, LocalState>,
 ) -> Result<(), String> {
     let runtime = state
-        .media_runtime
-        .clone()
-        .ok_or_else(|| "El motor multimedia local no está disponible".to_string())?;
+        .media_runtime()
+        .ok_or_else(crate::components::media_tools_required_error)?;
     let connection = state
         .connection
         .lock()
@@ -254,9 +253,8 @@ pub(crate) fn retry_failed_playlist_items(
     state: State<'_, LocalState>,
 ) -> Result<usize, String> {
     let runtime = state
-        .media_runtime
-        .clone()
-        .ok_or_else(|| "El motor multimedia local no está disponible".to_string())?;
+        .media_runtime()
+        .ok_or_else(crate::components::media_tools_required_error)?;
     let connection = state
         .connection
         .lock()
@@ -374,9 +372,9 @@ pub(crate) fn replace_playlist_item_with_alternative(
     input: PlaylistAlternativeInput,
     state: State<'_, LocalState>,
 ) -> Result<(), String> {
-    let runtime = state.media_runtime.clone().ok_or_else(|| {
-        "El motor multimedia local aún no está instalado en esta compilación".to_string()
-    })?;
+    let runtime = state
+        .media_runtime()
+        .ok_or_else(crate::components::media_tools_required_error)?;
     let source_url = normalize_tiktok_source_value(&validate_media_url(&input.source_url)?);
     let title = if input.title.trim().is_empty() {
         "Alternativa multimedia".to_string()

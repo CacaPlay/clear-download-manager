@@ -21,7 +21,7 @@ pub(crate) struct DispatcherContext {
     pub(crate) active_downloads: Arc<Mutex<HashSet<i64>>>,
     pub(crate) active_media_pids: Arc<Mutex<std::collections::HashMap<i64, u32>>>,
     pub(crate) external_processes: ExternalProcessRegistry,
-    pub(crate) media_runtime: Option<MediaRuntimePaths>,
+    pub(crate) media_runtime: Arc<Mutex<Option<MediaRuntimePaths>>>,
 }
 
 #[derive(Clone, Copy)]
@@ -207,7 +207,13 @@ impl DownloadDispatcher {
         let Some(permit) = permit else {
             return false;
         };
-        if matches!(kind, DispatchKind::Media) && context.media_runtime.is_none() {
+        if matches!(kind, DispatchKind::Media)
+            && context
+                .media_runtime
+                .lock()
+                .map(|runtime| runtime.is_none())
+                .unwrap_or(true)
+        {
             drop(permit);
             return false;
         }
@@ -249,7 +255,12 @@ impl DownloadDispatcher {
     }
 
     fn launch_media(&self, context: &DispatcherContext, job_id: i64, permit: DynamicSlotPermit) {
-        let Some(runtime) = context.media_runtime.clone() else {
+        let Some(runtime) = context
+            .media_runtime
+            .lock()
+            .ok()
+            .and_then(|runtime| runtime.clone())
+        else {
             drop(permit);
             return;
         };
@@ -675,7 +686,7 @@ mod tests {
             active_downloads: active_downloads.clone(),
             active_media_pids: Arc::new(Mutex::new(HashMap::new())),
             external_processes: Arc::new(Mutex::new(HashMap::new())),
-            media_runtime: None,
+            media_runtime: Arc::new(Mutex::new(None)),
         };
         let gate = DynamicSlotGate::new(2);
         let first_permit = gate.try_acquire().unwrap();
@@ -747,7 +758,7 @@ mod tests {
             active_downloads: active_downloads.clone(),
             active_media_pids: Arc::new(Mutex::new(HashMap::new())),
             external_processes: Arc::new(Mutex::new(HashMap::new())),
-            media_runtime: None,
+            media_runtime: Arc::new(Mutex::new(None)),
         };
         let gate = DynamicSlotGate::new(1);
         let first_permit = gate.try_acquire().unwrap();
@@ -926,7 +937,7 @@ mod tests {
             active_downloads: active_downloads.clone(),
             active_media_pids: Arc::new(Mutex::new(HashMap::new())),
             external_processes: Arc::new(Mutex::new(HashMap::new())),
-            media_runtime: None,
+            media_runtime: Arc::new(Mutex::new(None)),
         };
         assert_eq!(
             claim_next_job(DispatchKind::Http, &context).unwrap(),
@@ -983,7 +994,7 @@ mod tests {
             active_downloads: active_downloads.clone(),
             active_media_pids: Arc::new(Mutex::new(HashMap::new())),
             external_processes: Arc::new(Mutex::new(HashMap::new())),
-            media_runtime: None,
+            media_runtime: Arc::new(Mutex::new(None)),
         };
         drop(connection);
 
@@ -1143,7 +1154,7 @@ mod tests {
             active_downloads: Arc::new(Mutex::new(HashSet::new())),
             active_media_pids: active_media,
             external_processes: Arc::new(Mutex::new(HashMap::new())),
-            media_runtime: None,
+            media_runtime: Arc::new(Mutex::new(None)),
         };
         assert_eq!(
             claim_next_job(DispatchKind::Media, &context).unwrap(),

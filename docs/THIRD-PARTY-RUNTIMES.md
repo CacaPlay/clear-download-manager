@@ -4,11 +4,14 @@
 con `src-tauri/resources/bin/runtime-manifest.json` mediante
 `npm run verify:binaries`. Los hashes de archivo son SHA-256.
 
-## Binarios que entran al paquete Windows
+## Inventario de runtimes fijados
 
-Los paquetes Tauri normal y Store incluyen `resources/bin/*` y
-`resources/licenses/*`. El runtime-manifest identifica versión, URL de origen,
-hash del archivo extraído y, cuando se conserva, hash del archivo descargado.
+El runtime-manifest identifica versión, URL de origen, hash del archivo
+extraído y, cuando se conserva, hash del archivo descargado. Desde Component
+Manager V1, los instaladores Windows normal y Store incluyen los avisos y
+licencias, pero excluyen los ejecutables de `resources/bin/`. Las versiones
+fijadas sirven también para validar paquetes locales de componentes. Consulta
+`docs/COMPONENT-MANAGER.md` para la arquitectura y el alcance de distribución.
 
 | Componente | Versión exacta | Licencia/aviso del artefacto Windows | Fuente y SHA-256 del ejecutable | Textos/build |
 | --- | --- | --- | --- | --- |
@@ -16,6 +19,11 @@ hash del archivo extraído y, cuando se conserva, hash del archivo descargado.
 | Deno | 2.9.7, `x86_64-pc-windows-msvc` | MIT. | [Asset oficial](https://github.com/denoland/deno/releases/tag/v2.9.7); ejecutable `e020f3e232bd16e33768dee528e5983349c962952051ced0a5d58ad42f5d9b33`; ZIP `a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238`. | `DENO-LICENSE.txt`, `DENO-NOTICE.txt`; la herramienta se usa como runtime de challenges EJS de yt-dlp. |
 | aria2c | 1.37.0 | GPL-2.0-or-later con texto de excepción/licencia OpenSSL procedente del archivo distribuido. | [Release oficial](https://github.com/aria2/aria2/releases/tag/release-1.37.0); ejecutable `be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2`; ZIP fijado `67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288`. | `ARIA2-COPYING.txt`, `ARIA2-OPENSSL-LICENSE.txt`, `ARIA2-NOTICE.txt`. Falta preparar la fuente correspondiente o una oferta escrita que acompañe una distribución binaria. |
 | FFmpeg/FFprobe | 9.0.2 SAFE LEAN, reconstruido desde el paquete correspondiente aprobado. | GPL-3.0-or-later (`--enable-gpl`, `--enable-version3`). | FFmpeg `e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f`; FFprobe `787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3`. | Fuente: `ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz`, SHA-256 `b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58`. Build inputs y revisión humana fijados en `corresponding-source.json`. La entrega del asset correspondiente y la inspección del paquete siguen siendo requisitos antes de un release binario. |
+
+Estos registros describen los runtimes opcionales aunque no estén dentro del
+instalador Core. La preparación local aún puede colocar los ejecutables en
+`resources/bin/` para construir los paquetes de prueba; Tauri no los incorpora
+al NSIS/MSI/MSIX por defecto.
 
 El README del release exacto de yt-dlp declara que los ejecutables PyInstaller
 incluyen código GPLv3+ y que la obra combinada queda bajo GPLv3+. También indica
@@ -114,7 +122,7 @@ por sí solo una evaluación legal completa.
 | Escenario | Tratamiento de aria2/FFmpeg | Bloqueos relevantes |
 | --- | --- | --- |
 | **A. Solo fuente**: publicar la baseline de código fuente; no adjuntar instaladores ni redistribuir `aria2c.exe`, `ffmpeg.exe` o `ffprobe.exe`. | El source release gate excluye runtimes e instaladores; mantiene avisos, SBOM, inventarios y registros de derechos. | El gate `check:source-release` valida la preparación source-only. No autoriza una distribución binaria ni reabre por sí solo PR #5. |
-| **B. Binarios**: publicar NSIS/MSI/MSIX o cualquier paquete que incluya esos runtimes. | Las configuraciones Tauri incluyen `resources/bin/*` y `resources/licenses/*`; el runtime SAFE LEAN se reconstruye y verifica desde su fuente correspondiente. | Se necesita completar aria2 y yt-dlp, adjuntar los assets exactos de fuente correspondiente y verificar los hashes/notices del paquete concreto antes de publicar. |
+| **B. Binarios**: publicar NSIS/MSI/MSIX o cualquier paquete que incluya esos runtimes. | El Core installer omite `resources/bin/*`. Si un release distribuye paquetes opcionales aparte, debe reconstruirse/verificarse SAFE LEAN desde su fuente correspondiente y revisar el paquete exacto. | Se necesita completar aria2 y yt-dlp, adjuntar los assets exactos de fuente correspondiente y verificar hashes/notices antes de publicar. |
 
 ### Gates separados implementados
 

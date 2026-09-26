@@ -17,7 +17,7 @@ const runtimeTranslations = [
   ['Verificando e instalando la actualización firmada.', 'Verifying and installing the signed update.'],
   ['Progreso de descarga', 'Download progress'],
   ['Instalando actualización', 'Installing update'],
-  ['FFmpeg, FFprobe, Deno y aria2c se actualizan junto con la aplicación firmada.', 'FFmpeg, FFprobe, Deno, and aria2c are updated with the signed application.'],
+  ['Media Tools y Torrent Engine se instalan como paquetes opcionales independientes.', 'Media Tools and Torrent Engine are installed as separate optional packages.'],
   ['Con la aplicación firmada', 'With the signed app']
 ];
 for (const [source, expected] of runtimeTranslations) {

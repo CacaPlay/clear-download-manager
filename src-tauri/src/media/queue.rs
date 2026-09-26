@@ -124,9 +124,9 @@ fn queue_media_download_with_filename(
     session: MediaSessionOptions,
     state: State<'_, LocalState>,
 ) -> Result<MediaQueueReceipt, String> {
-    let runtime = state.media_runtime.clone().ok_or_else(|| {
-        "El motor multimedia local aún no está instalado en esta compilación".to_string()
-    })?;
+    let runtime = state
+        .media_runtime()
+        .ok_or_else(crate::components::media_tools_required_error)?;
     let source_url = normalize_tiktok_source_value(&validate_media_url(&url)?);
     let selector = safe_format_selector(&format_selector)?;
     let allowed_modes = [

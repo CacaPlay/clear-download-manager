@@ -386,6 +386,7 @@ const appState = {
   toolUpdateStatus: null,
   toolUpdateChecking: false,
   toolUpdateApplying: false,
+  components: [],
   downloadSchedules: previewMode ? [
     { id: 1, job_id: 2, action: 'resume', run_at: '2026-08-01 08:30:00', repeat_daily: false, enabled: true, last_run_at: null },
     { id: 2, job_id: 1, action: 'pause', run_at: '2026-08-01 23:00:00', repeat_daily: true, enabled: true, last_run_at: null }
@@ -1363,6 +1364,33 @@ function bindEvents() {
     const url = toolRepositories[button.dataset.settingsToolRepo];
     if (url) void invoke('open_external_url', { url }).catch((error) => showToast(friendlyError(error), 'error'));
   }));
+  document.querySelectorAll('[data-component-action]').forEach((button) => button.addEventListener('click', async () => {
+    if (button.disabled) return;
+    const action = button.dataset.componentAction;
+    const id = button.dataset.componentId;
+    button.disabled = true;
+    try {
+      if (action === 'install') {
+        const installed = await invoke('install_component_from_package', { id });
+        if (!installed) return;
+      } else if (action === 'verify') {
+        await invoke('verify_component', { id });
+      } else if (action === 'remove') {
+        await invoke('remove_component', { id });
+      }
+      [appState.components, appState.runtimeStatus, appState.mediaRuntimeStatus] = await Promise.all([
+        invoke('list_components'),
+        invoke('runtime_status'),
+        invoke('media_runtime_status')
+      ]);
+      showToast(action === 'remove' ? 'Componente quitado' : action === 'verify' ? 'Verificación terminada' : 'Componente instalado', 'success');
+    } catch (error) {
+      showToast(friendlyError(error), 'error');
+    } finally {
+      button.disabled = false;
+      render();
+    }
+  }));
   document.querySelector('[data-settings-official-site]')?.addEventListener('click', () => {
     void invoke('open_external_url', { url: 'https://cdm.cacaplay.lat' }).catch((error) => showToast(friendlyError(error), 'error'));
   });
@@ -1872,10 +1900,11 @@ function bindEvents() {
     onRefreshRuntime: async () => {
       if (previewMode) return;
       try {
-        [appState.runtimeStatus, appState.mediaRuntimeStatus, appState.extensionBridgeStatus] = await Promise.all([
+        [appState.runtimeStatus, appState.mediaRuntimeStatus, appState.extensionBridgeStatus, appState.components] = await Promise.all([
           invoke('runtime_status'),
           invoke('media_runtime_status'),
-          invoke('extension_bridge_status')
+          invoke('extension_bridge_status'),
+          invoke('list_components').catch(() => [])
         ]);
         showToast('Estado de componentes actualizado', 'success');
       } catch (error) { showToast(String(error), 'error'); }

@@ -6,7 +6,6 @@
   },
   "bundle": {
     "resources": [
-      "resources/bin/*",
       "resources/licenses/*",
       "resources/extension/*"
     ],
