@@ -1,8 +1,8 @@
 # Inventario de runtimes de terceros
 
-**Revisión:** 2026-09-24. Hashes contrastados con los archivos locales y
-`src-tauri/resources/bin/runtime-manifest.json` mediante `npm run
-verify:binaries`. Los hashes de archivo son SHA-256.
+**Revisión:** 2026-09-26. Los hashes de los runtimes preparados se comparan
+con `src-tauri/resources/bin/runtime-manifest.json` mediante
+`npm run verify:binaries`. Los hashes de archivo son SHA-256.
 
 ## Binarios que entran al paquete Windows
 
@@ -15,7 +15,7 @@ hash del archivo extraído y, cuando se conserva, hash del archivo descargado.
 | yt-dlp | 2026.08.19 | El proyecto yt-dlp usa Unlicense; el ejecutable Windows PyInstaller incorpora componentes GPL-3.0-or-later y publica el inventario de terceros. | [Release oficial](https://github.com/yt-dlp/yt-dlp/releases/tag/2026.08.19); `66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a`. Coincide con el asset y `SHA2-256SUMS` del release. | `YT-DLP-LICENSE.txt`, `YT-DLP-THIRD-PARTY-LICENSES.txt`, `YT-DLP-NOTICE.txt`; la lista de licencias está fijada al commit `3a08beaf031ab68f966401ead017ac81fe8486cf` y su SHA-256 es `472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7`. |
 | Deno | 2.9.7, `x86_64-pc-windows-msvc` | MIT. | [Asset oficial](https://github.com/denoland/deno/releases/tag/v2.9.7); ejecutable `e020f3e232bd16e33768dee528e5983349c962952051ced0a5d58ad42f5d9b33`; ZIP `a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238`. | `DENO-LICENSE.txt`, `DENO-NOTICE.txt`; la herramienta se usa como runtime de challenges EJS de yt-dlp. |
 | aria2c | 1.37.0 | GPL-2.0-or-later con texto de excepción/licencia OpenSSL procedente del archivo distribuido. | [Release oficial](https://github.com/aria2/aria2/releases/tag/release-1.37.0); ejecutable `be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2`; ZIP fijado `67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288`. | `ARIA2-COPYING.txt`, `ARIA2-OPENSSL-LICENSE.txt`, `ARIA2-NOTICE.txt`. Falta preparar la fuente correspondiente o una oferta escrita que acompañe una distribución binaria. |
-| FFmpeg | 9.0.2 essentials, Gyan build; FFprobe tiene la misma versión. | GPL v3, según el README del build verificado; `--enable-gpl` y `--enable-version3` están presentes en `-buildconf`. | [Release del proveedor](https://github.com/GyanD/codexffmpeg/releases/tag/9.0.2); ejecutable FFmpeg `3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec`; FFprobe `f0d36ecbbdd3bcfac3efa078c96c7271c2e68b3810595552ac3b7f17e9a65c52`; ZIP `60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba`. | `FFMPEG-LICENSE.txt`, `FFMPEG-BUILD-README.txt`, `FFMPEG-NOTICE.txt`; fuente FFmpeg: commit `946fcce07b`. El aviso incluye la configuración exacta reportada por `-buildconf`. Falta preparar las fuentes correspondientes de la compilación completa —incluidas las bibliotecas enlazadas— o una oferta escrita que acompañe cualquier redistribución binaria. |
+| FFmpeg/FFprobe | 9.0.2 SAFE LEAN, reconstruido desde el paquete correspondiente aprobado. | GPL-3.0-or-later (`--enable-gpl`, `--enable-version3`). | FFmpeg `e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f`; FFprobe `787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3`. | Fuente: `ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz`, SHA-256 `b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58`. Build inputs y revisión humana fijados en `corresponding-source.json`. La entrega del asset correspondiente y la inspección del paquete siguen siendo requisitos antes de un release binario. |
 
 El README del release exacto de yt-dlp declara que los ejecutables PyInstaller
 incluyen código GPLv3+ y que la obra combinada queda bajo GPLv3+. También indica
@@ -34,15 +34,17 @@ presenta como una firma upstream independiente.
 ## Estado técnico de la fuente correspondiente GPL
 
 `third-party-source/corresponding-source.json` es el inventario de release y
-`third-party-source/README.md` describe la entrada de materiales. Ambos runtimes
-siguen **PENDIENTES**: no se descargó ni se presenta como equivalente ningún
-archivo de fuente genérico. El hash del binario observado no demuestra qué
-fuentes y bibliotecas lo produjeron.
+`third-party-source/README.md` describe la entrada de materiales. FFmpeg/FFprobe
+SAFE LEAN tiene fuente, build inputs y revisión aprobados; el contrato confirma
+que sus hashes activos corresponden a esos registros. aria2 y yt-dlp siguen
+**PENDIENTES**. El gate global y la entrega de assets de release permanecen
+bloqueados hasta resolver ambos runtimes y acompañar cada asset con su fuente
+correspondiente exacta.
 
 | Componente | Configuración conocida | Material que falta para cerrar la correspondencia | Método automatizable |
 | --- | --- | --- | --- |
 | aria2 1.37.0 | Release `release-1.37.0`, asset Win64 y hashes indicados arriba; incluye licencia/excepción OpenSSL. La receta exacta del build Windows y sus opciones no están acreditadas. | Archivo de fuentes que corresponda al build distribuido, receta/parches/configuración Windows exactos, fuentes correspondientes de dependencias enlazadas y revisión de integridad. | `check:gpl-source` coteja versión/hash con `runtime-manifest.json`, comprueba archivos y SHA-256 declarados y bloquea si falta registro del distribuidor. |
-| FFmpeg/FFprobe 9.0.2 | Build Gyan essentials; `--enable-gpl`, `--enable-version3`, `--enable-static` y configuración completa conservada en `FFMPEG-BUILD-README.txt`; la fuente FFmpeg reportada es el commit `946fcce07b`. | Fuentes completas del proveedor para el binario concreto, fuentes/versiones de todas las bibliotecas habilitadas y enlazadas, scripts/configuración/parches del build, y revisión de correspondencia. El commit FFmpeg solo no basta. | El mismo gate compara SHA-256 de ambos ejecutables y del ZIP, exige archivo de fuente y build inputs con hashes, release asset name y revisión humana registrada. |
+| FFmpeg/FFprobe 9.0.2 SAFE LEAN | Build estático determinista con `--enable-gpl`, `--enable-version3`; fuente FFmpeg `946fcce07b6dcd0331c8cc609192aeff5e1924f8`, x264, LAME y dav1d fijados en el paquete correspondiente. | No falta material de fuente o revisión local para este runtime. El asset exacto debe estar presente junto al paquete que lo distribuye y pasar inspección de hashes. | El gate coteja los hashes de ambos ejecutables, fuente, build inputs, revisión humana y nombre/hash del asset de release. |
 
 El gate valida inventario, presencia e integridad local y forma parte de
 `check:release`, por lo que los flujos GitHub Windows y Store fallan cerrados
@@ -89,35 +91,30 @@ Véanse [GPLv2 §3](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html),
 
 ## Estado de cumplimiento para una publicación
 
-Se verificaron estáticamente el código fuente/licencias, los hashes, las
-versiones reportadas y la inclusión de los avisos en las configuraciones de
-paquete. Eso no demuestra por sí solo el cumplimiento completo de las
-condiciones de redistribución. En particular, el repo no contiene aún un
-paquete de código fuente correspondiente ni una oferta escrita mantenida para
-los binarios GPL de aria2 y FFmpeg; tampoco se construyó un paquete de release
-que incluya y compruebe esos materiales junto a los binarios. El cierre
-posterior produjo paquetes QA unsigned en un directorio temporal, pero sin
-fuentes/ofertas GPL; no se publicaron y no son artefactos de release. FFmpeg
-declara que el build `--enable-gpl` pasa a GPL y requiere que la fuente
-corresponda a los binarios distribuidos. Mantener **NO PUBLICAR** esos bundles
-hasta cerrar y verificar este punto.
+Se aprobaron los materiales correspondientes del runtime SAFE LEAN y la
+preparación activa reconstruye sus hashes canónicos desde el paquete
+correspondiente. Esto no demuestra por sí solo suficiencia legal para cada
+canal ni que un archivo de fuente acompañe ya a un release publicado. aria2 y
+yt-dlp siguen pendientes, y no se ha creado ni publicado un paquete de release
+con los materiales GPL exactos. El gate binario permanece **PENDING / NO
+PUBLICAR** hasta completar esos runtimes y verificar los assets del paquete.
 
-La metadata de código propio permanece sujeta al pendiente de titularidad de
-PR #5 documentado en `docs/OPEN-SOURCE-RIGHTS-REVIEW.md`; este inventario de
-componentes terceros no resuelve ese asunto.
+La revisión del titular para PR #5 está registrada por separado en
+`rights/release-rights.json`; este inventario de componentes terceros no
+reabre ni sustituye esa revisión.
 
 ## Fuente de código frente a distribución de binarios GPL
 
 El gate `check:gpl-source` valida materiales que deben acompañar una
-distribución de los binarios GPL de aria2 y FFmpeg: revisión del distribuidor,
-método elegido, fuente/inputs correspondientes o una oferta escrita revisada,
-hashes y nombre del asset que acompaña a los binarios. No es por sí solo una
-prueba de titularidad del código de Clear ni una evaluación legal completa.
+distribución de los binarios GPL de aria2, FFmpeg y yt-dlp: revisión del
+distribuidor, método elegido, fuente/inputs correspondientes o una oferta
+escrita revisada, hashes y nombre del asset que acompaña a los binarios. No es
+por sí solo una evaluación legal completa.
 
 | Escenario | Tratamiento de aria2/FFmpeg | Bloqueos relevantes |
 | --- | --- | --- |
-| **A. Solo fuente**: publicar la baseline de código fuente; no adjuntar instaladores ni redistribuir `aria2c.exe`, `ffmpeg.exe` o `ffprobe.exe`. | Las obligaciones ligadas a redistribuir esos binarios no se activan por el mero archivo Git que los excluye. Se conservan licencias, SBOM, `THIRD_PARTY_NOTICES` y los avisos de dependencias de código. | El título/licencia del código propio, incluido PR #5, sigue siendo un bloqueo. Hace falta un gate de fuente que compruebe que el archivo publicado no contiene runtimes ni instaladores/bundles. Los campos de oferta/fuente correspondiente de cada binario no deberían bloquear esta modalidad una vez separada. |
-| **B. Binarios**: publicar NSIS/MSI/MSIX o cualquier paquete que incluya esos runtimes. | Las configuraciones Tauri incluyen `resources/bin/*` y `resources/licenses/*`; por tanto los paquetes contienen aria2 y FFmpeg/FFprobe cuando están preparados. | Se necesita el gate actual de fuente correspondiente/oferta escrita por cada runtime, revisión humana del distribuidor, hashes/versiones/configuración y verificación de que el material seleccionado acompaña al asset que lleva los binarios, además de resolver PR #5. |
+| **A. Solo fuente**: publicar la baseline de código fuente; no adjuntar instaladores ni redistribuir `aria2c.exe`, `ffmpeg.exe` o `ffprobe.exe`. | El source release gate excluye runtimes e instaladores; mantiene avisos, SBOM, inventarios y registros de derechos. | El gate `check:source-release` valida la preparación source-only. No autoriza una distribución binaria ni reabre por sí solo PR #5. |
+| **B. Binarios**: publicar NSIS/MSI/MSIX o cualquier paquete que incluya esos runtimes. | Las configuraciones Tauri incluyen `resources/bin/*` y `resources/licenses/*`; el runtime SAFE LEAN se reconstruye y verifica desde su fuente correspondiente. | Se necesita completar aria2 y yt-dlp, adjuntar los assets exactos de fuente correspondiente y verificar los hashes/notices del paquete concreto antes de publicar. |
 
 ### Gates separados implementados
 
@@ -168,5 +165,5 @@ exigiendo el gate GPL completo para publicar paquetes Windows.
 Estos gates separan la composición de los artefactos; no concluyen por sí solos
 que una publicación source-only cumpla toda obligación aplicable ni sustituyen
 una revisión legal del distribuidor. El estado binario sigue **PENDING** hasta
-que las fuentes/ofertas de aria2 y FFmpeg/FFprobe, sus avisos y el paquete
-concreto queden verificados.
+que los materiales de aria2 y yt-dlp, el asset correspondiente de FFmpeg/FFprobe,
+sus avisos y el paquete concreto queden verificados.

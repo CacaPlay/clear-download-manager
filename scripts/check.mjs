@@ -21,7 +21,7 @@ const required = [
   'extension/sdk/cacatools-native-client.js', 'extension/sdk/manifest-v3.example.json', 'extension/sdk/service-worker.example.js',
   'scripts/build.mjs', 'scripts/generate-source-manifest.mjs', 'scripts/verify-binaries.mjs',
   'scripts/validation/source-manifest-scope.mjs',
-  'scripts/prepare-windows-binaries.ps1', 'scripts/rust-gate-windows.ps1',
+  'scripts/prepare-windows-binaries.ps1', 'scripts/prepare-safe-lean-ffmpeg.ps1', 'scripts/rust-gate-windows.ps1',
   'scripts/native-check-windows.ps1', 'scripts/final-windows-build.ps1',
   'scripts/configure-updater-windows.ps1', 'scripts/prepare-update-release.ps1',
   'scripts/register-extension-host-windows.ps1', 'scripts/configure-extension-integration.ps1', 'scripts/report-windows-size.ps1',

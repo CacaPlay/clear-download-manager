@@ -52,6 +52,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'check:quality failed.' }
           npm run build:web
           if ($LASTEXITCODE -ne 0) { throw 'build:web failed.' }
+      - name: Prepare pinned SAFE LEAN MSYS2 toolchain
+        shell: pwsh
+        run: ./scripts/prepare-safe-lean-toolchain.ps1
       - name: Rust gates
         shell: pwsh
         run: |

@@ -1008,12 +1008,16 @@ mod tests {
         partial.components[0].artifact.filename = "ffmpeg.exe".into();
         partial.components[0].artifact.family = Some(ToolchainFamily::FfmpegSet);
         partial.components[0].source.authority = SourceAuthority::FfmpegProvider;
-        partial.components[0].source.repository = "GyanD/codexffmpeg".into();
+        partial.components[0].source.repository = "FFmpeg/FFmpeg".into();
         partial.components[0].version = "8.1.2".into();
         assert!(matches!(
             validate_manifest(&partial, "0.45.4"),
             Err(ManifestError::PartialFfmpegSet)
         ));
+
+        let mut retired_provider = partial.clone();
+        retired_provider.components[0].source.repository = "GyanD/codexffmpeg".into();
+        assert!(validate_manifest(&retired_provider, "0.45.4").is_err());
 
         let mut untrusted = valid_manifest();
         untrusted.components[0].source.repository = "evil.example/tools".into();

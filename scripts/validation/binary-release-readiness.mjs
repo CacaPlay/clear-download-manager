@@ -88,7 +88,13 @@ if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isF
     const packageSha256 = crypto.createHash('sha256').update(fs.readFileSync(packagePath)).digest('hex');
     const files = inventory(inspectionRoot);
     const byName = new Map(files.map((file) => [path.basename(file.path).toLowerCase(), file]));
-    const runtime = JSON.parse(fs.readFileSync(path.join(root, 'src-tauri/resources/bin/runtime-manifest.json'), 'utf8'));
+    const runtimeManifestText = fs.readFileSync(path.join(root, 'src-tauri/resources/bin/runtime-manifest.json'), 'utf8');
+    const runtime = JSON.parse(runtimeManifestText.replace(/^\uFEFF/, ''));
+    if (runtime.ffmpeg?.profile !== 'SAFE LEAN'
+      || runtime.ffmpeg?.approvedCandidateKey !== 'ffmpegSafeLeanCandidate'
+      || /gyan\.dev|GyanD/i.test(String(runtime.ffmpeg?.source || ''))) {
+      failures.push('package inspection: active FFmpeg runtime must be the approved SAFE LEAN build with no Gyan source metadata.');
+    }
     const expected = new Map([
       ['yt-dlp.exe', runtime.ytDlp?.sha256],
       ['aria2c.exe', runtime.aria2?.executableSha256],
@@ -101,6 +107,13 @@ if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isF
         failures.push(`package inspection: ${name} is missing or its hash differs from runtime-manifest.json.`);
       }
     }
+    for (const name of ['ffmpeg.exe', 'ffprobe.exe']) {
+      const copies = files.filter((file) => path.basename(file.path).toLowerCase() === name);
+      if (copies.length !== 1) failures.push(`package inspection: expected exactly one ${name}; found ${copies.length}.`);
+    }
+    if (files.some((file) => /gyan|essentials_build/i.test(file.path))) {
+      failures.push('package inspection: retired Gyan FFmpeg files or names are still present.');
+    }
     const requiredNotices = [
       'yt-dlp-license.txt', 'yt-dlp-notice.txt', 'yt-dlp-third-party-licenses.txt',
       'aria2-copying.txt', 'aria2-notice.txt', 'ffmpeg-license.txt',
@@ -108,6 +121,12 @@ if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isF
     ];
     const missingNotices = requiredNotices.filter((name) => !byName.has(name));
     if (missingNotices.length) failures.push(`package inspection: missing runtime/license notices: ${missingNotices.join(', ')}.`);
+    for (const name of ['ffmpeg-notice.txt', 'ffmpeg-build-readme.txt', 'third_party_notices.txt']) {
+      const file = byName.get(name);
+      if (file && /GyanD|gyan\.dev|essentials_build/i.test(fs.readFileSync(file.absolute, 'utf8'))) {
+        failures.push(`package inspection: active ${name} still names the retired Gyan build.`);
+      }
+    }
     console.log(`Package inspection SHA-256: ${packageSha256}`);
     console.log(`Expanded package files inspected: ${files.length}`);
     console.log(`${failures.some((entry) => entry.startsWith('package inspection:')) ? 'FAIL' : 'PASS'}: package contents, runtime hashes, and notices`);
