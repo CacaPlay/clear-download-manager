@@ -135,6 +135,7 @@ test('Windows CI installs the exact locked MSYS2 packages before SAFE LEAN build
   assert.match(bootstrapText, /Get-FileHash/);
   assert.match(bootstrapText, /pacman -U/);
   assert.match(bootstrapText, /verify-toolchain\.py/);
+  assert.match(bootstrapText, /foreach \(\$Required in @\(\$Bash, \$Cygpath, \(Join-Path \$MsysRoot 'usr\\bin\\pacman\.exe'\)\)\)/);
 
   const quality = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/quality.yml'), 'utf8');
   const qualityBootstrap = quality.indexOf('prepare-safe-lean-toolchain.ps1');

@@ -22,7 +22,7 @@ $MsysRoot = [IO.Path]::GetFullPath($MsysRoot)
 $Bash = Join-Path $MsysRoot 'usr\bin\bash.exe'
 $Cygpath = Join-Path $MsysRoot 'usr\bin\cygpath.exe'
 $Python = Join-Path $MsysRoot 'ucrt64\bin\python.exe'
-foreach ($Required in @($Bash, $Cygpath, (Join-Path $MsysRoot 'usr\bin\pacman.exe'), $Python)) {
+foreach ($Required in @($Bash, $Cygpath, (Join-Path $MsysRoot 'usr\bin\pacman.exe'))) {
   if (-not (Test-Path -LiteralPath $Required -PathType Leaf)) {
     throw "The GitHub Windows runner does not have the required MSYS2 bootstrap executable: $Required"
   }
