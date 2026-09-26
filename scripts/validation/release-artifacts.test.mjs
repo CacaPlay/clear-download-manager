@@ -491,3 +491,25 @@ test('Quality and release CI install pinned Playwright Chromium before their res
     assert.ok(gateIndex > browserIndex, `${name} must install Chromium before ${gateCommand}`);
   }
 });
+
+test('source manifest canonicalizes shell-script line endings across Windows checkouts', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-source-manifest-eol-test-'));
+  const generator = path.join(temp, 'scripts', 'generate-source-manifest.mjs');
+  const shellScript = path.join(temp, 'tools', 'probe.sh');
+  fs.mkdirSync(path.dirname(generator), { recursive: true });
+  fs.mkdirSync(path.dirname(shellScript), { recursive: true });
+  fs.copyFileSync(path.join(repositoryRoot, 'scripts/generate-source-manifest.mjs'), generator);
+
+  try {
+    const lfContent = '#!/bin/sh\nprintf ok\n';
+    fs.writeFileSync(shellScript, lfContent, 'utf8');
+    const generate = spawnSync(process.execPath, [generator], { cwd: temp, encoding: 'utf8' });
+    assert.equal(generate.status, 0, generate.stderr || generate.stdout);
+
+    fs.writeFileSync(shellScript, lfContent.replaceAll('\n', '\r\n'), 'utf8');
+    const check = spawnSync(process.execPath, [generator, '--check'], { cwd: temp, encoding: 'utf8' });
+    assert.equal(check.status, 0, check.stderr || check.stdout);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});

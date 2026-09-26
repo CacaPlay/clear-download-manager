@@ -107,7 +107,7 @@ function walk(directory, relative = '') {
 // every platform while binary assets remain byte-for-byte verified.
 const textExtensions = new Set([
   '.bat', '.cmd', '.css', '.html', '.js', '.json', '.md', '.mjs', '.ps1',
-  '.lock', '.nsh', '.py', '.rs', '.sql', '.svg', '.toml', '.txt', '.xml', '.yml', '.yaml',
+  '.lock', '.nsh', '.py', '.rs', '.sh', '.sql', '.svg', '.toml', '.txt', '.xml', '.yml', '.yaml',
 ]);
 const textBasenames = new Set(['.gitattributes', '.gitignore', '.npmrc', 'CODEOWNERS', 'COPYING', 'LICENSE']);
 
