@@ -127,6 +127,32 @@ test('toolchain lock fixes every package and wheel digest', () => {
   }
 });
 
+test('Windows CI installs the exact locked MSYS2 packages before SAFE LEAN builds', () => {
+  const bootstrap = path.join(repositoryRoot, 'scripts/prepare-safe-lean-toolchain.ps1');
+  assert.ok(fs.existsSync(bootstrap), 'the CI toolchain bootstrap must exist');
+  const bootstrapText = fs.readFileSync(bootstrap, 'utf8');
+  assert.match(bootstrapText, /toolchain\.lock\.json/);
+  assert.match(bootstrapText, /Get-FileHash/);
+  assert.match(bootstrapText, /pacman -U/);
+  assert.match(bootstrapText, /verify-toolchain\.py/);
+
+  const quality = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/quality.yml'), 'utf8');
+  const qualityBootstrap = quality.indexOf('prepare-safe-lean-toolchain.ps1');
+  const qualityRuntimePrep = quality.indexOf('npm run prepare:windows-binaries');
+  assert.ok(qualityBootstrap >= 0 && qualityBootstrap < qualityRuntimePrep, 'Quality must prepare the pinned toolchain before runtime binaries');
+
+  const release = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const packageSign = release.split('\n  package-sign:\n')[1]?.split('\n  verify-binary-release:\n')[0] ?? '';
+  const packageBootstrap = packageSign.indexOf('prepare-safe-lean-toolchain.ps1');
+  const packageBuild = packageSign.indexOf('npm run build:windows:final');
+  assert.ok(packageBootstrap >= 0 && packageBootstrap < packageBuild, 'package-sign must prepare the pinned toolchain before building');
+
+  const verifyPackage = release.split('\n  verify-binary-release:\n')[1] ?? '';
+  const verifyBootstrap = verifyPackage.indexOf('prepare-safe-lean-toolchain.ps1');
+  const verifyRuntimePrep = verifyPackage.indexOf('npm run prepare:windows-binaries');
+  assert.ok(verifyBootstrap >= 0 && verifyBootstrap < verifyRuntimePrep, 'binary verification must prepare the pinned toolchain before runtime binaries');
+});
+
 test('pinned wheel bootstrap verifies inputs and installs only Meson and Ninja tooling', () => {
   const script = packageFile('prepare-toolchain-wheels.ps1');
   assert.ok(fs.existsSync(script), 'prepare-toolchain-wheels.ps1 must be present in the source package');
