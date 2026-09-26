@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "candidate": "SAFE LEAN",
+  "ffmpegVersion": "9.0.2",
+  "effectiveBuildLicense": "GPL-3.0-or-later",
+  "components": [
+    {
+      "id": "ffmpeg",
+      "version": "9.0.2",
+      "sourceRepository": "https://github.com/FFmpeg/FFmpeg",
+      "sourceRef": "n9.0.2",
+      "sourceCommit": "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
+      "license": "GPL-3.0-or-later (effective configured build)",
+      "archive": {
+        "name": "ffmpeg-946fcce.tar.gz",
+        "sha256": "0aa2b1de2a5698b20a23e93d539a9a8e82ca0117496c5bdf05d198805f42bb3b",
+        "upstreamUrl": "https://github.com/FFmpeg/FFmpeg/archive/946fcce07b6dcd0331c8cc609192aeff5e1924f8.tar.gz"
+      }
+    },
+    {
+      "id": "x264",
+      "version": "commit b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+      "sourceRepository": "https://code.videolan.org/videolan/x264",
+      "sourceRef": "b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+      "sourceCommit": "b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+      "license": "GPL-2.0-or-later",
+      "archive": {
+        "name": "x264-b35605ace3dd.tar",
+        "sha256": "56d1a073f1f67cf6d3419a02f7663dce76ffc47b4aefe814c048f79ce3040a3d",
+        "derivation": "Uncompressed source archive of the exact upstream commit; original archive bytes are preserved."
+      }
+    },
+    {
+      "id": "lame",
+      "version": "3.100",
+      "sourceRepository": "https://sourceforge.net/projects/lame/",
+      "sourceRef": "lame-3.100",
+      "license": "LGPL-2.0-or-later",
+      "archive": {
+        "name": "lame-3.100-official.tar.gz",
+        "sha256": "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e",
+        "upstreamUrl": "https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz/download"
+      }
+    },
+    {
+      "id": "dav1d",
+      "version": "1.5.4",
+      "sourceRepository": "https://code.videolan.org/videolan/dav1d",
+      "sourceRef": "1.5.4",
+      "sourceCommit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+      "tagObject": "191bdda98ec3c68137754dc97da1db34043d7cd4",
+      "license": "BSD-2-Clause",
+      "archive": {
+        "name": "dav1d-1.5.4.tar",
+        "sha256": "ffd903f96a657615796483435e578557fc976b8a8574c5154117d93f3f901ba4",
+        "derivation": "Uncompressed source archive of the exact verified upstream tag target; original archive bytes are preserved."
+      }
+    }
+  ],
+  "originalValidatedArtifact": {
+    "ffmpegSha256": "bfd6a61157c2b123124cd76c0acfc8c24d6406e064fa3b7d792a04dbaba9bf3e",
+    "ffprobeSha256": "6fca76ec1ba51984fef6c2b97fc604f030aeb30533fb3ffa6df44b5400b30bb3",
+    "buildConfigurationSha256": "4bcef85bcb3974d39f0a554166df3a36c07aab496ed1b2397b0cbdd0898a4d6",
+    "experimentalBuildScriptSha256": "20648cb2ecf2b39278dede96dccf8ea306fa3c63bda0c90c1163365ded44ded4"
+  }
+}

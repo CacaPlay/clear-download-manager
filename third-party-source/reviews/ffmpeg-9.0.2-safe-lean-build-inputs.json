@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "runtime": {
+    "id": "ffmpeg",
+    "version": "9.0.2",
+    "profile": "SAFE LEAN",
+    "sourceRepository": "https://github.com/FFmpeg/FFmpeg",
+    "sourceVersion": "n9.0.2",
+    "sourceCommit": "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
+    "effectiveLicense": "GPL-3.0-or-later"
+  },
+  "canonicalOutputs": [
+    {
+      "name": "ffmpeg.exe",
+      "bytes": 31374848,
+      "sha256": "e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f"
+    },
+    {
+      "name": "ffprobe.exe",
+      "bytes": 31156736,
+      "sha256": "787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3"
+    }
+  ],
+  "correspondingSourceArchive": {
+    "assetName": "ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz",
+    "path": "third-party-source/ffmpeg/ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz",
+    "bytes": 20504148,
+    "sha256": "b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58"
+  },
+  "sourceComponents": [
+    {
+      "id": "ffmpeg",
+      "version": "9.0.2",
+      "sourceCommit": "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
+      "archive": "ffmpeg-946fcce.tar.gz",
+      "archiveSha256": "0aa2b1de2a5698b20a23e93d539a9a8e82ca0117496c5bdf05d198805f42bb3b"
+    },
+    {
+      "id": "x264",
+      "version": "b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+      "archive": "x264-b35605ace3dd.tar",
+      "archiveSha256": "56d1a073f1f67cf6d3419a02f7663dce76ffc47b4aefe814c048f79ce3040a3d"
+    },
+    {
+      "id": "lame",
+      "version": "3.100",
+      "archive": "lame-3.100-official.tar.gz",
+      "archiveSha256": "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e"
+    },
+    {
+      "id": "dav1d",
+      "version": "1.5.4",
+      "sourceCommit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+      "archive": "dav1d-1.5.4.tar",
+      "archiveSha256": "ffd903f96a657615796483435e578557fc976b8a8574c5154117d93f3f901ba4"
+    }
+  ],
+  "buildInputs": [
+    {
+      "path": "tools/ffmpeg-safe-lean/build-options.json",
+      "sha256": "5ed7082b19a85117b9b8d02a9e487aa14513d1376ce94d8fa1225cade50aa8e6"
+    },
+    {
+      "path": "tools/ffmpeg-safe-lean/source-inputs.json",
+      "sha256": "9b1026579ddeb04fc8534606451b49f1193ac3a2fafbbe4d203bbb4a467f1e3e"
+    },
+    {
+      "path": "tools/ffmpeg-safe-lean/toolchain.lock.json",
+      "sha256": "d9c81e4996045b7e11f54c04fe5da91bed555d80418ee5e6df6e00612790cb9b"
+    },
+    {
+      "path": "tools/ffmpeg-safe-lean/build-safe-lean.sh",
+      "sha256": "ba062aaed58391d50a0c1100cd0aa9d6bfc76a571a40c5db507225666fbd7339"
+    },
+    {
+      "path": "tools/ffmpeg-safe-lean/prepare-toolchain-wheels.ps1",
+      "sha256": "9e74912f8259ea94d3cd5ab3df6df160b16ad582d26b5e2b3ebbe192d26ea920"
+    },
+    {
+      "path": "tools/ffmpeg-safe-lean/verify-sha256.sh",
+      "sha256": "d4457da3194e54daf19ad6f836ac803f9b1e5877e0d4391ae48d48bc8c16fbc2"
+    },
+    {
+      "path": "tools/ffmpeg-safe-lean/verify-toolchain.py",
+      "sha256": "79a9d1dbce6c1588dddb877a6ba1e50b180cdbda055dcfe670d0420747758e36"
+    },
+    {
+      "path": "tools/ffmpeg-safe-lean/package-source.ps1",
+      "sha256": "38b5fdabe591446031e7118a358b0e48e383b1af04be59f627905dd250240116"
+    },
+    {
+      "path": "tools/ffmpeg-safe-lean/deterministic-build-evidence.md",
+      "sha256": "80731b5ee73c5fdf9d134a4879272eb569a774711a1a34d18f5df1a815a5540b"
+    }
+  ],
+  "reproducibility": {
+    "independentBuildsIdentical": 4,
+    "originalPrototypeBinariesReproduced": false,
+    "completeOfflineToolchainBundled": false
+  },
+  "registryReviewRecord": "third-party-source/reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md"
+}

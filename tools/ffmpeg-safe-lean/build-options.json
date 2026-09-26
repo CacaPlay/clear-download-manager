@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "candidate": "SAFE LEAN",
+  "runtimeVersion": "9.0.2",
+  "target": "Windows x64",
+  "patches": [],
+  "dependencyBuildOptions": {
+    "x264": ["--host=x86_64-w64-mingw32", "--enable-static", "--disable-cli", "--disable-asm", "--enable-pic"],
+    "lame": ["--host=x86_64-w64-mingw32", "--disable-shared", "--enable-static", "--disable-frontend"],
+    "dav1d": ["--buildtype=release", "--default-library=static", "-Denable_asm=false", "-Denable_docs=false", "-Denable_examples=false", "-Denable_tests=false", "-Denable_tools=false", "-Dxxhash_muxer=disabled"]
+  },
+  "dependencySearchEnvironment": {
+    "CFLAGS": "-O2 -I$BUILD_PREFIX/lame/include -I$BUILD_PREFIX/x264/include -I$BUILD_PREFIX/dav1d/include",
+    "LDFLAGS": "-L$BUILD_PREFIX/lame/lib -L$BUILD_PREFIX/x264/lib -L$BUILD_PREFIX/dav1d/lib"
+  },
+  "deterministicBuild": {
+    "sourceDateEpoch": 1784011149,
+    "sourceDateEpochUtc": "2026-07-14T06:39:09Z",
+    "sourceDateEpochSource": "dav1d commit 54706fc6bc0cdecab7e9593974a4039cc038fca7 committer timestamp",
+    "locale": "C",
+    "timezone": "UTC",
+    "compilerPrefixMaps": [
+      "$BUILD_ROOT=/safe-lean/build",
+      "$SOURCE_ROOT=/safe-lean/sources"
+    ],
+    "peLinkerOption": "--no-insert-timestamp"
+  },
+  "ffmpegConfigureOptions": [
+    "--prefix=/ffmpeg-safe-lean-av1",
+    "--target-os=mingw32",
+    "--arch=x86_64",
+    "--enable-gpl",
+    "--enable-version3",
+    "--enable-static",
+    "--disable-shared",
+    "--disable-debug",
+    "--disable-doc",
+    "--disable-ffplay",
+    "--disable-autodetect",
+    "--disable-x86asm",
+    "--disable-indevs",
+    "--disable-outdevs",
+    "--disable-devices",
+    "--disable-hwaccels",
+    "--enable-schannel",
+    "--enable-ffmpeg",
+    "--enable-ffprobe",
+    "--enable-network",
+    "--enable-libx264",
+    "--enable-libmp3lame",
+    "--enable-libdav1d",
+    "--extra-cflags=-O2",
+    "--extra-ldflags=-static -Wl,--no-insert-timestamp",
+    "--pkg-config-flags=--static",
+    "--pkg-config=pkg-config"
+  ],
+  "outputs": ["ffmpeg.exe", "ffprobe.exe", "build-config.json"],
+  "effectiveBuildLicense": "GPL-3.0-or-later"
+}
