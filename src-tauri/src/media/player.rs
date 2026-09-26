@@ -220,7 +220,7 @@ pub(crate) async fn player_media_snapshot(
     // ffprobe can take noticeable time on a large, fragmented, or partially
     // indexed file. This command is async so the Tauri/WebView UI thread is
     // never blocked while collecting optional technical metadata.
-    let technical = match (state.media_runtime.clone(), playable_path.clone()) {
+    let technical = match (state.media_runtime(), playable_path.clone()) {
         (Some(runtime), Some(path)) => {
             tauri::async_runtime::spawn_blocking(move || probe_player_technical(&runtime, &path))
                 .await

@@ -584,7 +584,7 @@ async function loadSnapshot({ includeSettings = false, includeSchedules = true, 
     appState.snapshotFailures = 0;
     syncPendingJobs();
     if (includeSettings) {
-      const [desktopSettings, remoteAppearance, runtimeStatus, mediaRuntimeStatus, updaterStatus, extensionBridgeStatus, startupStatus, windowBehavior, backgroundLaunch, progressEngineStatus, mediaSessionSettings, experienceSettings, toolUpdateStatus, bandwidthSettings] = await Promise.all([
+      const [desktopSettings, remoteAppearance, runtimeStatus, mediaRuntimeStatus, updaterStatus, extensionBridgeStatus, startupStatus, windowBehavior, backgroundLaunch, progressEngineStatus, mediaSessionSettings, experienceSettings, toolUpdateStatus, bandwidthSettings, components] = await Promise.all([
         invoke('desktop_settings'),
         invoke('get_appearance_settings'),
         invoke('runtime_status'),
@@ -598,7 +598,8 @@ async function loadSnapshot({ includeSettings = false, includeSchedules = true, 
         invoke('media_session_settings').catch(() => ({ useBraveCookies: false, cookiesPath: null, cookiesFileAvailable: false })),
         invoke('get_experience_settings').catch(() => ({ clipboardAutoSuggest: true, extensionPromptDecision: '', newsReadIds: [], updateSeenVersions: [] })),
         invoke('get_tool_update_status').catch(() => null),
-        invoke('get_bandwidth_settings').catch(() => ({ mode: 'unlimited' }))
+        invoke('get_bandwidth_settings').catch(() => ({ mode: 'unlimited' })),
+        invoke('list_components').catch(() => [])
       ]);
       if (desktopSettings?.downloads_dir) appState.downloadDirectory = desktopSettings.downloads_dir;
       const httpConcurrency = Number(desktopSettings?.downloadConcurrency?.http);
@@ -630,6 +631,7 @@ async function loadSnapshot({ includeSettings = false, includeSchedules = true, 
       appState.mediaSessionSettings = mediaSessionSettings || { useBraveCookies: false, cookiesPath: null, cookiesFileAvailable: false };
       appState.experienceSettings = experienceSettings || { clipboardAutoSuggest: true, extensionPromptDecision: '', newsReadIds: [], updateSeenVersions: [] };
       appState.toolUpdateStatus = toolUpdateStatus || appState.toolUpdateStatus;
+      appState.components = Array.isArray(components) ? components : [];
       appState.bandwidthSettings = bandwidthSettings?.mode === 'limited'
         ? { mode: 'limited', bytesPerSecond: Number(bandwidthSettings.bytesPerSecond || 0) }
         : { mode: 'unlimited' };

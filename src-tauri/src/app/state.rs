@@ -10,6 +10,7 @@ use std::{
 
 use rusqlite::Connection;
 
+use crate::components::ComponentManager;
 use crate::kill_process_tree;
 use crate::{
     DownloadDispatcher, ExternalProcessRegistry, MediaRuntimePaths, WindowBehaviorSettings,
@@ -24,9 +25,33 @@ pub(crate) struct LocalState {
     pub(crate) active_media_pids: Arc<Mutex<HashMap<i64, u32>>>,
     pub(crate) external_processes: ExternalProcessRegistry,
     pub(crate) preparation_operations: WindowOperationRegistry,
-    pub(crate) media_runtime: Option<MediaRuntimePaths>,
-    pub(crate) aria2_path: Option<PathBuf>,
+    pub(crate) component_manager: Arc<ComponentManager>,
+    pub(crate) media_runtime: Arc<Mutex<Option<MediaRuntimePaths>>>,
+    pub(crate) aria2_path: Arc<Mutex<Option<PathBuf>>>,
     pub(crate) dispatcher: Arc<DownloadDispatcher>,
+}
+
+impl LocalState {
+    pub(crate) fn media_runtime(&self) -> Option<MediaRuntimePaths> {
+        self.media_runtime
+            .lock()
+            .ok()
+            .and_then(|runtime| runtime.clone())
+    }
+
+    pub(crate) fn aria2_path(&self) -> Option<PathBuf> {
+        self.aria2_path.lock().ok().and_then(|path| path.clone())
+    }
+
+    pub(crate) fn refresh_component_runtime_slots(&self) {
+        if let Ok(mut runtime) = self.media_runtime.lock() {
+            *runtime = self.component_manager.media_runtime_paths();
+        }
+        if let Ok(mut path) = self.aria2_path.lock() {
+            *path = self.component_manager.aria2_path();
+        }
+        self.dispatcher.wake();
+    }
 }
 
 pub(crate) type WorkerCompletion = Box<dyn FnOnce() + Send + 'static>;

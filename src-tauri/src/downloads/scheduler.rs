@@ -106,8 +106,8 @@ pub(crate) struct SchedulerRuntime {
     pub(crate) active_downloads: Arc<Mutex<HashSet<i64>>>,
     pub(crate) active_media_pids: Arc<Mutex<HashMap<i64, u32>>>,
     pub(crate) external_processes: ExternalProcessRegistry,
-    pub(crate) media_runtime: Option<MediaRuntimePaths>,
-    pub(crate) aria2_path: Option<PathBuf>,
+    pub(crate) media_runtime: Arc<Mutex<Option<MediaRuntimePaths>>>,
+    pub(crate) aria2_path: Arc<Mutex<Option<PathBuf>>>,
     pub(crate) managed_root: PathBuf,
 }
 
@@ -166,7 +166,12 @@ fn execute_scheduled_action(
             }
             drop(connection);
             if is_media {
-                if let Some(media_runtime) = runtime.media_runtime.clone() {
+                if let Some(media_runtime) = runtime
+                    .media_runtime
+                    .lock()
+                    .ok()
+                    .and_then(|runtime| runtime.clone())
+                {
                     run_media_worker(
                         db_path.to_path_buf(),
                         media_runtime,
@@ -176,7 +181,7 @@ fn execute_scheduled_action(
                     );
                 }
             } else if is_torrent {
-                if let Some(path) = runtime.aria2_path.clone() {
+                if let Some(path) = runtime.aria2_path.lock().ok().and_then(|path| path.clone()) {
                     run_torrent_worker(
                         db_path.to_path_buf(),
                         path,

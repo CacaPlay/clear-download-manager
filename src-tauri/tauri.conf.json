@@ -56,8 +56,8 @@
       "nsis",
       "msi"
     ],
-    "shortDescription": "Gestor local de descargas, torrents, video, audio y playlists.",
-    "longDescription": "Clear Download Manager administra descargas HTTP, torrents y contenido multimedia de forma local mediante aria2c, yt-dlp, FFmpeg y SQLite.",
+    "shortDescription": "Gestor local de descargas HTTP, multimedia y torrents opcionales.",
+    "longDescription": "Clear Download Manager gestiona descargas HTTP con Rust y SQLite. Las funciones multimedia y torrent usan componentes locales opcionales.",
     "windows": {
       "nsis": {
         "installMode": "currentUser",
@@ -80,7 +80,6 @@
       }
     },
     "resources": [
-      "resources/bin/*",
       "resources/licenses/*",
       "resources/updater/*",
       "resources/extension/*"

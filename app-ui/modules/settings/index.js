@@ -168,19 +168,37 @@ function integrationsPage() {
   return `<div class="settings-page settings-page-integrations">${pageIntro('Integraciones', 'Conexiones disponibles')}<section class="settings-section">${sectionHeading('link', 'Extensión del navegador')}${statusRow('Puente', extension?.prepared ? 'Preparado' : 'No detectado', extension?.prepared ? 'ok' : 'warn')} ${statusRow('Protocolo', extension?.protocolVersion ? `v${extension.protocolVersion}` : '—')}</section><section class="settings-section settings-section-compact">${sectionHeading('globe', tr('officialSite'))}<div class="settings-official-site"><p>${tr('officialSiteDescription')}</p><button type="button" class="settings-tool-repo" data-settings-official-site>${icon('link', 15)}<span>${tr('visitOfficialSite')}</span></button></div></section></div>`;
 }
 
+function componentManagerSection() {
+  const components = Array.isArray(appState.components) ? appState.components : [];
+  const labels = {
+    'media-tools': 'Media Tools',
+    'torrent-engine': 'Torrent Engine'
+  };
+  const stateLabels = {
+    missing: tr('No instalado'),
+    installed: tr('Instalado'),
+    corrupted: tr('Requiere reparación'),
+    'update-available': tr('Actualización disponible'),
+    installing: tr('Instalando'),
+    error: tr('Falló la instalación')
+  };
+  const rows = ['media-tools', 'torrent-engine'].map((id) => {
+    const component = components.find((item) => item.id === id) || { id, state: 'missing' };
+    const state = String(component.state || 'missing').toLowerCase();
+    const tone = state === 'installed' ? 'ok' : state === 'installing' ? 'info' : state === 'missing' ? 'warn' : 'error';
+    const version = component.version ? ` · v${escapeHtml(component.version)}` : '';
+    const installAction = ['installed', 'installing'].includes(state) ? '' : `<button type="button" class="settings-component-action" data-component-action="install" data-component-id="${id}">${icon('download', 16)} ${state === 'corrupted' ? tr('Reparar') : tr('Instalar paquete local')}</button>`;
+    const verifyAction = ['installed', 'corrupted'].includes(state) ? `<button type="button" class="settings-component-action" data-component-action="verify" data-component-id="${id}">${icon('shield', 16)} ${tr('Verificar')}</button>` : '';
+    const removeAction = ['installed', 'corrupted'].includes(state) ? `<button type="button" class="settings-component-action" data-component-action="remove" data-component-id="${id}">${icon('close', 16)} ${tr('Quitar')}</button>` : '';
+    return `<article class="settings-component-row"><div><strong>${labels[id]}</strong><span data-status-tone="${tone}">${stateLabels[state] || 'Status unavailable'}${version}</span></div><div class="settings-inline-actions">${installAction}${verifyAction}${removeAction}</div></article>`;
+  }).join('');
+  return `<section class="settings-section settings-section-components">${sectionHeading('tools', tr('Componentes'))}<p class="settings-section-note">${tr('El núcleo puede funcionar sin los componentes multimedia o torrent. Selecciona un paquete local .cdmcomponent para instalar o reparar un componente.')}</p>${rows}</section>`;
+}
+
 function updatesPage() {
   const visual = window.__cacatoolsVisualDiagnostics || visualDiagnosticsSnapshot();
-  const tool = appState.toolUpdateStatus || {};
   const runtime = appState.runtimeStatus || {};
   const media = appState.mediaRuntimeStatus || {};
-  const labels = { CURRENT: 'Actualizado', AVAILABLE: 'Actualización disponible', CHECKING: 'Comprobando…', DOWNLOADING: 'Descargando…', VERIFYING: 'Verificando…', INSTALLING: 'Instalando…', UPDATED: 'Actualizado', FAILED: 'No se pudo completar', OFFLINE: 'Sin conexión', UNAVAILABLE: 'Comprobación no disponible' };
-  const state = labels[tool.state] || 'Estado no disponible';
-  const tone = ['CURRENT', 'AVAILABLE', 'UPDATED'].includes(tool.state) ? 'ok' : ['CHECKING', 'DOWNLOADING', 'VERIFYING', 'INSTALLING', 'UNAVAILABLE'].includes(tool.state) ? 'info' : 'warn';
-  const checking = Boolean(appState.toolUpdateChecking);
-  const updating = Boolean(appState.toolUpdateApplying);
-  const canUpdate = Boolean(tool.canUpdate) && !checking && !updating;
-  const checkedAt = Number(tool.lastChecked || 0);
-  const checkedLabel = checkedAt > 0 ? new Date(checkedAt * 1000).toLocaleString() : 'Aún no comprobado';
   const compactVersion = (version) => {
     const raw = String(version || '').split(/\r?\n/, 1)[0];
     const match = raw.match(/\b\d{4}\.\d{2}\.\d{2}\b|\b\d+\.\d+(?:\.\d+)?(?:[-+][a-z0-9.]+)?/i);
@@ -193,8 +211,7 @@ function updatesPage() {
   const repositories = `<div class="settings-tool-repos"><h4>Repositorios oficiales</h4><div>${repositoryButton('yt-dlp', 'yt-dlp')}${repositoryButton('ffmpeg', 'FFmpeg / FFprobe')}${repositoryButton('deno', 'Deno')}${repositoryButton('aria2', 'aria2c')}</div></div>`;
   const licenseRows = `<ul class="settings-open-source-list"><li><strong>yt-dlp</strong><span>${tr('licenseYtdlp')}</span></li><li><strong>Deno</strong><span>${tr('licenseDeno')}</span></li><li><strong>FFmpeg / FFprobe</strong><span>${tr('licenseFfmpeg')}</span></li><li><strong>aria2c</strong><span>${tr('licenseAria2')}</span></li></ul>`;
   const openSourceLicenses = `<details class="settings-open-source"><summary>${icon('shield', 16)}${tr('openSourceLicenses')}</summary><p>${tr('licensesSummary')}</p>${licenseRows}<small>${tr('licenseBundleInfo')}</small></details>`;
-  const availableVersion = `${tool.availableVersion ? statusRow('Versión disponible', escapeHtml(tool.availableVersion), 'ok') : ''}${statusRow('FFmpeg / FFprobe / Deno / aria2c', 'Con la aplicación firmada', 'info')}`;
-  return `<div class="settings-page settings-page-updates">${pageIntro('Actualizaciones y diagnóstico', 'Estado local')}<section class="settings-section">${sectionHeading('shield', 'Versiones')}${statusRow('Aplicación', escapeHtml(runtime.version || APP_VERSION), 'neutral')} ${statusRow('yt-dlp', installed(media.yt_dlp, media.yt_dlp_version), media.yt_dlp ? 'ok' : 'warn')} ${statusRow('FFmpeg', installed(media.ffmpeg, media.ffmpeg_version), media.ffmpeg ? 'ok' : 'warn')} ${statusRow('FFprobe', installed(media.ffprobe, media.ffprobe_version), media.ffprobe ? 'ok' : 'warn')} ${statusRow('aria2c', installed(runtime.aria2_available, runtime.aria2_version), runtime.aria2_available ? 'ok' : 'warn')}</section><section class="settings-section settings-section-tools" data-tool-update-section>${sectionHeading('tools', 'Herramientas internas')}${statusRow('yt-dlp', state, tone)}${availableVersion}${statusRow('Última comprobación', escapeHtml(checkedLabel), 'info')}<div class="settings-inline-actions settings-tool-update-actions"><button type="button" class="tool-update-check" ${checking || updating ? 'disabled aria-disabled="true"' : ''}>${icon('history', 16)} Buscar ahora</button>${canUpdate ? `<button type="button" class="tool-update-apply">${icon('download', 16)} Actualizar</button>` : ''}</div>${repositories}${openSourceLicenses}</section><section class="settings-section settings-section-compact">${sectionHeading('tools', 'Diagnóstico visual')}${statusRow('Escala efectiva', `${visual.resolvedScale || 100}%`, 'neutral')} ${statusRow('Tipografía', `${escapeHtml(visual.font?.size || '16px')} · Segoe UI`, 'neutral')}<button type="button" class="copy-visual-diagnostics">${icon('clipboard', 16)} Copiar diagnóstico</button></section></div>`;
+  return `<div class="settings-page settings-page-updates">${pageIntro('Actualizaciones y diagnóstico', 'Estado local')}<section class="settings-section">${sectionHeading('shield', 'Versiones')}${statusRow('Aplicación', escapeHtml(runtime.version || APP_VERSION), 'neutral')} ${statusRow('yt-dlp', installed(media.yt_dlp, media.yt_dlp_version), media.yt_dlp ? 'ok' : 'warn')} ${statusRow('FFmpeg', installed(media.ffmpeg, media.ffmpeg_version), media.ffmpeg ? 'ok' : 'warn')} ${statusRow('FFprobe', installed(media.ffprobe, media.ffprobe_version), media.ffprobe ? 'ok' : 'warn')} ${statusRow('aria2c', installed(runtime.aria2_available, runtime.aria2_version), runtime.aria2_available ? 'ok' : 'warn')}</section>${componentManagerSection()}<section class="settings-section settings-section-tools">${sectionHeading('globe', 'Repositorios oficiales')}${repositories}${openSourceLicenses}</section><section class="settings-section settings-section-compact">${sectionHeading('tools', 'Diagnóstico visual')}${statusRow('Escala efectiva', `${visual.resolvedScale || 100}%`, 'neutral')} ${statusRow('Tipografía', `${escapeHtml(visual.font?.size || '16px')} · Segoe UI`, 'neutral')}<button type="button" class="copy-visual-diagnostics">${icon('clipboard', 16)} Copiar diagnóstico</button></section></div>`;
 }
 
 export function settingsMarkup() {

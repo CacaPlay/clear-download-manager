@@ -34,8 +34,8 @@ No se modificó el remoto ni se consultaron valores de secretos.
 
 | Canal | Entrada y configuración | Contenido observado |
 | --- | --- | --- |
-| GitHub Windows NSIS/MSI | `.github/workflows/release-windows.yml`, `src-tauri/tauri.conf.json` | Frontend `dist/`, ejecutable Tauri, `resources/bin/*`, `resources/licenses/*`, updater y bridge/extensión nativa. La firma y publicación requieren secretos de release. |
-| Microsoft Store MSIX | `scripts/build-store-msix.ps1`, `src-tauri/tauri.store.conf.json` | Frontend `dist-store/`, runtime Windows, avisos/licencias y bridge. No incluye endpoints ni artefactos del updater; el MSIX se produce sin firmar para Partner Center. |
+| GitHub Windows NSIS/MSI | `.github/workflows/release-windows.yml`, `src-tauri/tauri.conf.json` | Frontend `dist/`, ejecutable Tauri, `resources/licenses/*`, updater y bridge/extensión nativa. El Core installer omite `resources/bin/*`; firma y publicación requieren secretos de release. |
+| Microsoft Store MSIX | `scripts/build-store-msix.ps1`, `src-tauri/tauri.store.conf.json` | Frontend `dist-store/`, avisos/licencias y bridge. El Core package omite `resources/bin/*`. No incluye endpoints ni artefactos del updater; el MSIX se produce sin firmar para Partner Center. |
 | Extensión Chrome ZIP | `scripts/build-extension.ps1` | Solo los archivos runtime de `extension/`, assets/iconos y `LICENSE.md`, `COPYING`, `NOTICE.md`. La identidad pública versionada se inyecta en el manifest generado; el ZIP no incorpora los binarios Windows. |
 
 El inventario de versiones runtime está en

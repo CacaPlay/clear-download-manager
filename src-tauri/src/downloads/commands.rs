@@ -602,9 +602,8 @@ pub(crate) fn set_job_status(
         drop(connection);
         if is_media {
             let runtime = state
-                .media_runtime
-                .clone()
-                .ok_or_else(|| "El motor multimedia local no está disponible".to_string())?;
+                .media_runtime()
+                .ok_or_else(crate::components::media_tools_required_error)?;
             resume_media_worker_when_idle(
                 state.db_path.clone(),
                 runtime,
@@ -614,9 +613,8 @@ pub(crate) fn set_job_status(
             );
         } else if is_torrent {
             let aria2_path = state
-                .aria2_path
-                .clone()
-                .ok_or_else(|| "aria2c no está disponible en esta instalación".to_string())?;
+                .aria2_path()
+                .ok_or_else(crate::components::torrent_engine_required_error)?;
             resume_torrent_worker_when_idle(
                 state.db_path.clone(),
                 aria2_path,

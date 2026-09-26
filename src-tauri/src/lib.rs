@@ -4,6 +4,7 @@ mod extension_bridge;
 
 mod app;
 pub mod catalog_tooling;
+mod components;
 mod tools;
 pub(crate) use app::bootstrap::{
     acquire_instance_lock, exit_application, focus_main_window, hide_main_window, install_tray,
@@ -22,8 +23,7 @@ pub(crate) use app::process::{
     ExternalProcessKind, ExternalProcessRegistry,
 };
 pub(crate) use app::runtime::{
-    discover_media_runtime, find_runtime_binary, resolve_tool, resolve_tool_with_arguments,
-    runtime_binary_version, MediaRuntimePaths, MediaRuntimeSnapshot, ToolId,
+    resolve_tool, runtime_binary_version, MediaRuntimePaths, MediaRuntimeSnapshot, ToolId,
 };
 #[cfg(test)]
 pub(crate) use app::state::WindowOperationRegistry;
@@ -374,8 +374,8 @@ where
 }
 
 fn runtime_status(state: State<'_, LocalState>) -> serde_json::Value {
-    let aria2_version = state
-        .aria2_path
+    let aria2_path = state.aria2_path();
+    let aria2_version = aria2_path
         .as_deref()
         .map(|path| runtime_binary_version(path, "--version"))
         .unwrap_or_default();
@@ -385,19 +385,18 @@ fn runtime_status(state: State<'_, LocalState>) -> serde_json::Value {
         "loopback_only": true,
         "download_engine": "rust-http-sequential-v3",
         "torrent_engine": "aria2c",
-        "aria2_available": state.aria2_path.is_some(),
+        "aria2_available": aria2_path.is_some(),
         "aria2_version": aria2_version,
-        "media_available": state.media_runtime.is_some(),
+        "media_available": state.media_runtime().is_some(),
         "version": env!("CARGO_PKG_VERSION")
     })
 }
 
 fn resolver_binary(app: &AppHandle) -> Result<PathBuf, String> {
-    resolve_tool_with_arguments(Some(app), ToolId::YtDlp, &["--version"])
-        .path
-        .ok_or_else(|| {
-            "No se encontró el componente multimedia interno. Verifica los archivos de la aplicación e inténtalo de nuevo.".into()
-        })
+    app.state::<LocalState>()
+        .component_manager
+        .resolve_capability(components::Capability::MediaExtraction)
+        .map_err(|_| components::media_tools_required_error())
 }
 
 fn legacy_removed_provider_error() -> String {
@@ -533,7 +532,12 @@ fn enable_available_js_runtime(command: &mut Command) {
 }
 
 fn available_deno_runtime() -> Option<String> {
-    let candidate = resolve_tool(None, ToolId::Deno).path?;
+    let candidate = match components::global() {
+        Some(manager) => manager
+            .resolve_capability(components::Capability::JsRuntime)
+            .ok()?,
+        None => resolve_tool(None, ToolId::Deno).path?,
+    };
     if candidate.components().count() == 1 {
         Some("deno".to_string())
     } else {
@@ -1102,8 +1106,13 @@ fn run_app() {
             let active_media_pids = Arc::new(Mutex::new(HashMap::new()));
             let external_processes = Arc::new(Mutex::new(HashMap::new()));
             let preparation_operations = Arc::new(Mutex::new(HashMap::new()));
-            let media_runtime = discover_media_runtime(app.handle());
-            let aria2_path = find_runtime_binary(app.handle(), "aria2c", "CACATOOLS_ARIA2C");
+            let component_manager = Arc::new(components::ComponentManager::new(
+                app.path().app_local_data_dir()?.join("components"),
+                components::RuntimePins::embedded().map_err(std::io::Error::other)?,
+            )?);
+            components::install_global(component_manager.clone());
+            let media_runtime = Arc::new(Mutex::new(component_manager.media_runtime_paths()));
+            let aria2_path = Arc::new(Mutex::new(component_manager.aria2_path()));
             let download_concurrency = read_download_concurrency_settings(&connection);
             let queued_torrent_ids: Vec<i64> = {
                 queued_torrent_jobs_for_recovery(&connection)?
@@ -1143,6 +1152,7 @@ fn run_app() {
                 active_media_pids: active_media_pids.clone(),
                 external_processes: external_processes.clone(),
                 preparation_operations,
+                component_manager,
                 media_runtime: media_runtime.clone(),
                 aria2_path: aria2_path.clone(),
                 dispatcher: dispatcher.clone(),
@@ -1153,12 +1163,12 @@ fn run_app() {
             for id in queued_ids {
                 run_download_worker(db_path.clone(), active_downloads.clone(), id);
             }
-            if let Some(path) = aria2_path.clone() {
+            if let Some(path) = aria2_path.lock().ok().and_then(|path| path.clone()) {
                 for id in queued_torrent_ids {
                     run_torrent_worker(db_path.clone(), path.clone(), active_media_pids.clone(), id);
                 }
             }
-            if let Some(runtime) = media_runtime.clone() {
+            if let Some(runtime) = media_runtime.lock().ok().and_then(|runtime| runtime.clone()) {
                 for id in queued_media_ids.into_iter().chain(queued_playlist_jobs) {
                     run_media_worker(
                         db_path.clone(),
@@ -1266,6 +1276,10 @@ fn run_app() {
             commands::clipboard::set_file_clipboard,
             commands::clipboard::start_file_drag,
             commands::system::runtime_status,
+            commands::components::list_components,
+            commands::components::verify_component,
+            commands::components::install_component_from_package,
+            commands::components::remove_component,
             commands::downloads::desktop_snapshot,
             commands::downloads::download_activity_snapshot,
             commands::downloads::progress_v2_full_snapshot,

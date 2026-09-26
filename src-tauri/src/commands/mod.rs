@@ -1,4 +1,5 @@
 pub(crate) mod clipboard;
+pub(crate) mod components;
 pub(crate) mod downloads;
 pub(crate) mod media;
 pub(crate) mod news;
