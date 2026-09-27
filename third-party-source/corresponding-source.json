@@ -102,7 +102,7 @@
       "sourceArchiveGenerated": true,
       "sourceArchiveSha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472",
       "buildInputsPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-build-inputs.json",
-      "buildInputsSha256": "804ce431f779fbec0db26961dd91985006ec113bdce6857bbb7389671d3a6fa4",
+      "buildInputsSha256": "b4d7230c13e12a85c97313f95d307fff531dc3e4216af6a179a6545c911db5d7",
       "releaseAssetName": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
       "releaseAssetSha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472",
       "writtenOfferPath": null,

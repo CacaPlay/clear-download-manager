@@ -53,6 +53,7 @@ jobs:
       contents: read
     outputs:
       source_archive_artifact_id: ${{ steps.source_artifact.outputs.artifact-id }}
+      yt_dlp_source_artifact_id: ${{ steps.yt_dlp_source_artifact.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -89,6 +90,29 @@ jobs:
         run: npm run check:release
       - name: Test release artifact contracts
         run: npm run test:release-artifacts
+      - name: Test yt-dlp source input fetch contract
+        run: npm run test:yt-dlp-source-fetch
+      - name: Fetch and assemble the pinned yt-dlp corresponding-source archive
+        shell: pwsh
+        run: |
+          npm run source:yt-dlp:fetch -- --staging-directory output/yt-dlp-source-inputs
+          if ($LASTEXITCODE -ne 0) { throw 'Fetching pinned yt-dlp source inputs failed.' }
+          python scripts/assemble-yt-dlp-corresponding-source.py --staging-directory output/yt-dlp-source-inputs --output-directory output/release-assets
+          if ($LASTEXITCODE -ne 0) { throw 'Assembling the yt-dlp corresponding-source archive failed.' }
+          $archive = Get-Item -LiteralPath 'output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz' -ErrorAction Stop
+          $sha256 = (Get-FileHash -LiteralPath $archive.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($archive.Length -ne 89850212 -or $sha256 -ne 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472') {
+            throw "yt-dlp corresponding-source archive did not match its technical pin (bytes=$($archive.Length), sha256=$sha256)."
+          }
+      - name: Upload yt-dlp corresponding-source input for package verification
+        id: yt_dlp_source_artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: yt-dlp-corresponding-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
       - name: Run Rust format, check, tests, and clippy
         shell: pwsh
         run: |
@@ -160,6 +184,11 @@ jobs:
         with:
           artifact-ids: ${{ needs.build-test.outputs.source_archive_artifact_id }}
           path: source-input
+      - name: Download the yt-dlp corresponding-source archive produced by build-test
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build-test.outputs.yt_dlp_source_artifact_id }}
+          path: yt-dlp-source-input
       - name: Validate updater target for latest.json
         shell: pwsh
         run: |
@@ -192,6 +221,13 @@ jobs:
           $sourceArchives = @(Get-ChildItem source-input -File -Filter 'clear-download-manager-source.tar')
           if ($sourceArchives.Count -ne 1) { throw 'Expected exactly one source archive artifact from build-test.' }
           Copy-Item -LiteralPath $sourceArchives[0].FullName -Destination output/update-release/clear-download-manager-source.tar -Force
+          $ytDlpSources = @(Get-ChildItem yt-dlp-source-input -File -Filter 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz')
+          if ($ytDlpSources.Count -ne 1) { throw 'Expected exactly one yt-dlp corresponding-source artifact from build-test.' }
+          $ytDlpSourceSha256 = (Get-FileHash -LiteralPath $ytDlpSources[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($ytDlpSources[0].Length -ne 89850212 -or $ytDlpSourceSha256 -ne 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472') {
+            throw "The yt-dlp corresponding-source artifact failed its exact size/hash check (bytes=$($ytDlpSources[0].Length), sha256=$ytDlpSourceSha256)."
+          }
+          Copy-Item -LiteralPath $ytDlpSources[0].FullName -Destination 'output/update-release/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz' -Force
           $checksumPath = Join-Path $PWD 'output/update-release/SHA256SUMS.txt'
           $checksumLines = @(Get-ChildItem output/update-release -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
             "$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"

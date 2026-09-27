@@ -48,6 +48,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'check:local-build failed.' }
           npm run test:release-artifacts
           if ($LASTEXITCODE -ne 0) { throw 'release artifact tests failed.' }
+          npm run test:yt-dlp-source-fetch
+          if ($LASTEXITCODE -ne 0) { throw 'yt-dlp source fetch tests failed.' }
           npm run check:quality
           if ($LASTEXITCODE -ne 0) { throw 'check:quality failed.' }
           npm run build:web

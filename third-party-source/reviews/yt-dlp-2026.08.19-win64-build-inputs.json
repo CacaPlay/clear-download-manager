@@ -53,6 +53,14 @@
     "generatedFromPinnedInputs": true,
     "assemblyScript": "scripts/assemble-yt-dlp-corresponding-source.py"
   },
+  "cleanFetchAssembly": {
+    "stagingWasEmpty": true,
+    "verifiedDownloadCount": 40,
+    "inventoryCount": 1,
+    "archiveName": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
+    "bytes": 89850212,
+    "sha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472"
+  },
   "humanReview": {
     "required": true,
     "status": "PENDING"
@@ -126,13 +134,39 @@
     "path": "sdists/source-inventory.json",
     "sha256": "8b0c6b75efe58709558ab7631eae3e981bccf72962df8005a67526b395fab294"
   },
+  "pinnedDownloadInputs": {
+    "path": "third-party-source/reviews/yt-dlp-2026.08.19-win64-download-inputs.json",
+    "sha256": "afc4027a5c6ec497028406f1c7c530db3149f29c3722a9d66abce167ae3ff36d"
+  },
   "upstreamBuildRecipe": {
     "buildRecipeAndToolSourcesIncluded": true,
     "command": "python -m bundle.pyinstaller",
     "commit": "5eb86b862d61adc3df0f44e6e0b815b7d74fa3f5",
     "pyinstallerCommit": "70fc17210920bce17f4ab09bbf8104b0dbd45338",
+    "pyinstallerDistribution": {
+      "repository": "https://github.com/yt-dlp/Pyinstaller-Builds",
+      "releaseTag": "2026.08.19.215425",
+      "releaseUrl": "https://github.com/yt-dlp/Pyinstaller-Builds/releases/tag/2026.08.19.215425",
+      "releaseId": 373374519,
+      "createdAt": "2026-08-15T22:43:15Z",
+      "publishedAt": "2026-08-19T22:00:11Z",
+      "immutable": true,
+      "wheelAsset": {
+        "name": "pyinstaller-6.22.0-py3-none-win_amd64.whl",
+        "url": "https://github.com/yt-dlp/Pyinstaller-Builds/releases/download/2026.08.19.215425/pyinstaller-6.22.0-py3-none-win_amd64.whl",
+        "bytes": 1101025,
+        "sha256": "294099ecb5fdd2a13ae4c29006d4e335b697a63b6a16cf052b90ec2b40bef05a"
+      },
+      "sourceAsset": {
+        "name": "pyinstaller-6.22.0.tar.gz",
+        "url": "https://github.com/yt-dlp/Pyinstaller-Builds/releases/download/2026.08.19.215425/pyinstaller-6.22.0.tar.gz",
+        "bytes": 3527013,
+        "sha256": "2fadbed5d951d53f003ed899312823a07dbba59990a223cbe538933e1c42a168",
+        "sourceCommit": "70fc17210920bce17f4ab09bbf8104b0dbd45338"
+      }
+    },
     "python": "3.10.11",
-    "repository": "https://github.com/yt-dlp/yt-dlp-pyinstaller-builds",
+    "repository": "https://github.com/yt-dlp/Pyinstaller-Builds",
     "runner": "windows-2025 (moving hosted runner label)"
   }
 }

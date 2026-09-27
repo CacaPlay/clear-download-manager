@@ -236,12 +236,20 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   assert.doesNotMatch(buildTest, /check:release-build/);
   assert.match(buildTest, /npm run source:archive/);
   assert.match(buildTest, /npm run test:release-artifacts/);
+  assert.match(buildTest, /npm run source:yt-dlp:fetch/);
+  assert.match(buildTest, /scripts\/assemble-yt-dlp-corresponding-source\.py/);
+  assert.match(buildTest, /b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472/);
+  assert.match(buildTest, /yt_dlp_source_artifact_id:\s*\$\{\{\s*steps\.yt_dlp_source_artifact\.outputs\.artifact-id\s*\}\}/);
+  assert.match(buildTest, /id:\s*yt_dlp_source_artifact[\s\S]*?yt-dlp-2026\.08\.19-win64-corresponding-source\.tar\.xz/);
   assert.doesNotMatch(buildTest, /check:binary-release/);
   assert.match(buildTest, /permissions:\s*\n\s+contents:\s*read/);
   assert.doesNotMatch(buildTest, /secrets\./);
   assert.match(packageSign, /environment:\s*\n\s+name: release/);
   assert.match(packageSign, /contents:\s*read/);
   assert.match(packageSign, /npm run build:windows:final/);
+  assert.match(packageSign, /artifact-ids:\s*\$\{\{\s*needs\.build-test\.outputs\.yt_dlp_source_artifact_id\s*\}\}/);
+  assert.match(packageSign, /yt-dlp-2026\.08\.19-win64-corresponding-source\.tar\.xz/);
+  assert.match(packageSign, /output\/update-release/);
   assert.match(packageSign, /uses:\s*actions\/upload-artifact@[a-f0-9]{40}/);
   assert.match(packageSign, /release_artifact_id:\s*\$\{\{\s*steps\.release_artifact\.outputs\.artifact-id\s*\}\}/);
   assert.equal(secretRefs.length, 2);
@@ -524,6 +532,42 @@ test('yt-dlp source candidate is hash-pinned and remains pending for distributor
   assert.match(licenses, /mutagen \| GPL-2\.0-or-later/);
   const buildInputs = JSON.parse(fs.readFileSync(path.join(repositoryRoot, entry.buildInputsPath), 'utf8'));
   assert.equal(buildInputs.runtime.binarySha256, entry.binarySha256);
+  assert.deepEqual(buildInputs.pinnedDownloadInputs, {
+    path: 'third-party-source/reviews/yt-dlp-2026.08.19-win64-download-inputs.json',
+    sha256: 'afc4027a5c6ec497028406f1c7c530db3149f29c3722a9d66abce167ae3ff36d',
+  });
+  assert.deepEqual(buildInputs.cleanFetchAssembly, {
+    stagingWasEmpty: true,
+    verifiedDownloadCount: 40,
+    inventoryCount: 1,
+    archiveName: 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz',
+    bytes: 89850212,
+    sha256: 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472',
+  });
+  const pyinstallerRelease = buildInputs.upstreamBuildRecipe.pyinstallerDistribution;
+  assert.deepEqual(pyinstallerRelease, {
+    repository: 'https://github.com/yt-dlp/Pyinstaller-Builds',
+    releaseTag: '2026.08.19.215425',
+    releaseUrl: 'https://github.com/yt-dlp/Pyinstaller-Builds/releases/tag/2026.08.19.215425',
+    releaseId: 373374519,
+    createdAt: '2026-08-15T22:43:15Z',
+    publishedAt: '2026-08-19T22:00:11Z',
+    immutable: true,
+    wheelAsset: {
+      name: 'pyinstaller-6.22.0-py3-none-win_amd64.whl',
+      url: 'https://github.com/yt-dlp/Pyinstaller-Builds/releases/download/2026.08.19.215425/pyinstaller-6.22.0-py3-none-win_amd64.whl',
+      bytes: 1101025,
+      sha256: '294099ecb5fdd2a13ae4c29006d4e335b697a63b6a16cf052b90ec2b40bef05a',
+    },
+    sourceAsset: {
+      name: 'pyinstaller-6.22.0.tar.gz',
+      url: 'https://github.com/yt-dlp/Pyinstaller-Builds/releases/download/2026.08.19.215425/pyinstaller-6.22.0.tar.gz',
+      bytes: 3527013,
+      sha256: '2fadbed5d951d53f003ed899312823a07dbba59990a223cbe538933e1c42a168',
+      sourceCommit: '70fc17210920bce17f4ab09bbf8104b0dbd45338',
+    },
+  });
+  assert.equal(buildInputs.upstreamBuildRecipe.repository, 'https://github.com/yt-dlp/Pyinstaller-Builds');
   assert.equal(buildInputs.correspondingSourceArchive.bytes, entry.sourceArchiveBytes);
   assert.equal(buildInputs.correspondingSourceArchive.path, entry.sourceArchivePath);
   assert.equal(buildInputs.correspondingSourceArchive.sha256, entry.sourceArchiveSha256);
