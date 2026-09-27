@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "status": "PENDING",
+  "status": "READY",
   "releaseAssetPolicy": "Each GPL runtime file must link to the exact releaseAssetName recorded for its runtime family. The release asset SHA-256 must match the recorded digest, and a human distributor review must approve the selected corresponding-source archive or written offer.",
   "runtimes": [
     {
@@ -31,9 +31,9 @@
       "writtenOfferSha256": null,
       "humanReview": {
         "required": true,
-        "status": "PENDING",
-        "reviewRecordPath": null,
-        "reviewRecordSha256": null
+        "status": "APPROVED",
+        "reviewRecordPath": "third-party-source/reviews/aria2-1.37.0-win64-distributor-review.md",
+        "reviewRecordSha256": "6753aa52e73f90033648394d4733236cacac446684577a6f13e43d32c3ded66d"
       },
       "technicalStatus": "READY_FOR_HUMAN_REVIEW",
       "technicalBlockers": [],
@@ -109,9 +109,9 @@
       "writtenOfferSha256": null,
       "humanReview": {
         "required": true,
-        "status": "PENDING",
-        "reviewRecordPath": null,
-        "reviewRecordSha256": null
+        "status": "APPROVED",
+        "reviewRecordPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md",
+        "reviewRecordSha256": "a95817b65a6d34a283a0661117e1bb006dfa6b2a1560ebd88b5ca70f2108e884"
       },
       "sourceArchiveBytes": 89850212,
       "technicalStatus": "READY_FOR_HUMAN_REVIEW",

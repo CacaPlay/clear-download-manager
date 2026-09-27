@@ -17,4 +17,4 @@ if (issues.failures.length || issues.pending.length) {
   process.exit(issues.failures.length ? 1 : 2);
 }
 
-console.log('GPL corresponding-source inventory is structurally complete and hash-matched. Human and distribution/legal review remain release prerequisites.');
+console.log('GPL corresponding-source inventory is structurally complete, hash-matched, and has approved distributor review records. This gate does not make an independent legal determination; binary release remains separately gated.');

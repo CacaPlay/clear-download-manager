@@ -353,7 +353,7 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'third-party-source/corresponding-source.json'), 'utf8'));
   const byId = new Map(manifest.runtimes.map((entry) => [entry.id, entry]));
   assert.equal(manifest.schemaVersion, 2);
-  assert.equal(manifest.status, 'PENDING');
+  assert.equal(manifest.status, 'READY');
 
   for (const id of ['aria2', 'ffmpeg', 'yt-dlp']) {
     const entry = byId.get(id);
@@ -383,7 +383,9 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
       assert.equal(entry.binarySourceUrl, null, 'a locally built candidate must not claim the old upstream binary URL');
       assert.equal(entry.binaryArchiveSha256, null, 'a locally built candidate has no upstream binary archive digest');
     } else if (id === 'aria2') {
-      assert.equal(entry.humanReview.status, 'PENDING');
+      assert.equal(entry.humanReview.status, 'APPROVED');
+      assert.equal(entry.humanReview.reviewRecordPath, 'third-party-source/reviews/aria2-1.37.0-win64-distributor-review.md');
+      assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
       assert.equal(entry.distributionMethod, 'corresponding-source-archive');
       assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
       assert.deepEqual(entry.technicalBlockers, []);
@@ -392,7 +394,9 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
       assert.match(entry.buildInputsSha256, /^[a-f0-9]{64}$/);
       assert.match(entry.binaryArchiveSha256, /^[a-f0-9]{64}$/);
     } else {
-      assert.equal(entry.humanReview.status, 'PENDING');
+      assert.equal(entry.humanReview.status, 'APPROVED');
+      assert.equal(entry.humanReview.reviewRecordPath, 'third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md');
+      assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
       assert.equal(entry.distributionMethod, 'corresponding-source-archive');
       assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
       assert.deepEqual(entry.technicalBlockers, []);
@@ -427,9 +431,14 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   assert.equal(runtime.ffmpegSafeLeanCandidate.humanReviewSha256, byId.get('ffmpeg').humanReview.reviewRecordSha256);
   const issues = validateCorrespondingSourceRegistry(manifest, runtime, repositoryRoot);
   assert.deepEqual(issues.failures, []);
-  assert.ok(issues.pending.some((issue) => issue.startsWith('aria2:')));
-  assert.ok(issues.pending.some((issue) => issue.startsWith('yt-dlp:')));
+  assert.deepEqual(issues.pending, []);
   assert.equal(issues.pending.some((issue) => issue.includes('SAFE LEAN candidate is approved but not the active FFmpeg runtime')), false);
+  for (const id of ['aria2', 'yt-dlp']) {
+    const review = byId.get(id).humanReview;
+    const record = fs.readFileSync(path.join(repositoryRoot, review.reviewRecordPath), 'utf8');
+    assert.match(record, /Status: \*\*APPROVED\*\*/);
+    assert.match(record, /limitations are explicitly accepted/i);
+  }
   const reviewRecord = fs.readFileSync(path.join(repositoryRoot, byId.get('ffmpeg').humanReview.reviewRecordPath), 'utf8');
   assert.match(reviewRecord, /“Apruebo el par canónico SAFE LEAN y su corresponding-source package para integrarlos en CDM\. Autoriza registrar la revisión humana y continuar con PR #16, sin tag ni release\.”/);
   assert.match(reviewRecord, /aria2.*PENDING/s);
@@ -493,7 +502,7 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   assert.match(reviewDisabled.failures.join('\n'), /explicit required=true/);
 });
 
-test('yt-dlp source candidate is hash-pinned and remains pending for distributor review', () => {
+test('yt-dlp source candidate is hash-pinned and approved against its explicit review record', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'third-party-source/corresponding-source.json'), 'utf8'));
   const byId = new Map(manifest.runtimes.map((entry) => [entry.id, entry]));
   const entry = byId.get('yt-dlp');
@@ -507,7 +516,9 @@ test('yt-dlp source candidate is hash-pinned and remains pending for distributor
   assert.equal(entry.binaryAssetSha256, entry.binarySha256);
   assert.equal(entry.releaseAssetName, 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
   assert.equal(entry.humanReview.required, true);
-  assert.equal(entry.humanReview.status, 'PENDING');
+  assert.equal(entry.humanReview.status, 'APPROVED');
+  assert.equal(entry.humanReview.reviewRecordPath, 'third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md');
+  assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
   assert.equal(entry.distributionMethod, 'corresponding-source-archive');
   assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
   assert.deepEqual(entry.technicalBlockers, []);
@@ -574,9 +585,14 @@ test('yt-dlp source candidate is hash-pinned and remains pending for distributor
   assert.equal(buildInputs.correspondingSourceArchive.generatedFromPinnedInputs, true);
   assert.equal(buildInputs.rebuildAssessment.cleanWindowsRebuildPerformed, false);
   assert.equal(buildInputs.rebuildAssessment.humanDistributorReview, 'PENDING');
+  const reviewRecord = fs.readFileSync(path.join(repositoryRoot, entry.humanReview.reviewRecordPath), 'utf8');
+  assert.match(reviewRecord, /runtime: yt-dlp 2026\.08\.19/i);
+  assert.match(reviewRecord, /clean empty staging fetch:\s*\*\*PASS\*\*/i);
+  assert.match(reviewRecord, /40 pinned inputs were verified by size and SHA-256/i);
+  assert.match(reviewRecord, /no bit-identical rebuild has been established/i);
   const issues = validateCorrespondingSourceRegistry(manifest, runtime, repositoryRoot);
   assert.deepEqual(issues.failures, []);
-  assert.ok(issues.pending.includes('yt-dlp: distributor human review is still required.'));
+  assert.deepEqual(issues.pending, []);
 });
 
 test('binary release requires exact corresponding-source assets outside the expanded installer tree', () => {

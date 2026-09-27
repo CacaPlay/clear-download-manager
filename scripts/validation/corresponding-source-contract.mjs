@@ -126,9 +126,11 @@ function validateTechnicalBuildInputs(entry, runtimeRecord, root, issues, expect
       || (archiveHash && archiveHash !== entry.sourceArchiveSha256)) {
       issues.failures.push(`${entry.id} build-input record: exact source archive name, path, byte count, and SHA-256 do not match the registry.`);
     }
+    // Build-input review values are historical snapshots. Current distributor approval is
+    // enforced through the hash-matched humanReview record in the active registry above.
     if (!record.rebuildAssessment || !Array.isArray(record.rebuildAssessment.blockers)
       || record.rebuildAssessment.humanDistributorReview !== 'PENDING') {
-      issues.failures.push(`${entry.id} build-input record: rebuild assessment and pending human review must be explicit.`);
+      issues.failures.push(`${entry.id} build-input record: historical rebuild assessment and its pending-review snapshot must be explicit.`);
     }
   } catch (error) {
     issues.failures.push(`${entry.id} build-input record: invalid JSON (${error.message}).`);

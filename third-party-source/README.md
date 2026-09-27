@@ -4,10 +4,10 @@ This directory holds exact corresponding-source materials for GPL runtimes
 that Clear Download Manager prepares and may distribute. The active FFmpeg and
 FFprobe runtime is the distributor-approved SAFE LEAN 9.0.2 build. Its exact
 complete source package, build inputs, executable hashes, and review record are
-linked in `corresponding-source.json`. aria2 and yt-dlp remain PENDING, so overall GPL
-source readiness and binary release remain blocked.
+linked in `corresponding-source.json`. aria2 and yt-dlp also have approved,
+hash-linked distributor review records with their accepted limitations retained.
 
-The release gate requires each runtime's exact version, source commit, runtime hashes, corresponding-source archive, build-input record, matching release asset name/hash, and required distributor review. Do not substitute a generic upstream source URL or nearby version. Technical source candidates for aria2 and yt-dlp are now present; distributor reviews remain PENDING.
+The release gate requires each runtime's exact version, source commit, runtime hashes, corresponding-source archive, build-input record, matching release asset name/hash, and required distributor review. Do not substitute a generic upstream source URL or nearby version. The aria2 and yt-dlp source candidates and review records are listed below.
 
 ## Active FFmpeg/FFprobe SAFE LEAN runtime
 
@@ -31,10 +31,10 @@ binary toolchain packages. Windows builds require the exact pinned MSYS2
 UCRT64 package closure plus the locked Meson and Ninja wheels. Build output is
 verified against the recorded canonical hashes before packaging.
 
-## Remaining distributor work
+## Distributor review records
 
-1. Review the aria2 candidate and its reproducibility limits. The upstream Windows recipe uses --without-openssl and the source bundle contains six static dependency sources and notices. Its Ubuntu/apt inputs are not pinned and no independent rebuild was performed.
-2. Review the yt-dlp candidate for the GPL combined executable. It includes pinned yt-dlp, PyInstaller and builder sources, Python inputs, observed package source distributions, native build inputs, and the license inventory. No clean Windows rebuild or functional source-versus-binary comparison was performed; the host lacks the pinned Python/MSVC/CMake toolchain.
+1. aria2 1.37.0 is approved in `reviews/aria2-1.37.0-win64-distributor-review.md`. Its Ubuntu/apt inputs remain unpinned, dependency downloads are not hash-verified by the upstream recipe, and no independent rebuild was performed; these limitations were explicitly accepted.
+2. yt-dlp 2026.08.19 is approved in `reviews/yt-dlp-2026.08.19-win64-distributor-review.md`. Its source package includes the pinned source and build inputs, but no clean Windows rebuild, bit-identical result, or complete binary module inventory is claimed; these limitations were explicitly accepted.
 3. Keep release-asset inspection fail-closed. Exact source archives must accompany matching component packages and be linked by the signed catalog before binary readiness can pass.
 4. Preserve each archive, build script, patches, dependency source, notices, hashes, and review record. A written offer is a separate reviewed method, not a generic URL.
 
