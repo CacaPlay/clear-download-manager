@@ -1,7 +1,7 @@
 # Component Manager Progress and Capability Prompt Design
 
-**Date:** 2026-09-27  
-**Base:** `4b52bbe41e4a5fc0656cae0980e6c871e25e2dcf`  
+**Date:** 2026-09-27
+**Base:** `4b52bbe41e4a5fc0656cae0980e6c871e25e2dcf`
 **Branch:** `codex/component-manager-progress-acl`
 
 ## Purpose
