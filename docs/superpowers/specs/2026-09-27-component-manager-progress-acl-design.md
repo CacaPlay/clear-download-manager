@@ -42,6 +42,7 @@ Only the signed, validated catalog's `packageBytes` supplies an expected total o
 - Preserve the existing 20-second connection timeout.
 - Use a short bounded total timeout for the small signed-catalog request (30 seconds).
 - For package transfers, use a bounded inactivity/read timeout (45 seconds without received data) and no arbitrary short whole-transfer deadline. This permits legitimately slow but progressing transfers while ensuring a stalled connection terminates.
+- Treat the validated signed catalog's `packageBytes` as a hard transfer ceiling: after each read, if cumulative `bytesDownloaded` exceeds it, abort immediately with an invalid-asset/size-mismatch error, remove that operation's partial staging data, and emit a terminal error. Do not continue to EOF to discover the mismatch.
 - Check a per-operation cancellation token between received chunks. Cancellation is accepted only while the operation phase is `download`; phase transition and cancellation decision must be serialized so a late cancel cannot interrupt verification, staging, or activation.
 - On accepted cancellation, stop the transfer, remove only that operation's partial download through the existing staging cleanup guard, clear activity, and emit `cancelled`. After `verify` begins, cancellation is rejected and the UI offers no cancel action.
 - Keep package URL, signature, exact-size, and SHA-256 validation unchanged. A timeout, HTTP, catalog, signature, or asset error preserves the active version and produces a terminal recoverable state.
@@ -68,6 +69,7 @@ When a command reports a missing optional capability, return/propagate a structu
 - Catalog fetch fails and times out: operation emits terminal error and returns to retryable state.
 - Download with known content length reports exact byte totals and only reaches 100% after complete receipt.
 - Download without known content length reports received bytes with absent total/ratio.
+- A streamed asset that exceeds the signed catalog's `packageBytes` is aborted on the first excess read, cleans its partial file, and returns an invalid-asset error before EOF.
 - A stalled transfer times out; progressing slow transfer remains eligible to continue.
 - Cancellation during download stops the transfer and removes its partial staging file; cancellation after transition to verify is rejected.
 - Successful installation emits `download -> verify -> install -> activate -> done` from real backend boundaries.
