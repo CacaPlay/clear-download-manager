@@ -15,10 +15,12 @@ use std::{
 };
 use zip::ZipArchive;
 
-use crate::MediaRuntimePaths;
+use crate::{tools::trust::TrustedKeys, MediaRuntimePaths};
 
 #[cfg(test)]
 mod tests;
+
+mod distribution;
 
 const COMPONENT_SCHEMA_VERSION: u32 = 1;
 const MAX_PACKAGE_BYTES: u64 = 512 * 1024 * 1024;
@@ -27,6 +29,8 @@ const MAX_COMPONENT_FILE_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_MANIFEST_BYTES: u64 = 64 * 1024;
 const POINTER_NAME: &str = "active.json";
 const MANIFEST_NAME: &str = "component.json";
+const CATALOG_PROOF_NAME: &str = "catalog.json";
+const CATALOG_STATE_NAME: &str = ".catalog-state.json";
 const STAGING_DIR: &str = ".staging";
 
 pub(crate) fn media_tools_required_error() -> String {
@@ -131,12 +135,14 @@ impl Capability {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub(crate) enum ComponentState {
     Missing,
     Installed,
     Corrupted,
     UpdateAvailable,
+    Downloading,
+    Verifying,
     Installing,
     Error,
 }
@@ -180,6 +186,43 @@ pub(crate) struct RuntimePins {
 impl RuntimePins {
     pub(crate) fn embedded() -> Result<Self, ComponentError> {
         Self::from_runtime_manifest(include_str!("../resources/bin/runtime-manifest.json"))
+    }
+
+    fn from_catalog_component(
+        component: &distribution::CatalogComponent,
+    ) -> Result<Self, ComponentError> {
+        let expected = component.id.artifacts();
+        if component.files.len() != expected.len() {
+            return Err(ComponentError::InvalidManifest(
+                "catalog file inventory does not match the component".into(),
+            ));
+        }
+        let mut artifacts = HashMap::new();
+        for (entry, artifact) in component.files.iter().zip(expected) {
+            if entry.artifact != *artifact
+                || entry.name != artifact.filename()
+                || !is_version_token(&entry.version)
+                || !is_sha256(&entry.sha256)
+                || entry.size == 0
+                || entry.size > MAX_COMPONENT_FILE_BYTES
+                || artifacts.contains_key(artifact)
+            {
+                return Err(ComponentError::InvalidManifest(
+                    "catalog runtime pin is invalid".into(),
+                ));
+            }
+            artifacts.insert(
+                *artifact,
+                ArtifactPin {
+                    artifact: *artifact,
+                    filename: entry.name.clone(),
+                    version: entry.version.clone(),
+                    sha256: entry.sha256.clone(),
+                    size: Some(entry.size),
+                },
+            );
+        }
+        Ok(Self { artifacts })
     }
 
     fn from_runtime_manifest(contents: &str) -> Result<Self, ComponentError> {
@@ -324,6 +367,10 @@ pub(crate) struct ComponentStatus {
     pub(crate) directory: Option<PathBuf>,
     pub(crate) manifest: Option<ComponentPackageManifest>,
     pub(crate) error: Option<String>,
+    #[serde(rename = "progressPercent")]
+    pub(crate) progress_percent: Option<u8>,
+    #[serde(rename = "availableVersion")]
+    pub(crate) available_version: Option<String>,
 }
 
 #[derive(Debug)]
@@ -336,6 +383,13 @@ pub(crate) enum ComponentError {
     Corrupted(ComponentId),
     CapabilityUnavailable(Capability),
     Busy(ComponentId),
+    Catalog(distribution::CatalogValidationError),
+    CatalogFetch(distribution::CatalogFetchError),
+    Download(distribution::AssetDownloadError),
+    CatalogRollback,
+    CatalogReplay,
+    Downgrade,
+    ImmutableVersionChanged,
 }
 
 impl fmt::Display for ComponentError {
@@ -358,6 +412,23 @@ impl fmt::Display for ComponentError {
                 "component capability is unavailable: {capability:?}"
             ),
             Self::Busy(id) => write!(formatter, "component operation is already active: {id}"),
+            Self::Catalog(error) => write!(formatter, "component catalog rejected: {error}"),
+            Self::CatalogFetch(error) => {
+                write!(formatter, "component catalog fetch failed: {error:?}")
+            }
+            Self::Download(error) => write!(formatter, "component download failed: {error:?}"),
+            Self::CatalogRollback => {
+                formatter.write_str("component catalog sequence is older than the accepted catalog")
+            }
+            Self::CatalogReplay => {
+                formatter.write_str("component catalog sequence was reused with different contents")
+            }
+            Self::Downgrade => {
+                formatter.write_str("component update would downgrade the installed version")
+            }
+            Self::ImmutableVersionChanged => {
+                formatter.write_str("catalog attempted to change an immutable component version")
+            }
         }
     }
 }
@@ -376,6 +447,21 @@ struct ActivePointer {
     #[serde(rename = "schemaVersion")]
     schema_version: u32,
     directory: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    package_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    catalog_sequence: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    catalog_sha256: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct CatalogSequenceState {
+    schema_version: u32,
+    sequence: u64,
+    key_id: String,
+    catalog_sha256: String,
 }
 
 pub(crate) struct ComponentManager {
@@ -383,11 +469,24 @@ pub(crate) struct ComponentManager {
     pins: Arc<RuntimePins>,
     operation: Mutex<()>,
     installing: Mutex<HashSet<ComponentId>>,
+    activity: Mutex<HashMap<ComponentId, ComponentState>>,
+    progress: Mutex<HashMap<ComponentId, u8>>,
     errors: Mutex<HashMap<ComponentId, String>>,
+    catalog_trust: TrustedKeys,
+    catalog_cache: Mutex<Option<distribution::VerifiedComponentCatalog>>,
+    allow_loopback_http: bool,
 }
 
 impl ComponentManager {
     pub(crate) fn new(root: PathBuf, pins: RuntimePins) -> Result<Self, ComponentError> {
+        Self::new_with_trust(root, pins, distribution::production_trust())
+    }
+
+    fn new_with_trust(
+        root: PathBuf,
+        pins: RuntimePins,
+        catalog_trust: TrustedKeys,
+    ) -> Result<Self, ComponentError> {
         ensure_directory_without_reparse(&root)?;
         let root = fs::canonicalize(root)?;
         reject_reparse_path(&root)?;
@@ -422,7 +521,12 @@ impl ComponentManager {
             pins: Arc::new(pins),
             operation: Mutex::new(()),
             installing: Mutex::new(HashSet::new()),
+            activity: Mutex::new(HashMap::new()),
+            progress: Mutex::new(HashMap::new()),
             errors: Mutex::new(errors),
+            catalog_trust,
+            catalog_cache: Mutex::new(None),
+            allow_loopback_http: cfg!(test),
         })
     }
 
@@ -463,9 +567,25 @@ impl ComponentManager {
             .lock()
             .ok()
             .and_then(|items| items.get(&id).cloned());
+        let activity = self
+            .activity
+            .lock()
+            .ok()
+            .and_then(|items| items.get(&id).copied());
+        let progress_percent = self
+            .progress
+            .lock()
+            .ok()
+            .and_then(|items| items.get(&id).copied());
+        let available_version = self.catalog_cache.lock().ok().and_then(|catalog| {
+            catalog
+                .as_ref()
+                .and_then(|catalog| catalog.component(id))
+                .map(|component| component.version.clone())
+        });
         let mut status = match self.read_active(id) {
-            Ok(Some((directory, manifest))) => {
-                match self.verify_directory(id, &directory, &manifest) {
+            Ok(Some((directory, manifest, pins))) => {
+                match self.verify_directory(id, &directory, &manifest, &pins) {
                     Ok(()) => ComponentStatus {
                         id,
                         state: ComponentState::Installed,
@@ -474,6 +594,8 @@ impl ComponentManager {
                         directory: Some(directory),
                         manifest: Some(manifest),
                         error: None,
+                        progress_percent,
+                        available_version,
                     },
                     Err(_) => ComponentStatus {
                         id,
@@ -483,6 +605,8 @@ impl ComponentManager {
                         directory: Some(directory),
                         manifest: Some(manifest),
                         error: Some("Component verification failed".into()),
+                        progress_percent,
+                        available_version,
                     },
                 }
             }
@@ -498,6 +622,8 @@ impl ComponentManager {
                 directory: None,
                 manifest: None,
                 error: last_error,
+                progress_percent,
+                available_version,
             },
             Err(_) => ComponentStatus {
                 id,
@@ -507,10 +633,22 @@ impl ComponentManager {
                 directory: None,
                 manifest: None,
                 error: Some("Component metadata is invalid".into()),
+                progress_percent,
+                available_version,
             },
         };
-        if installing {
+        if let Some(activity) = activity {
+            status.state = activity;
+        } else if installing {
             status.state = ComponentState::Installing;
+        } else if let (Some(installed), Some(available)) =
+            (&status.version, &status.available_version)
+        {
+            if distribution::validate_component_upgrade(installed, available).is_ok()
+                && Version::parse(available).ok() > Version::parse(installed).ok()
+            {
+                status.state = ComponentState::UpdateAvailable;
+            }
         }
         status
     }
@@ -520,6 +658,252 @@ impl ComponentManager {
         id: ComponentId,
     ) -> Result<ComponentStatus, ComponentError> {
         Ok(self.component_status(id))
+    }
+
+    pub(crate) fn refresh_component_catalog(&self) -> Result<Vec<ComponentStatus>, ComponentError> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        self.refresh_component_catalog_at(distribution::COMPONENT_CATALOG_ENDPOINT, now, false)
+    }
+
+    fn refresh_component_catalog_at(
+        &self,
+        endpoint: &str,
+        now: i64,
+        allow_loopback_http: bool,
+    ) -> Result<Vec<ComponentStatus>, ComponentError> {
+        let _operation = self.operation.lock().map_err(|_| {
+            ComponentError::InvalidPackage("component manager is unavailable".into())
+        })?;
+        let bytes = distribution::fetch_catalog_bytes(endpoint, allow_loopback_http)
+            .map_err(ComponentError::CatalogFetch)?;
+        let verified = distribution::verify_component_catalog(
+            &bytes,
+            &self.catalog_trust,
+            now,
+            allow_loopback_http,
+        )
+        .map_err(ComponentError::Catalog)?;
+        self.accept_catalog_sequence(&verified)?;
+        *self.catalog_cache.lock().map_err(|_| {
+            ComponentError::InvalidPackage("component manager is unavailable".into())
+        })? = Some(verified);
+        Ok(self.list_components())
+    }
+
+    pub(crate) fn install_component_from_catalog<F>(
+        &self,
+        id: ComponentId,
+        progress: F,
+    ) -> Result<ComponentStatus, ComponentError>
+    where
+        F: FnMut(ComponentState, u64, u64),
+    {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        self.install_component_from_catalog_at(
+            id,
+            distribution::COMPONENT_CATALOG_ENDPOINT,
+            now,
+            false,
+            progress,
+        )
+    }
+
+    fn install_component_from_catalog_at<F>(
+        &self,
+        id: ComponentId,
+        endpoint: &str,
+        now: i64,
+        allow_loopback_http: bool,
+        mut progress: F,
+    ) -> Result<ComponentStatus, ComponentError>
+    where
+        F: FnMut(ComponentState, u64, u64),
+    {
+        let _operation = self.operation.lock().map_err(|_| {
+            ComponentError::InvalidPackage("component manager is unavailable".into())
+        })?;
+        self.set_activity(id, ComponentState::Downloading, Some(0));
+        self.errors.lock().ok().map(|mut errors| errors.remove(&id));
+        let result = (|| {
+            let catalog_bytes = distribution::fetch_catalog_bytes(endpoint, allow_loopback_http)
+                .map_err(ComponentError::CatalogFetch)?;
+            let verified = distribution::verify_component_catalog(
+                &catalog_bytes,
+                &self.catalog_trust,
+                now,
+                allow_loopback_http,
+            )
+            .map_err(ComponentError::Catalog)?;
+            self.accept_catalog_sequence(&verified)?;
+            let component = verified
+                .component(id)
+                .cloned()
+                .ok_or(ComponentError::Catalog(
+                    distribution::CatalogValidationError::InvalidComponent,
+                ))?;
+            *self.catalog_cache.lock().map_err(|_| {
+                ComponentError::InvalidPackage("component manager is unavailable".into())
+            })? = Some(verified.clone());
+
+            if let Some((_, active_manifest, _)) = self.read_active(id)? {
+                distribution::validate_component_upgrade(
+                    &active_manifest.version,
+                    &component.version,
+                )
+                .map_err(|error| match error {
+                    distribution::CatalogValidationError::Downgrade => ComponentError::Downgrade,
+                    other => ComponentError::Catalog(other),
+                })?;
+                if active_manifest.version == component.version
+                    && active_manifest.files != component.files
+                {
+                    return Err(ComponentError::ImmutableVersionChanged);
+                }
+            }
+
+            let pins = RuntimePins::from_catalog_component(&component)?;
+            progress(ComponentState::Downloading, 0, component.package_bytes);
+            let staging_root = self.root.join(STAGING_DIR);
+            ensure_directory_without_reparse(&staging_root)?;
+            let download_directory = staging_root.join(unique_leaf("component-download"));
+            ensure_directory_without_reparse(&download_directory)?;
+            let _download_cleanup = InstallCleanupGuard::new(download_directory.clone());
+            let package_path = download_directory.join(&component.asset_name);
+            self.set_activity(id, ComponentState::Downloading, Some(0));
+            let download_request = distribution::AssetDownloadRequest {
+                url: &component.package_url,
+                release_tag: &component.release_tag,
+                asset_name: &component.asset_name,
+                destination: &package_path,
+                expected_size: component.package_bytes,
+                expected_sha256: &component.package_sha256,
+                maximum_size: MAX_PACKAGE_BYTES,
+                allow_loopback_http,
+            };
+            distribution::download_asset_to_path(&download_request, |received| {
+                let percent = received
+                    .saturating_mul(100)
+                    .checked_div(component.package_bytes)
+                    .unwrap_or(0)
+                    .min(100) as u8;
+                self.set_activity(id, ComponentState::Downloading, Some(percent));
+                progress(
+                    ComponentState::Downloading,
+                    received,
+                    component.package_bytes,
+                );
+            })
+            .map_err(ComponentError::Download)?;
+            self.set_activity(id, ComponentState::Verifying, Some(100));
+            progress(
+                ComponentState::Verifying,
+                component.package_bytes,
+                component.package_bytes,
+            );
+            let package = self.validate_package_with_pins(&package_path, &pins)?;
+            if package.package_sha256 != component.package_sha256
+                || package.manifest.id != id
+                || package.manifest.version != component.version
+                || package.manifest.capabilities != component.capabilities
+                || package.manifest.files != component.files
+            {
+                return Err(ComponentError::InvalidManifest(
+                    "downloaded package differs from the signed catalog".into(),
+                ));
+            }
+            self.set_activity(id, ComponentState::Installing, Some(100));
+            progress(
+                ComponentState::Installing,
+                component.package_bytes,
+                component.package_bytes,
+            );
+            self.install_validated_package(
+                package,
+                &pins,
+                Some(&verified.original_bytes),
+                Some(verified.signed.payload.sequence),
+            )?;
+            Ok(())
+        })();
+        self.clear_activity(id);
+        match result {
+            Ok(()) => Ok(self.component_status(id)),
+            Err(error) => {
+                if self.read_active(id).ok().flatten().is_none() {
+                    if let Ok(mut errors) = self.errors.lock() {
+                        errors.insert(id, "Component installation failed".into());
+                    }
+                }
+                Err(error)
+            }
+        }
+    }
+
+    fn set_activity(&self, id: ComponentId, state: ComponentState, progress: Option<u8>) {
+        if let Ok(mut activity) = self.activity.lock() {
+            activity.insert(id, state);
+        }
+        if let Ok(mut values) = self.progress.lock() {
+            if let Some(progress) = progress {
+                values.insert(id, progress);
+            } else {
+                values.remove(&id);
+            }
+        }
+    }
+
+    fn clear_activity(&self, id: ComponentId) {
+        if let Ok(mut activity) = self.activity.lock() {
+            activity.remove(&id);
+        }
+        if let Ok(mut values) = self.progress.lock() {
+            values.remove(&id);
+        }
+    }
+
+    fn accept_catalog_sequence(
+        &self,
+        catalog: &distribution::VerifiedComponentCatalog,
+    ) -> Result<(), ComponentError> {
+        let state_path = self.root.join(CATALOG_STATE_NAME);
+        let digest = sha256_bytes(&catalog.original_bytes);
+        if state_path.exists() {
+            reject_reparse_path(&state_path)?;
+            let current: CatalogSequenceState = serde_json::from_slice(&fs::read(&state_path)?)
+                .map_err(|error| ComponentError::InvalidManifest(error.to_string()))?;
+            if current.schema_version != 1 || !is_sha256(&current.catalog_sha256) {
+                return Err(ComponentError::InvalidManifest(
+                    "catalog sequence state is invalid".into(),
+                ));
+            }
+            if catalog.signed.payload.sequence < current.sequence {
+                return Err(ComponentError::CatalogRollback);
+            }
+            if catalog.signed.payload.sequence == current.sequence
+                && digest != current.catalog_sha256
+            {
+                return Err(ComponentError::CatalogReplay);
+            }
+            if catalog.signed.payload.sequence == current.sequence {
+                return Ok(());
+            }
+        }
+        let state = CatalogSequenceState {
+            schema_version: 1,
+            sequence: catalog.signed.payload.sequence,
+            key_id: catalog.signed.payload.key_id.clone(),
+            catalog_sha256: digest,
+        };
+        let bytes = serde_json::to_vec(&state)
+            .map_err(|error| ComponentError::InvalidManifest(error.to_string()))?;
+        write_atomic_file(&state_path, &bytes)?;
+        Ok(())
     }
 
     pub(crate) fn resolve_capability(
@@ -533,12 +917,14 @@ impl ComponentManager {
                 return Err(ComponentError::Missing(id))
             }
             ComponentState::Corrupted => return Err(ComponentError::Corrupted(id)),
-            ComponentState::Installing => return Err(ComponentError::Busy(id)),
+            ComponentState::Downloading
+            | ComponentState::Verifying
+            | ComponentState::Installing => return Err(ComponentError::Busy(id)),
             ComponentState::Installed | ComponentState::UpdateAvailable => {}
         }
-        let (directory, manifest) = self.read_active(id)?.ok_or(ComponentError::Missing(id))?;
-        let pin = self
-            .pins
+        let (directory, manifest, pins) =
+            self.read_active(id)?.ok_or(ComponentError::Missing(id))?;
+        let pin = pins
             .pin(capability.artifact())
             .ok_or(ComponentError::CapabilityUnavailable(capability))?;
         if !manifest.files.iter().any(|file| {
@@ -573,7 +959,7 @@ impl ComponentManager {
             .lock()
             .map_err(|_| ComponentError::InvalidPackage("component manager is unavailable".into()))?
             .remove(&id);
-        let result = self.install_validated_package(package);
+        let result = self.install_validated_package(package, &self.pins, None, None);
         self.installing
             .lock()
             .ok()
@@ -655,7 +1041,13 @@ impl ComponentManager {
         }
     }
 
-    fn install_validated_package(&self, package: ValidatedPackage) -> Result<(), ComponentError> {
+    fn install_validated_package(
+        &self,
+        package: ValidatedPackage,
+        pins: &RuntimePins,
+        catalog_proof: Option<&[u8]>,
+        catalog_sequence: Option<u64>,
+    ) -> Result<(), ComponentError> {
         let id = package.manifest.id;
         let staging_root = self.root.join(STAGING_DIR);
         ensure_directory_without_reparse(&staging_root)?;
@@ -668,7 +1060,7 @@ impl ComponentManager {
         let mut cleanup = InstallCleanupGuard::new(staging.clone());
         let mut archive = ZipArchive::new(File::open(&package.path)?)
             .map_err(|error| ComponentError::InvalidPackage(error.to_string()))?;
-        extract_validated_files(&mut archive, &staging, &package.manifest, &self.pins)?;
+        extract_validated_files(&mut archive, &staging, &package.manifest, pins)?;
         let manifest_bytes = serde_json::to_vec_pretty(&package.manifest)
             .map_err(|error| ComponentError::InvalidManifest(error.to_string()))?;
         let mut manifest_file = OpenOptions::new()
@@ -678,6 +1070,14 @@ impl ComponentManager {
         manifest_file.write_all(&manifest_bytes)?;
         manifest_file.sync_all()?;
         drop(manifest_file);
+        if let Some(proof) = catalog_proof {
+            let mut proof_file = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(staging.join(CATALOG_PROOF_NAME))?;
+            proof_file.write_all(proof)?;
+            proof_file.sync_all()?;
+        }
         for entry in &package.manifest.files {
             let path = staging.join(&entry.name);
             if !is_regular_file_without_reparse(&path) || hash_file(&path)? != entry.sha256 {
@@ -704,6 +1104,9 @@ impl ComponentManager {
                 .unwrap_or_default()
                 .to_string_lossy()
                 .into_owned(),
+            package_sha256: Some(package.package_sha256.clone()),
+            catalog_sequence,
+            catalog_sha256: catalog_proof.map(sha256_bytes),
         };
         let pointer_path = component_root.join(POINTER_NAME);
         let pointer_tmp = component_root.join(format!("{POINTER_NAME}.{}.tmp", unique_leaf("ptr")));
@@ -727,6 +1130,14 @@ impl ComponentManager {
     }
 
     fn validate_package(&self, package_path: &Path) -> Result<ValidatedPackage, ComponentError> {
+        self.validate_package_with_pins(package_path, &self.pins)
+    }
+
+    fn validate_package_with_pins(
+        &self,
+        package_path: &Path,
+        pins: &RuntimePins,
+    ) -> Result<ValidatedPackage, ComponentError> {
         let metadata = fs::symlink_metadata(package_path)?;
         if !metadata.is_file()
             || metadata.file_type().is_symlink()
@@ -752,7 +1163,7 @@ impl ComponentManager {
         let manifest_bytes = read_manifest(&mut archive)?;
         let manifest: ComponentPackageManifest = serde_json::from_slice(&manifest_bytes)
             .map_err(|error| ComponentError::InvalidManifest(error.to_string()))?;
-        validate_manifest(&manifest, &self.pins)?;
+        validate_manifest(&manifest, pins)?;
         let expected_names = manifest
             .files
             .iter()
@@ -778,6 +1189,15 @@ impl ComponentManager {
                     file.name
                 )));
             }
+            let pin = pins
+                .pin(file.artifact)
+                .ok_or_else(|| ComponentError::InvalidManifest("runtime pin is missing".into()))?;
+            if pin.size.is_some_and(|size| size != file.size) {
+                return Err(ComponentError::InvalidManifest(format!(
+                    "catalog size does not match {}",
+                    file.name
+                )));
+            }
         }
         let package_sha256 = hash_file(package_path)?;
         Ok(ValidatedPackage {
@@ -790,7 +1210,7 @@ impl ComponentManager {
     fn read_active(
         &self,
         id: ComponentId,
-    ) -> Result<Option<(PathBuf, ComponentPackageManifest)>, ComponentError> {
+    ) -> Result<Option<(PathBuf, ComponentPackageManifest, RuntimePins)>, ComponentError> {
         let component_root = self.component_root(id);
         if !component_root.exists() {
             return Ok(None);
@@ -819,17 +1239,88 @@ impl ComponentManager {
                 "active component directory is missing".into(),
             ));
         }
+        let proof_path = directory.join(CATALOG_PROOF_NAME);
+        let catalog_pin = match (pointer.catalog_sequence, pointer.catalog_sha256.as_deref()) {
+            (Some(sequence), Some(expected_catalog_hash)) => {
+                if !valid_directory_leaf(&pointer.directory)
+                    || !pointer.package_sha256.as_deref().is_some_and(is_sha256)
+                    || !is_sha256(expected_catalog_hash)
+                    || !is_regular_file_without_reparse(&proof_path)
+                    || hash_file(&proof_path)? != expected_catalog_hash
+                {
+                    return Err(ComponentError::InvalidManifest(
+                        "signed component proof is missing or invalid".into(),
+                    ));
+                }
+                let proof_bytes = fs::read(&proof_path)?;
+                let verified = distribution::verify_persisted_catalog_snapshot(
+                    &proof_bytes,
+                    &self.catalog_trust,
+                    self.allow_loopback_http,
+                )
+                .map_err(ComponentError::Catalog)?;
+                if verified.signed.payload.sequence != sequence {
+                    return Err(ComponentError::InvalidManifest(
+                        "signed component proof sequence does not match the active pointer".into(),
+                    ));
+                }
+                let catalog_component = verified.component(id).ok_or(ComponentError::Catalog(
+                    distribution::CatalogValidationError::InvalidComponent,
+                ))?;
+                if Some(catalog_component.package_sha256.as_str())
+                    != pointer.package_sha256.as_deref()
+                {
+                    return Err(ComponentError::InvalidManifest(
+                        "signed catalog does not approve the active component package".into(),
+                    ));
+                }
+                let manifest_bytes = fs::read(directory.join(MANIFEST_NAME))?;
+                let active_manifest: ComponentPackageManifest =
+                    serde_json::from_slice(&manifest_bytes)
+                        .map_err(|error| ComponentError::InvalidManifest(error.to_string()))?;
+                if active_manifest.id != id
+                    || active_manifest.version != catalog_component.version
+                    || active_manifest.capabilities != catalog_component.capabilities
+                    || active_manifest.files != catalog_component.files
+                {
+                    return Err(ComponentError::InvalidManifest(
+                        "active manifest differs from the signed catalog".into(),
+                    ));
+                }
+                Some(RuntimePins::from_catalog_component(catalog_component)?)
+            }
+            (None, None) => {
+                if pointer.catalog_sha256.is_some()
+                    || proof_path.exists()
+                    || pointer
+                        .package_sha256
+                        .as_deref()
+                        .is_some_and(|hash| !is_sha256(hash))
+                {
+                    return Err(ComponentError::InvalidManifest(
+                        "local component pointer contains unexpected catalog metadata".into(),
+                    ));
+                }
+                None
+            }
+            _ => {
+                return Err(ComponentError::InvalidManifest(
+                    "active pointer has incomplete catalog metadata".into(),
+                ));
+            }
+        };
         let manifest_path = directory.join(MANIFEST_NAME);
         reject_reparse_path(&manifest_path)?;
         let manifest: ComponentPackageManifest = serde_json::from_slice(&fs::read(manifest_path)?)
             .map_err(|error| ComponentError::InvalidManifest(error.to_string()))?;
-        validate_manifest(&manifest, &self.pins)?;
+        let pins = catalog_pin.unwrap_or_else(|| (*self.pins).clone());
+        validate_manifest(&manifest, &pins)?;
         if manifest.id != id {
             return Err(ComponentError::InvalidManifest(
                 "active component id does not match its directory".into(),
             ));
         }
-        Ok(Some((directory, manifest)))
+        Ok(Some((directory, manifest, pins)))
     }
 
     fn verify_directory(
@@ -837,6 +1328,7 @@ impl ComponentManager {
         id: ComponentId,
         directory: &Path,
         manifest: &ComponentPackageManifest,
+        pins: &RuntimePins,
     ) -> Result<(), ComponentError> {
         reject_reparse_path(directory)?;
         let expected = manifest
@@ -844,6 +1336,12 @@ impl ComponentManager {
             .iter()
             .map(|file| file.name.as_str())
             .chain([MANIFEST_NAME])
+            .chain(
+                directory
+                    .join(CATALOG_PROOF_NAME)
+                    .exists()
+                    .then_some(CATALOG_PROOF_NAME),
+            )
             .collect::<HashSet<_>>();
         for entry in fs::read_dir(directory)? {
             let entry = entry?;
@@ -861,8 +1359,7 @@ impl ComponentManager {
             }
         }
         for file in &manifest.files {
-            let pin = self
-                .pins
+            let pin = pins
                 .pin(file.artifact)
                 .ok_or_else(|| ComponentError::InvalidManifest("runtime pin is missing".into()))?;
             if pin.filename != file.name || pin.version != file.version || pin.sha256 != file.sha256
@@ -1296,6 +1793,35 @@ fn sync_directory(_path: &Path) -> Result<(), ComponentError> {
     #[cfg(unix)]
     File::open(_path)?.sync_all()?;
     Ok(())
+}
+
+fn write_atomic_file(path: &Path, bytes: &[u8]) -> Result<(), ComponentError> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| ComponentError::InvalidPackage("state path has no parent".into()))?;
+    reject_reparse_path(parent)?;
+    if fs::symlink_metadata(path).is_ok() {
+        reject_reparse_path(path)?;
+    }
+    let mut temporary_name = path.as_os_str().to_os_string();
+    temporary_name.push(format!(".{}.tmp", unique_leaf("state")));
+    let temporary = PathBuf::from(temporary_name);
+    let result = (|| {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)?;
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        drop(file);
+        atomic_replace(&temporary, path)?;
+        sync_directory(parent)?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
 }
 
 #[cfg(windows)]

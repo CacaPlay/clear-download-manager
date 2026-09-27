@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { lucideIcon } from '../../app-ui/assets/icons/lucide.js';
 import { inspectSourcePaths, evaluateSourceReadiness, SOURCE_ONLY_GATE_IDS } from './source-release-artifact.mjs';
 import { validateCorrespondingSourceRegistry, inspectCorrespondingSourceReleaseAssets } from './corresponding-source-contract.mjs';
+import { inspectCorePackageFiles } from './core-package-contract.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const assetRights = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'rights/asset-provenance.json'), 'utf8'));
@@ -328,7 +329,16 @@ test('PR Quality uses a source-only gate while binary release keeps GPL source r
   assert.match(releaseWorkflow, /npm run check:release/);
   assert.match(releaseWorkflow, /npm run check:binary-release/);
   assert.match(binaryReadiness, /run\('check:gpl-source'/);
-  assert.match(binaryReadiness, /run\('verify:binaries'/);
+  assert.doesNotMatch(binaryReadiness, /run\('verify:binaries'/, 'the Core release gate must not require optional runtimes under resources/bin');
+  assert.match(binaryReadiness, /--component-packages-dir/);
+  assert.match(binaryReadiness, /inspect-component-packages\.ps1/);
+  const componentInspector = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/inspect-component-packages.ps1'), 'utf8');
+  assert.match(componentInspector, /assetName="media-tools-\$MediaToolsVersion\.cdmcomponent"/);
+  assert.match(componentInspector, /assetName="torrent-engine-\$TorrentEngineVersion\.cdmcomponent"/);
+  assert.match(componentInspector, /yt-dlp\.exe/);
+  const licenseReadiness = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/license-readiness.mjs'), 'utf8');
+  assert.match(licenseReadiness, /inspect-component-packages\.ps1/);
+  assert.doesNotMatch(licenseReadiness, /Binary package inspection must verify the bundled yt-dlp\.exe hash/);
 });
 
 test('corresponding-source inventory pins full upstream revisions and exact runtime-to-release assets', () => {
@@ -337,7 +347,7 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   assert.equal(manifest.schemaVersion, 2);
   assert.equal(manifest.status, 'PENDING');
 
-  for (const id of ['aria2', 'ffmpeg']) {
+  for (const id of ['aria2', 'ffmpeg', 'yt-dlp']) {
     const entry = byId.get(id);
     assert.match(entry.sourceCommit, /^[a-f0-9]{40}$/);
     assert.ok(entry.sourceVersion);
@@ -353,16 +363,35 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
       assert.equal(entry.distributionMethod, 'corresponding-source-archive');
       assert.equal(entry.releaseAssetSha256, 'b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58');
       assert.equal(entry.sourceArchiveSha256, entry.releaseAssetSha256);
-      assert.match(entry.sourceArchivePath, /^third-party-source\//);
+      if (entry.id === 'yt-dlp') {
+        assert.equal(entry.sourceArchivePath, `output/release-assets/${entry.releaseAssetName}`);
+        assert.equal(entry.sourceArchiveGenerated, true);
+      } else {
+        assert.match(entry.sourceArchivePath, /^third-party-source\//);
+      }
       assert.match(entry.buildInputsPath, /^third-party-source\//);
       assert.match(entry.humanReview.reviewRecordPath, /^third-party-source\//);
       assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
       assert.equal(entry.binarySourceUrl, null, 'a locally built candidate must not claim the old upstream binary URL');
       assert.equal(entry.binaryArchiveSha256, null, 'a locally built candidate has no upstream binary archive digest');
+    } else if (id === 'aria2') {
+      assert.equal(entry.humanReview.status, 'PENDING');
+      assert.equal(entry.distributionMethod, 'corresponding-source-archive');
+      assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
+      assert.deepEqual(entry.technicalBlockers, []);
+      assert.equal(entry.releaseAssetName, 'aria2-1.37.0-win64-corresponding-source.tar.xz');
+      assert.match(entry.sourceArchiveSha256, /^[a-f0-9]{64}$/);
+      assert.match(entry.buildInputsSha256, /^[a-f0-9]{64}$/);
+      assert.match(entry.binaryArchiveSha256, /^[a-f0-9]{64}$/);
     } else {
       assert.equal(entry.humanReview.status, 'PENDING');
-      assert.equal(entry.distributionMethod, null);
-      assert.match(entry.binaryArchiveSha256, /^[a-f0-9]{64}$/);
+      assert.equal(entry.distributionMethod, 'corresponding-source-archive');
+      assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
+      assert.deepEqual(entry.technicalBlockers, []);
+      assert.equal(entry.releaseAssetName, 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
+      assert.equal(entry.binaryAssetSha256, '66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a');
+      assert.match(entry.sourceArchiveSha256, /^[a-f0-9]{64}$/);
+      assert.match(entry.buildInputsSha256, /^[a-f0-9]{64}$/);
     }
     for (const runtimeFile of entry.runtimeFiles) {
       assert.match(runtimeFile.sha256, /^[a-f0-9]{64}$/);
@@ -456,7 +485,7 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   assert.match(reviewDisabled.failures.join('\n'), /explicit required=true/);
 });
 
-test('yt-dlp Windows standalone is a GPL runtime and remains source-pending', () => {
+test('yt-dlp source candidate is hash-pinned and remains pending for distributor review', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'third-party-source/corresponding-source.json'), 'utf8'));
   const byId = new Map(manifest.runtimes.map((entry) => [entry.id, entry]));
   const entry = byId.get('yt-dlp');
@@ -471,7 +500,15 @@ test('yt-dlp Windows standalone is a GPL runtime and remains source-pending', ()
   assert.equal(entry.releaseAssetName, 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
   assert.equal(entry.humanReview.required, true);
   assert.equal(entry.humanReview.status, 'PENDING');
-  assert.equal(entry.distributionMethod, null);
+  assert.equal(entry.distributionMethod, 'corresponding-source-archive');
+  assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
+  assert.deepEqual(entry.technicalBlockers, []);
+  assert.equal(entry.sourceArchivePath, 'output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
+  assert.equal(entry.sourceArchiveGenerated, true);
+  assert.equal(entry.sourceArchiveBytes, 89850212);
+  assert.equal(entry.sourceArchiveSha256, 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472');
+  assert.equal(entry.releaseAssetSha256, entry.sourceArchiveSha256);
+  assert.match(entry.buildInputsSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(entry.runtimeFiles, [{
     name: 'yt-dlp.exe',
     sha256: entry.binarySha256,
@@ -485,9 +522,17 @@ test('yt-dlp Windows standalone is a GPL runtime and remains source-pending', ()
   assert.equal(byId.has('deno'), false);
   const licenses = fs.readFileSync(path.join(repositoryRoot, 'src-tauri/resources/licenses/YT-DLP-THIRD-PARTY-LICENSES.txt'), 'utf8');
   assert.match(licenses, /mutagen \| GPL-2\.0-or-later/);
+  const buildInputs = JSON.parse(fs.readFileSync(path.join(repositoryRoot, entry.buildInputsPath), 'utf8'));
+  assert.equal(buildInputs.runtime.binarySha256, entry.binarySha256);
+  assert.equal(buildInputs.correspondingSourceArchive.bytes, entry.sourceArchiveBytes);
+  assert.equal(buildInputs.correspondingSourceArchive.path, entry.sourceArchivePath);
+  assert.equal(buildInputs.correspondingSourceArchive.sha256, entry.sourceArchiveSha256);
+  assert.equal(buildInputs.correspondingSourceArchive.generatedFromPinnedInputs, true);
+  assert.equal(buildInputs.rebuildAssessment.cleanWindowsRebuildPerformed, false);
+  assert.equal(buildInputs.rebuildAssessment.humanDistributorReview, 'PENDING');
   const issues = validateCorrespondingSourceRegistry(manifest, runtime, repositoryRoot);
   assert.deepEqual(issues.failures, []);
-  assert.ok(issues.pending.some((issue) => issue.startsWith('yt-dlp:')));
+  assert.ok(issues.pending.includes('yt-dlp: distributor human review is still required.'));
 });
 
 test('binary release requires exact corresponding-source assets outside the expanded installer tree', () => {
@@ -497,14 +542,11 @@ test('binary release requires exact corresponding-source assets outside the expa
   assert.doesNotMatch(binaryReadiness, /files\.some\(\(file\)\s*=>\s*\/\(\?:aria2\|ffmpeg\)/);
   assert.match(binaryReadiness, /--release-assets-dir/);
   assert.match(binaryReadiness, /inspectCorrespondingSourceReleaseAssets/);
+  assert.match(binaryReadiness, /inspectCorePackageFiles/);
   assert.match(binaryReadiness, /runtimeManifestText\.replace\(\/\^\\uFEFF\/, ''\)/, 'package inspection must accept a PowerShell UTF-8 BOM in the runtime manifest');
-  assert.match(binaryReadiness, /\['yt-dlp\.exe', runtime\.ytDlp\?\.sha256\]/, 'package inspection must hash-check the bundled yt-dlp.exe');
   assert.match(binaryReadiness, /runtime\.ffmpeg\?\.profile/);
   assert.match(binaryReadiness, /SAFE LEAN/);
   assert.match(binaryReadiness, /Gyan|gyan\.dev/i);
-  assert.match(binaryReadiness, /ffmpeg-notice\.txt/);
-  assert.match(binaryReadiness, /'yt-dlp-notice\.txt'/, 'package inspection must require the yt-dlp effective-license notice');
-  assert.match(binaryReadiness, /'yt-dlp-third-party-licenses\.txt'/, 'package inspection must require the pinned yt-dlp third-party license inventory');
   assert.match(sourceContract, /releaseAssetName/);
   assert.match(sourceContract, /releaseAssetSha256/);
   assert.match(workflow, /--release-assets-dir\s+output\/update-release/);
@@ -522,6 +564,7 @@ test('binary release requires exact corresponding-source assets outside the expa
       const bytes = Buffer.from(`fixture for ${entry.id}`);
       fs.writeFileSync(path.join(temp, entry.releaseAssetName), bytes);
       entry.releaseAssetSha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+      entry.sourceArchiveBytes = bytes.length;
     }
     const present = inspectCorrespondingSourceReleaseAssets(exactManifest, temp);
     assert.deepEqual(present, { failures: [], pending: [] });
@@ -529,9 +572,50 @@ test('binary release requires exact corresponding-source assets outside the expa
     exactManifest.runtimes[0].releaseAssetSha256 = '0'.repeat(64);
     const tampered = inspectCorrespondingSourceReleaseAssets(exactManifest, temp);
     assert.match(tampered.failures.join('\n'), /SHA-256 does not match/);
+
+    exactManifest.runtimes[0].releaseAssetSha256 = crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, exactManifest.runtimes[0].releaseAssetName))).digest('hex');
+    exactManifest.runtimes[0].sourceArchiveBytes += 1;
+    const wrongSize = inspectCorrespondingSourceReleaseAssets(exactManifest, temp);
+    assert.match(wrongSize.failures.join('\n'), /byte count does not match/);
+
+    exactManifest.runtimes[0].sourceArchiveBytes -= 1;
+    exactManifest.runtimes[2].sourceArchiveBytes += 1;
+    const wrongYtDlpSize = inspectCorrespondingSourceReleaseAssets(exactManifest, temp);
+    assert.match(wrongYtDlpSize.failures.join('\n'), /yt-dlp: exact release asset byte count does not match/);
+
+    const renamedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-corresponding-source-renamed-'));
+    try {
+      const ytDlp = exactManifest.runtimes.find(entry => entry.id === 'yt-dlp');
+      fs.copyFileSync(path.join(temp, ytDlp.releaseAssetName), path.join(renamedDir, 'yt-dlp-wrong-name.tar.xz'));
+      const renamed = inspectCorrespondingSourceReleaseAssets(exactManifest, renamedDir);
+      assert.equal(renamed.failures.length, 0);
+      assert.ok(renamed.pending.includes(`yt-dlp: exact release asset ${ytDlp.releaseAssetName} is not present.`));
+    } finally {
+      fs.rmSync(renamedDir, { recursive: true, force: true });
+    }
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
+});
+
+test('Core installer excludes optional runtime binaries and component distribution assets', () => {
+  assert.deepEqual(inspectCorePackageFiles([
+    'ClearDownloadManager.exe',
+    'resources/licenses/THIRD_PARTY_NOTICES.txt',
+  ]), { failures: [] });
+  const rejected = inspectCorePackageFiles([
+    'resources/bin/yt-dlp.exe',
+    'resources/bin/ffmpeg.exe',
+    'resources/bin/ffprobe.exe',
+    'resources/bin/deno.exe',
+    'resources/bin/aria2c.exe',
+    'components/media-tools-1.0.0.cdmcomponent',
+    'component-catalog-v1.json',
+  ]);
+  assert.equal(rejected.failures.length, 7);
+  assert.match(rejected.failures.join('\n'), /optional runtime yt-dlp\.exe/);
+  assert.match(rejected.failures.join('\n'), /optional component package/);
+  assert.match(rejected.failures.join('\n'), /distribution metadata/);
 });
 
 test('PR #14 local build support remains present on the updated PR #13 tree', () => {

@@ -1,7 +1,7 @@
 Clear Download Manager — resolved Rust dependency license inventory
 Generated from both desktop and native-host Cargo.lock files with cargo metadata --locked --all-features --filter-platform x86_64-pc-windows-msvc.
 License expressions are declarations from each upstream Cargo package; OR means alternatives and AND means combined terms.
-Resolved registry packages: 359
+Resolved registry packages: 362
 
 PROJECT | PACKAGE | VERSION | DECLARED LICENSE
 desktop | adler2 | 2.0.1 | 0BSD OR MIT OR Apache-2.0
@@ -23,6 +23,7 @@ desktop | block-buffer | 0.10.4 | MIT OR Apache-2.0
 desktop | brotli | 8.0.4 | BSD-3-Clause AND MIT
 desktop | brotli-decompressor | 5.0.3 | BSD-3-Clause/MIT
 desktop | bs58 | 0.5.1 | MIT/Apache-2.0
+desktop | bumpalo | 3.20.3 | MIT OR Apache-2.0
 desktop | bytemuck | 1.25.2 | Zlib OR Apache-2.0 OR MIT
 desktop | byteorder | 1.5.0 | Unlicense OR MIT
 desktop | byteorder-lite | 0.1.0 | Unlicense OR MIT
@@ -355,7 +356,9 @@ desktop | zerotrie | 0.2.4 | Unicode-3.0
 desktop | zerovec | 0.11.6 | Unicode-3.0
 desktop | zerovec-derive | 0.11.3 | Unicode-3.0
 desktop | zip | 4.6.1 | MIT
+desktop | zlib-rs | 0.6.7 | Zlib
 desktop | zmij | 1.0.23 | MIT
+desktop | zopfli | 0.8.3 | Apache-2.0
 native-host | fs2 | 0.4.3 | MIT/Apache-2.0
 native-host | itoa | 1.0.18 | MIT OR Apache-2.0
 native-host | memchr | 2.8.3 | Unlicense OR MIT

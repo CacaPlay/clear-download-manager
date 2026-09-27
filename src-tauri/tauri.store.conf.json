@@ -5,6 +5,11 @@
     "frontendDist": "../dist-store"
   },
   "bundle": {
+    "windows": {
+      "webviewInstallMode": {
+        "type": "offlineInstaller"
+      }
+    },
     "resources": [
       "resources/licenses/*",
       "resources/extension/*"

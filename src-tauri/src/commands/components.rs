@@ -1,7 +1,18 @@
-use crate::components::{ComponentId, ComponentStatus};
+use crate::components::{ComponentId, ComponentState, ComponentStatus};
 use crate::LocalState;
-use tauri::{AppHandle, State};
+use serde::Serialize;
+use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ComponentDownloadProgress {
+    id: ComponentId,
+    state: ComponentState,
+    received_bytes: u64,
+    total_bytes: u64,
+    progress_percent: u8,
+}
 
 #[tauri::command]
 pub(crate) fn list_components(state: State<'_, LocalState>) -> Vec<ComponentStatus> {
@@ -43,6 +54,54 @@ pub(crate) fn install_component_from_package(
         .map_err(|error| error.to_string())?;
     state.refresh_component_runtime_slots();
     Ok(Some(status))
+}
+
+#[tauri::command]
+pub(crate) fn refresh_component_catalog(
+    state: State<'_, LocalState>,
+) -> Result<Vec<ComponentStatus>, String> {
+    state
+        .component_manager
+        .refresh_component_catalog()
+        .map_err(|error| {
+            eprintln!("[components] signed catalog refresh failed: {error}");
+            "No se pudo verificar el catálogo firmado de componentes.".to_string()
+        })
+}
+
+#[tauri::command]
+pub(crate) fn install_component_from_catalog(
+    id: ComponentId,
+    app: AppHandle,
+    state: State<'_, LocalState>,
+) -> Result<ComponentStatus, String> {
+    let result =
+        state
+            .component_manager
+            .install_component_from_catalog(id, |state, received, total| {
+                let payload = ComponentDownloadProgress {
+                    id,
+                    state,
+                    received_bytes: received,
+                    total_bytes: total,
+                    progress_percent: received
+                        .saturating_mul(100)
+                        .checked_div(total)
+                        .unwrap_or(0)
+                        .min(100) as u8,
+                };
+                let _ = app.emit("component-download-progress", payload);
+            });
+    match result {
+        Ok(status) => {
+            state.refresh_component_runtime_slots();
+            Ok(status)
+        }
+        Err(error) => {
+            eprintln!("[components] remote installation failed for {id}: {error}");
+            Err("No se pudo verificar o instalar el componente. Comprueba la conexión e inténtalo más tarde.".into())
+        }
+    }
 }
 
 #[tauri::command]

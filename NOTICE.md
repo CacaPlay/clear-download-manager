@@ -54,12 +54,12 @@ app-ui/assets/icons/LICENSE and app-ui/assets/icons/NOTICE.md.
   license texts and source references are in that directory. The ambiguous
   custom music vector was replaced by the official Lucide list-music path,
   pinned to an upstream commit in its local notice.
-- src-tauri/resources/bin/ contains separately licensed runtime tools when
-  prepared for a Windows build. Their version-specific license texts, notices,
-  source references and build information are under
-  src-tauri/resources/licenses/. In particular, aria2 and the current
-  FFmpeg/FFprobe build have copyleft obligations; consult their notices before
-  redistributing binaries.
+- src-tauri/resources/bin/ is used to prepare separately licensed optional
+  runtime components. Their version-specific license texts, notices, source
+  references and build information are under src-tauri/resources/licenses/.
+  The Core installer omits those executables. In particular, aria2 and the
+  current FFmpeg/FFprobe build have copyleft obligations; consult their notices
+  and corresponding-source records before distributing component packages.
 - Rust and npm dependencies retain their individual licenses. The lockfiles
   identify the resolved versions; generated dependency inventory and SBOM
   files accompany release builds where available.

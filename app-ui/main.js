@@ -65,6 +65,7 @@ const initialLocale = loadLocale();
 const BUILD_ID = 'CDM-0.95.4-20260922-release-migration';
 let deferredDownloadManagerRefresh = false;
 let deferredDownloadManagerRefreshTimer = 0;
+let componentProgressRenderTimer = 0;
 let snapshotRefreshTimer = 0;
 let lastFullSnapshotAt = 0;
 const DOWNLOAD_ACTIVITY_REFRESH_MS = 250;
@@ -641,6 +642,33 @@ async function bindAppUpdateProgress() {
   }
 }
 
+async function bindComponentDownloadProgress() {
+  const listen = window.__TAURI__?.event?.listen;
+  if (typeof listen !== 'function') return;
+  try {
+    await listen('component-download-progress', (event) => {
+      const payload = event?.payload && typeof event.payload === 'object' ? event.payload : {};
+      const id = String(payload.id || '');
+      if (!['media-tools', 'torrent-engine'].includes(id)) return;
+      const state = String(payload.state || 'downloading');
+      if (!['downloading', 'verifying', 'installing'].includes(state)) return;
+      const progressPercent = Number(payload.progressPercent);
+      if (!Number.isFinite(progressPercent)) return;
+      const current = Array.isArray(appState.components) ? appState.components : [];
+      appState.components = current.map((component) => component.id === id
+        ? { ...component, state, progressPercent: Math.max(0, Math.min(100, progressPercent)) }
+        : component);
+      if (appState.activeSection !== 'Ajustes' || componentProgressRenderTimer) return;
+      componentProgressRenderTimer = window.setTimeout(() => {
+        componentProgressRenderTimer = 0;
+        if (appState.activeSection === 'Ajustes') render();
+      }, 150);
+    });
+  } catch (error) {
+    console.warn('No se pudo registrar el progreso de componentes.', error);
+  }
+}
+
 configureRuntime({
   getAppState: () => appState,
   previewMode,
@@ -1019,7 +1047,8 @@ function friendlyError(error) {
   if (/cancel|cancelad/i.test(raw)) return 'La descarga fue cancelada.';
   if (/metadata_incomplete|no se encontraron canciones|no se encontró la canción/i.test(raw)) return 'No se encontró la canción.';
   if (/provider_failed|download_not_allowed/i.test(raw)) return 'No se encontró una versión disponible para descargar.';
-  if (/archivo final|ffmpeg_unavailable/i.test(raw)) return 'No se pudo crear el archivo final.';
+  if (/component catalog|component package|signing key|signature|corresponding.source|component download/i.test(raw)) return 'Clear no pudo verificar el catálogo o el paquete opcional. No se activó una versión nueva.';
+  if (/archivo final|ffmpeg_unavailable|enoent|ffmpeg.*(missing|not found)|yt.?dlp.*(missing|not found)/i.test(raw)) return 'No están disponibles las herramientas multimedia necesarias. Instálalas desde Ajustes > Componentes.';
   return raw || 'No se pudo completar la operación.';
 }
 
@@ -1364,6 +1393,20 @@ function bindEvents() {
     const url = toolRepositories[button.dataset.settingsToolRepo];
     if (url) void invoke('open_external_url', { url }).catch((error) => showToast(friendlyError(error), 'error'));
   }));
+  document.querySelector('[data-component-catalog-check]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      appState.components = await invoke('refresh_component_catalog');
+      showToast('Catálogo de componentes verificado', 'success');
+    } catch (error) {
+      showToast(friendlyError(error), 'error');
+    } finally {
+      button.disabled = false;
+      render();
+    }
+  });
   document.querySelectorAll('[data-component-action]').forEach((button) => button.addEventListener('click', async () => {
     if (button.disabled) return;
     const action = button.dataset.componentAction;
@@ -1371,7 +1414,11 @@ function bindEvents() {
     button.disabled = true;
     try {
       if (action === 'install') {
-        const installed = await invoke('install_component_from_package', { id });
+        appState.components = (Array.isArray(appState.components) ? appState.components : []).map((component) => component.id === id
+          ? { ...component, state: 'downloading', progressPercent: 0 }
+          : component);
+        render();
+        const installed = await invoke('install_component_from_catalog', { id });
         if (!installed) return;
       } else if (action === 'verify') {
         await invoke('verify_component', { id });
@@ -2021,6 +2068,7 @@ const nativeClipboardFocusBinding = !previewMode ? bindNativeClipboardFocus() : 
 const destinationPickerStateBinding = !previewMode ? bindDestinationPickerState() : Promise.resolve();
 const preparationModalStateBinding = !previewMode ? bindPreparationModalState() : Promise.resolve();
 const appUpdateProgressBinding = !previewMode ? bindAppUpdateProgress() : Promise.resolve();
+const componentDownloadProgressBinding = !previewMode ? bindComponentDownloadProgress() : Promise.resolve();
 const startupPromise = start();
 // The startup snapshot hydrates the persisted accent asynchronously.  Apply
 // the native icon once, after that snapshot is ready, then leave it alone while
@@ -2033,7 +2081,7 @@ if (!previewMode) {
   // A launch can complete without emitting a new focus event. Check only
   // after the real startup lifecycle has hydrated settings and rendered the
   // main surface, so the coordinator can present the suggestion safely.
-  void Promise.all([nativeClipboardFocusBinding, destinationPickerStateBinding, preparationModalStateBinding, appUpdateProgressBinding, startupPromise])
+  void Promise.all([nativeClipboardFocusBinding, destinationPickerStateBinding, preparationModalStateBinding, appUpdateProgressBinding, componentDownloadProgressBinding, startupPromise])
     .then(() => clipboardFocusWatcher.checkNow())
     .catch(() => {});
 }

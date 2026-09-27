@@ -179,6 +179,8 @@ function componentManagerSection() {
     installed: tr('Instalado'),
     corrupted: tr('Requiere reparación'),
     'update-available': tr('Actualización disponible'),
+    downloading: tr('Descargando'),
+    verifying: tr('Verificando'),
     installing: tr('Instalando'),
     error: tr('Falló la instalación')
   };
@@ -187,12 +189,19 @@ function componentManagerSection() {
     const state = String(component.state || 'missing').toLowerCase();
     const tone = state === 'installed' ? 'ok' : state === 'installing' ? 'info' : state === 'missing' ? 'warn' : 'error';
     const version = component.version ? ` · v${escapeHtml(component.version)}` : '';
-    const installAction = ['installed', 'installing'].includes(state) ? '' : `<button type="button" class="settings-component-action" data-component-action="install" data-component-id="${id}">${icon('download', 16)} ${state === 'corrupted' ? tr('Reparar') : tr('Instalar paquete local')}</button>`;
+    const installAction = ['installed', 'downloading', 'verifying', 'installing'].includes(state) ? '' : `<button type="button" class="settings-component-action" data-component-action="install" data-component-id="${id}">${icon('download', 16)} ${state === 'corrupted' ? tr('Reparar') : state === 'update-available' ? tr('Actualizar') : tr('Descargar e instalar')}</button>`;
     const verifyAction = ['installed', 'corrupted'].includes(state) ? `<button type="button" class="settings-component-action" data-component-action="verify" data-component-id="${id}">${icon('shield', 16)} ${tr('Verificar')}</button>` : '';
     const removeAction = ['installed', 'corrupted'].includes(state) ? `<button type="button" class="settings-component-action" data-component-action="remove" data-component-id="${id}">${icon('close', 16)} ${tr('Quitar')}</button>` : '';
-    return `<article class="settings-component-row"><div><strong>${labels[id]}</strong><span data-status-tone="${tone}">${stateLabels[state] || 'Status unavailable'}${version}</span></div><div class="settings-inline-actions">${installAction}${verifyAction}${removeAction}</div></article>`;
+    const progress = Number.isFinite(Number(component.progressPercent)) ? Math.max(0, Math.min(100, Number(component.progressPercent))) : null;
+    const progressMarkup = ['downloading', 'verifying', 'installing'].includes(state) && progress !== null
+      ? `<progress class="settings-component-progress" max="100" value="${progress}" aria-label="${labels[id]} ${progress}%"></progress>`
+      : '';
+    const available = component.availableVersion && component.availableVersion !== component.version
+      ? ` · ${tr('Disponible')} v${escapeHtml(component.availableVersion)}`
+      : '';
+    return `<article class="settings-component-row"><div><strong>${labels[id]}</strong><span data-status-tone="${tone}">${stateLabels[state] || 'Status unavailable'}${version}${available}</span>${progressMarkup}</div><div class="settings-inline-actions">${installAction}${verifyAction}${removeAction}</div></article>`;
   }).join('');
-  return `<section class="settings-section settings-section-components">${sectionHeading('tools', tr('Componentes'))}<p class="settings-section-note">${tr('El núcleo puede funcionar sin los componentes multimedia o torrent. Selecciona un paquete local .cdmcomponent para instalar o reparar un componente.')}</p>${rows}</section>`;
+  return `<section class="settings-section settings-section-components">${sectionHeading('tools', tr('Componentes'))}<p class="settings-section-note">${tr('El núcleo funciona sin herramientas multimedia o torrent. Cuando las necesites, Clear descargará el paquete opcional del catálogo firmado y comprobará su integridad antes de activarlo.')}</p><button type="button" class="settings-component-action" data-component-catalog-check>${icon('shield', 16)} ${tr('Buscar actualizaciones')}</button>${rows}</section>`;
 }
 
 function updatesPage() {

@@ -150,7 +150,8 @@
     "check:ui-v5:performance": "python scripts/validation/ui-v5-playlist-performance.py",
     "check:subwindows": "node scripts/validation/phase34_subwindow_responsiveness.mjs",
     "check:subwindows:interaction": "python scripts/validation/phase34_subwindow_interaction.py",
-    "check:pre2i-stabilization": "node scripts/validation/pre2i-stabilization.mjs && python scripts/validation/pre2i_player_interaction.py"
+    "check:pre2i-stabilization": "node scripts/validation/pre2i-stabilization.mjs && python scripts/validation/pre2i_player_interaction.py",
+    "test:optional-component-flow": "node --test scripts/validation/optional-component-install.test.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.5",

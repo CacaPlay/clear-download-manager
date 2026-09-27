@@ -472,6 +472,264 @@ fn make_package(temp: &Path, id: ComponentId, version: &str, pins: &RuntimePins)
     path
 }
 
+const REMOTE_CATALOG_NOW: i64 = 1_800_000_000;
+const COMPONENT_TEST_SEED: [u8; 32] = [
+    0x42, 0x19, 0x07, 0x2a, 0x5c, 0x9e, 0x11, 0xd3, 0x84, 0x20, 0x71, 0xa6, 0x0f, 0xc8, 0x33, 0x95,
+    0x67, 0x14, 0xe2, 0x4b, 0x8a, 0x55, 0x09, 0xbd, 0x73, 0x2c, 0xf1, 0x68, 0x0a, 0x44, 0x97, 0x5e,
+];
+
+fn component_test_trust() -> TrustedKeys {
+    let key = ed25519_dalek::SigningKey::from_bytes(&COMPONENT_TEST_SEED);
+    TrustedKeys::from_public_key_bytes(vec![(
+        "component-test-2026".into(),
+        key.verifying_key().to_bytes(),
+    )])
+    .expect("test trust root")
+}
+
+fn incompatible_fixture_pins() -> RuntimePins {
+    RuntimePins::from_test_files([
+        (
+            RuntimeArtifact::YtDlp,
+            "yt-dlp.exe",
+            "old",
+            b"old ytdlp".as_slice(),
+        ),
+        (
+            RuntimeArtifact::Ffmpeg,
+            "ffmpeg.exe",
+            "old",
+            b"old ffmpeg".as_slice(),
+        ),
+        (
+            RuntimeArtifact::Ffprobe,
+            "ffprobe.exe",
+            "old",
+            b"old ffprobe".as_slice(),
+        ),
+        (
+            RuntimeArtifact::Deno,
+            "deno.exe",
+            "old",
+            b"old deno".as_slice(),
+        ),
+        (
+            RuntimeArtifact::Aria2,
+            "aria2c.exe",
+            "old",
+            b"old aria2".as_slice(),
+        ),
+    ])
+}
+
+fn catalog_source(
+    runtime_id: &str,
+    source_commit: &str,
+    asset_name: &str,
+    license: &str,
+) -> distribution::CorrespondingSourceAsset {
+    distribution::CorrespondingSourceAsset {
+        runtime_id: runtime_id.into(),
+        source_commit: source_commit.into(),
+        asset_name: asset_name.into(),
+        asset_url: format!(
+            "https://github.com/CacaPlay/clear-download-manager/releases/download/v0.95.5/{asset_name}"
+        ),
+        bytes: 100,
+        sha256: "a".repeat(64),
+        license: license.into(),
+        human_review: "APPROVED".into(),
+    }
+}
+
+fn catalog_component(
+    id: ComponentId,
+    version: &str,
+    package_path: &Path,
+    address: std::net::SocketAddr,
+    pins: &RuntimePins,
+) -> distribution::CatalogComponent {
+    let asset_name = format!("{}-{version}.cdmcomponent", id.as_str());
+    let source_tag = "v0.95.5";
+    let (corresponding_sources, license_notices) = match id {
+        ComponentId::MediaTools => (
+            vec![
+                catalog_source(
+                    "ffmpeg",
+                    "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
+                    "ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz",
+                    "GPL-3.0-or-later",
+                ),
+                catalog_source(
+                    "yt-dlp",
+                    "3a08beaf031ab68f966401ead017ac81fe8486cf",
+                    "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
+                    "GPL-3.0-or-later",
+                ),
+            ],
+            vec![
+                distribution::LicenseNotice {
+                    runtime_id: "yt-dlp".into(),
+                    spdx: "GPL-3.0-or-later".into(),
+                    notice_file: "YT-DLP-NOTICE.txt".into(),
+                    notice_sha256: "c".repeat(64),
+                },
+                distribution::LicenseNotice {
+                    runtime_id: "ffmpeg".into(),
+                    spdx: "GPL-3.0-or-later".into(),
+                    notice_file: "FFMPEG-NOTICE.txt".into(),
+                    notice_sha256: "c".repeat(64),
+                },
+                distribution::LicenseNotice {
+                    runtime_id: "deno".into(),
+                    spdx: "MIT".into(),
+                    notice_file: "DENO-NOTICE.txt".into(),
+                    notice_sha256: "c".repeat(64),
+                },
+            ],
+        ),
+        ComponentId::TorrentEngine => (
+            vec![catalog_source(
+                "aria2",
+                "02f2d0d8472b3c38c29b4dba8c75ebd5fdd2899a",
+                "aria2-1.37.0-win64-corresponding-source.tar.xz",
+                "GPL-2.0-or-later",
+            )],
+            vec![distribution::LicenseNotice {
+                runtime_id: "aria2".into(),
+                spdx: "GPL-2.0-or-later".into(),
+                notice_file: "ARIA2-NOTICE.txt".into(),
+                notice_sha256: "c".repeat(64),
+            }],
+        ),
+    };
+    let package_bytes = fs::read(package_path).expect("read test package");
+    distribution::CatalogComponent {
+        id,
+        version: version.into(),
+        release_tag: source_tag.into(),
+        asset_name: asset_name.clone(),
+        package_url: format!("http://{address}/{asset_name}"),
+        package_bytes: package_bytes.len() as u64,
+        package_sha256: sha256_bytes(&package_bytes),
+        capabilities: id.capabilities().to_vec(),
+        minimum_cdm_version: "0.95.4".into(),
+        files: package_manifest(id, version, pins).files,
+        corresponding_sources,
+        license_notices,
+    }
+}
+
+fn start_remote_component_fixture(
+    temp: &Path,
+    version: &str,
+    sequence: u64,
+    tamper_media_package: bool,
+) -> (String, thread::JoinHandle<()>) {
+    use ed25519_dalek::Signer;
+
+    let pins = fixture_pins();
+    let media_path = temp.join(format!("media-{version}.zip"));
+    let torrent_path = temp.join(format!("torrent-{version}.zip"));
+    write_package(
+        &media_path,
+        &package_manifest(ComponentId::MediaTools, version, &pins),
+        &[],
+    );
+    write_package(
+        &torrent_path,
+        &package_manifest(ComponentId::TorrentEngine, version, &pins),
+        &[],
+    );
+    let media_bytes = fs::read(&media_path).expect("read media package");
+    let torrent_bytes = fs::read(&torrent_path).expect("read torrent package");
+    let mut served_media_bytes = media_bytes.clone();
+    if tamper_media_package {
+        served_media_bytes[0] ^= 0xff;
+    }
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind local component fixture");
+    let address = listener.local_addr().expect("local fixture address");
+    let media_component = catalog_component(
+        ComponentId::MediaTools,
+        version,
+        &media_path,
+        address,
+        &pins,
+    );
+    let torrent_component = catalog_component(
+        ComponentId::TorrentEngine,
+        version,
+        &torrent_path,
+        address,
+        &pins,
+    );
+    let payload = distribution::ComponentCatalogPayload {
+        schema_version: 1,
+        catalog_version: "1".into(),
+        sequence,
+        key_id: "component-test-2026".into(),
+        issued_at: REMOTE_CATALOG_NOW - 10,
+        expires_at: REMOTE_CATALOG_NOW + 3600,
+        components: vec![media_component.clone(), torrent_component.clone()],
+    };
+    let canonical_payload = serde_json::to_vec(&payload).expect("serialize catalog payload");
+    let key = ed25519_dalek::SigningKey::from_bytes(&COMPONENT_TEST_SEED);
+    let signed = distribution::SignedComponentCatalog {
+        payload,
+        signature: base64::Engine::encode(
+            &base64::engine::general_purpose::STANDARD,
+            key.sign(&canonical_payload).to_bytes(),
+        ),
+    };
+    let catalog_bytes = serde_json::to_vec(&signed).expect("serialize signed catalog");
+    let media_name = media_component.asset_name;
+    let torrent_name = torrent_component.asset_name;
+    let server = thread::spawn(move || {
+        for _ in 0..2 {
+            let (mut stream, _) = listener.accept().expect("accept fixture request");
+            let mut request = Vec::new();
+            let mut chunk = [0_u8; 1024];
+            loop {
+                let read = stream.read(&mut chunk).expect("read fixture request");
+                if read == 0 {
+                    break;
+                }
+                request.extend_from_slice(&chunk[..read]);
+                if request.windows(4).any(|window| window == b"\r\n\r\n") {
+                    break;
+                }
+            }
+            let request_line = String::from_utf8_lossy(&request);
+            let body: &[u8] = if request_line.starts_with("GET /component-catalog-v1.json ") {
+                &catalog_bytes
+            } else if request_line.starts_with(&format!("GET /{media_name} ")) {
+                &served_media_bytes
+            } else if request_line.starts_with(&format!("GET /{torrent_name} ")) {
+                &torrent_bytes
+            } else {
+                &[]
+            };
+            let status = if body.is_empty() {
+                "404 Not Found"
+            } else {
+                "200 OK"
+            };
+            write!(
+                stream,
+                "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            )
+            .expect("write fixture response headers");
+            stream.write_all(body).expect("write fixture response body");
+        }
+    });
+    (
+        format!("http://{address}/component-catalog-v1.json"),
+        server,
+    )
+}
+
 #[test]
 fn component_status_starts_missing_and_capabilities_fail_closed() {
     let temp = tempdir().expect("temp dir");
@@ -485,6 +743,176 @@ fn component_status_starts_missing_and_capabilities_fail_closed() {
         manager.resolve_capability(Capability::MediaProbe),
         Err(ComponentError::Missing(ComponentId::MediaTools))
     ));
+}
+
+#[test]
+fn signed_remote_component_catalog_downloads_verifies_installs_and_activates_atomically() {
+    let temp = tempdir().expect("temp dir");
+    let (endpoint, server) = start_remote_component_fixture(temp.path(), "1.0.0", 1, false);
+    let manager = ComponentManager::new_with_trust(
+        temp.path().join("remote-components"),
+        incompatible_fixture_pins(),
+        component_test_trust(),
+    )
+    .expect("create manager with test trust root");
+    let mut progress = Vec::new();
+
+    let installed = manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |state, received, total| progress.push((state, received, total)),
+        )
+        .expect("install verified remote component");
+    server.join().expect("complete local HTTP fixture");
+
+    assert_eq!(installed.state, ComponentState::Installed);
+    assert_eq!(installed.version.as_deref(), Some("1.0.0"));
+    assert!(progress
+        .iter()
+        .any(|(state, _, _)| *state == ComponentState::Verifying));
+    assert!(progress
+        .iter()
+        .any(|(state, _, _)| *state == ComponentState::Installing));
+    assert_eq!(
+        fs::read(
+            manager
+                .resolve_capability(Capability::MediaExtraction)
+                .expect("resolve activated runtime")
+        )
+        .expect("read activated fixture runtime"),
+        fixture_bytes("yt-dlp.exe")
+    );
+    assert!(manager.root().join(CATALOG_STATE_NAME).is_file());
+    assert_eq!(staging_entries(manager.root()), 0);
+    let restarted = ComponentManager::new_with_trust(
+        manager.root().to_path_buf(),
+        incompatible_fixture_pins(),
+        component_test_trust(),
+    )
+    .expect("restart manager with same trust root");
+    assert_eq!(
+        restarted.component_status(ComponentId::MediaTools).state,
+        ComponentState::Installed
+    );
+    assert_eq!(
+        fs::read(
+            restarted
+                .resolve_capability(Capability::MediaExtraction)
+                .expect("resolve signed runtime after restart")
+        )
+        .expect("read runtime after restart"),
+        fixture_bytes("yt-dlp.exe")
+    );
+}
+
+#[test]
+fn signed_catalog_update_activates_new_component_version() {
+    let temp = tempdir().expect("temp dir");
+    let manager = ComponentManager::new_with_trust(
+        temp.path().join("remote-components"),
+        incompatible_fixture_pins(),
+        component_test_trust(),
+    )
+    .expect("create manager with test trust root");
+    let (first_endpoint, first_server) =
+        start_remote_component_fixture(temp.path(), "1.0.0", 1, false);
+    manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &first_endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |_, _, _| {},
+        )
+        .expect("install original remote component");
+    first_server.join().expect("complete initial transfer");
+    let original_path = manager
+        .resolve_capability(Capability::MediaExtraction)
+        .expect("resolve original runtime");
+
+    let (update_endpoint, update_server) =
+        start_remote_component_fixture(temp.path(), "2.0.0", 2, false);
+    let updated = manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &update_endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |_, _, _| {},
+        )
+        .expect("activate newer signed component");
+    update_server.join().expect("complete update transfer");
+
+    assert_eq!(updated.version.as_deref(), Some("2.0.0"));
+    let updated_path = manager
+        .resolve_capability(Capability::MediaExtraction)
+        .expect("resolve updated runtime");
+    assert_ne!(updated_path, original_path);
+    assert_eq!(
+        fs::read(updated_path).expect("read updated runtime"),
+        fixture_bytes("yt-dlp.exe")
+    );
+}
+
+#[test]
+fn failed_remote_update_preserves_the_previously_active_component() {
+    let temp = tempdir().expect("temp dir");
+    let manager = ComponentManager::new_with_trust(
+        temp.path().join("remote-components"),
+        fixture_pins(),
+        component_test_trust(),
+    )
+    .expect("create manager with test trust root");
+    let (first_endpoint, first_server) =
+        start_remote_component_fixture(temp.path(), "1.0.0", 1, false);
+    manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &first_endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |_, _, _| {},
+        )
+        .expect("install original remote component");
+    first_server
+        .join()
+        .expect("complete first fixture transfer");
+    let original_path = manager
+        .resolve_capability(Capability::MediaExtraction)
+        .expect("resolve original active runtime");
+    let (update_endpoint, update_server) =
+        start_remote_component_fixture(temp.path(), "2.0.0", 2, true);
+
+    let result = manager.install_component_from_catalog_at(
+        ComponentId::MediaTools,
+        &update_endpoint,
+        REMOTE_CATALOG_NOW,
+        true,
+        |_, _, _| {},
+    );
+    update_server
+        .join()
+        .expect("complete update fixture transfer");
+
+    assert!(matches!(
+        result,
+        Err(ComponentError::Download(
+            distribution::AssetDownloadError::HashMismatch
+        ))
+    ));
+    let status = manager.component_status(ComponentId::MediaTools);
+    assert_eq!(status.version.as_deref(), Some("1.0.0"));
+    assert_eq!(status.state, ComponentState::UpdateAvailable);
+    assert_eq!(
+        manager
+            .resolve_capability(Capability::MediaExtraction)
+            .expect("old runtime stays active after failed update"),
+        original_path
+    );
+    assert_eq!(staging_entries(manager.root()), 0);
 }
 
 #[cfg(windows)]
@@ -850,6 +1278,71 @@ fn verification_detects_modified_installed_component_and_repair_restores_it() {
     assert_eq!(
         manager.resolve_capability(Capability::MediaMerge).unwrap(),
         repaired.directory.unwrap().join("ffmpeg.exe")
+    );
+}
+
+#[test]
+fn signed_catalog_reinstall_repairs_corruption_and_remove_deactivates_component() {
+    let temp = tempdir().expect("temp dir");
+    let manager = ComponentManager::new_with_trust(
+        temp.path().join("remote-components"),
+        incompatible_fixture_pins(),
+        component_test_trust(),
+    )
+    .expect("create manager with test trust root");
+    let (endpoint, server) = start_remote_component_fixture(temp.path(), "1.0.0", 1, false);
+    manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |_, _, _| {},
+        )
+        .expect("install signed remote component");
+    server.join().expect("complete initial transfer");
+    let active = manager
+        .resolve_capability(Capability::MediaExtraction)
+        .expect("resolve installed runtime");
+    fs::write(&active, b"corrupted runtime").expect("corrupt installed runtime");
+    assert_eq!(
+        manager
+            .verify_component(ComponentId::MediaTools)
+            .expect("verify corrupted runtime")
+            .state,
+        ComponentState::Corrupted
+    );
+
+    let (repair_endpoint, repair_server) =
+        start_remote_component_fixture(temp.path(), "1.0.0", 2, false);
+    let repaired = manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &repair_endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |_, _, _| {},
+        )
+        .expect("repair from the current signed catalog package");
+    repair_server.join().expect("complete repair transfer");
+    assert_eq!(repaired.state, ComponentState::Installed);
+    assert_eq!(repaired.version.as_deref(), Some("1.0.0"));
+    assert_eq!(
+        fs::read(
+            manager
+                .resolve_capability(Capability::MediaExtraction)
+                .expect("resolve repaired runtime")
+        )
+        .expect("read repaired runtime"),
+        fixture_bytes("yt-dlp.exe")
+    );
+
+    manager
+        .remove_component(ComponentId::MediaTools)
+        .expect("remove repaired remote component");
+    assert_eq!(
+        manager.component_status(ComponentId::MediaTools).state,
+        ComponentState::Missing
     );
 }
 
