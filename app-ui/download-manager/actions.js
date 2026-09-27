@@ -1,5 +1,6 @@
 import { runtimeState, setOptimisticJobPriority } from './state.js';
 import { playlistJobId } from './core/model.js';
+import { invokeWithOptionalComponent } from '../modules/components/optional-install.js';
 
 function closeRowMenu() {
   runtimeState.rowMenuJobId = null;
@@ -281,7 +282,7 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
       runtimeState.torrentBusy = true;
       rerenderNow();
       try {
-        const receipt = await context.invoke?.('queue_torrent_download', { source });
+        const receipt = await invokeWithOptionalComponent(context.invoke, 'queue_torrent_download', { source });
         runtimeState.modal = '';
         runtimeState.torrentSource = '';
         context.onToast?.(`Torrent añadido: ${receipt?.filename || 'descarga'}`, 'success');

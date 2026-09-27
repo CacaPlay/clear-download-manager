@@ -1,3 +1,5 @@
+import { invokeWithOptionalComponent } from '../components/optional-install.js';
+
 let extensionContext = {};
 let appState = {};
 let previewMode = false;
@@ -10,6 +12,20 @@ const showToast = (...args) => contextValue('showToast', () => {})(...args);
 const routeDownloadAnalysis = (...args) => contextValue('routeDownloadAnalysis', async () => {})(...args);
 const downloadManagerVisualPreferences = (...args) => contextValue('downloadManagerVisualPreferences', () => ({ theme: 'dark', accent: '' }))(...args);
 const forceDownloadManagerAllView = (...args) => contextValue('forceDownloadManagerAllView', () => {})(...args);
+
+function optionalComponentInstallOptions() {
+  return {
+    confirmInstall: async (message) => {
+      await forceExtensionForeground();
+      return globalThis.confirm?.call(globalThis, message) ?? false;
+    },
+    onProgress: ({ component, state, progressPercent }) => {
+      const label = component === 'media-tools' ? 'Media Tools' : 'Torrent Engine';
+      const stage = state === 'verifying' ? 'Verificando' : state === 'installing' ? 'Instalando' : 'Descargando';
+      showToast(`${stage} ${label} · ${Math.round(progressPercent)}%`, 'info');
+    }
+  };
+}
 
 export function configureExtension(context = {}) {
   extensionContext = context;
@@ -91,7 +107,7 @@ async function queueExtensionSourceInBackground(source, payload = {}) {
     useBraveCookies: Boolean(payload.sessionConsent),
     cookiesPath: payload.cookiesPath || null
   };
-  const media = await invoke('analyze_media_url_with_session', { url: normalized, ...sessionArgs });
+  const media = await invokeWithOptionalComponent(invoke, 'analyze_media_url_with_session', { url: normalized, ...sessionArgs }, optionalComponentInstallOptions());
   if (Array.isArray(media?.items) && media.items.length) {
     const items = media.items.map((item, index) => extensionPlaylistItem({
       ...item,
@@ -101,14 +117,14 @@ async function queueExtensionSourceInBackground(source, payload = {}) {
       durationSeconds: item.duration_seconds,
       provider: item.provider
     }, index)).filter((item) => item.sourceUrl);
-    return invoke('queue_playlist_selection', {
+    return invokeWithOptionalComponent(invoke, 'queue_playlist_selection', {
       playlistTitle: String(payload.playlistTitle || media.title || 'Playlist desde la extensión'),
       items,
       format: extensionPlaylistFormatLabel(payload)
-    });
+    }, optionalComponentInstallOptions());
   }
   const format = preferredExtensionMediaFormat(payload);
-  return invoke('queue_media_download_secure', {
+  return invokeWithOptionalComponent(invoke, 'queue_media_download_secure', {
     url: normalized,
     title: media?.title || payload.title || 'Descarga multimedia',
     thumbnail: media?.thumbnail || payload.thumbnail || '',
@@ -117,7 +133,7 @@ async function queueExtensionSourceInBackground(source, payload = {}) {
     expectedDurationSeconds: media?.duration_seconds || null,
     useBraveCookies: sessionArgs.useBraveCookies,
     cookiesPath: sessionArgs.cookiesPath
-  });
+  }, optionalComponentInstallOptions());
 }
 
 async function forceExtensionForeground() {
@@ -257,11 +273,11 @@ async function processExtensionBridgeRequests() {
       && !detectedPlaylist;
     if (manualPlaylist || urls.length > 1) {
       const items = sourceItems.map(extensionPlaylistItem).filter((item) => item.sourceUrl);
-      await invoke('queue_playlist_selection', {
+      await invokeWithOptionalComponent(invoke, 'queue_playlist_selection', {
         playlistTitle: String(payload.playlistTitle || payload.collectionName || 'Playlist desde la extensión'),
         items,
         format: extensionPlaylistFormatLabel(payload)
-      });
+      }, optionalComponentInstallOptions());
       await loadSnapshot();
       if (foreground) {
         showToast(`${items.length} enlaces añadidos como playlist.`, 'success');

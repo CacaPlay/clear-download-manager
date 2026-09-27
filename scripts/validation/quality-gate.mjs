@@ -13,6 +13,7 @@ const scriptPath = fileURLToPath(import.meta.url);
 export const qualityGateIds = [
   ...releaseGateIds.filter((gate) => gate !== 'check:gpl-source'),
   'check:component-manager',
+  'test:optional-component-flow',
   'check:manifest',
   'check:source-release',
 ];

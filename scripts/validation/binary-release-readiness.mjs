@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { inspectCorrespondingSourceReleaseAssets } from './corresponding-source-contract.mjs';
+import { inspectCorePackageFiles } from './core-package-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const args = process.argv.slice(2);
@@ -15,6 +16,7 @@ const sourceArchive = value('--source-archive') ? path.resolve(value('--source-a
 const packagePath = value('--package') ? path.resolve(value('--package')) : '';
 const inspectionRoot = value('--inspection-dir') ? path.resolve(value('--inspection-dir')) : '';
 const releaseAssetsDir = value('--release-assets-dir') ? path.resolve(value('--release-assets-dir')) : '';
+const componentPackagesDir = value('--component-packages-dir') ? path.resolve(value('--component-packages-dir')) : '';
 const checks = [];
 const failures = [];
 const pending = [];
@@ -60,7 +62,7 @@ else {
   console.log('PENDING: source-release gate (no --source-archive supplied)');
 }
 run('check:gpl-source', 'scripts/validation/gpl-source-readiness.mjs');
-run('verify:binaries', 'scripts/verify-binaries.mjs');
+
 
 try {
   const sourceRegistry = JSON.parse(fs.readFileSync(path.join(root, 'third-party-source/corresponding-source.json'), 'utf8'));
@@ -73,6 +75,36 @@ try {
   for (const issue of sourceAssetIssues.pending) console.log(`PENDING: corresponding-source assets: ${issue}`);
 } catch (error) {
   failures.push(`corresponding-source assets: ${error.message}`);
+}
+
+const trustSource = fs.readFileSync(path.join(root, 'src-tauri/src/tools/trust.rs'), 'utf8');
+const productionTrust = trustSource.match(/production\s*\(\)\s*->\s*Self\s*\{[\s\S]{0,400}?\}/);
+if (productionTrust?.[0].includes('Self::empty()')) {
+  pending.push('production catalog signing key');
+  checks.push({ label: 'production catalog signing key', status: 'PENDING' });
+  console.log('PENDING: production catalog signing key is intentionally not provisioned; remote activation remains fail-closed.');
+}
+
+if (!componentPackagesDir || !fs.existsSync(componentPackagesDir) || !fs.statSync(componentPackagesDir).isDirectory()) {
+  pending.push('optional component package inspection');
+  checks.push({ label: 'optional component package inspection', status: 'PENDING' });
+  console.log('PENDING: optional component package inspection (supply --component-packages-dir with both exact packages)');
+} else {
+  const result = spawnSync('powershell.exe', [
+    '-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+    path.join(root, 'scripts/validation/inspect-component-packages.ps1'),
+    '-PackageDirectory', componentPackagesDir,
+    '-RuntimeManifestPath', path.join(root, 'src-tauri/resources/bin/runtime-manifest.json'),
+  ], { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024 });
+  const output = String(result.stdout || '') + String(result.stderr || '');
+  if (result.status === 0) {
+    checks.push({ label: 'optional component package inspection', status: 'PASS' });
+    console.log(output.trim());
+  } else {
+    failures.push('optional component package inspection: ' + output.trim().split(/\r?\n/).slice(-4).join(' | '));
+    checks.push({ label: 'optional component package inspection', status: 'FAIL' });
+    console.error(output);
+  }
 }
 
 if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isFile()) {
@@ -88,6 +120,8 @@ if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isF
     const packageSha256 = crypto.createHash('sha256').update(fs.readFileSync(packagePath)).digest('hex');
     const files = inventory(inspectionRoot);
     const byName = new Map(files.map((file) => [path.basename(file.path).toLowerCase(), file]));
+    const coreContents = inspectCorePackageFiles(files.map(file => file.path));
+    failures.push(...coreContents.failures.map(issue => `package inspection: ${issue}`));
     const runtimeManifestText = fs.readFileSync(path.join(root, 'src-tauri/resources/bin/runtime-manifest.json'), 'utf8');
     const runtime = JSON.parse(runtimeManifestText.replace(/^\uFEFF/, ''));
     if (runtime.ffmpeg?.profile !== 'SAFE LEAN'
@@ -95,41 +129,12 @@ if (!packagePath || !fs.existsSync(packagePath) || !fs.statSync(packagePath).isF
       || /gyan\.dev|GyanD/i.test(String(runtime.ffmpeg?.source || ''))) {
       failures.push('package inspection: active FFmpeg runtime must be the approved SAFE LEAN build with no Gyan source metadata.');
     }
-    const expected = new Map([
-      ['yt-dlp.exe', runtime.ytDlp?.sha256],
-      ['aria2c.exe', runtime.aria2?.executableSha256],
-      ['ffmpeg.exe', runtime.ffmpeg?.ffmpegSha256],
-      ['ffprobe.exe', runtime.ffmpeg?.ffprobeSha256],
-    ]);
-    for (const [name, digest] of expected) {
-      const file = byName.get(name);
-      if (!file || !digest || crypto.createHash('sha256').update(fs.readFileSync(file.absolute)).digest('hex') !== digest.toLowerCase()) {
-        failures.push(`package inspection: ${name} is missing or its hash differs from runtime-manifest.json.`);
-      }
-    }
-    for (const name of ['ffmpeg.exe', 'ffprobe.exe']) {
-      const copies = files.filter((file) => path.basename(file.path).toLowerCase() === name);
-      if (copies.length !== 1) failures.push(`package inspection: expected exactly one ${name}; found ${copies.length}.`);
-    }
     if (files.some((file) => /gyan|essentials_build/i.test(file.path))) {
       failures.push('package inspection: retired Gyan FFmpeg files or names are still present.');
     }
-    const requiredNotices = [
-      'yt-dlp-license.txt', 'yt-dlp-notice.txt', 'yt-dlp-third-party-licenses.txt',
-      'aria2-copying.txt', 'aria2-notice.txt', 'ffmpeg-license.txt',
-      'ffmpeg-notice.txt', 'ffmpeg-build-readme.txt', 'third_party_notices.txt',
-    ];
-    const missingNotices = requiredNotices.filter((name) => !byName.has(name));
-    if (missingNotices.length) failures.push(`package inspection: missing runtime/license notices: ${missingNotices.join(', ')}.`);
-    for (const name of ['ffmpeg-notice.txt', 'ffmpeg-build-readme.txt', 'third_party_notices.txt']) {
-      const file = byName.get(name);
-      if (file && /GyanD|gyan\.dev|essentials_build/i.test(fs.readFileSync(file.absolute, 'utf8'))) {
-        failures.push(`package inspection: active ${name} still names the retired Gyan build.`);
-      }
-    }
     console.log(`Package inspection SHA-256: ${packageSha256}`);
     console.log(`Expanded package files inspected: ${files.length}`);
-    console.log(`${failures.some((entry) => entry.startsWith('package inspection:')) ? 'FAIL' : 'PASS'}: package contents, runtime hashes, and notices`);
+    console.log(`${failures.some((entry) => entry.startsWith('package inspection:')) ? 'FAIL' : 'PASS'}: standalone Core package excludes optional runtimes and component distribution assets`);
   } catch (error) {
     failures.push(`package inspection: ${error.message}`);
   }

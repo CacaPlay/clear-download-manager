@@ -766,12 +766,12 @@ app-ui/assets/icons/LICENSE and app-ui/assets/icons/NOTICE.md.
   license texts and source references are in that directory. The ambiguous
   custom music vector was replaced by the official Lucide list-music path,
   pinned to an upstream commit in its local notice.
-- src-tauri/resources/bin/ contains separately licensed runtime tools when
-  prepared for a Windows build. Their version-specific license texts, notices,
-  source references and build information are under
-  src-tauri/resources/licenses/. In particular, aria2 and the current
-  FFmpeg/FFprobe build have copyleft obligations; consult their notices before
-  redistributing binaries.
+- src-tauri/resources/bin/ is used to prepare separately licensed optional
+  runtime components. Their version-specific license texts, notices, source
+  references and build information are under src-tauri/resources/licenses/.
+  The Core installer omits those executables. In particular, aria2 and the
+  current FFmpeg/FFprobe build have copyleft obligations; consult their notices
+  and corresponding-source records before distributing component packages.
 - Rust and npm dependencies retain their individual licenses. The lockfiles
   identify the resolved versions; generated dependency inventory and SBOM
   files accompany release builds where available.
@@ -833,7 +833,7 @@ SOFTWARE.
 ----- Resolved dependency inventories -----
 
 npm SBOM: NPM-SBOM.spdx.json (SPDX-2.3; 40 packages)
-Rust inventory: CARGO-DEPENDENCY-LICENSES.txt (359 Windows x64 registry packages)
+Rust inventory: CARGO-DEPENDENCY-LICENSES.txt (362 Windows x64 registry packages)
 
 ===== yt-dlp =====
 
@@ -849,11 +849,11 @@ Third-party licenses source commit: 3a08beaf031ab68f966401ead017ac81fe8486cf
 Third-party licenses source: https://raw.githubusercontent.com/yt-dlp/yt-dlp/3a08beaf031ab68f966401ead017ac81fe8486cf/THIRD_PARTY_LICENSES.txt
 Third-party licenses pinned SHA-256: 472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7
 The verified source file is included as YT-DLP-THIRD-PARTY-LICENSES.txt.
-The yt-dlp repository code itself is distributed under The Unlicense: https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/LICENSE.
+yt-dlp itself is distributed under The Unlicense: https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/LICENSE.
 
-This is not the effective license expression for the standalone Windows executable. The README at the exact release tag states that PyInstaller-bundled executables include GPLv3+ code and that the combined work is GPLv3+. It also states that standalone release binaries contain the Python interpreter and packages marked with an asterisk; mutagen is marked and is GPL-2.0-or-later. See https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/README.md#licensing and the pinned third-party license inventory above.
+The standalone Windows executable is a combined PyInstaller distribution and does not have the same effective license as the yt-dlp source repository. The README at the exact release tag describes the bundled executable as GPL-3.0-or-later; the pinned THIRD_PARTY_LICENSES.txt identifies Mutagen as GPL-2.0-or-later. See https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/README.md#licensing and the included YT-DLP-THIRD-PARTY-LICENSES.txt.
 
-Clear records this yt-dlp.exe artifact as GPL-3.0-or-later for release gating. Corresponding source/build inputs or a reviewed alternative have not been assembled or approved; status: PENDING. The upstream source tarball alone is not treated as corresponding source because the release README says it contains only Unlicense-licensed code.
+Clear records yt-dlp.exe as GPL-3.0-or-later for release gating. Corresponding source/build inputs or a reviewed alternative remain PENDING. Do not distribute the binary until the GPL source gate passes.
 
 ----- YT-DLP-LICENSE.txt -----
 

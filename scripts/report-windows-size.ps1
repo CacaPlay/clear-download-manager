@@ -1,6 +1,9 @@
 [CmdletBinding()]
 param(
-  [string]$OutputDirectory = 'output\size-report'
+  [string]$OutputDirectory = 'output\size-report',
+  [string]$StoreNsisPath = '',
+  [string]$StoreMsiPath = '',
+  [string]$InstalledCoreDirectory = ''
 )
 
 Set-StrictMode -Version 2.0
@@ -68,6 +71,32 @@ foreach ($Candidate in $Candidates) {
   if ($null -ne $Entry) { [void]$Entries.Add($Entry) }
 }
 
+foreach ($Candidate in @(
+  @{ Path = $StoreNsisPath; Category = 'store-nsis' },
+  @{ Path = $StoreMsiPath; Category = 'store-msi' }
+)) {
+  if ([string]::IsNullOrWhiteSpace([string]$Candidate.Path)) { continue }
+  $CandidatePath = if ([IO.Path]::IsPathRooted([string]$Candidate.Path)) {
+    [IO.Path]::GetFullPath([string]$Candidate.Path)
+  }
+  else { Join-Path $Root $Candidate.Path }
+  $Entry = File-Entry -Path $CandidatePath -Category $Candidate.Category
+  if ($null -ne $Entry) { [void]$Entries.Add($Entry) }
+  else { throw "Specified Store installer does not exist: $CandidatePath" }
+}
+
+$InstalledCoreFiles = @()
+if (-not [string]::IsNullOrWhiteSpace($InstalledCoreDirectory)) {
+  $InstalledCorePath = if ([IO.Path]::IsPathRooted($InstalledCoreDirectory)) {
+    [IO.Path]::GetFullPath($InstalledCoreDirectory)
+  }
+  else { [IO.Path]::GetFullPath((Join-Path $Root $InstalledCoreDirectory)) }
+  if (-not (Test-Path -LiteralPath $InstalledCorePath -PathType Container)) {
+    throw "Specified installed Core directory does not exist: $InstalledCorePath"
+  }
+  $InstalledCoreFiles = @(Get-ChildItem -LiteralPath $InstalledCorePath -Recurse -File)
+}
+
 $BundleRoot = Join-Path $TauriTargetRoot 'release\bundle'
 if (Test-Path $BundleRoot) {
   Get-ChildItem $BundleRoot -Recurse -File -ErrorAction SilentlyContinue |
@@ -97,6 +126,14 @@ function Get-CategoryByteSum {
 
 $RuntimeBytes = Get-CategoryByteSum -Items $EntryArray -Category 'runtime'
 $AppBytes = Get-CategoryByteSum -Items $EntryArray -Category 'app'
+$NormalInstallerBytes = Get-CategoryByteSum -Items $EntryArray -Category 'installer'
+$NormalNsisBytes = [int64](($EntryArray | Where-Object { $_.category -eq 'installer' -and $_.name -like '*.exe' } | Measure-Object -Property bytes -Sum).Sum)
+$NormalMsiBytes = [int64](($EntryArray | Where-Object { $_.category -eq 'installer' -and $_.name -like '*.msi' } | Measure-Object -Property bytes -Sum).Sum)
+$StoreNsisBytes = Get-CategoryByteSum -Items $EntryArray -Category 'store-nsis'
+$StoreMsiBytes = Get-CategoryByteSum -Items $EntryArray -Category 'store-msi'
+$InstalledCoreBytes = [int64](($InstalledCoreFiles | Measure-Object -Property Length -Sum).Sum)
+$OptionalRuntimeNames = @('yt-dlp.exe', 'ffmpeg.exe', 'ffprobe.exe', 'deno.exe', 'aria2c.exe')
+$UnexpectedInstalledRuntimes = @($InstalledCoreFiles | Where-Object { $OptionalRuntimeNames -contains $_.Name } | ForEach-Object { $_.FullName })
 $Report = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString('o')
   version = ((Get-Content (Join-Path $Root 'package.json') -Raw | ConvertFrom-Json).version)
@@ -104,15 +141,29 @@ $Report = [ordered]@{
     rustRelease = 'LTO + opt-level=s + panic=abort + strip + codegen-units=1 (Cargo stable)'
     unusedCommands = 'Tauri removeUnusedCommands=true'
     nsis = 'LZMA'
-    webview2 = 'downloadBootstrapper (not embedded)'
-    note = 'The four offline engines dominate the installed payload. They remain bundled to preserve offline reliability.'
+    normalWebview2 = 'downloadBootstrapper (compact normal/GitHub package)'
+    storeWebview2 = 'offlineInstaller (standalone/offline Store package; approximately 127 MB added)'
+    note = 'Optional media and torrent engines are separate post-install packages. Pass -StoreNsisPath, -StoreMsiPath, and -InstalledCoreDirectory to report those exact outputs.'
   }
   totals = [ordered]@{
     appBytes = $AppBytes
     runtimeBytes = $RuntimeBytes
+    normalInstallerBytes = $NormalInstallerBytes
+    normalNsisBytes = $NormalNsisBytes
+    normalMsiBytes = $NormalMsiBytes
+    storeNsisBytes = $StoreNsisBytes
+    storeMsiBytes = $StoreMsiBytes
+    installedCorePayloadBytes = $InstalledCoreBytes
     appMiB = [math]::Round($AppBytes / 1MB, 2)
     runtimeMiB = [math]::Round($RuntimeBytes / 1MB, 2)
+    normalInstallerMiB = [math]::Round($NormalInstallerBytes / 1MB, 2)
+    normalNsisMiB = [math]::Round($NormalNsisBytes / 1MB, 2)
+    normalMsiMiB = [math]::Round($NormalMsiBytes / 1MB, 2)
+    storeNsisMiB = [math]::Round($StoreNsisBytes / 1MB, 2)
+    storeMsiMiB = [math]::Round($StoreMsiBytes / 1MB, 2)
+    installedCorePayloadMiB = [math]::Round($InstalledCoreBytes / 1MB, 2)
   }
+  installedCorePayload = [ordered]@{ files = $InstalledCoreFiles.Count; unexpectedOptionalRuntimeFiles = $UnexpectedInstalledRuntimes }
   files = @($EntryArray)
 }
 $ReportPath = Join-Path $Output 'windows-size-report.json'
@@ -120,4 +171,5 @@ $ReportPath = Join-Path $Output 'windows-size-report.json'
 
 Write-Host "OK: size report written to $ReportPath" -ForegroundColor Green
 $EntryArray | Sort-Object -Property bytes -Descending | Format-Table -Property category, name, mebibytes
-Write-Host "App: $($Report.totals.appMiB) MiB | Offline runtimes: $($Report.totals.runtimeMiB) MiB"
+Write-Host "App: $($Report.totals.appMiB) MiB | normal NSIS/MSI: $($Report.totals.normalNsisMiB)/$($Report.totals.normalMsiMiB) MiB | Store NSIS/MSI: $($Report.totals.storeNsisMiB)/$($Report.totals.storeMsiMiB) MiB | installed Core: $($Report.totals.installedCorePayloadMiB) MiB"
+if ($UnexpectedInstalledRuntimes.Count) { Write-Warning "Optional runtime files found in installed Core: $($UnexpectedInstalledRuntimes -join ', ')" }

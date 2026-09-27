@@ -42,6 +42,7 @@ const ALLOWED_ENTRY_KEYS = new Set([
   'buildConfigurationEvidence', 'runtimeFiles', 'distributionMethod',
   'sourceArchivePath', 'sourceArchiveSha256', 'buildInputsPath', 'buildInputsSha256',
   'releaseAssetName', 'releaseAssetSha256', 'writtenOfferPath', 'writtenOfferSha256',
+  'technicalStatus', 'technicalBlockers', 'sourceArchiveBytes', 'sourceArchiveGenerated',
   'humanReview',
 ]);
 
@@ -57,7 +58,7 @@ const expectedSourceAssetName = (id, version, runtimeManifestKey) => {
   return `ffmpeg-${version}-essentials-win64-corresponding-source.tar.xz`;
 };
 
-function addFileState(issues, root, relative, expectedHash, label) {
+function addFileState(issues, root, relative, expectedHash, label, expectedSize = null) {
   if (relative == null || expectedHash == null) {
     issues.pending.push(`${label}: archive/input and SHA-256 are not recorded.`);
     return null;
@@ -87,12 +88,53 @@ function addFileState(issues, root, relative, expectedHash, label) {
     issues.failures.push(`${label}: must be a regular file, not a link or directory.`);
     return null;
   }
+  if (expectedSize != null && stat.size !== expectedSize) {
+    issues.failures.push(`${label}: file size does not match the recorded byte count.`);
+    return null;
+  }
   const actualHash = digest(absolute);
   if (actualHash !== expectedHash) {
     issues.failures.push(`${label}: SHA-256 does not match the file.`);
     return null;
   }
   return actualHash;
+}
+
+function validateTechnicalBuildInputs(entry, runtimeRecord, root, issues, expectedName, archiveHash, recordHash) {
+  if (!recordHash) return;
+  try {
+    const record = JSON.parse(fs.readFileSync(path.resolve(root, entry.buildInputsPath), 'utf8'));
+    const identity = record.runtime || {};
+    const binaryHash = identity.binarySha256 || identity.sha256;
+    if (record.schemaVersion !== 1
+      || identity.id !== entry.id
+      || identity.version !== entry.version
+      || identity.sourceCommit !== entry.sourceCommit
+      || binaryHash !== entry.binarySha256
+      || identity.effectiveLicense !== entry.license
+      || (identity.sourceRepository && identity.sourceRepository !== entry.sourceRepository)
+      || (identity.sourceVersion && identity.sourceVersion !== entry.sourceVersion)
+      || runtimeRecord.sha256 && identity.sha256 && runtimeRecord.sha256 !== identity.sha256) {
+      issues.failures.push(`${entry.id} build-input record: pinned runtime identity, commit, binary hash, or license does not match the registry.`);
+    }
+    const archive = record.correspondingSourceArchive;
+    if (archive?.assetName !== expectedName
+      || archive?.path !== entry.sourceArchivePath
+      || archive?.bytes !== entry.sourceArchiveBytes
+      || archive?.sha256 !== entry.sourceArchiveSha256
+      || (entry.id === 'yt-dlp' && archive?.generatedFromPinnedInputs !== true)
+      || (archiveHash && archiveHash !== entry.sourceArchiveSha256)) {
+      issues.failures.push(`${entry.id} build-input record: exact source archive name, path, byte count, and SHA-256 do not match the registry.`);
+    }
+    // Build-input review values are historical snapshots. Current distributor approval is
+    // enforced through the hash-matched humanReview record in the active registry above.
+    if (!record.rebuildAssessment || !Array.isArray(record.rebuildAssessment.blockers)
+      || record.rebuildAssessment.humanDistributorReview !== 'PENDING') {
+      issues.failures.push(`${entry.id} build-input record: historical rebuild assessment and its pending-review snapshot must be explicit.`);
+    }
+  } catch (error) {
+    issues.failures.push(`${entry.id} build-input record: invalid JSON (${error.message}).`);
+  }
 }
 
 export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
@@ -213,6 +255,17 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
       issues.failures.push(`${id}.runtimeFiles: exact runtime filenames, hashes, and corresponding-source asset links are required.`);
     }
 
+    if (['aria2', 'yt-dlp'].includes(id)) {
+      if (!['PENDING', 'READY_FOR_HUMAN_REVIEW'].includes(entry.technicalStatus)
+        || !Array.isArray(entry.technicalBlockers)) {
+        issues.failures.push(`${id}: technicalStatus and technicalBlockers must be explicit.`);
+      } else if (entry.technicalStatus === 'READY_FOR_HUMAN_REVIEW' && entry.technicalBlockers.length) {
+        issues.failures.push(`${id}: READY_FOR_HUMAN_REVIEW cannot have unresolved technicalBlockers.`);
+      } else if (entry.technicalStatus === 'PENDING' && !entry.technicalBlockers.length) {
+        issues.failures.push(`${id}: PENDING technical status must name its blocker.`);
+      }
+    }
+
     const review = entry.humanReview;
     if (!review || review.required !== true || !['PENDING', 'APPROVED'].includes(review.status)) {
       issues.failures.push(`${id}.humanReview: explicit required=true and a PENDING or APPROVED status are mandatory.`);
@@ -231,8 +284,20 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
     }
 
     if (entry.distributionMethod === 'corresponding-source-archive') {
-      const sourceHash = addFileState(issues, root, entry.sourceArchivePath, entry.sourceArchiveSha256, `${id}.sourceArchive`);
+      let sourceHash;
+      if (entry.sourceArchiveGenerated === true) {
+        if (id !== 'yt-dlp' || entry.sourceArchivePath !== `output/release-assets/${expectedName}`
+          || entry.sourceArchiveBytes !== 89850212
+          || entry.sourceArchiveSha256 !== 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472') {
+          issues.failures.push(`${id}.sourceArchive: generated archive path, size, and digest must match the pinned release asset contract.`);
+        }
+      } else {
+        sourceHash = addFileState(issues, root, entry.sourceArchivePath, entry.sourceArchiveSha256, `${id}.sourceArchive`, entry.sourceArchiveBytes ?? null);
+      }
       const buildInputsHash = addFileState(issues, root, entry.buildInputsPath, entry.buildInputsSha256, `${id}.buildInputs`);
+      if (['aria2', 'yt-dlp'].includes(id)) {
+        validateTechnicalBuildInputs(entry, runtimeRecord, root, issues, expectedName, sourceHash, buildInputsHash);
+      }
       if (safeLeanCandidate && buildInputsHash) {
         try {
           const buildInputs = JSON.parse(fs.readFileSync(path.resolve(root, entry.buildInputsPath), 'utf8'));
@@ -269,7 +334,8 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
       }
       if (entry.releaseAssetSha256 == null) {
         issues.pending.push(`${id}: release asset SHA-256 is not recorded.`);
-      } else if (!validSha256(entry.releaseAssetSha256) || sourceHash && entry.releaseAssetSha256 !== sourceHash) {
+      } else if (!validSha256(entry.releaseAssetSha256) || sourceHash && entry.releaseAssetSha256 !== sourceHash
+        || entry.releaseAssetSha256 !== entry.sourceArchiveSha256) {
         issues.failures.push(`${id}: release asset hash must be a full SHA-256 equal to the corresponding-source archive hash.`);
       }
     } else if (entry.distributionMethod === 'written-offer') {
@@ -349,6 +415,10 @@ export function inspectCorrespondingSourceReleaseAssets(manifest, directory) {
       continue;
     }
     const actualHash = digest(path.join(directory, exact[0].name));
+    if (record.sourceArchiveBytes != null && fs.statSync(path.join(directory, exact[0].name)).size !== record.sourceArchiveBytes) {
+      issues.failures.push(`${id}: exact release asset byte count does not match the corresponding-source registry.`);
+      continue;
+    }
     if (actualHash !== expectedHash) issues.failures.push(`${id}: exact release asset SHA-256 does not match the approved registry.`);
   }
   return issues;

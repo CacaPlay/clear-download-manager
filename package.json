@@ -51,7 +51,9 @@
     "check:binary-release": "node scripts/validation/binary-release-readiness.mjs",
     "check:quality": "node scripts/validation/quality-gate.mjs",
     "source:archive": "node scripts/create-source-archive.mjs",
+    "source:yt-dlp:fetch": "python scripts/fetch-yt-dlp-corresponding-source-inputs.py",
     "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs",
+    "test:yt-dlp-source-fetch": "python -m unittest scripts.validation.test_yt_dlp_source_fetch -v",
     "verify:binaries": "node scripts/verify-binaries.mjs",
     "tauri": "tauri",
     "build:local": "tauri build --no-bundle",
@@ -150,7 +152,8 @@
     "check:ui-v5:performance": "python scripts/validation/ui-v5-playlist-performance.py",
     "check:subwindows": "node scripts/validation/phase34_subwindow_responsiveness.mjs",
     "check:subwindows:interaction": "python scripts/validation/phase34_subwindow_interaction.py",
-    "check:pre2i-stabilization": "node scripts/validation/pre2i-stabilization.mjs && python scripts/validation/pre2i_player_interaction.py"
+    "check:pre2i-stabilization": "node scripts/validation/pre2i-stabilization.mjs && python scripts/validation/pre2i_player_interaction.py",
+    "test:optional-component-flow": "node --test scripts/validation/optional-component-install.test.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.5",

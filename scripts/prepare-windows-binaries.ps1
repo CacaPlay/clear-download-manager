@@ -1,4 +1,4 @@
-﻿param(
+param(
   [string]$YtDlpVersion = "2026.08.19",
   [string]$YtDlpCommit = "3a08beaf031ab68f966401ead017ac81fe8486cf",
   [string]$YtDlpLicensesSha256 = "472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7",
@@ -383,7 +383,7 @@ $Manifest = [ordered]@{
 $Manifest | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $BinDir "runtime-manifest.json") -Encoding UTF8
 
 @"
-CacaTools Download Manager includes yt-dlp as a local component.
+Clear Download Manager provides yt-dlp in the optional Media Tools component.
 Version: $YtDlpVersionActual
 Official source: $YtDlpUrl
 Official checksums: $YtDlpChecksumsUrl
@@ -401,7 +401,7 @@ Clear records yt-dlp.exe as GPL-3.0-or-later for release gating. Corresponding s
 "@ | Set-Content (Join-Path $LicenseDir "YT-DLP-NOTICE.txt") -Encoding UTF8
 
 @"
-CacaTools Download Manager includes aria2c as a local download engine.
+Clear Download Manager provides aria2c in the optional Torrent Engine component.
 Version output: $Aria2VersionActual
 Official release asset: $Aria2Url
 Archive SHA-256: $Aria2Actual
@@ -416,7 +416,7 @@ Release source tag: release-$Aria2Version
 "@ | Set-Content (Join-Path $LicenseDir "ARIA2-NOTICE.txt") -Encoding UTF8
 
 @"
-CacaTools Download Manager uses FFmpeg and FFprobe as external executables to combine and convert audio and video.
+Clear Download Manager provides FFmpeg and FFprobe in the optional Media Tools component to combine and convert audio and video.
 Build: $FfmpegVersionActual (SAFE LEAN; GPL-3.0-or-later)
 Corresponding-source archive: $FfmpegSourceArchiveName
 Corresponding-source SHA-256: $FfmpegActual
@@ -433,7 +433,7 @@ $FfmpegBuildConfig
 "@ | Set-Content (Join-Path $LicenseDir "FFMPEG-NOTICE.txt") -Encoding UTF8
 
 @"
-CacaTools Download Manager includes Deno as the bundled JavaScript runtime used by yt-dlp EJS challenges.
+Clear Download Manager provides Deno in the optional Media Tools component as the JavaScript runtime used by yt-dlp EJS challenges.
 Version output: $DenoVersionActual
 Official release asset: $DenoUrl
 Archive SHA-256: $DenoActual

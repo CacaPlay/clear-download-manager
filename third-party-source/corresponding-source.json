@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "status": "PENDING",
+  "status": "READY",
   "releaseAssetPolicy": "Each GPL runtime file must link to the exact releaseAssetName recorded for its runtime family. The release asset SHA-256 must match the recorded digest, and a human distributor review must approve the selected corresponding-source archive or written offer.",
   "runtimes": [
     {
@@ -20,16 +20,24 @@
           "correspondingSourceAsset": "aria2-1.37.0-win64-corresponding-source.tar.xz"
         }
       ],
-      "distributionMethod": null,
-      "sourceArchivePath": null,
-      "sourceArchiveSha256": null,
-      "buildInputsPath": null,
-      "buildInputsSha256": null,
+      "distributionMethod": "corresponding-source-archive",
+      "sourceArchivePath": "third-party-source/aria2/aria2-1.37.0-win64-corresponding-source.tar.xz",
+      "sourceArchiveSha256": "ef538f14aa306fd66c7bf8b0d09ae82ba7f881e013d8c0f8eee9eed0ed1e0234",
+      "buildInputsPath": "third-party-source/reviews/aria2-1.37.0-win64-build-inputs.json",
+      "buildInputsSha256": "52c48d636f6ae1fa259997342bf3b6c0679d0c588ab4fa1fb58cce69332ffa80",
       "releaseAssetName": "aria2-1.37.0-win64-corresponding-source.tar.xz",
-      "releaseAssetSha256": null,
+      "releaseAssetSha256": "ef538f14aa306fd66c7bf8b0d09ae82ba7f881e013d8c0f8eee9eed0ed1e0234",
       "writtenOfferPath": null,
       "writtenOfferSha256": null,
-      "humanReview": { "required": true, "status": "PENDING", "reviewRecordPath": null, "reviewRecordSha256": null }
+      "humanReview": {
+        "required": true,
+        "status": "APPROVED",
+        "reviewRecordPath": "third-party-source/reviews/aria2-1.37.0-win64-distributor-review.md",
+        "reviewRecordSha256": "6753aa52e73f90033648394d4733236cacac446684577a6f13e43d32c3ded66d"
+      },
+      "technicalStatus": "READY_FOR_HUMAN_REVIEW",
+      "technicalBlockers": [],
+      "sourceArchiveBytes": 11482952
     },
     {
       "id": "ffmpeg",
@@ -89,16 +97,25 @@
           "correspondingSourceAsset": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz"
         }
       ],
-      "distributionMethod": null,
-      "sourceArchivePath": null,
-      "sourceArchiveSha256": null,
-      "buildInputsPath": null,
-      "buildInputsSha256": null,
+      "distributionMethod": "corresponding-source-archive",
+      "sourceArchivePath": "output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
+      "sourceArchiveGenerated": true,
+      "sourceArchiveSha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472",
+      "buildInputsPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-build-inputs.json",
+      "buildInputsSha256": "b4d7230c13e12a85c97313f95d307fff531dc3e4216af6a179a6545c911db5d7",
       "releaseAssetName": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
-      "releaseAssetSha256": null,
+      "releaseAssetSha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472",
       "writtenOfferPath": null,
       "writtenOfferSha256": null,
-      "humanReview": { "required": true, "status": "PENDING", "reviewRecordPath": null, "reviewRecordSha256": null }
+      "humanReview": {
+        "required": true,
+        "status": "APPROVED",
+        "reviewRecordPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md",
+        "reviewRecordSha256": "a95817b65a6d34a283a0661117e1bb006dfa6b2a1560ebd88b5ca70f2108e884"
+      },
+      "sourceArchiveBytes": 89850212,
+      "technicalStatus": "READY_FOR_HUMAN_REVIEW",
+      "technicalBlockers": []
     }
   ]
 }

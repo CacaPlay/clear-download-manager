@@ -4,6 +4,7 @@ import { bindAppearanceSync } from './modules/appearance/sync.js?v=0.95.0-verify
 import { bindDestinationPickerState, chooseDestinationDirectory } from './modules/downloads/destination-picker.js?v=0.45.1';
 import { loadLocale, resolveLocale } from './modules/i18n/index.js';
 import { localizeDom } from './modules/i18n/runtime.js';
+import { invokeWithOptionalComponent } from './modules/components/optional-install.js';
 
 document.addEventListener('contextmenu', (event) => event.preventDefault(), true);
 
@@ -251,15 +252,16 @@ async function invokeMediaAnalysisWithRetry(url, generation = state.sizeGenerati
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     if (!analysisIsCurrent(requestId, generation)) return null;
     try {
-       return await invoke('analyze_media_url_with_session_for_window', {
+       return await invokeWithOptionalComponent(invoke, 'analyze_media_url_with_session_for_window', {
          url: source,
          useBraveCookies: Boolean(state.sessionConsent),
          cookiesPath: state.cookiesPath || null,
          windowLabel
-       });
+       }, { onProgress: updateComponentInstallProgress });
     }
     catch (error) {
       lastError = error;
+      if (error?.code === 'CDM_OPTIONAL_COMPONENT_FLOW_STOP') break;
       if (attempt >= attempts) break;
       state.phase = `Reintentando análisis (${attempt + 1}/${attempts})…`;
       if (analysisIsCurrent(requestId, generation) && state.busy) render();
@@ -872,6 +874,13 @@ async function chooseDestination() {
   } catch (error) { showError(error); }
 }
 
+function updateComponentInstallProgress({ component, state: phase, progressPercent }) {
+  const label = component === 'media-tools' ? 'Media Tools' : 'Torrent Engine';
+  const stage = phase === 'verifying' ? 'Verificando' : phase === 'installing' ? 'Instalando' : 'Descargando';
+  state.phase = `${stage} ${label} · ${Math.round(progressPercent)}%`;
+  render();
+}
+
 function showError(error) {
   state.error = friendlyAnalysisError(error, state.source);
   state.busy = false;
@@ -902,14 +911,14 @@ async function confirmDownload() {
   try {
     if (state.kind === 'playlist') {
       const items = selectedItems().map((item) => ({ sourceId: item.sourceId, sourceUrl: item.sourceUrl, metadataUrl: item.metadataUrl, selectedSourceUrl: item.selectedSourceUrl, resolutionState: item.resolutionState || 'ready', providerId: item.providerId, title: item.title, creator: item.creator, thumbnail: item.thumbnail, durationLabel: item.durationLabel, expectedDurationSeconds: item.expectedDurationSeconds }));
-      await invoke('queue_playlist_selection', { playlistTitle: state.analysis?.title || 'Playlist', items, format: state.playlistFormat });
+      await invokeWithOptionalComponent(invoke, 'queue_playlist_selection', { playlistTitle: state.analysis?.title || 'Playlist', items, format: state.playlistFormat }, { onProgress: updateComponentInstallProgress });
     } else if (state.direct) {
       await invoke('queue_http_download', { url: state.direct.url, filename: httpFilenameForQueue(), extensionFilename: null, extensionMime: null, extensionExpectedExtension: null });
     } else {
       const selectedSelector = state.videoQuality !== 'best' && selectorHasUnsafeBestFallback(state.selectedFormat, state.videoQuality)
         ? videoSelectorForQuality(state.videoQuality)
         : (state.selectedFormat || format?.id || videoSelectorForQuality(state.videoQuality));
-      await invoke('queue_media_download_secure', { url: state.source, title: state.analysis?.title || 'Contenido multimedia', thumbnail: state.analysis?.thumbnail || null, formatSelector: selectedSelector, outputMode: state.outputMode, expectedDurationSeconds: Number(state.analysis?.duration_seconds || 0) || null, filename: state.filename.trim() || null, useBraveCookies: Boolean(state.sessionConsent), cookiesPath: state.cookiesPath || null });
+      await invokeWithOptionalComponent(invoke, 'queue_media_download_secure', { url: state.source, title: state.analysis?.title || 'Contenido multimedia', thumbnail: state.analysis?.thumbnail || null, formatSelector: selectedSelector, outputMode: state.outputMode, expectedDurationSeconds: Number(state.analysis?.duration_seconds || 0) || null, filename: state.filename.trim() || null, useBraveCookies: Boolean(state.sessionConsent), cookiesPath: state.cookiesPath || null }, { onProgress: updateComponentInstallProgress });
     }
     state.busy = false;
     // The preparation surface is only for choosing options. Once confirmed,

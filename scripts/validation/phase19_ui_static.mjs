@@ -73,7 +73,7 @@ const assertions = [
   ['Rustfmt 1.9 canonical extension include', files.bridge.includes('const BUNDLED_EXTENSION_CONFIG: &str = include_str!("../resources/extension/extension-config.json");')],
   ['stable release binary optimized', files.cargo.includes('lto = true') && files.cargo.includes('opt-level = "s"') && files.cargo.includes('strip = true') && files.cargo.includes('panic = "abort"') && files.cargo.includes('codegen-units = 1') && !files.cargo.includes('trim-paths') && tauri.build?.removeUnusedCommands === true],
   ['NSIS LZMA', tauri.bundle?.windows?.nsis?.compression === 'lzma'],
-  ['WebView2 bootstrapper', tauri.bundle?.windows?.webviewInstallMode?.type === 'downloadBootstrapper'],
+  ['Normal package uses WebView2 bootstrapper', tauri.bundle?.windows?.webviewInstallMode?.type === 'downloadBootstrapper'],
   ['size report prepared', files.sizeReport.includes('windows-size-report.json') && packageJson.scripts?.['report:size:windows']],
   ['startup smoke captures Rust abort diagnostics', files.smoke.includes('RedirectStandardError') && files.smoke.includes('RUST_BACKTRACE') && files.smoke.includes('$CrashText')],
   ['PowerShell 5.1 size report property safety', files.sizeReport.includes('return [pscustomobject][ordered]@{') && files.sizeReport.includes('Measure-Object -Property bytes -Sum') && files.sizeReport.includes('Sort-Object -Property bytes -Descending') && !files.sizeReport.includes('Measure-Object bytes -Sum')],

@@ -1279,6 +1279,8 @@ fn run_app() {
             commands::components::list_components,
             commands::components::verify_component,
             commands::components::install_component_from_package,
+            commands::components::refresh_component_catalog,
+            commands::components::install_component_from_catalog,
             commands::components::remove_component,
             commands::downloads::desktop_snapshot,
             commands::downloads::download_activity_snapshot,
