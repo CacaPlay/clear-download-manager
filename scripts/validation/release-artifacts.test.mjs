@@ -230,6 +230,7 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   const verify = job('verify-binary-release');
   const publish = job('publish');
   const secretRefs = [...workflow.matchAll(/secrets\.(RELEASE_TAURI_SIGNING_PRIVATE_KEY(?:_PASSWORD)?)/g)];
+  const componentSecretRefs = [...workflow.matchAll(/secrets\.RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY/g)];
 
   assert.match(buildTest, /npm run check:local-build/);
   assert.match(buildTest, /npm run check:release/);
@@ -254,7 +255,15 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   assert.match(packageSign, /release_artifact_id:\s*\$\{\{\s*steps\.release_artifact\.outputs\.artifact-id\s*\}\}/);
   assert.equal(secretRefs.length, 2);
   assert.ok(secretRefs.every((match) => match.index >= workflow.indexOf('  package-sign:')));
+  assert.equal(componentSecretRefs.length, 1);
+  assert.ok(componentSecretRefs[0].index >= workflow.indexOf('  package-sign:'));
+  assert.ok(componentSecretRefs[0].index < workflow.indexOf('  verify-binary-release:'));
+  assert.match(packageSign, /Sign inline Component Manager catalog/);
+  assert.match(packageSign, /verify-production/);
+  assert.match(packageSign, /component-release-assets\.mjs/);
   assert.match(verify, /artifact-ids:\s*\$\{\{\s*needs\.package-sign\.outputs\.release_artifact_id\s*\}\}/);
+  assert.match(verify, /component-release-assets\.mjs/);
+  assert.match(verify, /verify-production/);
   assert.match(verify, /npm run check:binary-release/);
   assert.match(verify, /--package/);
   assert.match(verify, /--inspection-dir/);
@@ -711,6 +720,16 @@ test('Quality and release CI install pinned Playwright Chromium before their res
     assert.ok(browserIndex > installIndex, `${name} must install Chromium after Playwright`);
     assert.ok(gateIndex > browserIndex, `${name} must install Chromium before ${gateCommand}`);
   }
+});
+
+test('component release assembly removes only its generated package stage in finally', () => {
+  const assembly = fs.readFileSync(path.join(repositoryRoot, 'scripts/assemble-component-release-assets.ps1'), 'utf8');
+  assert.match(assembly, /\$packageOutput\s*=\s*Join-Path\s+\$env:TEMP\s+\("cdm-component-package-stage-/);
+  assert.match(assembly, /try\s*\{[\s\S]*?\$packageBuild\s*=/);
+  assert.match(assembly, /finally\s*\{[\s\S]*?Remove-Item\s+-LiteralPath\s+\$stagePath\s+-Recurse\s+-Force/);
+  assert.match(assembly, /\$stageName\s+-match\s+'\^cdm-component-package-stage-\[0-9a-f\]\{32\}\$'/);
+  const finallyBody = assembly.slice(assembly.lastIndexOf('} finally {'));
+  assert.doesNotMatch(finallyBody, /Remove-Item[^\r\n]*\$output\b/);
 });
 
 test('source manifest canonicalizes shell-script line endings across Windows checkouts', () => {

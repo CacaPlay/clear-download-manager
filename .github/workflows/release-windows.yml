@@ -118,11 +118,11 @@ jobs:
         run: |
           cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
           if ($LASTEXITCODE -ne 0) { throw 'cargo fmt failed.' }
-          cargo check --manifest-path src-tauri/Cargo.toml --locked --all-targets
+          cargo check --manifest-path src-tauri/Cargo.toml --locked --all-targets --features maintainer-tooling
           if ($LASTEXITCODE -ne 0) { throw 'cargo check failed.' }
-          cargo test --manifest-path src-tauri/Cargo.toml --locked --lib
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --lib --features maintainer-tooling
           if ($LASTEXITCODE -ne 0) { throw 'cargo test failed.' }
-          cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+          cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets --features maintainer-tooling -- -D warnings
           if ($LASTEXITCODE -ne 0) { throw 'cargo clippy failed.' }
       - name: Create and validate the exact source archive
         shell: pwsh
@@ -213,7 +213,7 @@ jobs:
           }
           npm run build:windows:final
           if ($LASTEXITCODE -ne 0) { throw 'The signed Windows package build failed.' }
-      - name: Prepare final update files and checksums
+      - name: Prepare signed Core/update files and CDM source archive
         shell: pwsh
         run: |
           ./scripts/prepare-update-release.ps1 -Clean -Tag $env:GITHUB_REF_NAME -ReleaseNotes "Release $env:GITHUB_REF_NAME"
@@ -227,7 +227,39 @@ jobs:
           if ($ytDlpSources[0].Length -ne 89850212 -or $ytDlpSourceSha256 -ne 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472') {
             throw "The yt-dlp corresponding-source artifact failed its exact size/hash check (bytes=$($ytDlpSources[0].Length), sha256=$ytDlpSourceSha256)."
           }
-          Copy-Item -LiteralPath $ytDlpSources[0].FullName -Destination 'output/update-release/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz' -Force
+      - name: Assemble exact optional component packages and release evidence
+        shell: pwsh
+        run: |
+          $ytDlpSources = @(Get-ChildItem yt-dlp-source-input -File -Filter 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz')
+          if ($ytDlpSources.Count -ne 1) { throw 'Expected exactly one verified yt-dlp source archive.' }
+          ./scripts/assemble-component-release-assets.ps1 -ReleaseTag $env:GITHUB_REF_NAME -Sequence ([UInt64]$env:GITHUB_RUN_NUMBER) -KeyId 'component-catalog-2026-01' -OutputDirectory 'output/component-release-assets' -YtDlpSourceArchive $ytDlpSources[0].FullName
+          if ($LASTEXITCODE -ne 0) { throw 'Assembling release component packages and catalog payload failed.' }
+          ./scripts/validation/inspect-component-packages.ps1 -PackageDirectory 'output/component-release-assets' -RuntimeManifestPath 'src-tauri/resources/bin/runtime-manifest.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Optional component package inspection failed.' }
+      - name: Sign inline Component Manager catalog
+        env:
+          RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY: ${{ secrets.RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY)) {
+            throw 'The release environment is missing RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY.'
+          }
+          cargo run --manifest-path src-tauri/Cargo.toml --locked --quiet --features maintainer-tooling --example component-catalog-tool -- sign --input 'output/component-release-assets/component-catalog-payload.json' --output 'output/component-release-assets/component-catalog-v1.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Inline Component Manager catalog signing failed.' }
+      - name: Verify catalog with the production public key embedded in Core
+        shell: pwsh
+        run: |
+          cargo run --manifest-path src-tauri/Cargo.toml --locked --quiet --features maintainer-tooling --example component-catalog-tool -- verify-production --input 'output/component-release-assets/component-catalog-v1.json'
+          if ($LASTEXITCODE -ne 0) { throw 'The inline component catalog did not verify with Core production trust.' }
+          Remove-Item -LiteralPath 'output/component-release-assets/component-catalog-payload.json' -Force
+          node scripts/validation/component-release-assets.mjs --directory output/component-release-assets
+          if ($LASTEXITCODE -ne 0) { throw 'Component release asset and catalog-link validation failed.' }
+          Get-ChildItem output/component-release-assets -File | ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path 'output/update-release' $_.Name)
+          }
+      - name: Generate and verify SHA256SUMS for the exact release artifact
+        shell: pwsh
+        run: |
           $checksumPath = Join-Path $PWD 'output/update-release/SHA256SUMS.txt'
           $checksumLines = @(Get-ChildItem output/update-release -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
             "$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"
@@ -268,6 +300,13 @@ jobs:
           path: output/update-release
       - name: Verify the downloaded artifact inventory and SHA-256 values
         run: node scripts/validation/verify-release-artifact.mjs --directory output/update-release
+      - name: Verify exact component assets, source links, notices, and inline signature
+        shell: pwsh
+        run: |
+          node scripts/validation/component-release-assets.mjs --directory output/update-release
+          if ($LASTEXITCODE -ne 0) { throw 'The downloaded component release assets failed validation.' }
+          cargo run --manifest-path src-tauri/Cargo.toml --locked --quiet --features maintainer-tooling --example component-catalog-tool -- verify-production --input 'output/update-release/component-catalog-v1.json'
+          if ($LASTEXITCODE -ne 0) { throw 'The downloaded catalog signature did not verify against Core production trust.' }
       - name: Prepare pinned SAFE LEAN MSYS2 toolchain
         shell: pwsh
         run: ./scripts/prepare-safe-lean-toolchain.ps1
@@ -287,7 +326,7 @@ jobs:
           $inspection = Join-Path $PWD 'output/binary-package-inspection'
           New-Item -ItemType Directory -Force -Path $inspection | Out-Null
           Expand-Archive -LiteralPath $packages[0].FullName -DestinationPath $inspection -Force
-          npm run check:binary-release -- --source-archive $sourceArchives[0].FullName --package $packages[0].FullName --inspection-dir $inspection --release-assets-dir output/update-release
+          npm run check:binary-release -- --source-archive $sourceArchives[0].FullName --package $packages[0].FullName --inspection-dir $inspection --release-assets-dir output/update-release --component-packages-dir output/update-release
           if ($LASTEXITCODE -ne 0) { throw 'The final binary release gate did not pass; publication is blocked.' }
 
   publish:

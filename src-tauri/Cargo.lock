@@ -411,6 +411,7 @@ dependencies = [
  "tokio",
  "url",
  "window-vibrancy",
+ "zeroize",
  "zip",
 ]
 

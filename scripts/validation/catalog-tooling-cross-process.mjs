@@ -24,6 +24,17 @@ function cargo(example, args, expectSuccess = true) {
   return result;
 }
 
+function testComponentCatalogProvisioner() {
+  const result = spawnSync(
+    "cargo",
+    ["test", "--locked", "--quiet", "--features", "maintainer-tooling", "--example", "component-catalog-tool"],
+    { cwd: tauriRoot, stdio: "inherit", windowsHide: true },
+  );
+  if (result.error || result.status !== 0) {
+    throw new Error(`component-catalog-tool provisioning tests returned ${result.status ?? result.error?.message}`);
+  }
+}
+
 function equalFile(actual, expected, label) {
   if (!readFileSync(actual).equals(readFileSync(expected))) {
     throw new Error(`${label} differs from the frozen v1 vector`);
@@ -31,6 +42,7 @@ function equalFile(actual, expected, label) {
 }
 
 try {
+  testComponentCatalogProvisioner();
   const generated = [];
   for (const run of ["first", "second"]) {
     const paths = {

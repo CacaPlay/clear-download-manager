@@ -20,6 +20,8 @@ const phaseFiles = [
   join(tauriRoot, "src", "catalog_tooling.rs"),
   join(tauriRoot, "examples", "catalog-signer.rs"),
   join(tauriRoot, "examples", "catalog-verifier.rs"),
+  join(tauriRoot, "examples", "component-catalog-tool.rs"),
+  join(tauriRoot, "src", "component_catalog_tooling.rs"),
   ...walk(vectorRoot),
   join(root, "scripts", "validation", "catalog-tooling-cross-process.mjs"),
 ].filter((path) => path !== allowedTestSeed);
@@ -47,8 +49,21 @@ if (!/fn production\(\) -> Self \{[\s\S]*?Self::empty\(\)[\s\S]*?\n\s*\}/.test(t
   failures.push("TrustedKeys::production() is not demonstrably empty");
 }
 
+const componentKeySource = readFileSync(join(tauriRoot, "src", "components", "catalog_key.rs"), "utf8");
+const publicKey = componentKeySource.match(/PUBLIC_KEY_BASE64: &str = "([^"]*)"/);
+const componentKeyId = componentKeySource.match(/KEY_ID: &str = "([^"]*)"/);
+if (!publicKey || !componentKeyId || componentKeyId[1] !== "component-catalog-2026-01") {
+  failures.push("Component Manager production key ID or public-key slot is invalid");
+}
+if (publicKey?.[1]) {
+  const decoded = Buffer.from(publicKey[1], "base64");
+  if (decoded.length !== 32 || decoded.toString("base64") !== publicKey[1]) {
+    failures.push("Component Manager production public key is not canonical 32-byte base64");
+  }
+}
+
 const cargoToml = readFileSync(join(tauriRoot, "Cargo.toml"), "utf8");
-for (const name of ["catalog-signer", "catalog-verifier"]) {
+for (const name of ["catalog-signer", "catalog-verifier", "component-catalog-tool"]) {
   const block = cargoToml.match(new RegExp(`\\[\\[example\\]\\][\\s\\S]*?name = "${name}"[\\s\\S]*?(?=\\n\\[|$)`));
   if (!block || !/required-features = \["maintainer-tooling"\]/.test(block[0])) {
     failures.push(`${name} is not feature-gated maintainer tooling`);
@@ -68,19 +83,19 @@ const bundleInputs = [
     .map((name) => join(root, name)),
 ];
 for (const path of bundleInputs) {
-  if (/catalog-signer|test-private-key\.base64|catalog-test-vectors/.test(path)) {
+  if (/catalog-signer|catalog-verifier|component-catalog-tool|test-private-key\.base64|catalog-test-vectors/.test(path)) {
     failures.push(`maintainer tooling present in bundle/runtime path: ${path}`);
   }
   if (path.endsWith(".zip")) {
     const listing = spawnSync("tar", ["-tf", path], { encoding: "utf8", windowsHide: true });
-    if (listing.status === 0 && /catalog-signer|test-private-key\.base64|catalog-test-vectors/.test(listing.stdout)) {
+    if (listing.status === 0 && /catalog-signer|catalog-verifier|component-catalog-tool|test-private-key\.base64|catalog-test-vectors/.test(listing.stdout)) {
       failures.push(`maintainer tooling present in extension archive: ${path}`);
     }
     continue;
   }
   if (statSync(path).size >= 2_000_000) continue;
   const text = readFileSync(path, "utf8");
-  if (/catalog-signer|test-private-key\.base64|catalog-test-vectors/.test(text)) {
+  if (/catalog-signer|catalog-verifier|component-catalog-tool|test-private-key\.base64|catalog-test-vectors/.test(text)) {
     failures.push(`maintainer tooling referenced by bundle/runtime input: ${path}`);
   }
 }
@@ -91,7 +106,7 @@ const metadata = JSON.parse(execFileSync(
   { cwd: tauriRoot, encoding: "utf8", windowsHide: true },
 ));
 const releaseDir = join(metadata.target_directory, "release");
-for (const filename of ["catalog-signer.exe", "catalog-verifier.exe", "catalog-signer", "catalog-verifier"]) {
+for (const filename of ["catalog-signer.exe", "catalog-verifier.exe", "component-catalog-tool.exe", "catalog-signer", "catalog-verifier", "component-catalog-tool"]) {
   if (existsSync(join(releaseDir, filename))) failures.push(`maintainer executable exists in release output: ${filename}`);
 }
 const appExecutable = join(releaseDir, "cacatools-desktop.exe");
@@ -110,7 +125,8 @@ if (failures.length) {
 }
 console.log(JSON.stringify({
   status: "PASS",
-  productionTrustRoot: "EMPTY",
+  toolCatalogProductionTrustRoot: "EMPTY",
+  componentCatalogProductionTrustRoot: publicKey?.[1] ? "NON_EMPTY" : "EMPTY_FAIL_CLOSED",
   testSeedAllowlist: "ONE EXPLICIT PUBLIC FIXTURE",
   maintainerFeature: "maintainer-tooling",
   releaseExecutablesPresent: false,

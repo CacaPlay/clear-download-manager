@@ -4,6 +4,8 @@ mod extension_bridge;
 
 mod app;
 pub mod catalog_tooling;
+#[cfg(feature = "maintainer-tooling")]
+pub mod component_catalog_tooling;
 mod components;
 mod tools;
 pub(crate) use app::bootstrap::{

@@ -63,8 +63,8 @@ impl TrustedKeys {
     }
 
     pub(crate) fn production() -> Self {
-        // Phase 2B deliberately ships no production root. A future signed app
-        // release must add the public key here; manifests cannot add roots.
+        // Tool Catalog trust remains independent from Component Manager.
+        // Manifests cannot add trust roots.
         Self::empty()
     }
 

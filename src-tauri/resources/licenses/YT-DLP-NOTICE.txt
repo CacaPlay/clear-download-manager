@@ -1,4 +1,4 @@
-﻿CacaTools Download Manager includes yt-dlp as a local component.
+﻿Clear Download Manager provides yt-dlp in the optional Media Tools component.
 Version: 2026.08.19
 Official source: https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe
 Official checksums: https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/SHA2-256SUMS

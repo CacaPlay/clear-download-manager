@@ -47,7 +47,7 @@ and [MSI/EXE package requirements](https://learn.microsoft.com/en-us/windows/app
 The catalog has a strict schema, exact component identities, package names,
 version, size, SHA-256, capabilities, minimum CDM version, corresponding-source
 assets, and notice hashes. The catalog payload is verified with Ed25519 using
-the existing trust implementation. The catalog URL and release asset route are
+the Component Manager trust root. The catalog URL and release asset route are
 fixed in Core; redirects are restricted to GitHub release hosts. Package bytes
 are bounded, written to a temporary file, checked for exact size and SHA-256,
 then passed through the existing archive, manifest, and per-file validation
@@ -55,15 +55,18 @@ before staging and atomic activation. A persisted sequence and signed catalog
 proof reject catalog rollback and allow installed packages to be checked again
 after the catalog freshness window expires.
 
-The signed catalog is verified before component installation. The production
-trust root is empty in this change, so production catalog refresh and remote
-installation fail closed until the distributor provisions and approves a
-production public verification key in a reviewed Core change. Public
-verification keys and key IDs are not secrets and may be embedded in the
-application and versioned in the repository. The corresponding private
-signing key must remain only in a protected signing environment and must never
-be committed or printed in logs. Test-only keys and loopback HTTP are compiled
-into tests only. Do not reuse a test signing key for a release.
+The signed catalog uses an inline Ed25519 signature in
+`component-catalog-v1.json`; the signature covers the payload serialized with
+`serde_json::to_vec(payload)`. Component Manager has its own production trust
+domain, separate from the legacy Tool Catalog. Its production trust root is empty,
+so production catalog refresh and remote installation remain
+fail-closed until the distributor provisions the matching protected secret
+and approves the public key in a reviewed Core change. Public verification
+keys and key IDs are not secrets and may be embedded in the application and
+versioned in the repository. The private signing key must remain only in the
+protected `release` environment and must never be committed or printed in
+logs. Test-only keys and loopback HTTP are compiled into tests only. Do not
+reuse a test signing key for a release.
 
 If an update fails, the currently active component remains selected. The
 manager stages the replacement in a version-specific directory and changes
@@ -86,18 +89,24 @@ A future component-enabled release needs all of the following, with immutable
 names and recorded SHA-256 values:
 
 1. The offline Core installer and source archive.
-2. `component-catalog-v1.json` and its detached signature, signed by the
-   distributor's offline key.
-3. One versioned `.cdmcomponent` package and its corresponding-source assets
-   for each component the catalog advertises.
-4. Runtime notices, license inventory, and checksum inventory.
+2. `component-catalog-v1.json` with its inline signature, signed by the
+   distributor's Component Manager key.
+3. `media-tools-1.0.0.cdmcomponent` and
+   `torrent-engine-1.0.0.cdmcomponent`, with exact corresponding-source assets.
+4. `ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz`,
+   `aria2-1.37.0-win64-corresponding-source.tar.xz`, and
+   `yt-dlp-2026.08.19-win64-corresponding-source.tar.xz`.
+5. `YT-DLP-NOTICE.txt`, `FFMPEG-NOTICE.txt`, `DENO-NOTICE.txt`,
+   `ARIA2-NOTICE.txt`, license inventory, and `SHA256SUMS.txt`.
 
 The media package links yt-dlp, FFmpeg/FFprobe, and Deno to their exact
 runtime/source/notice records. The torrent package links aria2 to its exact
 records. A release must not advertise a component unless the corresponding
-source and license gates pass. SAFE LEAN is approved. aria2 and yt-dlp source
-packages and human distributor reviews remain pending, so the GPL source and
-binary release gate remains fail-closed.
+source and license gates pass. FFmpeg, aria2, and yt-dlp distributor reviews
+are approved; GPL corresponding-source packages are marked READY by the
+rights register. The binary release gate remains fail-closed until the exact
+packages, catalog trust root, and complete release artifact are verified in
+the release pipeline.
 
 `runtime-manifest.json`, SBOM, notices, and license inventories remain in the
 source tree. The manifest identifies runtimes and hashes; it does not mean

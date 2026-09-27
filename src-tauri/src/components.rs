@@ -20,7 +20,8 @@ use crate::{tools::trust::TrustedKeys, MediaRuntimePaths};
 #[cfg(test)]
 mod tests;
 
-mod distribution;
+pub(crate) mod catalog_key;
+pub(crate) mod distribution;
 
 const COMPONENT_SCHEMA_VERSION: u32 = 1;
 const MAX_PACKAGE_BYTES: u64 = 512 * 1024 * 1024;
