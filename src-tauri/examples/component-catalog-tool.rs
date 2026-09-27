@@ -9,7 +9,7 @@ use std::{
     collections::BTreeMap,
     env, fs,
     io::Write,
-    path::Path,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
 };
 use zeroize::Zeroizing;
@@ -108,27 +108,210 @@ fn decode_public_key(path: &str) -> Result<[u8; 32], String> {
 
 fn run_gh(args: &[&str], stdin_value: Option<&str>) -> Result<std::process::Output, String> {
     let mut command = Command::new("gh");
-    command
-        .args(args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+    command.args(args);
     if stdin_value.is_some() {
-        command.stdin(Stdio::piped());
+        // Secret writes never capture stdout/stderr, so a CLI diagnostic cannot
+        // accidentally echo the secret into this process's output buffers.
+        command
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+    } else {
+        command.stdout(Stdio::piped()).stderr(Stdio::piped());
     }
     let mut child = command
         .spawn()
         .map_err(|_| "GitHub CLI could not be started; verify `gh auth status`.".to_string())?;
     if let Some(value) = stdin_value {
-        child
-            .stdin
-            .take()
-            .ok_or_else(|| "GitHub CLI secret input pipe is unavailable".to_string())?
-            .write_all(value.as_bytes())
-            .map_err(|_| "GitHub CLI did not accept secret input".to_string())?;
+        let Some(mut stdin) = child.stdin.take() else {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err("GitHub CLI secret input pipe is unavailable".into());
+        };
+        let write_result = stdin.write_all(value.as_bytes());
+        drop(stdin); // EOF is required for gh to finish reading the secret.
+        if write_result.is_err() {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err("GitHub CLI did not accept secret input".into());
+        }
     }
     child
         .wait_with_output()
         .map_err(|_| "GitHub CLI did not return a result".to_string())
+}
+
+fn production_secret_args() -> [&'static str; 7] {
+    [
+        "secret",
+        "set",
+        PRODUCTION_SECRET,
+        "--env",
+        "release",
+        "--repo",
+        PRODUCTION_REPOSITORY,
+    ]
+}
+
+struct LocalTrustBackup {
+    public_module_path: PathBuf,
+    manifest_path: PathBuf,
+    original_public_module: Vec<u8>,
+    original_manifest: Vec<u8>,
+}
+
+impl LocalTrustBackup {
+    fn capture(root: &Path) -> Result<Self, String> {
+        let public_module_path = root.join(PUBLIC_KEY_MODULE);
+        let manifest_path = root.join("MANIFEST.sha256");
+        Ok(Self {
+            original_public_module: fs::read(&public_module_path)
+                .map_err(|_| "component public-key module could not be backed up".to_string())?,
+            original_manifest: fs::read(&manifest_path)
+                .map_err(|_| "source manifest could not be backed up".to_string())?,
+            public_module_path,
+            manifest_path,
+        })
+    }
+
+    fn restore(&self) -> Result<(), String> {
+        let mut failures = Vec::new();
+        if fs::write(&self.public_module_path, &self.original_public_module).is_err() {
+            failures.push("component public-key module");
+        }
+        if fs::write(&self.manifest_path, &self.original_manifest).is_err() {
+            failures.push("source manifest");
+        }
+        if failures.is_empty() {
+            Ok(())
+        } else {
+            Err(format!("could not restore {}", failures.join(" and ")))
+        }
+    }
+}
+
+fn manifest_command(root: &Path, verify_only: bool) -> Result<(), String> {
+    let mut command = Command::new("node");
+    command
+        .arg("scripts/generate-source-manifest.mjs")
+        .current_dir(root)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    if verify_only {
+        command.arg("--check");
+    }
+    let status = command
+        .status()
+        .map_err(|_| "Node could not validate the source manifest".to_string())?;
+    if !status.success() {
+        return Err("source manifest generation or validation failed".into());
+    }
+    Ok(())
+}
+
+fn restore_after_failure(backup: &LocalTrustBackup, reason: String) -> String {
+    match backup.restore() {
+        Ok(()) => reason,
+        Err(rollback) => format!("{reason}; local rollback also failed: {rollback}"),
+    }
+}
+
+fn provision_production_key_with<E, S, G, M, V, P>(
+    root: &Path,
+    check_environment: E,
+    secret_exists: S,
+    generate_seed: G,
+    regenerate_manifest: M,
+    validate_manifest: V,
+    store_secret: P,
+) -> Result<String, String>
+where
+    E: FnOnce() -> Result<(), String>,
+    S: FnOnce() -> Result<bool, String>,
+    G: FnOnce() -> Result<[u8; 32], String>,
+    M: FnOnce(&Path) -> Result<(), String>,
+    V: FnOnce(&Path) -> Result<(), String>,
+    P: FnOnce(&[&str], Option<&str>) -> Result<(), String>,
+{
+    if !root.join("package.json").is_file() || !root.join("src-tauri/Cargo.toml").is_file() {
+        return Err("run this command from the repository root".into());
+    }
+    let public_module_path = root.join(PUBLIC_KEY_MODULE);
+    let existing_module = fs::read_to_string(&public_module_path)
+        .map_err(|_| "component public-key module is missing".to_string())?;
+    if !existing_module.contains("PUBLIC_KEY_BASE64: &str = \"\"") {
+        return Err(
+            "a Component Manager public key is already provisioned; refusing rotation".into(),
+        );
+    }
+
+    // All remote preflight checks happen before entropy is requested.
+    check_environment()?;
+    if secret_exists()? {
+        return Err(
+            "the release environment secret name already exists; refusing key rotation".into(),
+        );
+    }
+
+    let seed = Zeroizing::new(generate_seed()?);
+    let signing_key = SigningKey::from_bytes(&seed);
+    let challenge = b"Clear Download Manager Component Catalog key-pair check";
+    let signature = signing_key.sign(challenge);
+    signing_key
+        .verifying_key()
+        .verify_strict(challenge, &signature)
+        .map_err(|_| "generated Component Manager key pair did not verify".to_string())?;
+    let public_key = signing_key.verifying_key().to_bytes();
+    let fingerprint = Sha256::digest(public_key)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    let private_seed_base64 = Zeroizing::new(STANDARD.encode(&seed[..]));
+    let public_key_base64 = STANDARD.encode(public_key);
+    let public_module = format!(
+        "//! Public trust anchor for the Component Manager catalog only.\n\
+         //! The private seed is stored only in the protected GitHub release environment.\n\n\
+         pub(crate) const KEY_ID: &str = \"{PRODUCTION_KEY_ID}\";\n\
+         pub(crate) const PUBLIC_KEY_BASE64: &str = \"{public_key_base64}\";\n"
+    );
+
+    // Both local files are snapshotted before the first write.
+    let backup = LocalTrustBackup::capture(root)?;
+    let local_prepare = (|| {
+        fs::write(&backup.public_module_path, public_module.as_bytes())
+            .map_err(|_| "could not write the public trust anchor".to_string())?;
+        regenerate_manifest(root)?;
+        let written_module = fs::read(&backup.public_module_path)
+            .map_err(|_| "could not read back the public trust anchor".to_string())?;
+        if written_module != public_module.as_bytes() {
+            return Err("public trust anchor read-back did not match".into());
+        }
+        if !backup.manifest_path.is_file() {
+            return Err("source manifest is missing after generation".into());
+        }
+        validate_manifest(root)
+    })();
+    if let Err(error) = local_prepare {
+        drop(private_seed_base64);
+        drop(signing_key);
+        drop(seed);
+        return Err(restore_after_failure(&backup, error));
+    }
+
+    // This is the final fallible operation. The private value is supplied only
+    // through stdin; the secret name and all other arguments are non-secret.
+    let args = production_secret_args();
+    let stored = store_secret(&args, Some(&private_seed_base64));
+    drop(private_seed_base64);
+    drop(signing_key); // ed25519-dalek's `zeroize` feature clears the signing key on drop.
+    drop(seed);
+    if let Err(error) = stored {
+        return Err(restore_after_failure(&backup, error));
+    }
+
+    // No verification, file write, manifest operation, or other fallible local
+    // operation follows confirmed `gh secret set` success.
+    Ok(fingerprint)
 }
 
 fn environment_secret_exists() -> Result<bool, String> {
@@ -188,94 +371,30 @@ fn release_environment_writable() -> Result<(), String> {
 
 fn provision_production_key() -> Result<(), String> {
     let root = env::current_dir().map_err(|_| "cannot inspect current directory".to_string())?;
-    if !root.join("package.json").is_file() || !root.join("src-tauri/Cargo.toml").is_file() {
-        return Err("run this command from the repository root".into());
-    }
-    let public_module_path = root.join(PUBLIC_KEY_MODULE);
-    let original_module = fs::read_to_string(&public_module_path)
-        .map_err(|_| "component public-key module is missing".to_string())?;
-    if !original_module.contains("PUBLIC_KEY_BASE64: &str = \"\"") {
-        return Err(
-            "a Component Manager public key is already provisioned; refusing rotation".into(),
-        );
-    }
-    release_environment_writable()?;
-    if environment_secret_exists()? {
-        return Err(
-            "the release environment secret name already exists; refusing key rotation".into(),
-        );
-    }
-
-    let seed = Zeroizing::new(os_random_seed()?);
-    let signing_key = SigningKey::from_bytes(&seed);
-    let challenge = b"Clear Download Manager Component Catalog key-pair check";
-    let signature = signing_key.sign(challenge);
-    signing_key
-        .verifying_key()
-        .verify_strict(challenge, &signature)
-        .map_err(|_| "generated Component Manager key pair did not verify".to_string())?;
-    let private_seed_base64 = Zeroizing::new(STANDARD.encode(*seed));
-    let public_key_base64 = STANDARD.encode(signing_key.verifying_key().to_bytes());
-
-    let public_module = format!(
-        "//! Public trust anchor for the Component Manager catalog only.\n\
-         //! The private seed is stored only in the protected GitHub release environment.\n\n\
-         pub(crate) const KEY_ID: &str = \"{PRODUCTION_KEY_ID}\";\n\
-         pub(crate) const PUBLIC_KEY_BASE64: &str = \"{public_key_base64}\";\n"
-    );
-    fs::write(&public_module_path, public_module.as_bytes())
-        .map_err(|_| "could not write the public trust anchor".to_string())?;
-
-    let result = run_gh(
-        &[
-            "secret",
-            "set",
-            PRODUCTION_SECRET,
-            "--env",
-            "release",
-            "--repo",
-            PRODUCTION_REPOSITORY,
-            "--body",
-            "-",
-        ],
-        Some(&private_seed_base64),
-    );
-    // Drop the only application-level copy before inspecting CLI status.
-    let output = match result {
-        Ok(output) if output.status.success() => output,
-        _ => {
-            let _ = fs::write(&public_module_path, original_module.as_bytes());
-            return Err(
-                "GitHub did not confirm storing the release secret; no key was retained locally"
-                    .into(),
-            );
-        }
-    };
-    drop(output);
-    if !environment_secret_exists()? {
-        return Err(
-            "secret-name verification failed; do not use the generated trust anchor".into(),
-        );
-    }
-
-    let node = Command::new("node")
-        .arg("scripts/generate-source-manifest.mjs")
-        .current_dir(&root)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .map_err(|_| {
-            "public key was stored but MANIFEST.sha256 could not be updated".to_string()
-        })?;
-    if !node.success() {
-        return Err("public key was stored but MANIFEST.sha256 could not be updated".into());
-    }
-    let fingerprint = Sha256::digest(signing_key.verifying_key().to_bytes())
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect::<String>();
-    println!("PASS: production Component Manager key provisioned; keyId={PRODUCTION_KEY_ID}; public-key fingerprint={fingerprint}");
-    println!("Secret value printed: NO");
+    let fingerprint = provision_production_key_with(
+        &root,
+        release_environment_writable,
+        environment_secret_exists,
+        os_random_seed,
+        |path| manifest_command(path, false),
+        |path| manifest_command(path, true),
+        |args, stdin_value| {
+            let Some(secret) = stdin_value else {
+                return Err("GitHub secret input was not configured".into());
+            };
+            let result = run_gh(args, Some(secret)).map_err(|_| {
+                "GitHub secret write did not complete; local rollback was attempted. The remote outcome may be ambiguous, so inspect the secret name before retrying; provisioning refuses an existing name.".to_string()
+            })?;
+            if result.status.success() {
+                Ok(())
+            } else {
+                Err("GitHub did not confirm storing the release secret; local rollback was attempted. The remote outcome may be ambiguous, so inspect the secret name before retrying; provisioning refuses an existing name.".into())
+            }
+        },
+    )?;
+    // Fingerprint is public and computed before remote storage; success is the
+    // process exit code, so there are no fallible output writes after provisioning.
+    drop(fingerprint);
     Ok(())
 }
 
@@ -369,5 +488,205 @@ fn main() {
     if let Err(error) = run() {
         eprintln!("component-catalog-tool: FAIL: {error}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        cell::{Cell, RefCell},
+        fs,
+    };
+    use tempfile::TempDir;
+
+    fn fixture(public_key: &str) -> TempDir {
+        let temp = tempfile::tempdir().expect("create fixture directory");
+        let root = temp.path();
+        fs::create_dir_all(root.join("src-tauri/src/components")).expect("create source tree");
+        fs::create_dir_all(root.join("src-tauri/src/tools")).expect("create tool source tree");
+        fs::write(root.join("package.json"), "{}\n").expect("write package marker");
+        fs::write(root.join("src-tauri/Cargo.toml"), "[package]\n").expect("write Cargo marker");
+        fs::write(
+            root.join(PUBLIC_KEY_MODULE),
+            format!(
+                "pub(crate) const KEY_ID: &str = \"{PRODUCTION_KEY_ID}\";\n\
+                 pub(crate) const PUBLIC_KEY_BASE64: &str = \"{public_key}\";\n"
+            ),
+        )
+        .expect("write initial public key module");
+        fs::write(root.join("MANIFEST.sha256"), "original manifest\n")
+            .expect("write original manifest");
+        fs::write(
+            root.join("src-tauri/src/tools/trust.rs"),
+            "tool trust sentinel\n",
+        )
+        .expect("write Tool Catalog trust sentinel");
+        temp
+    }
+
+    fn no_manifest_work(_: &Path) -> Result<(), String> {
+        Ok(())
+    }
+
+    #[test]
+    fn existing_secret_aborts_before_generating_entropy() {
+        let temp = fixture("");
+        let generated = Cell::new(false);
+        let result = provision_production_key_with(
+            temp.path(),
+            || Ok(()),
+            || Ok(true),
+            || {
+                generated.set(true);
+                Ok([0x51; 32])
+            },
+            no_manifest_work,
+            no_manifest_work,
+            |_, _| panic!("secret storage must not run"),
+        );
+        assert!(result.unwrap_err().contains("already exists"));
+        assert!(!generated.get());
+    }
+
+    #[test]
+    fn existing_public_key_refuses_rotation_before_generating_entropy() {
+        let temp = fixture("already-provisioned-public-key");
+        let generated = Cell::new(false);
+        let result = provision_production_key_with(
+            temp.path(),
+            || Ok(()),
+            || panic!("secret inventory must not be queried after a public key exists"),
+            || {
+                generated.set(true);
+                Ok([0x52; 32])
+            },
+            no_manifest_work,
+            no_manifest_work,
+            |_, _| panic!("secret storage must not run"),
+        );
+        assert!(result.unwrap_err().contains("refusing rotation"));
+        assert!(!generated.get());
+    }
+
+    #[test]
+    fn secret_request_uses_stdin_and_never_puts_value_in_argv() {
+        let args = production_secret_args();
+        assert!(!args.contains(&"--body"));
+        assert!(args.contains(&PRODUCTION_SECRET));
+
+        let temp = fixture("");
+        let mut observed_args = Vec::new();
+        let mut observed_stdin = None;
+        let observed_events = RefCell::new(Vec::new());
+        let result = provision_production_key_with(
+            temp.path(),
+            || Ok(()),
+            || Ok(false),
+            || Ok([0x53; 32]),
+            |root| {
+                observed_events.borrow_mut().push("manifest-generation");
+                fs::write(root.join("MANIFEST.sha256"), "updated manifest\n")
+                    .map_err(|error| error.to_string())
+            },
+            |root| {
+                observed_events.borrow_mut().push("manifest-validation");
+                if fs::read(root.join("MANIFEST.sha256")).map_err(|error| error.to_string())?
+                    != b"updated manifest\n"
+                {
+                    return Err("manifest validation failed".into());
+                }
+                Ok(())
+            },
+            |request_args, stdin| {
+                observed_events.borrow_mut().push("secret-store");
+                observed_args = request_args.iter().map(|arg| (*arg).to_string()).collect();
+                observed_stdin = stdin.map(str::to_string);
+                Ok(())
+            },
+        );
+        assert!(result.is_ok());
+        assert_eq!(observed_args, args.map(str::to_string).to_vec());
+        assert!(!observed_args.iter().any(|arg| arg == "--body"));
+        let received = observed_stdin.expect("secret must use stdin");
+        assert!(!observed_args.iter().any(|arg| arg == &received));
+        assert_eq!(
+            *observed_events.borrow(),
+            ["manifest-generation", "manifest-validation", "secret-store"]
+        );
+        assert!(!fs::read_to_string(temp.path().join(PUBLIC_KEY_MODULE))
+            .unwrap()
+            .contains("PUBLIC_KEY_BASE64: &str = \"\""));
+        assert_eq!(
+            fs::read_to_string(temp.path().join("src-tauri/src/tools/trust.rs")).unwrap(),
+            "tool trust sentinel\n"
+        );
+    }
+
+    #[test]
+    fn local_preparation_failure_restores_both_files_before_secret_store() {
+        let temp = fixture("");
+        let original_module = fs::read(temp.path().join(PUBLIC_KEY_MODULE)).unwrap();
+        let original_manifest = fs::read(temp.path().join("MANIFEST.sha256")).unwrap();
+        let result = provision_production_key_with(
+            temp.path(),
+            || Ok(()),
+            || Ok(false),
+            || Ok([0x54; 32]),
+            |_| Err("simulated manifest generation failure".into()),
+            no_manifest_work,
+            |_, _| panic!("secret storage must not run after local failure"),
+        );
+        assert!(result
+            .unwrap_err()
+            .contains("simulated manifest generation failure"));
+        assert_eq!(
+            fs::read(temp.path().join(PUBLIC_KEY_MODULE)).unwrap(),
+            original_module
+        );
+        assert_eq!(
+            fs::read(temp.path().join("MANIFEST.sha256")).unwrap(),
+            original_manifest
+        );
+    }
+
+    #[test]
+    fn secret_store_failure_restores_public_key_and_manifest() {
+        let temp = fixture("");
+        let original_module = fs::read(temp.path().join(PUBLIC_KEY_MODULE)).unwrap();
+        let original_manifest = fs::read(temp.path().join("MANIFEST.sha256")).unwrap();
+        let result = provision_production_key_with(
+            temp.path(),
+            || Ok(()),
+            || Ok(false),
+            || Ok([0x55; 32]),
+            |root| {
+                fs::write(root.join("MANIFEST.sha256"), "updated manifest\n")
+                    .map_err(|error| error.to_string())
+            },
+            |root| {
+                if fs::read(root.join("MANIFEST.sha256")).map_err(|error| error.to_string())?
+                    != b"updated manifest\n"
+                {
+                    return Err("manifest validation failed".into());
+                }
+                Ok(())
+            },
+            |_, stdin| {
+                assert!(stdin.is_some());
+                Err("simulated gh secret set failure".into())
+            },
+        );
+        assert!(result
+            .unwrap_err()
+            .contains("simulated gh secret set failure"));
+        assert_eq!(
+            fs::read(temp.path().join(PUBLIC_KEY_MODULE)).unwrap(),
+            original_module
+        );
+        assert_eq!(
+            fs::read(temp.path().join("MANIFEST.sha256")).unwrap(),
+            original_manifest
+        );
     }
 }

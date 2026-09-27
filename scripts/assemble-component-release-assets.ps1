@@ -61,7 +61,8 @@ function Copy-VerifiedAsset([string]$SourcePath, [string]$AssetName, [UInt64]$Ex
 
 $sourceManifest = Get-Content -LiteralPath $sourceManifestPath -Raw | ConvertFrom-Json
 $packageOutput = Join-Path $env:TEMP ("cdm-component-package-stage-{0}" -f [guid]::NewGuid().ToString('N'))
-[System.IO.Directory]::CreateDirectory($packageOutput) | Out-Null
+try {
+  [System.IO.Directory]::CreateDirectory($packageOutput) | Out-Null
 $packageBuild = @(& (Join-Path $PSScriptRoot 'package-release-components.ps1') -OutputDirectory $packageOutput -RuntimeDirectory $runtimeRoot)
 if ($packageBuild.Count -ne 2) { throw 'Expected exact media-tools and torrent-engine package build results.' }
 
@@ -176,3 +177,16 @@ $assets = @(Get-ChildItem -LiteralPath $output -File | Sort-Object Name | ForEac
   [pscustomobject]@{ name=$_.Name; bytes=$_.Length; sha256=(Get-Sha256 $_.FullName) }
 })
 [pscustomobject]@{ releaseTag=$ReleaseTag; catalogPayload=$catalogPayloadPath; assets=$assets }
+} finally {
+  if (Test-Path -LiteralPath $packageOutput -PathType Container) {
+    $tempRoot = [System.IO.Path]::GetFullPath($env:TEMP).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $stagePath = [System.IO.Path]::GetFullPath($packageOutput)
+    $stageParent = [System.IO.Path]::GetDirectoryName($stagePath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $stageName = [System.IO.Path]::GetFileName($stagePath)
+    if ([StringComparer]::OrdinalIgnoreCase.Equals($stageParent, $tempRoot) -and $stageName -match '^cdm-component-package-stage-[0-9a-f]{32}$') {
+      Remove-Item -LiteralPath $stagePath -Recurse -Force
+    } else {
+      throw 'Refusing to remove a package staging path outside the generated temporary directory.'
+    }
+  }
+}

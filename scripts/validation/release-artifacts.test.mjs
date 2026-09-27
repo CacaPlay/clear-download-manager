@@ -722,6 +722,16 @@ test('Quality and release CI install pinned Playwright Chromium before their res
   }
 });
 
+test('component release assembly removes only its generated package stage in finally', () => {
+  const assembly = fs.readFileSync(path.join(repositoryRoot, 'scripts/assemble-component-release-assets.ps1'), 'utf8');
+  assert.match(assembly, /\$packageOutput\s*=\s*Join-Path\s+\$env:TEMP\s+\("cdm-component-package-stage-/);
+  assert.match(assembly, /try\s*\{[\s\S]*?\$packageBuild\s*=/);
+  assert.match(assembly, /finally\s*\{[\s\S]*?Remove-Item\s+-LiteralPath\s+\$stagePath\s+-Recurse\s+-Force/);
+  assert.match(assembly, /\$stageName\s+-match\s+'\^cdm-component-package-stage-\[0-9a-f\]\{32\}\$'/);
+  const finallyBody = assembly.slice(assembly.lastIndexOf('} finally {'));
+  assert.doesNotMatch(finallyBody, /Remove-Item[^\r\n]*\$output\b/);
+});
+
 test('source manifest canonicalizes shell-script line endings across Windows checkouts', () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-source-manifest-eol-test-'));
   const generator = path.join(temp, 'scripts', 'generate-source-manifest.mjs');

@@ -34,6 +34,7 @@ export const releaseGateIds = [
   'check:http-resume-integrity',
   'check:http-finalization',
   'check:http-single-writer',
+  'check:catalog-tooling',
   'check:catalog-safety',
   'check:extension',
   'check:extension-modules',
