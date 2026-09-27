@@ -1,4 +1,4 @@
-﻿CacaTools Download Manager includes aria2c as a local download engine.
+﻿Clear Download Manager provides aria2c in the optional Torrent Engine component.
 Version output: aria2 version 1.37.0
 Official release asset: https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip
 Archive SHA-256: 67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288

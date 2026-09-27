@@ -1,4 +1,4 @@
-﻿CacaTools Download Manager uses FFmpeg and FFprobe as external executables to combine and convert audio and video.
+﻿Clear Download Manager provides FFmpeg and FFprobe in the optional Media Tools component to combine and convert audio and video.
 Build: ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers (SAFE LEAN; GPL-3.0-or-later)
 Corresponding-source archive: ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz
 Corresponding-source SHA-256: b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58

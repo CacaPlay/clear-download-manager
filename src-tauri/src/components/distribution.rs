@@ -422,10 +422,27 @@ impl VerifiedComponentCatalog {
 }
 
 pub(crate) fn production_trust() -> TrustedKeys {
-    // Deliberately remains empty until the distributor provisions an offline
-    // catalog signing key and approves embedding its public key in a later PR.
-    // The remote component path fails closed while this set is empty.
-    TrustedKeys::production()
+    // Component catalogs have a dedicated trust domain. Keep it empty until
+    // the distributor provisions the matching protected secret and approves
+    // the public key in Core. Tool-catalog roots must never activate this path.
+    let encoded = super::catalog_key::PUBLIC_KEY_BASE64;
+    if encoded.is_empty() {
+        return TrustedKeys::empty();
+    }
+    let Ok(bytes) = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, encoded)
+    else {
+        return TrustedKeys::empty();
+    };
+    if bytes.len() != 32
+        || base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes) != encoded
+    {
+        return TrustedKeys::empty();
+    }
+    let Ok(public_key) = <[u8; 32]>::try_from(bytes) else {
+        return TrustedKeys::empty();
+    };
+    TrustedKeys::from_public_key_bytes([(super::catalog_key::KEY_ID.to_string(), public_key)])
+        .unwrap_or_else(|_| TrustedKeys::empty())
 }
 
 pub(crate) fn verify_component_catalog(
@@ -493,7 +510,7 @@ fn verify_component_catalog_internal(
     })
 }
 
-fn validate_payload(
+pub(crate) fn validate_payload(
     payload: &ComponentCatalogPayload,
     allow_loopback_http: bool,
 ) -> Result<(), CatalogValidationError> {
@@ -978,7 +995,97 @@ mod tests {
         let verified = verify_component_catalog(&bytes(signed_catalog()), &trust(), NOW, false)
             .expect("valid signed catalog");
         assert_eq!(verified.signed.payload.sequence, 4);
-        assert_eq!(production_trust().key_ids().count(), 0);
+        let production_keys = production_trust();
+        let production_ids: Vec<_> = production_keys.key_ids().collect();
+        if crate::components::catalog_key::PUBLIC_KEY_BASE64.is_empty() {
+            assert!(production_ids.is_empty());
+        } else {
+            assert_eq!(production_ids, [crate::components::catalog_key::KEY_ID]);
+        }
+        assert_eq!(
+            verify_component_catalog(&bytes(signed_catalog()), &production_trust(), NOW, false)
+                .unwrap_err(),
+            CatalogValidationError::UnknownKey
+        );
+    }
+
+    #[test]
+    fn signed_payload_tampering_is_rejected_for_release_pins_and_sequence() {
+        let original = serde_json::to_value(signed_catalog()).unwrap();
+        let mut cases = Vec::new();
+        let mut sequence = original.clone();
+        sequence["payload"]["sequence"] = serde_json::json!(5);
+        cases.push(("sequence", sequence));
+        let mut version = original.clone();
+        version["payload"]["components"][0]["version"] = serde_json::json!("1.0.1");
+        version["payload"]["components"][0]["assetName"] =
+            serde_json::json!("media-tools-1.0.1.cdmcomponent");
+        version["payload"]["components"][0]["packageUrl"] = serde_json::json!(
+            "https://github.com/CacaPlay/clear-download-manager/releases/download/v0.95.5/media-tools-1.0.1.cdmcomponent"
+        );
+        cases.push(("component version", version));
+        let mut package_hash = original.clone();
+        package_hash["payload"]["components"][0]["packageSha256"] =
+            serde_json::json!("e".repeat(64));
+        cases.push(("package hash", package_hash));
+        let mut source_hash = original.clone();
+        source_hash["payload"]["components"][0]["correspondingSources"][0]["sha256"] =
+            serde_json::json!("f".repeat(64));
+        cases.push(("source hash", source_hash));
+        for (label, changed) in cases {
+            let bytes = serde_json::to_vec(&changed).unwrap();
+            assert_eq!(
+                verify_component_catalog(&bytes, &trust(), NOW, false).unwrap_err(),
+                CatalogValidationError::InvalidSignature,
+                "tampering was accepted at {label}"
+            );
+        }
+    }
+
+    #[cfg(feature = "maintainer-tooling")]
+    #[test]
+    fn component_catalog_tooling_signs_the_runtime_canonical_payload_inline() {
+        let mut payload_value = signed_catalog().payload;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        payload_value.issued_at = now - 60;
+        payload_value.expires_at = now + 3600;
+        let payload = serde_json::to_vec(&payload_value).unwrap();
+        let seed = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, TEST_SEED);
+        let signed = crate::component_catalog_tooling::sign_payload(&payload, &seed)
+            .expect("maintainer tool signs valid payload");
+        let parsed: SignedComponentCatalog = serde_json::from_slice(&signed).unwrap();
+        assert!(!parsed.signature.is_empty());
+        let verified = verify_component_catalog(&signed, &trust(), now, false)
+            .expect("runtime verifier accepts maintainer-tool signature");
+        assert_eq!(verified.signed.payload.sequence, 4);
+        let public = key().verifying_key().to_bytes();
+        let inspection = crate::component_catalog_tooling::verify_catalog(
+            &signed,
+            public,
+            "component-test-2026",
+            now,
+        )
+        .expect("maintainer verifier accepts the production-format catalog");
+        assert_eq!(inspection.signature_model, "inline");
+        assert!(crate::component_catalog_tooling::verify_catalog(
+            &signed,
+            SigningKey::from_bytes(&[0x19_u8; 32])
+                .verifying_key()
+                .to_bytes(),
+            "component-test-2026",
+            now,
+        )
+        .is_err());
+        assert!(crate::component_catalog_tooling::verify_catalog(
+            &signed,
+            public,
+            "wrong-key-id",
+            now,
+        )
+        .is_err());
     }
 
     #[test]
@@ -1056,6 +1163,17 @@ mod tests {
         expired.payload.expires_at = NOW - 600;
         assert_eq!(
             verify_component_catalog(&bytes(expired), &trust(), NOW, false).unwrap_err(),
+            CatalogValidationError::Expired
+        );
+    }
+
+    #[test]
+    fn issued_at_beyond_allowed_clock_skew_is_rejected() {
+        let mut future = signed_catalog();
+        future.payload.issued_at = NOW + 5 * 60 + 1;
+        future.payload.expires_at = future.payload.issued_at + 3600;
+        assert_eq!(
+            verify_component_catalog(&bytes(future), &trust(), NOW, false).unwrap_err(),
             CatalogValidationError::Expired
         );
     }

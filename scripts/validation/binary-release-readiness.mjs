@@ -77,12 +77,45 @@ try {
   failures.push(`corresponding-source assets: ${error.message}`);
 }
 
-const trustSource = fs.readFileSync(path.join(root, 'src-tauri/src/tools/trust.rs'), 'utf8');
-const productionTrust = trustSource.match(/production\s*\(\)\s*->\s*Self\s*\{[\s\S]{0,400}?\}/);
-if (productionTrust?.[0].includes('Self::empty()')) {
-  pending.push('production catalog signing key');
-  checks.push({ label: 'production catalog signing key', status: 'PENDING' });
-  console.log('PENDING: production catalog signing key is intentionally not provisioned; remote activation remains fail-closed.');
+const componentKeySource = fs.readFileSync(path.join(root, 'src-tauri/src/components/catalog_key.rs'), 'utf8');
+const keyIdMatch = componentKeySource.match(/KEY_ID:\s*&str\s*=\s*"([^"]*)"/);
+const publicKeyMatch = componentKeySource.match(/PUBLIC_KEY_BASE64:\s*&str\s*=\s*"([^"]*)"/);
+let productionComponentKey = null;
+if (!keyIdMatch || keyIdMatch[1] !== 'component-catalog-2026-01' || !publicKeyMatch) {
+  failures.push('Component Manager production trust anchor is malformed.');
+} else if (!publicKeyMatch[1]) {
+  pending.push('production Component Manager public key');
+  checks.push({ label: 'production Component Manager public key', status: 'PENDING' });
+  console.log('PENDING: production Component Manager public key is not embedded; remote activation remains fail-closed.');
+} else {
+  const decoded = Buffer.from(publicKeyMatch[1], 'base64');
+  if (decoded.length !== 32 || decoded.toString('base64') !== publicKeyMatch[1]) {
+    failures.push('Component Manager public key is not canonical 32-byte base64.');
+  } else {
+    productionComponentKey = publicKeyMatch[1];
+    checks.push({ label: 'production Component Manager public key', status: 'PASS' });
+    console.log('PASS: production Component Manager public key is embedded with the expected keyId.');
+  }
+}
+
+if (releaseAssetsDir && fs.existsSync(releaseAssetsDir)) {
+  run('exact component release assets and inline catalog links', 'scripts/validation/component-release-assets.mjs', ['--directory', releaseAssetsDir]);
+  if (productionComponentKey) {
+    const catalogPath = path.join(releaseAssetsDir, 'component-catalog-v1.json');
+    const result = spawnSync('cargo', [
+      'run', '--manifest-path', 'src-tauri/Cargo.toml', '--locked', '--quiet',
+      '--features', 'maintainer-tooling', '--example', 'component-catalog-tool', '--',
+      'verify-production', '--input', catalogPath,
+    ], { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 8 * 1024 * 1024 });
+    if (result.status === 0) {
+      checks.push({ label: 'production inline catalog signature', status: 'PASS' });
+      console.log('PASS: inline component catalog signature verifies with the public key embedded in Core.');
+    } else {
+      failures.push(`production inline catalog signature: ${`${result.stdout || ''}${result.stderr || ''}`.trim().split(/\r?\n/).slice(-4).join(' | ')}`);
+      checks.push({ label: 'production inline catalog signature', status: 'FAIL' });
+      console.error(`${result.stdout || ''}${result.stderr || ''}`);
+    }
+  }
 }
 
 if (!componentPackagesDir || !fs.existsSync(componentPackagesDir) || !fs.statSync(componentPackagesDir).isDirectory()) {

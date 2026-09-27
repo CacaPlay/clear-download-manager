@@ -230,6 +230,7 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   const verify = job('verify-binary-release');
   const publish = job('publish');
   const secretRefs = [...workflow.matchAll(/secrets\.(RELEASE_TAURI_SIGNING_PRIVATE_KEY(?:_PASSWORD)?)/g)];
+  const componentSecretRefs = [...workflow.matchAll(/secrets\.RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY/g)];
 
   assert.match(buildTest, /npm run check:local-build/);
   assert.match(buildTest, /npm run check:release/);
@@ -254,7 +255,15 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   assert.match(packageSign, /release_artifact_id:\s*\$\{\{\s*steps\.release_artifact\.outputs\.artifact-id\s*\}\}/);
   assert.equal(secretRefs.length, 2);
   assert.ok(secretRefs.every((match) => match.index >= workflow.indexOf('  package-sign:')));
+  assert.equal(componentSecretRefs.length, 1);
+  assert.ok(componentSecretRefs[0].index >= workflow.indexOf('  package-sign:'));
+  assert.ok(componentSecretRefs[0].index < workflow.indexOf('  verify-binary-release:'));
+  assert.match(packageSign, /Sign inline Component Manager catalog/);
+  assert.match(packageSign, /verify-production/);
+  assert.match(packageSign, /component-release-assets\.mjs/);
   assert.match(verify, /artifact-ids:\s*\$\{\{\s*needs\.package-sign\.outputs\.release_artifact_id\s*\}\}/);
+  assert.match(verify, /component-release-assets\.mjs/);
+  assert.match(verify, /verify-production/);
   assert.match(verify, /npm run check:binary-release/);
   assert.match(verify, /--package/);
   assert.match(verify, /--inspection-dir/);

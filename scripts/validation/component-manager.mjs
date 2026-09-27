@@ -8,6 +8,9 @@ const runtimeManifest = JSON.parse(read('src-tauri/resources/bin/runtime-manifes
 const packageJson = JSON.parse(read('package.json'));
 const manager = read('src-tauri/src/components.rs');
 const distribution = read('src-tauri/src/components/distribution.rs');
+const componentCatalogTooling = read('src-tauri/src/component_catalog_tooling.rs');
+const catalogKey = read('src-tauri/src/components/catalog_key.rs');
+const toolTrust = read('src-tauri/src/tools/trust.rs');
 const componentTests = read('src-tauri/src/components/tests.rs');
 const componentCommands = read('src-tauri/src/commands/components.rs');
 const appState = read('src-tauri/src/app/state.rs');
@@ -27,6 +30,13 @@ for (const config of [mainConfig, storeConfig]) {
 }
 assert.ok(runtimeManifest.ytDlp && runtimeManifest.ffmpeg && runtimeManifest.deno && runtimeManifest.aria2, 'Runtime inventory must remain available to pin local packages.');
 assert.equal(packageJson.scripts['package:components:local'], 'powershell -ExecutionPolicy Bypass -File scripts/package-local-components.ps1');
+assert.ok(distribution.includes('pub(crate) fn production_trust()') && distribution.includes('super::catalog_key::PUBLIC_KEY_BASE64'), 'Component Manager must use its own production trust root.');
+assert.ok(catalogKey.includes('component-catalog-2026-01') && distribution.includes('PUBLIC_KEY_BASE64'), 'Component Manager must have its own versioned production trust anchor.');
+assert.ok(toolTrust.includes('pub(crate) fn production()') && !toolTrust.includes('component_catalog_production'), 'Tool Catalog trust must remain unchanged and separate.');
+assert.ok(componentCatalogTooling.includes('serde_json::to_vec(&payload)'), 'Component catalog tooling must use the production verifier canonicalization.');
+assert.ok(componentCatalogTooling.includes('verify_component_catalog(&bytes, &trust, current_time()?, false)'), 'Component catalog signer must self-verify using the runtime verifier.');
+assert.ok(!componentCatalogTooling.includes('catalog_tooling::'), 'Component Catalog tooling must not invoke Tool Catalog schema tooling.');
+assert.ok(read('src-tauri/examples/component-catalog-tool.rs').includes('sign_payload'), 'The schema-specific maintainer CLI must be present.');
 for (const [capability, variant] of [
   ['media-extraction', 'MediaExtraction'], ['media-merge', 'MediaMerge'], ['media-probe', 'MediaProbe'],
   ['media-transcode', 'MediaTranscode'], ['js-runtime', 'JsRuntime'], ['bittorrent', 'Bittorrent']
