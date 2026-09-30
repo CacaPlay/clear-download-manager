@@ -734,6 +734,20 @@ test('Quality and release CI install pinned Playwright Chromium before their res
   }
 });
 
+test('release workflow retries an existing immutable tag from main without inheriting the expected 404 exit code', () => {
+  const release = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+
+  assert.match(release, /workflow_dispatch:[\s\S]*?release_tag:[\s\S]*?required:\s*true/);
+  assert.match(release, /RELEASE_TAG:\s*\$\{\{\s*github\.event_name\s*==\s*'workflow_dispatch'\s*&&\s*inputs\.release_tag\s*\|\|\s*github\.ref_name\s*\}\}/);
+  assert.match(release, /GITHUB_EVENT_NAME.*push/);
+  assert.match(release, /\$global:LASTEXITCODE\s*=\s*0/);
+  assert.match(release, /ref:\s*\$\{\{\s*env\.RELEASE_TAG\s*\}\}/);
+  assert.equal((release.match(/uses:\s*actions\/checkout@/g) ?? []).length, (release.match(/ref:\s*\$\{\{\s*env\.RELEASE_TAG\s*\}\}/g) ?? []).length);
+  assert.match(release, /-Tag\s+\$env:RELEASE_TAG/);
+  assert.match(release, /-ReleaseTag\s+\$env:RELEASE_TAG/);
+  assert.match(release, /\$tag\s*=\s*\$env:RELEASE_TAG/);
+});
+
 test('component release assembly removes only its generated package stage in finally', () => {
   const assembly = fs.readFileSync(path.join(repositoryRoot, 'scripts/assemble-component-release-assets.ps1'), 'utf8');
   assert.match(assembly, /\$packageOutput\s*=\s*Join-Path\s+\$env:TEMP\s+\("cdm-component-package-stage-/);
