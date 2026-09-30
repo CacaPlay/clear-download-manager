@@ -287,8 +287,8 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
       let sourceHash;
       if (entry.sourceArchiveGenerated === true) {
         if (id !== 'yt-dlp' || entry.sourceArchivePath !== `output/release-assets/${expectedName}`
-          || entry.sourceArchiveBytes !== 89850212
-          || entry.sourceArchiveSha256 !== 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472') {
+          || entry.sourceArchiveBytes !== 89850884
+          || entry.sourceArchiveSha256 !== '03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb') {
           issues.failures.push(`${id}.sourceArchive: generated archive path, size, and digest must match the pinned release asset contract.`);
         }
       } else {
