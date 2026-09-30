@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 
 const manifest = JSON.parse(fs.readFileSync('extension/manifest.json', 'utf8'));
 const extensionCompatibility = JSON.parse(fs.readFileSync('extension/app-compat.json', 'utf8'));
+const appVersion = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
 const errors = [];
 const requiredPermissions = ['activeTab', 'scripting', 'downloads', 'storage', 'sidePanel', 'nativeMessaging'];
 
@@ -23,7 +24,8 @@ if (!registerScript.includes(`$PublishedId = '${publishedId}'`) || !registerScri
 if (chromiumHostTemplate.allowed_origins?.[0] !== `chrome-extension://${publishedId}/`) errors.push('La plantilla Chromium no conserva el ID publicado');
 if (manifest.manifest_version !== 3) errors.push('Manifest V2 no permitido');
 if (Object.prototype.hasOwnProperty.call(manifest, 'minimumAppVersion') || Object.prototype.hasOwnProperty.call(manifest, 'maximumTestedAppVersion')) errors.push('El manifest contiene claves de compatibilidad no admitidas por Chrome');
-if (extensionCompatibility.minimumAppVersion !== '0.24.1' || extensionCompatibility.maximumTestedAppVersion !== '0.95.x') errors.push('app-compat.json no conserva la compatibilidad de la serie 0.95.x');
+const testedAppSeries = `${String(appVersion).split('.').slice(0, 2).join('.')}.x`;
+if (extensionCompatibility.minimumAppVersion !== '0.24.1' || extensionCompatibility.maximumTestedAppVersion !== testedAppSeries) errors.push(`app-compat.json debe conservar la compatibilidad mínima y declarar ${testedAppSeries}`);
 if (!requiredPermissions.every((permission) => manifest.permissions.includes(permission))) errors.push('Faltan permisos básicos de la extensión');
 const automaticDetectionMatches = ['https://*.youtube.com/*', 'https://youtu.be/*', 'https://*.pinterest.com/*', 'https://*.tiktok.com/*'];
 if (JSON.stringify(manifest.host_permissions) !== JSON.stringify(automaticDetectionMatches)) errors.push('Los host_permissions no coinciden con los dominios actuales de detección automática');

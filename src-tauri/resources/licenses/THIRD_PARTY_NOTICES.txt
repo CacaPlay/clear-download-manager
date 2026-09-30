@@ -833,13 +833,13 @@ SOFTWARE.
 ----- Resolved dependency inventories -----
 
 npm SBOM: NPM-SBOM.spdx.json (SPDX-2.3; 40 packages)
-Rust inventory: CARGO-DEPENDENCY-LICENSES.txt (362 Windows x64 registry packages)
+Rust inventory: CARGO-DEPENDENCY-LICENSES.txt (363 Windows x64 registry packages)
 
 ===== yt-dlp =====
 
 ----- YT-DLP-NOTICE.txt -----
 
-CacaTools Download Manager includes yt-dlp as a local component.
+Clear Download Manager provides yt-dlp in the optional Media Tools component.
 Version: 2026.08.19
 Official source: https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe
 Official checksums: https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/SHA2-256SUMS
@@ -5582,7 +5582,7 @@ THE SOFTWARE.
 
 ----- DENO-NOTICE.txt -----
 
-CacaTools Download Manager includes Deno as the bundled JavaScript runtime used by yt-dlp EJS challenges.
+Clear Download Manager provides Deno in the optional Media Tools component as the JavaScript runtime used by yt-dlp EJS challenges.
 Version output: deno 2.9.7 (stable, release, x86_64-pc-windows-msvc)
 Official release asset: https://github.com/denoland/deno/releases/download/v2.9.7/deno-x86_64-pc-windows-msvc.zip
 Archive SHA-256: a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238
@@ -5617,7 +5617,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ----- FFMPEG-NOTICE.txt -----
 
-CacaTools Download Manager uses FFmpeg and FFprobe as external executables to combine and convert audio and video.
+Clear Download Manager provides FFmpeg and FFprobe in the optional Media Tools component to combine and convert audio and video.
 Build: ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers (SAFE LEAN; GPL-3.0-or-later)
 Corresponding-source archive: ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz
 Corresponding-source SHA-256: b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58
@@ -6374,7 +6374,7 @@ The complete corresponding source and notices are provided in the adjacent sourc
 
 ----- ARIA2-NOTICE.txt -----
 
-CacaTools Download Manager includes aria2c as a local download engine.
+Clear Download Manager provides aria2c in the optional Torrent Engine component.
 Version output: aria2 version 1.37.0
 Official release asset: https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip
 Archive SHA-256: 67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288

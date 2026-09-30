@@ -15,7 +15,7 @@ const ES_TO_EN = Object.freeze({
   'Analizar': 'Analyze', 'Analizando…': 'Analyzing…', 'Limpiar': 'Clear', 'Activas': 'Active', 'Completadas': 'Completed', 'Velocidad': 'Speed',
   'Pendientes': 'Pending', 'En ejecución': 'Running', 'Con errores': 'With errors', 'Archivos': 'Files', 'Vídeo': 'Video', 'Audio': 'Audio', 'Multimedia': 'Media',
   'No hay descargas aquí todavía': 'No downloads here yet', 'Pega un enlace, añade un torrent o busca un vídeo para comenzar.': 'Paste a link, add a torrent, or search for a video to get started.',
-  'Nueva descarga': 'New download', 'ÁREA DE DESCARGAS': 'DOWNLOAD AREA', 'Resumen de descargas': 'Download summary', 'Sugerencias de búsqueda': 'Search suggestions',
+  'Nueva descarga': 'New download', 'Ordenar': 'Sort', 'Ordenar descargas': 'Sort downloads', 'Más recientes': 'Most recent', 'Recientes': 'Recent', 'Visibles': 'Visible', 'Más antiguos': 'Oldest', 'Nombre (A-Z)': 'Name (A-Z)', 'Tamaño: mayor a menor': 'Largest first', 'Mayor a menor': 'Largest first', 'Tamaño ↓': 'Size ↓', 'Ninguna': 'None', 'Todas': 'All', 'Prioridad…': 'Priority…', 'Cambiar prioridad de la selección': 'Change selected priority', 'Alta': 'High', 'Normal': 'Normal', 'Baja': 'Low', 'Eliminar': 'Delete', 'Quitar selección visible': 'Clear visible selection', 'Seleccionar todas las descargas visibles': 'Select all visible downloads', 'Salir de selección': 'Exit selection', 'ÁREA DE DESCARGAS': 'DOWNLOAD AREA', 'Resumen de descargas': 'Download summary', 'Sugerencias de búsqueda': 'Search suggestions',
   'RESULTADOS DE VÍDEO': 'VIDEO RESULTS', 'Cargando más resultados': 'Loading more results', 'Listos': 'Ready', 'Cargando resultados': 'Loading results',
   'Sigue escribiendo para buscar coincidencias.': 'Keep typing to search for matches.', 'Busca un vídeo por su título': 'Search for a video by title', 'También puedes escribir artista, canal o palabras clave.': 'You can also enter an artist, channel, or keywords.',
   'Vídeo encontrado': 'Video found', 'Sugerencia de YouTube': 'YouTube suggestion', 'Reproducir': 'Play', '↑↓ para navegar · Enter para analizar': '↑↓ to navigate · Enter to analyze', 'Ctrl + K enfoca el buscador': 'Ctrl + K focuses search',
@@ -26,13 +26,13 @@ const ES_TO_EN = Object.freeze({
   'Más detalles': 'More details', 'Actualizar': 'Update', 'Más tarde': 'Later', 'Instalar ahora': 'Install now', 'Preparando…': 'Preparing…', 'Buscar ahora': 'Check now', 'Buscar actualizaciones': 'Check for updates', 'Comentarios y sugerencias': 'Feedback', 'Ver release': 'View release', 'Ver extensión': 'View extension', 'Apoyar': 'Support',
   'Apoya el proyecto': 'Support the project', 'Tu apoyo ayuda a mantener Clear Download Manager en desarrollo.': 'Your support helps keep Clear Download Manager in development.',
   'Actualizaciones': 'Updates', 'Extensión': 'Extension', 'Historial': 'History', 'Todas': 'All', 'ACTUALIZACIÓN': 'UPDATE', 'EXTENSIÓN': 'EXTENSION', 'Actualizaciones anteriores': 'Previous updates',
-  'General': 'General', 'Descargas simultáneas': 'Concurrent downloads', 'Carpeta de descargas': 'Download folder', 'Cambiar carpeta': 'Change folder', 'Abrir carpeta': 'Open folder', 'Comportamiento': 'Behavior', 'Reanudación': 'Resume', 'Parciales': 'Partials', 'Conservados': 'Kept', 'En tiempo real': 'Real-time', 'Disponible': 'Available', 'No detectado': 'Not detected',
+  'General': 'General', 'Descargas simultáneas': 'Concurrent downloads', 'Carpeta de descargas': 'Download folder', 'Cambiar carpeta': 'Change folder', 'Abrir carpeta': 'Open folder', 'Comportamiento': 'Behavior', 'Comportamiento de descargas': 'Download behavior', 'Crear subcarpetas por categoría': 'Create category subfolders', 'Organiza los archivos directos y multimedia; los torrents conservan su carpeta.': 'Sort direct and media files into category folders; torrents keep their own folder.', 'Usar nombres de archivo originales': 'Use original file names', 'Conserva el nombre del origen cuando esté disponible.': 'Keep the name provided by the source when available.', 'Preguntar dónde guardar': 'Ask where to save', 'Elige una carpeta para cada descarga o playlist antes de iniciarla.': 'Choose a folder for each download or playlist before it starts.', 'Reanudar descargas interrumpidas': 'Resume interrupted downloads', 'Continúa desde los datos parciales cuando el servidor lo permite.': 'Continue from partial data when the server allows it.', 'Reanudación': 'Resume', 'Parciales': 'Partials', 'Conservados': 'Kept', 'En tiempo real': 'Real-time', 'Disponible': 'Available', 'No detectado': 'Not detected',
   'Destino y organización': 'Destination and organization', 'UBICACIÓN ACTUAL': 'CURRENT LOCATION', 'Descargas HTTP simultáneas': 'Concurrent HTTP downloads', 'Descargas multimedia simultáneas': 'Concurrent media downloads', 'Las tareas activas continúan; el límite se aplica al próximo espacio disponible.': 'Active tasks continue; the limit applies to the next available slot.', 'Límite máximo por descarga': 'Maximum limit per download', 'Progreso': 'Progress',
   'Velocidad': 'Speed', 'Limitar velocidad de descarga': 'Limit download speed', 'Máximo por descarga': 'Maximum per download', 'Velocidad personalizada': 'Custom speed', 'Unidad': 'Unit', 'Sin límite': 'Unlimited', 'Personalizado': 'Custom', 'Se aplicará a descargas nuevas y reanudadas. MB/s significa megabytes por segundo.': 'Applies to new and resumed downloads. MB/s means megabytes per second.',
   'Multimedia': 'Media', 'Motores y preferencias': 'Engines and preferences', 'Disponibilidad': 'Availability', 'Sesión': 'Session', 'Cookies de Brave activadas': 'Brave cookies enabled', 'Sin cookies del navegador': 'No browser cookies', 'Mejor disponible': 'Best available', 'Calidad preferida': 'Preferred quality', 'Compatibilidad': 'Compatibility', 'Las políticas multimedia y el reproductor se conservan sin cambios.': 'Media policies and the player remain unchanged.',
   'Apariencia': 'Appearance', 'Personaliza la interfaz': 'Customize the interface', 'Tema y color': 'Theme and color', 'Tema': 'Theme', 'Sistema': 'System', 'Oscuro': 'Dark', 'Claro': 'Light', 'Color de acento': 'Accent color', 'Colores de acento': 'Accent colors', 'Colores de acento para iconos': 'Accent colors for icons', 'Color de iconos': 'Icon color', 'Controla la parte de color de los iconos; la base gris permanece limpia y legible.': 'Controls the colored part of icons; the gray base stays clean and legible.', 'Colores preajustados': 'Preset colors', 'Colores preajustados para iconos': 'Preset icon colors', 'Color personalizado': 'Custom color', 'Color personalizado de iconos': 'Custom icon color', 'Colores de progreso': 'Progress colors', 'Activo': 'Active', 'Completado': 'Completed', 'En pausa': 'Paused', 'Error': 'Error', 'Activo, completado, pausa y error conservan sus colores independientes.': 'Active, completed, paused, and error keep independent colors.', 'Escala y densidad': 'Scale and density', 'Escala automática': 'Automatic scale', 'Activada': 'Enabled', 'Desactivada': 'Disabled', 'Escala de interfaz': 'Interface scale', 'Reducir escala': 'Decrease scale', 'Aumentar escala': 'Increase scale', 'Porcentaje de escala': 'Scale percentage', 'Densidad': 'Density', 'Compacta': 'Compact', 'Equilibrada': 'Balanced', 'Amplia': 'Spacious', 'Avanzado': 'Advanced', 'Tamaño del texto': 'Text size', 'Miniaturas': 'Thumbnails', 'Medianas': 'Medium', 'Grandes': 'Large', 'Muy grandes': 'Extra large', 'Efectos': 'Effects', 'Superficie': 'Surface', 'Sólida': 'Solid', 'Mica': 'Mica', 'Movimiento': 'Motion', 'Reducido': 'Reduced', 'Desactivado': 'Off', 'Esquinas': 'Corners', 'Rectas': 'Sharp', 'Estándar': 'Standard', 'Suaves': 'Soft', 'Tamaño de texto, miniaturas y preferencias visuales': 'Text size, thumbnails, and visual preferences', 'Caca verde': 'Green', 'Caca azul': 'Blue', 'Violeta': 'Violet', 'Cian': 'Cyan', 'Rosa': 'Rose', 'Ámbar': 'Amber', 'Esmeralda': 'Emerald', 'Índigo': 'Indigo', 'Magenta': 'Magenta', 'Carmesí': 'Crimson', 'Turquesa': 'Teal', 'Gris predeterminado': 'Default gray', 'Automático': 'Automatic',
   'Integraciones': 'Integrations', 'Conexiones disponibles': 'Available connections', 'Extensión del navegador': 'Browser extension', 'Puente': 'Bridge', 'Preparado': 'Ready',
-  'Actualizaciones y diagnóstico': 'Updates and diagnostics', 'Estado local': 'Local status', 'Versiones': 'Versions', 'Aplicación': 'Application', 'Herramientas internas': 'Internal tools', 'Comprueba de forma segura el motor interno de multimedia.': 'Safely check the internal media engine.', 'yt-dlp · actualización segura': 'yt-dlp · safe update', 'FFmpeg / FFprobe / Deno / aria2c': 'Optional media and torrent components', 'Media Tools y Torrent Engine se instalan como paquetes opcionales independientes.': 'Media Tools and Torrent Engine are installed as separate optional packages.', 'yt-dlp, FFmpeg, FFprobe y Deno pertenecen a Media Tools; aria2c pertenece a Torrent Engine.': 'yt-dlp, FFmpeg, FFprobe, and Deno belong to Media Tools; aria2c belongs to Torrent Engine.', 'Incluida en la actualización de la aplicación': 'Installed separately from the application', 'Disponible': 'Available', 'No detectado': 'Not detected', 'Última comprobación': 'Last check', 'Diagnóstico visual': 'Visual diagnostics', 'Escala efectiva': 'Effective scale', 'Tipografía': 'Typography', 'Copiar diagnóstico': 'Copy diagnostics', 'Actualizado': 'Up to date', 'Comprobando…': 'Checking…', 'Descargando…': 'Downloading…', 'Verificando…': 'Verifying…', 'Instalando…': 'Installing…', 'No se pudo completar': 'Could not complete', 'Sin conexión': 'Offline', 'Actualizaciones no configuradas': 'Updates not configured', 'Estado no disponible': 'Status unavailable', 'Aún no comprobado': 'Not checked yet',
+  'Actualizaciones y diagnóstico': 'Updates and diagnostics', 'Estado local': 'Local status', 'Versiones': 'Versions', 'Aplicación': 'Application', 'Herramientas internas': 'Internal tools', 'Comprueba de forma segura el motor interno de multimedia.': 'Safely check the internal media engine.', 'yt-dlp · actualización segura': 'yt-dlp · safe update', 'FFmpeg / FFprobe / Deno / aria2c': 'Optional media and torrent components', 'MediaTools y Torrent Engine se instalan como paquetes opcionales independientes.': 'MediaTools and Torrent Engine are installed as separate optional packages.', 'yt-dlp, FFmpeg, FFprobe y Deno pertenecen a MediaTools; aria2c pertenece a Torrent Engine.': 'yt-dlp, FFmpeg, FFprobe, and Deno belong to MediaTools; aria2c belongs to Torrent Engine.', 'Complementos': 'Components', 'Gestiona los componentes opcionales de Clear.': 'Manage Clear optional components.', 'MediaTools': 'MediaTools', 'Incluida en la actualización de la aplicación': 'Installed separately from the application', 'Disponible': 'Available', 'No detectado': 'Not detected', 'Última comprobación': 'Last check', 'Diagnóstico visual': 'Visual diagnostics', 'Escala efectiva': 'Effective scale', 'Tipografía': 'Typography', 'Copiar diagnóstico': 'Copy diagnostics', 'Actualizado': 'Up to date', 'Comprobando…': 'Checking…', 'Descargando…': 'Downloading…', 'Verificando…': 'Verifying…', 'Instalando…': 'Installing…', 'No se pudo completar': 'Could not complete', 'Sin conexión': 'Offline', 'Actualizaciones no configuradas': 'Updates not configured', 'Estado no disponible': 'Status unavailable', 'Aún no comprobado': 'Not checked yet',
   'Componentes': 'Components', 'El núcleo puede funcionar sin los componentes multimedia o torrent. Selecciona un paquete local .cdmcomponent para instalar o reparar un componente.': 'Core can run without media or torrent components. Choose a local .cdmcomponent package to install or repair a component.', 'No instalado': 'Not installed', 'Instalado': 'Installed', 'Requiere reparación': 'Needs repair', 'Instalando': 'Installing', 'Falló la instalación': 'Installation failed', 'Reparar': 'Repair', 'Instalar paquete local': 'Install local package', 'Verificar': 'Verify', 'Quitar': 'Remove',
   'Preparar una descarga': 'Prepare a download', 'Pega un enlace multimedia, playlist o archivo directo y pulsa Analizar.': 'Paste a media link, playlist, or direct file and press Analyze.', 'Espera a que termine el análisis para confirmar la descarga.': 'Wait for analysis to finish to confirm the download.', 'Cerrar ahora saldrá completamente': 'Close now to exit completely', 'Cerrar ahora enviará CacaTools a la bandeja': 'Close now to send Clear Download Manager to the tray',
   'CENTRO DE DESCARGAS': 'DOWNLOAD CENTER', 'Enlace de descarga': 'Download link', 'Calidad': 'Quality', 'Formato': 'Format', 'Destino': 'Destination', 'Tamaño': 'Size', 'Selección': 'Selection', 'Descargar': 'Download', 'Descargando…': 'Downloading…', 'Cancelar': 'Cancel', 'Cargando…': 'Loading…', 'Resolviendo metadatos multimedia…': 'Resolving media metadata…', 'Analizando elementos de la playlist…': 'Analyzing playlist items…', 'Descarga lista': 'Download ready', 'Confirmar descarga': 'Confirm download', 'Espera': 'Wait', 'No se pudo analizar el enlace.': 'The link could not be analyzed.', 'Debes seleccionar al menos un elemento.': 'Select at least one item.', 'Elementos seleccionados': 'Selected items',
@@ -49,6 +49,11 @@ const ES_TO_EN = Object.freeze({
 // same runtime authority so settings, preparation dialogs, details, player,
 // and updater text are localized without changing their functional logic.
 const EXTRA_ES_TO_EN = Object.freeze({
+  'COMPLEMENTO NECESARIO': 'REQUIRED COMPONENT', 'Descargar e instalar': 'Download and install',
+  'Descarga y procesamiento de medios': 'Media download and processing', 'Descargas BitTorrent': 'BitTorrent downloads',
+  'Descarga aproximada:': 'Approximate download:', 'Solicitud aceptada. Esperando el estado del componente.': 'Request accepted. Waiting for component status.',
+  'Preparando descarga': 'Preparing download', 'Verificando integridad': 'Verifying integrity', 'Preparando instalación': 'Preparing installation',
+  'Activando componente': 'Activating component', 'Listo': 'Ready',
   'Límite de descarga': 'Download limit', 'Aplicar': 'Apply', 'Velocidad personalizada en KB/s': 'Custom speed in KB/s', 'Aplicar velocidad personalizada': 'Apply custom speed',
   'Elegir archivo torrent': 'Choose torrent file', 'Pegar enlace magnet': 'Paste magnet link', 'magnet:?xt=urn:btih:… o C:\\ruta\\archivo.torrent': 'magnet:?xt=urn:btih:… or C:\\path\\file.torrent',
   'Comprobación no disponible': 'Check unavailable', 'Instalada': 'Installed', 'Versión disponible': 'Version available', 'Actualización disponible': 'Update available', 'Repositorio': 'Repository', 'Abrir repositorio': 'Open repository', 'Repositorios oficiales': 'Official repositories',
@@ -255,6 +260,9 @@ const ES_PHRASES = Object.freeze([
 
 const EN_TO_ES = Object.freeze({
   ...Object.fromEntries(Object.entries(FULL_ES_TO_EN).map(([es, en]) => [en, es])),
+  Components: 'Complementos',
+  Ready: 'Listo',
+  Installed: 'Instalado',
   // “Playlist” is commonly used as-is in Spanish and keeps this toolbar compact.
   Playlist: 'Playlist'
 });
@@ -262,6 +270,8 @@ const EN_TO_ES = Object.freeze({
 export function translateRuntimeText(value, locale = 'es') {
   let text = String(value ?? '');
   if (locale === 'en') {
+    const remaining = text.trim().match(/^Faltan (.+)$/);
+    if (remaining) return text.replace(text.trim(), `Remaining ${remaining[1]}`);
     const updatePercent = text.trim().match(/^Descargando la actualización firmada \((\d+)%\)\.$/);
     if (updatePercent) return text.replace(text.trim(), `Downloading the signed update (${updatePercent[1]}%).`);
     const exact = FULL_ES_TO_EN[text.trim()];
@@ -271,6 +281,15 @@ export function translateRuntimeText(value, locale = 'es') {
       if (from.length < 4 || !text.includes(from)) continue;
       text = text.split(from).join(to);
     }
+    text = text.replace(/^Se necesita (.+)$/, '$1 is required');
+    text = text.replace(/^Preparando descarga (.+)$/, 'Preparing $1 download');
+    text = text.replace(/^Verificando integridad (.+)$/, 'Verifying $1 integrity');
+    text = text.replace(/^Preparando instalación (.+)$/, 'Preparing $1 installation');
+    text = text.replace(/^Instalando (.+)$/, 'Installing $1');
+    text = text.replace(/^Activando componente (.+)$/, 'Activating $1');
+    text = text.replace(/^Instalado (.+)$/, '$1 installed');
+    text = text.replace(/^No se pudo instalar (.+)$/, 'Could not install $1');
+    text = text.replace(/^Descarga cancelada (.+)$/, '$1 download cancelled');
     text = text.replace(/^(?:Abrir|Open) (.+) en el reproductor$/, 'Open $1 in the player');
     text = text.replace(/^Más acciones para (.+)$/, 'More actions for $1');
     text = text.replace(/^Eliminar (\d+)$/, 'Delete $1');
@@ -291,6 +310,21 @@ export function translateRuntimeText(value, locale = 'es') {
   } else {
     const exact = EN_TO_ES[text.trim()];
     if (exact) return text.replace(text.trim(), exact);
+    text = text.replace(/^Approximate download:\s*/, 'Descarga aproximada: ');
+    text = text.replace(/^(.+) is required$/, 'Se necesita $1');
+    text = text.replace(/^Preparing (.+) download$/, 'Preparando descarga $1');
+    text = text.replace(/^Preparing download (.+)$/, 'Preparando descarga $1');
+    text = text.replace(/^Verifying (.+) integrity$/, 'Verificando integridad $1');
+    text = text.replace(/^Verifying integrity (.+)$/, 'Verificando integridad $1');
+    text = text.replace(/^Preparing (.+) installation$/, 'Preparando instalación $1');
+    text = text.replace(/^Preparing installation (.+)$/, 'Preparando instalación $1');
+    text = text.replace(/^Installing (.+)$/, 'Instalando $1');
+    text = text.replace(/^Activating component (.+)$/, 'Activando componente $1');
+    text = text.replace(/^Activating (.+)$/, 'Activando componente $1');
+    text = text.replace(/^(.+) installed$/, 'Instalado $1');
+    text = text.replace(/^Installed (.+)$/, 'Instalado $1');
+    text = text.replace(/^Could not install (.+)$/, 'No se pudo instalar $1');
+    text = text.replace(/^(.+) download cancelled$/, 'Descarga cancelada $1');
     text = text.replace(/^Delete (\d+) downloads?$/, 'Eliminar $1 descargas');
     text = text.replace(/^Play (.+)$/, 'Reproducir $1');
     text = text.replace(/^Cancel “(.+)”$/, 'Cancelar “$1”');

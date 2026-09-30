@@ -10,6 +10,7 @@ use reqwest::{
     header::CONTENT_LENGTH,
     header::USER_AGENT,
     redirect::{Attempt, Policy},
+    Client as AsyncClient,
 };
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -21,14 +22,22 @@ use std::path::Path;
 use std::time::Duration;
 use url::Url;
 
+#[cfg(not(feature = "qa-component-manager"))]
 pub(crate) const COMPONENT_CATALOG_ENDPOINT: &str =
     "https://github.com/CacaPlay/clear-download-manager/releases/latest/download/component-catalog-v1.json";
+#[cfg(feature = "qa-component-manager")]
+pub(crate) const COMPONENT_CATALOG_ENDPOINT: &str =
+    "http://127.0.0.1:49301/component-catalog-v1.json";
+pub(crate) const ALLOW_LOOPBACK_HTTP: bool = cfg!(any(test, feature = "qa-component-manager"));
 
 const COMPONENT_CATALOG_SCHEMA: u32 = 1;
 const MAX_CATALOG_BYTES: usize = 256 * 1024;
 const MAX_CATALOG_LIFETIME_SECONDS: i64 = 90 * 24 * 60 * 60;
 const MAX_CLOCK_SKEW_SECONDS: i64 = 5 * 60;
 pub(crate) const MAX_COMPONENT_PACKAGE_BYTES: u64 = 512 * 1024 * 1024;
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
+const CATALOG_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+const PACKAGE_READ_TIMEOUT: Duration = Duration::from_secs(45);
 const RELEASE_HOST: &str = "github.com";
 const RELEASE_REPOSITORY_PATH: &str = "/CacaPlay/clear-download-manager/releases/download/";
 const CATALOG_PATH: &str =
@@ -131,6 +140,7 @@ pub(crate) enum AssetDownloadError {
     HashMismatch,
     TooLarge,
     Filesystem,
+    Cancelled,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -149,7 +159,8 @@ pub(crate) fn fetch_catalog_bytes(
     if !catalog_url_allowed(url, allow_loopback_http) {
         return Err(CatalogFetchError::InvalidUrl);
     }
-    let client = build_client(allow_loopback_http).map_err(|_| CatalogFetchError::Network)?;
+    let client =
+        build_catalog_client(allow_loopback_http).map_err(|_| CatalogFetchError::Network)?;
     let response = client
         .get(url)
         .header(USER_AGENT, "ClearDownloadManager/component-manager")
@@ -198,6 +209,7 @@ pub(crate) struct AssetDownloadRequest<'a> {
 pub(crate) fn download_asset_to_path<F>(
     request: &AssetDownloadRequest<'_>,
     progress: F,
+    cancelled: std::sync::Arc<std::sync::atomic::AtomicBool>,
 ) -> Result<(), AssetDownloadError>
 where
     F: FnMut(u64),
@@ -213,19 +225,89 @@ where
     if request.expected_size == 0 || request.expected_size > request.maximum_size {
         return Err(AssetDownloadError::TooLarge);
     }
-    let client =
-        build_client(request.allow_loopback_http).map_err(|_| AssetDownloadError::Network)?;
-    let mut response = client
-        .get(request.url)
-        .header(USER_AGENT, "ClearDownloadManager/component-manager")
-        .send()
-        .map_err(|error| {
-            if error.is_redirect() {
-                AssetDownloadError::RedirectRejected
-            } else {
-                AssetDownloadError::Network
-            }
-        })?;
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|_| AssetDownloadError::Network)?;
+    runtime.block_on(download_asset_async(request, progress, cancelled))
+}
+
+fn redirect_policy(allow_loopback_http: bool) -> Policy {
+    Policy::custom(move |attempt: Attempt<'_>| {
+        let target = attempt.url();
+        let is_github_https = !cfg!(feature = "qa-component-manager")
+            && target.scheme() == "https"
+            && target.port().is_none()
+            && matches!(
+                target.host_str(),
+                Some(
+                    "github.com"
+                        | "release-assets.githubusercontent.com"
+                        | "objects.githubusercontent.com"
+                        | "github-releases.githubusercontent.com"
+                )
+            );
+        let is_test_loopback = allow_loopback_http
+            && target.scheme() == "http"
+            && target.host_str() == Some("127.0.0.1")
+            && target.port().is_some()
+            && (!cfg!(feature = "qa-component-manager") || target.port() == Some(49301));
+        if attempt.previous().len() >= 3
+            || !target.username().is_empty()
+            || target.password().is_some()
+            || !(is_github_https || is_test_loopback)
+        {
+            attempt.error("component download redirect rejected")
+        } else {
+            attempt.follow()
+        }
+    })
+}
+
+fn build_catalog_client(allow_loopback_http: bool) -> Result<Client, reqwest::Error> {
+    Client::builder()
+        .connect_timeout(CONNECT_TIMEOUT)
+        .timeout(CATALOG_REQUEST_TIMEOUT)
+        .redirect(redirect_policy(allow_loopback_http))
+        .build()
+}
+
+fn build_package_client(allow_loopback_http: bool) -> Result<AsyncClient, reqwest::Error> {
+    AsyncClient::builder()
+        .connect_timeout(CONNECT_TIMEOUT)
+        .redirect(redirect_policy(allow_loopback_http))
+        .build()
+}
+
+async fn download_asset_async<F>(
+    request: &AssetDownloadRequest<'_>,
+    mut progress: F,
+    cancelled: std::sync::Arc<std::sync::atomic::AtomicBool>,
+) -> Result<(), AssetDownloadError>
+where
+    F: FnMut(u64),
+{
+    let client = build_package_client(request.allow_loopback_http)
+        .map_err(|_| AssetDownloadError::Network)?;
+    let response_result = tokio::select! {
+        response = tokio::time::timeout(
+            PACKAGE_READ_TIMEOUT,
+            client
+            .get(request.url)
+            .header(USER_AGENT, "ClearDownloadManager/component-manager")
+            .send(),
+        ) => response
+            .map_err(|_| AssetDownloadError::Network)?
+            .map_err(|error| {
+        if error.is_redirect() {
+            AssetDownloadError::RedirectRejected
+        } else {
+            AssetDownloadError::Network
+        }
+        }),
+        _ = wait_for_cancellation(cancelled.clone()) => Err(AssetDownloadError::Cancelled),
+    };
+    let mut response = response_result?;
     if !response.status().is_success() {
         return Err(AssetDownloadError::HttpStatus);
     }
@@ -235,57 +317,72 @@ where
     {
         return Err(AssetDownloadError::SizeMismatch);
     }
-    write_verified_download(
-        &mut response,
-        request.destination,
-        request.expected_size,
-        request.expected_sha256,
-        request.maximum_size,
-        progress,
-    )
-    .map_err(|error| match error {
-        AssetValidationError::TooLarge => AssetDownloadError::TooLarge,
-        AssetValidationError::SizeMismatch => AssetDownloadError::SizeMismatch,
-        AssetValidationError::HashMismatch => AssetDownloadError::HashMismatch,
-        AssetValidationError::ReadFailed => AssetDownloadError::Network,
-        AssetValidationError::WriteFailed | AssetValidationError::DestinationExists => {
-            AssetDownloadError::Filesystem
+    if request.expected_size > request.maximum_size {
+        return Err(AssetDownloadError::TooLarge);
+    }
+    if request.destination.exists() {
+        return Err(AssetDownloadError::Filesystem);
+    }
+    let mut partial_name = request.destination.as_os_str().to_os_string();
+    partial_name.push(".part");
+    let partial = std::path::PathBuf::from(partial_name);
+    let mut cleanup = PartialCleanup(Some(partial.clone()));
+    let mut output = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&partial)
+        .map_err(|_| AssetDownloadError::Filesystem)?;
+    let mut digest = Sha256::new();
+    let mut total = 0_u64;
+    loop {
+        let chunk_result = tokio::select! {
+            chunk = tokio::time::timeout(PACKAGE_READ_TIMEOUT, response.chunk()) => chunk
+                .map_err(|_| AssetDownloadError::Network)?
+                .map_err(|_| AssetDownloadError::Network),
+            _ = wait_for_cancellation(cancelled.clone()) => Err(AssetDownloadError::Cancelled),
+        };
+        let chunk = chunk_result?;
+        let Some(chunk) = chunk else { break };
+        total = total.saturating_add(chunk.len() as u64);
+        if total > request.maximum_size {
+            return Err(AssetDownloadError::TooLarge);
         }
-    })
+        if total > request.expected_size {
+            return Err(AssetDownloadError::SizeMismatch);
+        }
+        digest.update(&chunk);
+        output
+            .write_all(&chunk)
+            .map_err(|_| AssetDownloadError::Filesystem)?;
+        progress(total);
+    }
+    if total != request.expected_size {
+        return Err(AssetDownloadError::SizeMismatch);
+    }
+    let actual_sha256: String = digest
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
+    if actual_sha256 != request.expected_sha256 {
+        return Err(AssetDownloadError::HashMismatch);
+    }
+    output
+        .sync_all()
+        .map_err(|_| AssetDownloadError::Filesystem)?;
+    drop(output);
+    fs::rename(&partial, request.destination).map_err(|_| AssetDownloadError::Filesystem)?;
+    cleanup.0 = None;
+    Ok(())
 }
 
-fn build_client(allow_loopback_http: bool) -> Result<Client, reqwest::Error> {
-    Client::builder()
-        .connect_timeout(Duration::from_secs(20))
-        .timeout(Duration::from_secs(5 * 60))
-        .redirect(Policy::custom(move |attempt: Attempt<'_>| {
-            let target = attempt.url();
-            let is_github_https = target.scheme() == "https"
-                && target.port().is_none()
-                && matches!(
-                    target.host_str(),
-                    Some(
-                        "github.com"
-                            | "release-assets.githubusercontent.com"
-                            | "objects.githubusercontent.com"
-                            | "github-releases.githubusercontent.com"
-                    )
-                );
-            let is_test_loopback = allow_loopback_http
-                && target.scheme() == "http"
-                && target.host_str() == Some("127.0.0.1")
-                && target.port().is_some();
-            if attempt.previous().len() >= 3
-                || !target.username().is_empty()
-                || target.password().is_some()
-                || !(is_github_https || is_test_loopback)
-            {
-                attempt.error("component download redirect rejected")
-            } else {
-                attempt.follow()
-            }
-        }))
-        .build()
+async fn wait_for_cancellation(token: std::sync::Arc<std::sync::atomic::AtomicBool>) {
+    loop {
+        if token.load(std::sync::atomic::Ordering::Acquire) {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
 }
 
 pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
@@ -421,10 +518,10 @@ impl VerifiedComponentCatalog {
     }
 }
 
-pub(crate) fn production_trust() -> TrustedKeys {
-    // Component catalogs have a dedicated trust domain. Keep it empty until
-    // the distributor provisions the matching protected secret and approves
-    // the public key in Core. Tool-catalog roots must never activate this path.
+pub(crate) fn configured_trust() -> TrustedKeys {
+    // Component catalogs have a dedicated trust domain. The QA build selects
+    // a separate public test key at compile time; tool-catalog roots never
+    // activate this path.
     let encoded = super::catalog_key::PUBLIC_KEY_BASE64;
     if encoded.is_empty() {
         return TrustedKeys::empty();
@@ -443,6 +540,17 @@ pub(crate) fn production_trust() -> TrustedKeys {
     };
     TrustedKeys::from_public_key_bytes([(super::catalog_key::KEY_ID.to_string(), public_key)])
         .unwrap_or_else(|_| TrustedKeys::empty())
+}
+
+pub(crate) fn production_trust() -> TrustedKeys {
+    #[cfg(feature = "qa-component-manager")]
+    {
+        TrustedKeys::empty()
+    }
+    #[cfg(not(feature = "qa-component-manager"))]
+    {
+        configured_trust()
+    }
 }
 
 pub(crate) fn verify_component_catalog(
@@ -689,27 +797,39 @@ fn package_url_allowed(
         .path_segments()
         .map(|segments| segments.collect::<Vec<_>>())
         .unwrap_or_default();
-    let is_release_path = parsed.scheme() == "https"
-        && parsed.host_str() == Some(RELEASE_HOST)
-        && parsed.port().is_none()
-        && parsed.path().starts_with(RELEASE_REPOSITORY_PATH)
-        && segments
-            == [
-                "CacaPlay",
-                "clear-download-manager",
-                "releases",
-                "download",
-                release_tag,
-                asset_name,
-            ];
-    if is_release_path {
-        return true;
+    #[cfg(feature = "qa-component-manager")]
+    {
+        let _ = release_tag;
+        return allow_loopback
+            && parsed.scheme() == "http"
+            && parsed.host_str() == Some("127.0.0.1")
+            && parsed.port() == Some(49301)
+            && segments == [asset_name];
     }
-    allow_loopback
-        && parsed.scheme() == "http"
-        && parsed.port().is_some()
-        && parsed.host_str() == Some("127.0.0.1")
-        && segments == [asset_name]
+    #[cfg(not(feature = "qa-component-manager"))]
+    {
+        let is_release_path = parsed.scheme() == "https"
+            && parsed.host_str() == Some(RELEASE_HOST)
+            && parsed.port().is_none()
+            && parsed.path().starts_with(RELEASE_REPOSITORY_PATH)
+            && segments
+                == [
+                    "CacaPlay",
+                    "clear-download-manager",
+                    "releases",
+                    "download",
+                    release_tag,
+                    asset_name,
+                ];
+        if is_release_path {
+            return true;
+        }
+        allow_loopback
+            && parsed.scheme() == "http"
+            && parsed.port().is_some()
+            && parsed.host_str() == Some("127.0.0.1")
+            && segments == [asset_name]
+    }
 }
 
 fn catalog_url_allowed(url: &str, allow_loopback: bool) -> bool {
@@ -723,16 +843,27 @@ fn catalog_url_allowed(url: &str, allow_loopback: bool) -> bool {
     {
         return false;
     }
-    let official = parsed.scheme() == "https"
-        && parsed.host_str() == Some(RELEASE_HOST)
-        && parsed.port().is_none()
-        && parsed.path() == CATALOG_PATH;
-    let test_loopback = allow_loopback
-        && parsed.scheme() == "http"
-        && parsed.host_str() == Some("127.0.0.1")
-        && parsed.port().is_some()
-        && parsed.path() == "/component-catalog-v1.json";
-    official || test_loopback
+    #[cfg(feature = "qa-component-manager")]
+    {
+        return allow_loopback
+            && parsed.scheme() == "http"
+            && parsed.host_str() == Some("127.0.0.1")
+            && parsed.port() == Some(49301)
+            && parsed.path() == "/component-catalog-v1.json";
+    }
+    #[cfg(not(feature = "qa-component-manager"))]
+    {
+        let official = parsed.scheme() == "https"
+            && parsed.host_str() == Some(RELEASE_HOST)
+            && parsed.port().is_none()
+            && parsed.path() == CATALOG_PATH;
+        let test_loopback = allow_loopback
+            && parsed.scheme() == "http"
+            && parsed.host_str() == Some("127.0.0.1")
+            && parsed.port().is_some()
+            && parsed.path() == "/component-catalog-v1.json";
+        official || test_loopback
+    }
 }
 
 fn component_asset_name(id: ComponentId, version: &str) -> String {
@@ -948,23 +1079,135 @@ mod tests {
 
     #[test]
     fn catalog_endpoint_is_fixed_and_test_http_is_loopback_only() {
-        assert!(catalog_url_allowed(COMPONENT_CATALOG_ENDPOINT, false));
+        #[cfg(not(feature = "qa-component-manager"))]
+        {
+            assert!(catalog_url_allowed(COMPONENT_CATALOG_ENDPOINT, false));
+            assert!(!catalog_url_allowed(
+                "https://example.net/component-catalog-v1.json",
+                false
+            ));
+            assert!(!catalog_url_allowed(
+                "http://127.0.0.1:49152/component-catalog-v1.json",
+                false
+            ));
+            assert!(catalog_url_allowed(
+                "http://127.0.0.1:49152/component-catalog-v1.json",
+                true
+            ));
+            assert!(!catalog_url_allowed(
+                "http://127.0.0.1:49152/component-catalog-v1.json?redirect=https://example.net",
+                true
+            ));
+        }
+    }
+
+    #[cfg(feature = "qa-component-manager")]
+    #[test]
+    fn qa_build_trusts_only_its_fixed_loopback_component_route() {
+        assert_eq!(
+            COMPONENT_CATALOG_ENDPOINT,
+            "http://127.0.0.1:49301/component-catalog-v1.json"
+        );
+        assert!(catalog_url_allowed(COMPONENT_CATALOG_ENDPOINT, true));
         assert!(!catalog_url_allowed(
-            "https://example.net/component-catalog-v1.json",
-            false
-        ));
-        assert!(!catalog_url_allowed(
-            "http://127.0.0.1:49152/component-catalog-v1.json",
-            false
-        ));
-        assert!(catalog_url_allowed(
-            "http://127.0.0.1:49152/component-catalog-v1.json",
+            "https://github.com/CacaPlay/clear-download-manager/releases/latest/download/component-catalog-v1.json",
             true
         ));
         assert!(!catalog_url_allowed(
-            "http://127.0.0.1:49152/component-catalog-v1.json?redirect=https://example.net",
+            "http://localhost:49301/component-catalog-v1.json",
             true
         ));
+        assert!(!catalog_url_allowed(
+            "http://127.0.0.1:49302/component-catalog-v1.json",
+            true
+        ));
+        assert!(!catalog_url_allowed(
+            "http://127.0.0.1:49301/component-catalog-v1.json?redirect=https://example.net",
+            true
+        ));
+        assert!(package_url_allowed(
+            "http://127.0.0.1:49301/media-tools-1.0.0.cdmcomponent",
+            "qa-local-20260927",
+            "media-tools-1.0.0.cdmcomponent",
+            true
+        ));
+        assert!(!package_url_allowed(
+            "http://127.0.0.1:49302/media-tools-1.0.0.cdmcomponent",
+            "qa-local-20260927",
+            "media-tools-1.0.0.cdmcomponent",
+            true
+        ));
+        assert!(!package_url_allowed(
+            "https://github.com/CacaPlay/clear-download-manager/releases/download/qa-local-20260927/media-tools-1.0.0.cdmcomponent",
+            "qa-local-20260927",
+            "media-tools-1.0.0.cdmcomponent",
+            true
+        ));
+        assert_eq!(
+            super::super::catalog_key::KEY_ID,
+            "component-catalog-qa-20260927"
+        );
+        let public_key = base64::Engine::decode(
+            &base64::engine::general_purpose::STANDARD,
+            super::super::catalog_key::PUBLIC_KEY_BASE64,
+        )
+        .unwrap();
+        assert_eq!(
+            sha256_hex(&public_key),
+            "7910b5251d799b5160471f860db7de4bd478dea5280e5ebd7a63a1ec2a655313"
+        );
+    }
+
+    #[cfg(feature = "qa-component-manager")]
+    #[test]
+    fn qa_redirect_policy_rejects_external_and_wrong_port_targets() {
+        for destination in [
+            "http://example.invalid/component-catalog-v1.json",
+            "http://127.0.0.1:49302/component-catalog-v1.json",
+        ] {
+            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+            let address = listener.local_addr().unwrap();
+            let location = destination.to_string();
+            let server = thread::spawn(move || {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut request = [0_u8; 1024];
+                let _ = stream.read(&mut request);
+                write!(
+                    stream,
+                    "HTTP/1.1 302 Found\r\nLocation: {location}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                )
+                .unwrap();
+            });
+            let client = build_catalog_client(true).unwrap();
+            let response = client
+                .get(format!("http://{address}/component-catalog-v1.json"))
+                .send();
+            assert!(
+                response.is_err(),
+                "QA redirect unexpectedly followed {destination}"
+            );
+            server.join().unwrap();
+        }
+    }
+
+    #[cfg(feature = "qa-component-manager")]
+    #[test]
+    fn prepared_qa_catalog_signature_is_valid_when_catalog_path_is_supplied() {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let Some(path) = std::env::var_os("CDM_QA_CATALOG_PATH") else {
+            return;
+        };
+        let bytes = fs::read(path).expect("read the prepared local QA catalog");
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        let verified = verify_component_catalog(&bytes, &configured_trust(), now, true)
+            .expect("the prepared QA catalog verifies under its QA key");
+        assert_eq!(
+            verified.signed.payload.key_id,
+            "component-catalog-qa-20260927"
+        );
     }
 
     #[test]
@@ -1287,8 +1530,12 @@ mod tests {
             maximum_size: 1024,
             allow_loopback_http: true,
         };
-        download_asset_to_path(&request, |received| progress.push(received))
-            .expect("valid local fixture transfer");
+        download_asset_to_path(
+            &request,
+            |received| progress.push(received),
+            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        )
+        .expect("valid local fixture transfer");
         assert_eq!(fs::read(&target).unwrap(), body);
         assert!(!temp.path().join("fixture.cdmcomponent.part").exists());
         assert!(!progress.is_empty());
@@ -1311,9 +1558,137 @@ mod tests {
             maximum_size: 1024,
             allow_loopback_http: true,
         };
-        let result = download_asset_to_path(&request, |_| {});
+        let result = download_asset_to_path(
+            &request,
+            |_| {},
+            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        );
         assert_eq!(result, Err(AssetDownloadError::HashMismatch));
         assert!(!target.exists());
         assert!(!temp.path().join("fixture.cdmcomponent.part").exists());
+    }
+
+    #[test]
+    fn package_download_uses_signed_size_without_http_content_length() {
+        let body = b"catalog sized body".to_vec();
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server_body = body.clone();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 2048];
+            let _ = stream.read(&mut request);
+            write!(stream, "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n").unwrap();
+            stream.write_all(&server_body).unwrap();
+        });
+        let url = format!("http://{address}/fixture.cdmcomponent");
+        let temp = tempfile::tempdir().unwrap();
+        let target = temp.path().join("fixture.cdmcomponent");
+        let digest = sha256_hex(&body);
+        let request = AssetDownloadRequest {
+            url: &url,
+            release_tag: "v0.95.5",
+            asset_name: "fixture.cdmcomponent",
+            destination: &target,
+            expected_size: body.len() as u64,
+            expected_sha256: &digest,
+            maximum_size: 1024,
+            allow_loopback_http: true,
+        };
+        download_asset_to_path(
+            &request,
+            |_| {},
+            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        )
+        .expect("signed catalog size is sufficient");
+        server.join().unwrap();
+        assert_eq!(fs::read(&target).unwrap(), body);
+    }
+
+    #[test]
+    fn package_download_aborts_first_oversize_read_before_eof_and_cleans_partial() {
+        struct OversizeThenMustNotReadAgain(bool);
+        impl Read for OversizeThenMustNotReadAgain {
+            fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+                assert!(!self.0, "reader was polled after signed size was exceeded");
+                self.0 = true;
+                buffer[..4].copy_from_slice(b"over");
+                Ok(4)
+            }
+        }
+
+        let temp = tempfile::tempdir().unwrap();
+        let target = temp.path().join("fixture.cdmcomponent");
+        let result = write_verified_download(
+            OversizeThenMustNotReadAgain(false),
+            &target,
+            3,
+            &"0".repeat(64),
+            1024,
+            |_| {},
+        );
+        assert_eq!(result, Err(AssetValidationError::SizeMismatch));
+        assert!(!target.exists());
+        assert!(!temp.path().join("fixture.cdmcomponent.part").exists());
+    }
+
+    #[test]
+    fn package_download_cancellation_aborts_waiting_transfer_and_cleans_partial() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 2048];
+            let _ = stream.read(&mut request);
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Length: 64\r\nConnection: close\r\n\r\n"
+            )
+            .unwrap();
+            stream.write_all(b"partial").unwrap();
+            thread::sleep(Duration::from_millis(500));
+        });
+        let url = format!("http://{address}/fixture.cdmcomponent");
+        let temp = tempfile::tempdir().unwrap();
+        let target = temp.path().join("fixture.cdmcomponent");
+        let cancellation = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let progress_token = cancellation.clone();
+        let expected_sha256 = "0".repeat(64);
+        let request = AssetDownloadRequest {
+            url: &url,
+            release_tag: "v0.95.5",
+            asset_name: "fixture.cdmcomponent",
+            destination: &target,
+            expected_size: 64,
+            expected_sha256: &expected_sha256,
+            maximum_size: 1024,
+            allow_loopback_http: true,
+        };
+        let started = std::time::Instant::now();
+        let result = download_asset_to_path(
+            &request,
+            move |received| {
+                if received > 0 {
+                    progress_token.store(true, std::sync::atomic::Ordering::Release);
+                }
+            },
+            cancellation,
+        );
+        assert_eq!(result, Err(AssetDownloadError::Cancelled));
+        assert!(started.elapsed() < Duration::from_millis(400));
+        assert!(!target.exists());
+        assert!(!temp.path().join("fixture.cdmcomponent.part").exists());
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn catalog_and_package_timeout_policies_are_separate() {
+        assert_eq!(CONNECT_TIMEOUT, Duration::from_secs(20));
+        assert_eq!(CATALOG_REQUEST_TIMEOUT, Duration::from_secs(30));
+        assert_eq!(PACKAGE_READ_TIMEOUT, Duration::from_secs(45));
+        let catalog = build_catalog_client(true);
+        let package = build_package_client(true);
+        assert!(catalog.is_ok());
+        assert!(package.is_ok());
     }
 }

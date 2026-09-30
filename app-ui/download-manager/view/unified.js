@@ -1,6 +1,7 @@
-import { effectiveJobKind, escapeHtml, formatBytes, formatSpeed, isPlayableJob, isVisuallySelected, jobFileExtension, statusCounts, thumbnailUrl, totalSpeed, youtubeThumbnailFromSource } from '../core/model.js';
+import { completionDateParts, effectiveJobKind, escapeHtml, formatBytes, formatSpeed, isPlayableJob, isVisuallySelected, jobFileExtension, statusCounts, thumbnailUrl, totalSpeed, youtubeThumbnailFromSource } from '../core/model.js';
 import { dmFileAsset, dmIcon, dmPlaylistLogo } from './icons.js';
-import { floatingRowMenu, jobActionButton, progressMarkup, progressValueLabel, rowMenu, statusLabel } from './shared.js?v=0.45.1-runtime-20260903';
+import { floatingRowMenu, jobActionButton, progressMarkup, progressValueLabel, statusLabel } from './shared.js?v=0.45.1-runtime-20260903';
+import { renderInlineOptionalComponentPrompt, renderOptionalComponentProgress } from '../../modules/components/optional-install.js';
 
 function listThumbnailUrl(value) {
   let source = String(value || '').trim();
@@ -20,6 +21,21 @@ function deferredThumbnailMarkup(value, className = '', options = {}) {
   const eager = options?.eager === true;
   const loadAttributes = eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
   return `<img class="${className}" data-dm-thumbnail data-dm-thumbnail-src="${escapeHtml(listThumbnailUrl(original))}" data-original-thumbnail="${escapeHtml(original)}" data-dm-thumbnail-eager="${eager ? '1' : '0'}" alt="" ${loadAttributes} decoding="async" referrerpolicy="no-referrer">`;
+}
+
+function remainingTimeLabel(seconds, locale) {
+  const value = Math.max(0, Math.floor(Number(seconds || 0)));
+  if (!value) return '';
+  const isEnglish = String(locale || 'es').toLowerCase().startsWith('en');
+  if (value >= 3600) {
+    const hours = Math.floor(value / 3600);
+    return isEnglish ? `${hours}h left` : `Faltan ${hours} h`;
+  }
+  if (value >= 60) {
+    const minutes = Math.floor(value / 60);
+    return isEnglish ? `${minutes}m left` : `Faltan ${minutes} min`;
+  }
+  return isEnglish ? `${value}s left` : `Faltan ${value} s`;
 }
 
 export function inputDetection(value = '') {
@@ -63,17 +79,26 @@ export function unifiedSuggestionPanelMarkup(context, queryValue = context.unifi
   const query = String(queryValue || '');
   const detection = inputDetection(query);
   const suggestions = Array.isArray(context.unifiedSuggestions) ? context.unifiedSuggestions : [];
+  const componentProgress = context.unifiedComponentProgress;
+  const progressPhase = String(componentProgress?.phase || '');
+  const terminalProgress = ['error', 'cancelled'].includes(progressPhase);
+  const completedProgress = progressPhase === 'done' && !suggestions.length;
   const showSuggestions = Boolean(context.unifiedFocused && query.trim() && detection.kind === 'search');
   if (!showSuggestions) return '';
   const activeIndex = Math.max(-1, Math.min(suggestions.length - 1, Number(context.unifiedActiveIndex ?? -1)));
   return `<div class="dm-unified-suggestions" id="dm-unified-suggestion-list" role="listbox" aria-label="Sugerencias de búsqueda">
     <header><span>RESULTADOS DE VÍDEO</span>${context.unifiedSuggestionBusy ? '<span class="dm-suggestion-refresh"><i></i> Cargando más resultados</span>' : '<small>Listos</small>'}</header>
-    ${context.unifiedSuggestionBusy ? `<div class="dm-suggestion-skeletons" aria-label="Cargando resultados">${[0,1,2].map(() => '<i><b></b><span><em></em><em></em></span></i>').join('')}</div>` : ''}
-    ${suggestions.length ? suggestions.slice(0, 20).map((item, index) => `<button type="button" id="dm-suggestion-${index}" role="option" aria-selected="${index === activeIndex}" class="${index === activeIndex ? 'is-active' : ''}" data-dm-suggestion-index="${index}">
+    ${terminalProgress ? `<div class="dm-unified-component-state">${renderOptionalComponentProgress(componentProgress)}<button type="button" data-dm-unified-retry-component>Reintentar búsqueda</button></div>` : ''}
+    ${completedProgress ? `<div class="dm-unified-component-state">${renderOptionalComponentProgress(componentProgress)}</div>` : ''}
+    ${context.unifiedComponentError && !terminalProgress ? `<div class="dm-unified-component-state"><p>${escapeHtml(context.unifiedComponentError)}</p><button type="button" data-dm-unified-retry-component>Reintentar búsqueda</button></div>` : ''}
+    ${context.unifiedComponentPrompt ? `<div class="dm-unified-component-state">${renderInlineOptionalComponentPrompt(context.unifiedComponentPrompt, { accepted: context.unifiedComponentPromptAccepted })}</div>` : ''}
+    ${context.unifiedSuggestionBusy && componentProgress && !terminalProgress ? `<div class="dm-unified-component-state">${renderOptionalComponentProgress(componentProgress)}</div>` : ''}
+    ${context.unifiedSuggestionBusy && !componentProgress ? `<div class="dm-suggestion-skeletons" aria-label="Cargando resultados">${[0,1,2].map(() => '<i><b></b><span><em></em><em></em></span></i>').join('')}</div>` : ''}
+    ${!context.unifiedComponentPrompt && !terminalProgress && !completedProgress && !context.unifiedComponentError && !context.unifiedSuggestionBusy && suggestions.length ? suggestions.slice(0, 20).map((item, index) => `<button type="button" id="dm-suggestion-${index}" role="option" aria-selected="${index === activeIndex}" class="${index === activeIndex ? 'is-active' : ''}" data-dm-suggestion-index="${index}">
       <span class="dm-suggestion-visual">${searchThumbnailMarkup(item, index)}${item.sourceUrl ? `<span class="dm-suggestion-play" data-dm-preview-suggestion="${escapeHtml(item.sourceUrl)}" role="button" tabindex="0" aria-label="Reproducir ${escapeHtml(item.title)}" title="Reproducir">${dmIcon('play', 20)}</span>` : ''}${item.duration ? `<small>${escapeHtml(item.duration)}</small>` : ''}</span>
       <span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.subtitle || (item.sourceUrl ? 'Vídeo encontrado' : 'Sugerencia de YouTube'))}</small></span>
       ${dmIcon('chevron', 18)}
-    </button>`).join('') : `<div class="dm-suggestion-empty">${dmIcon('search', 24)}<span>Sigue escribiendo para buscar coincidencias.</span></div>`}
+    </button>`).join('') : !context.unifiedComponentPrompt && !terminalProgress && !completedProgress && !context.unifiedComponentError && !context.unifiedSuggestionBusy ? `<div class="dm-suggestion-empty">${dmIcon('search', 24)}<span>Sigue escribiendo para buscar coincidencias.</span></div>` : ''}
     <footer><span>↑↓ para navegar · Enter para analizar</span><span>Ctrl + K enfoca el buscador</span></footer>
   </div>`;
 }
@@ -97,14 +122,15 @@ export function unifiedSearchMarkup(context, variant = 'zen') {
   </section>`;
 }
 
-export function helperChipsMarkup({ disabled = false } = {}) {
+export function helperChipsMarkup({ disabled = false, translate = null } = {}) {
   const inactive = disabled ? ' disabled aria-disabled="true" tabindex="-1" class="is-inactive"' : '';
-  return `<section class="dm-helper-chips" aria-label="Accesos de entrada">
-    <button type="button" data-dm-paste-link${inactive}>${dmIcon('clipboard', 17)}<span>Pegar</span></button>
-    <button type="button" data-dm-add-torrent${inactive}>${dmIcon('magnet', 17)}<span>Torrent</span></button>
-    <button type="button" data-dm-new-download${inactive}>${dmIcon('file', 17)}<span>Archivo o enlace</span></button>
-    <button type="button" data-dm-focus-unified${inactive}>${dmPlaylistLogo(16)}<span>Playlist</span></button>
-  </section>`;
+  const t = (label) => translate?.(label) || label;
+  return `<div class="dm-helper-chips" role="group" aria-label="${escapeHtml(t('Accesos de entrada'))}">
+    <button type="button" data-dm-paste-link${inactive}><span class="dm-entry-icon" data-dm-new-icon="paste" aria-hidden="true"></span><span>${escapeHtml(t('Pegar'))}</span></button>
+    <button type="button" data-dm-add-torrent${inactive}><span class="dm-entry-icon" data-dm-new-icon="torrent" aria-hidden="true"></span><span>${escapeHtml(t('Torrent'))}</span></button>
+    <button type="button" data-dm-new-download${inactive}><span class="dm-entry-icon" data-dm-new-icon="link" aria-hidden="true"></span><span>${escapeHtml(t('Archivo o enlace'))}</span></button>
+    <button type="button" data-dm-focus-unified${inactive}>${dmPlaylistLogo(16)}<span>${escapeHtml(t('Playlist'))}</span></button>
+  </div>`;
 }
 
 const stablePlaylistStacks = new Map();
@@ -292,7 +318,8 @@ function liveRowSignature(job, visibleDetail, statusText, size, sizeDetail) {
     job.playlistActive || 0,
     job.priority,
     size,
-    sizeDetail
+    sizeDetail,
+    Number(job.completedAtMs || 0)
   ].join('\u001f');
 }
 
@@ -321,7 +348,7 @@ export function downloadVisualState(job, processing = null) {
   return status || 'unknown';
 }
 
-export function downloadRowState(job) {
+export function downloadRowState(job, locale = 'es', now = new Date()) {
   const completed = job.status === 'completed';
   const processing = !completed && job.status === 'running' && ['Combinando video y audio', 'Convirtiendo', 'Validando', 'Preparando', 'Procesando', 'Finalizando'].includes(String(job.stage || ''));
   const displayedTotal = completed && job.finalSize ? job.finalSize : job.totalBytes;
@@ -334,6 +361,12 @@ export function downloadRowState(job) {
         ? `${formatBytes(job.downloadedBytes)} /`
         : formatBytes(job.downloadedBytes);
   const transferSecondary = !processing && !completed && displayedTotal ? totalLabel : '';
+  const completedDate = completed
+    ? completionDateParts(job.completedAtMs || (job.updatedAt ? Date.parse(job.updatedAt) : 0), locale, now)
+    : null;
+  const remainingText = !processing && job.status === 'running'
+    ? remainingTimeLabel(job.etaSeconds, locale)
+    : '';
   const liveSpeed = !processing && job.status === 'running' && Number(job.speedBps || 0) > 0
     ? formatSpeed(job.speedBps)
     : '';
@@ -346,11 +379,13 @@ export function downloadRowState(job) {
     size: `${transferPrimary}\u001e${transferSecondary}`,
     transferPrimary,
     transferSecondary,
+    completedDate,
+    remainingText,
     processing,
     statusText,
     visualState: downloadVisualState(job, processing),
     structureSignature: stableRowSignature(job),
-    liveSignature: liveRowSignature(job, '', statusText, transferPrimary, transferSecondary)
+    liveSignature: liveRowSignature(job, completedDate?.dateLabel || remainingText, statusText, transferPrimary, transferSecondary)
   };
 }
 
@@ -374,23 +409,40 @@ export function directDownloadErrorHint(job) {
   return 'El parcial se conserva cuando el origen lo permite; puedes reintentar después de corregir el enlace.';
 }
 
-export function downloadRowMarkup(job, index, selectedId, rowMenuJobId, rowMenuPosition, recovery, selectionMode = false, selectedJobIds = new Set()) {
-  const { transferPrimary, transferSecondary, processing, statusText, visualState, structureSignature, liveSignature } = downloadRowState(job);
+export function truncateDownloadTitle(title) {
+  const value = String(title ?? '');
+  let characters;
+  try {
+    characters = Array.from(new Intl.Segmenter('es', { granularity: 'grapheme' }).segment(value), ({ segment }) => segment);
+  } catch {
+    characters = Array.from(value);
+  }
+  return characters.length > 25 ? `${characters.slice(0, 25).join('')}...` : value;
+}
+
+export function downloadRowMarkup(job, index, selectedId, rowMenuJobId, rowMenuPosition, recovery, selectionMode = false, selectedJobIds = new Set(), locale = 'es') {
+  const { transferPrimary, transferSecondary, completedDate, remainingText, processing, statusText, visualState, structureSignature, liveSignature } = downloadRowState(job, locale);
   const contentSignature = stableRowContentSignature(job);
   const batchSelected = Boolean(selectionMode && selectedJobIds?.has?.(Number(job.id)));
   const isVisualSelected = isVisuallySelected(job.id, { selectedJobId: selectedId }, selectionMode, selectedJobIds);
   const isSingleSelected = Boolean(!selectionMode && isVisualSelected);
   const type = typeMeta(job);
+  const taskAction = jobActionButton(job);
+  const taskActionMarkup = /\bdata-dm-(?:job|playlist)-action=|\bdata-dm-reveal-path=|\bdata-dm-open-download-directory\b/.test(taskAction)
+    ? `<div class="dm-item-actions">${taskAction}</div>` : '';
+  const displayTitle = truncateDownloadTitle(job.title);
   return `<article class="dm-download-item ${isSingleSelected ? 'is-selected' : ''} ${isVisualSelected ? 'is-visually-selected' : ''} ${selectionMode ? 'has-selection' : ''} ${batchSelected ? 'is-batch-selected' : ''} is-${escapeHtml(job.status)} kind-${escapeHtml(job.kind)}" data-dm-select-job="${job.id}" data-dm-state="${escapeHtml(job.status)}" data-dm-visual-state="${escapeHtml(visualState)}" data-dm-stage="${escapeHtml(job.stage || '')}" data-dm-processing="${processing ? 'true' : 'false'}" data-dm-row-structure="${structureSignature}" data-dm-row-content="${contentSignature}" data-dm-row-live="${escapeHtml(liveSignature)}" data-dm-drag-path="${job.status === 'completed' && job.destination ? escapeHtml(job.destination) : ''}" draggable="${job.status === 'completed' && job.destination ? 'true' : 'false'}" aria-selected="${isVisualSelected ? 'true' : 'false'}" tabindex="0">
     <span class="dm-item-index" aria-hidden="true">${index + 1}</span>
     ${selectionMode ? `<label class="dm-row-select" title="Seleccionar esta descarga"><input type="checkbox" data-dm-select-checkbox="${job.id}" ${batchSelected ? 'checked' : ''} aria-label="Seleccionar ${escapeHtml(job.title)}"><i></i></label>` : ''}
     ${jobVisual(job)}
     <div class="dm-item-body">
       <div class="dm-item-name">
-        <strong title="${escapeHtml(job.title)}">${escapeHtml(job.title)}</strong>
+        <strong title="${escapeHtml(job.title)}">${escapeHtml(displayTitle)}</strong>
         <div class="dm-item-subline">
           <span class="dm-item-type">${rowTypeIcon(job, type)}<span>${escapeHtml(rowTypeLabel(job, type))}</span></span>
           <div class="dm-item-status status-lane" title="${escapeHtml(statusText)}" aria-label="${escapeHtml(statusText)}"><i class="status-lane-icon-slot"></i><span class="status-lane-text-stage"><span class="status-lane-current">${escapeHtml(statusText)}</span></span></div>
+          <span class="dm-item-date" title="${escapeHtml(completedDate?.dateLabel || '')}" ${completedDate ? '' : 'hidden'}>${escapeHtml(completedDate?.dateLabel || '')}</span>
+          <span class="dm-item-remaining" title="${escapeHtml(remainingText)}" ${remainingText ? '' : 'hidden'}>${escapeHtml(remainingText)}</span>
           ${priorityMetaMarkup(job)}
         </div>
       </div>
@@ -398,8 +450,8 @@ export function downloadRowMarkup(job, index, selectedId, rowMenuJobId, rowMenuP
     </div>
     <div class="dm-item-progress${processing ? ' is-processing' : ''}" data-dm-analyzing="${processing ? 'true' : 'false'}">${processing ? `<div class="dm-progress-wrap dm-progress-processing-wrap"><div class="dm-progress dm-progress-processing is-indeterminate" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="${escapeHtml(statusText)}"><i aria-hidden="true"></i></div></div>` : progressMarkup(job)}</div>
     <strong class="dm-item-percentage">${escapeHtml(progressValueLabel(job))}</strong>
-     <div class="dm-item-transfer ${processing ? 'is-processing' : ''}" aria-label="${escapeHtml(transferPrimary)}">${processing ? '' : `<strong>${escapeHtml(transferPrimary)}</strong>${transferSecondary ? `<small>${escapeHtml(transferSecondary)}</small>` : ''}`}</div>
-    <div class="dm-item-actions">${jobActionButton(job)}${rowMenu(job, rowMenuJobId)}</div>
+     <div class="dm-item-transfer ${processing ? 'is-processing' : ''}" aria-label="${escapeHtml([transferPrimary, transferSecondary].filter(Boolean).join(' · '))}">${processing ? '' : `<strong>${escapeHtml(transferPrimary)}</strong>${transferSecondary ? `<small>${escapeHtml(transferSecondary)}</small>` : ''}`}</div>
+    ${taskActionMarkup}
   </article>${alternativesMarkup(job, recovery)}`;
 }
 
@@ -421,7 +473,8 @@ export function downloadAreaMarkup(context, visible, selectedId) {
     context.rowMenuPosition,
     recoveryByJobId[job.id],
     Boolean(context.selectionMode),
-    context.selectedJobIds || new Set()
+    context.selectedJobIds || new Set(),
+    typeof context.locale === 'function' ? context.locale() : context.locale || 'es'
   )).join('');
   const list = virtualization
     ? `<div class="dm-download-scroll" data-dm-live-replaced="1" data-dm-virtual-list="1" data-dm-virtual-key="${escapeHtml(virtualization.key)}" data-dm-virtual-start="${start}" data-dm-virtual-end="${end}" data-dm-virtual-total="${visible.length}" tabindex="0" aria-label="Historial de descargas">
@@ -429,7 +482,7 @@ export function downloadAreaMarkup(context, visible, selectedId) {
         <div class="dm-virtual-window" data-dm-virtual-window>${rows}</div>
         <div class="dm-virtual-spacer" data-dm-virtual-spacer="bottom" style="height:${Math.max(0, Number(virtualization.bottomHeight) || 0)}px"></div>
       </div>`
-    : `<div class="dm-download-scroll">${visible.map((job, index) => downloadRowMarkup(job, index, selectedId, context.rowMenuJobId, context.rowMenuPosition, recoveryByJobId[job.id], Boolean(context.selectionMode), context.selectedJobIds || new Set())).join('')}</div>`;
+    : `<div class="dm-download-scroll">${visible.map((job, index) => downloadRowMarkup(job, index, selectedId, context.rowMenuJobId, context.rowMenuPosition, recoveryByJobId[job.id], Boolean(context.selectionMode), context.selectedJobIds || new Set(), typeof context.locale === 'function' ? context.locale() : context.locale || 'es')).join('')}</div>`;
   return `<section class="dm-download-area${virtualization ? '" data-dm-live-replaced="1' : ''}">
     <header><span>Nombre</span><span>Estado</span><span>Progreso</span><span>Tamaño / ETA</span><span>Tipo</span><span></span></header>
     ${list}

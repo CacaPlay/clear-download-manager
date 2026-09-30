@@ -38,7 +38,7 @@ function aliasesFromObject(source) {
   return new Map(match ? [...match[1].matchAll(/([a-z][a-z0-9_-]*)\s*:\s*'([a-z][a-z0-9_-]*)'/gi)].map((entry) => [entry[1], entry[2]]) : []);
 }
 function calls(source, functionName) {
-  return new Set([...source.matchAll(new RegExp(`${functionName}\\(\\s*['\"]([a-z][a-z0-9_-]*)['\"]`, 'gi'))].map((match) => match[1]));
+  return new Set([...source.matchAll(new RegExp(`\\b${functionName}\\(\\s*['\"]([a-z][a-z0-9_-]*)['\"]`, 'gi'))].map((match) => match[1]));
 }
 function resolvedMissing(used, defined, aliases) {
   return [...used].filter((name) => !defined.has(aliases.get(name) || name)).sort();

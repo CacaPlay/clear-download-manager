@@ -26,6 +26,7 @@ pub(crate) fn queue_playlist_selection(
     let runtime = state
         .media_runtime()
         .ok_or_else(crate::components::media_tools_required_error)?;
+    let destination_root = crate::downloads::choose_job_download_root(&app, &state)?;
     let title = playlist_title.trim();
     if title.is_empty() {
         return Err("La playlist necesita un título".into());
@@ -47,13 +48,22 @@ pub(crate) fn queue_playlist_selection(
     }
     let (selector, output_mode) = mode_from_label(&format);
     let playlist_session = saved_media_session_for_db(&state.db_path);
-    let playlist_dir = playlist_destination_dir(&current_downloads_dir(&state)?, title);
-    fs::create_dir_all(&playlist_dir).map_err(|error| error.to_string())?;
-
     let mut connection = state
         .connection
         .lock()
         .map_err(|_| "No se pudo bloquear la base local".to_string())?;
+    let behavior = crate::downloads::read_download_behavior_settings(&connection);
+    let downloads_root = match destination_root {
+        Some(path) => path,
+        None => current_downloads_dir(&state)?,
+    };
+    let category_dir = crate::downloads::categorized_download_dir(
+        &downloads_root,
+        crate::downloads::category_folder_for_media_mode(&output_mode),
+        behavior.create_category_folders,
+    );
+    let playlist_dir = playlist_destination_dir(&category_dir, title);
+    fs::create_dir_all(&playlist_dir).map_err(|error| error.to_string())?;
     let transaction = connection
         .transaction()
         .map_err(|error| error.to_string())?;
@@ -119,6 +129,11 @@ pub(crate) fn queue_playlist_selection(
             params![item_title],
         ).map_err(|error| error.to_string())?;
         let job_id = transaction.last_insert_rowid();
+        let requested_filename = if behavior.use_original_file_names {
+            String::new()
+        } else {
+            format!("descarga-{job_id}")
+        };
         transaction.execute(
             "INSERT INTO playlist_items(batch_id,source_id,source_url,metadata_url,selected_source_url,title,creator,thumbnail,duration_label,position,status,progress,job_id,resolution_state,provider_id)
              VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,'queued',0,?11,'download_queued',?12)",
@@ -126,9 +141,9 @@ pub(crate) fn queue_playlist_selection(
         ).map_err(|error| error.to_string())?;
         let playlist_item_id = transaction.last_insert_rowid();
         transaction.execute(
-            "INSERT INTO media_jobs(job_id,source_url,download_url,metadata_url,provider_id,resolution_state,format_selector,output_mode,destination_dir,expected_duration_seconds,playlist_batch_id,playlist_item_id,artist,thumbnail)
-             VALUES(?1,?2,?2,?3,?4,'download_queued',?5,?6,?7,?8,?9,?10,?11,?12)",
-            params![job_id, source_url, item.metadata_url.trim(), item.provider_id.trim(), item_selector, output_mode, playlist_dir.to_string_lossy().to_string(), item.expected_duration_seconds, batch_id, playlist_item_id, item.creator.trim(), item.thumbnail.trim()],
+            "INSERT INTO media_jobs(job_id,source_url,download_url,metadata_url,provider_id,resolution_state,format_selector,output_mode,destination_dir,requested_filename,expected_duration_seconds,playlist_batch_id,playlist_item_id,artist,thumbnail)
+             VALUES(?1,?2,?2,?3,?4,'download_queued',?5,?6,?7,?8,?9,?10,?11,?12,?13)",
+            params![job_id, source_url, item.metadata_url.trim(), item.provider_id.trim(), item_selector, output_mode, playlist_dir.to_string_lossy().to_string(), requested_filename, item.expected_duration_seconds, batch_id, playlist_item_id, item.creator.trim(), item.thumbnail.trim()],
         ).map_err(|error| error.to_string())?;
     }
     transaction.commit().map_err(|error| error.to_string())?;

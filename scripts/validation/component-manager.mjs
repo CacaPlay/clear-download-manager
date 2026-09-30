@@ -57,17 +57,24 @@ assert.ok(
   componentTests.includes('fn staging_root_junction_does_not_prevent_core_manager_startup'),
   'The unsafe staging-root startup regression test is missing.'
 );
-for (const operation of ['list_components', 'verify_component', 'install_component_from_package', 'install_component_from_catalog', 'refresh_component_catalog', 'remove_component']) {
+for (const operation of ['list_components', 'component_prompt_info', 'verify_component', 'install_component_from_package', 'install_component_from_catalog', 'cancel_component_install', 'refresh_component_catalog', 'remove_component']) {
   assert.ok(componentCommands.includes(`fn ${operation}`), `Component command is missing: ${operation}`);
 }
 assert.ok(manager.includes('accept_catalog_sequence') && manager.includes('CATALOG_PROOF_NAME'), 'Remote updates must persist anti-rollback sequence and signed install proof.');
 assert.ok(distribution.includes('MAX_COMPONENT_PACKAGE_BYTES') && manager.includes('download_asset_to_path'), 'Remote package downloads must be bounded and hash-verified.');
+assert.ok(distribution.includes('CATALOG_REQUEST_TIMEOUT') && distribution.includes('PACKAGE_READ_TIMEOUT') && !distribution.includes('Duration::from_secs(5 * 60)'), 'Catalog total timeout and package inactivity timeout must remain separate without an arbitrary transfer deadline.');
+assert.ok(manager.includes('ComponentInstallPhase') && manager.includes('ComponentInstallProgress') && manager.includes('cancellation_token'), 'Backend must expose typed operation phases and safe download cancellation.');
+assert.ok(manager.includes('managed_tree_bytes') && manager.includes('reclaimable_bytes'), 'Removal space may be shown only from a safe manager-owned file walk.');
+assert.ok(/\.operation\s*\.try_lock\(\)\s*\.map_err\(\|_\|\s*ComponentError::Busy\(id\)\)\?/s.test(manager), 'Removal must reject while a component-manager operation is active.');
 assert.ok(componentTests.includes('signed_remote_component_catalog_downloads_verifies_installs_and_activates_atomically'), 'Local HTTP signed-catalog install coverage is missing.');
 assert.ok(componentTests.includes('failed_remote_update_preserves_the_previously_active_component'), 'Remote update rollback coverage is missing.');
 assert.ok(appState.includes('app_local_data_dir') || appState.includes('ComponentManager'), 'Component storage must be managed through LocalState.');
 assert.ok(packageBuilder.includes('Get-Sha256') && packageBuilder.includes('runtime-manifest.json'), 'Local package builder must verify the pinned inventory.');
 assert.ok(!packageBuilder.includes('Invoke-WebRequest'), 'V1 package builder must not download runtimes from a new host.');
 assert.ok(frontend.includes("invoke('install_component_from_catalog'") && frontend.includes("invoke('remove_component'"), 'Settings actions must use the approved remote component catalog and retain remove support.');
+assert.ok(frontend.includes("invoke('cancel_component_install'") && settings.includes('operation?.progressRatio') && settings.includes('operation?.bytesPerSecond') && settings.includes('operation?.bytesDownloaded'), 'Settings must use backend byte, ratio, speed, and cancellation data.');
+assert.ok(optionalInstall.includes('CDM_MISSING_CAPABILITY:') && optionalInstall.includes("invoke('component_prompt_info'"), 'Contextual prompts must route on stable capability identifiers and use verified metadata.');
+assert.ok(optionalInstallTests.includes('uninstall leaves capability absent') && optionalInstallTests.includes('installed capability bypasses contextual prompt'), 'Uninstall must be covered through absent capability and contextual reinstall routing.');
 assert.ok(frontend.includes('component-download-progress'), 'Remote component download progress must be displayed.');
 assert.ok(optionalInstall.includes('install_component_from_catalog') && optionalInstall.includes('return invoke(command, args)'), 'Missing optional components must be consent-installed and the original operation retried.');
 assert.ok(optionalInstall.includes("id: 'media-tools'") && optionalInstall.includes("id: 'torrent-engine'"), 'Only known optional component IDs may be installed from the signed catalog.');
@@ -75,6 +82,6 @@ assert.ok(downloadActions.includes("invokeWithOptionalComponent(context.invoke, 
 assert.ok(optionalInstallTests.includes('declining component installation') && optionalInstallTests.includes('installation progress') && optionalInstallTests.includes('safe message'), 'Optional component consent, progress, and safe-error tests are required.');
 assert.ok(settings.includes('data-component-action') && settings.includes('component-catalog-check'), 'Settings must expose remote install and catalog refresh actions.');
 const normalizedDocs = docs.replace(/\s+/g, ' ');
-assert.ok(normalizedDocs.includes('signed catalog') && normalizedDocs.includes('binary release gate remains fail-closed') && normalizedDocs.includes('production trust root is empty'), 'Remote distribution, trust provisioning, and pending legal review must remain explicit.');
+assert.ok(normalizedDocs.includes('signed catalog') && normalizedDocs.includes('binary release gate remains fail-closed') && normalizedDocs.includes('Core embeds the production verification key and key ID') && normalizedDocs.includes('does not yet publish `component-catalog-v1.json`'), 'Remote distribution, trust provisioning, and pending legal review must remain explicit.');
 
 console.log('OK: Core package excludes optional runtimes; remote component installs require the fixed signed catalog, exact package pins, and passing source gates.');

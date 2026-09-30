@@ -41,6 +41,7 @@ function copyDirectory(source, target, assetRoot = null) {
   for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
     const from = path.join(source, entry.name);
     const to = path.join(target, entry.name);
+    if (!entry.isDirectory() && entry.name.toLowerCase().endsWith('.png') && fs.existsSync(from.replace(/\.png$/i, '.webp'))) continue;
     if (assetRoot) {
       const assetPath = path.relative(assetRoot, from).replaceAll('\\', '/');
       if (assetPath === 'platforms' || assetPath.startsWith('platforms/') || excludedProductArtwork.has(assetPath)) continue;

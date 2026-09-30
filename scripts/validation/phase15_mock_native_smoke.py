@@ -3,8 +3,8 @@ from pathlib import Path
 import json, base64
 root=Path(__file__).resolve().parents[2]
 css=(root/'app-ui/styles.css').read_text(); js=(root/'app-ui/main.js').read_text()
-brand='data:image/png;base64,'+base64.b64encode((root/'app-ui/assets/brand/clear-download-manager-celeste.png').read_bytes()).decode()
-js=js.replace('./app-ui/assets/brand/clear-download-manager-celeste.png',brand)
+brand='data:image/webp;base64,'+base64.b64encode((root/'app-ui/assets/brand/clear-download-manager-celeste.webp').read_bytes()).decode()
+js=js.replace('./app-ui/assets/brand/clear-download-manager-celeste.webp',brand)
 bridge=r'''
 window.__mockCalls=[];
 window.__playlistProgress=8;

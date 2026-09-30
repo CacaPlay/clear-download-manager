@@ -131,8 +131,8 @@ if (!unknown || unknown.status !== 'CLEAR' || unknown.notAdditive !== true || un
   if (unknownAssets.size !== unknown.assetCount) {
     failures.push(`unknownProvenance: expected ${unknown.assetCount} cross-cutting assets, found ${unknownAssets.size}.`);
   }
-  if (unknownAssets.size !== 165) {
-    failures.push(`unknownProvenance: current family union must be 165 retained image assets; found ${unknownAssets.size}.`);
+  if (unknownAssets.size !== 212) {
+    failures.push(`unknownProvenance: current family union must be 212 retained legacy image assets; found ${unknownAssets.size}.`);
   }
 }
 

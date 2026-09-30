@@ -11,6 +11,8 @@ const excludedDirectories = new Set([
   'dist',
   'dist-store',
   'target',
+  // Local QA executables, frontend bundles, and staged art previews.
+  'artifacts',
   'output',
   '.superpowers',
   '__pycache__',

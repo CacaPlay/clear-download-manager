@@ -1,22 +1,19 @@
-use crate::components::{ComponentId, ComponentState, ComponentStatus};
+use crate::components::{Capability, ComponentId, ComponentPromptInfo, ComponentStatus};
 use crate::LocalState;
-use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
-
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ComponentDownloadProgress {
-    id: ComponentId,
-    state: ComponentState,
-    received_bytes: u64,
-    total_bytes: u64,
-    progress_percent: u8,
-}
 
 #[tauri::command]
 pub(crate) fn list_components(state: State<'_, LocalState>) -> Vec<ComponentStatus> {
     state.component_manager.list_components()
+}
+
+#[tauri::command]
+pub(crate) fn component_prompt_info(
+    capability: Capability,
+    state: State<'_, LocalState>,
+) -> ComponentPromptInfo {
+    state.component_manager.component_prompt_info(capability)
 }
 
 #[tauri::command]
@@ -75,33 +72,45 @@ pub(crate) fn install_component_from_catalog(
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<ComponentStatus, String> {
-    let result =
-        state
-            .component_manager
-            .install_component_from_catalog(id, |state, received, total| {
-                let payload = ComponentDownloadProgress {
-                    id,
-                    state,
-                    received_bytes: received,
-                    total_bytes: total,
-                    progress_percent: received
-                        .saturating_mul(100)
-                        .checked_div(total)
-                        .unwrap_or(0)
-                        .min(100) as u8,
-                };
-                let _ = app.emit("component-download-progress", payload);
-            });
+    let result = state
+        .component_manager
+        .install_component_from_catalog(id, |progress| {
+            let _ = app.emit("component-download-progress", progress);
+        });
     match result {
         Ok(status) => {
             state.refresh_component_runtime_slots();
             Ok(status)
         }
         Err(error) => {
+            state.refresh_component_runtime_slots();
             eprintln!("[components] remote installation failed for {id}: {error}");
-            Err("No se pudo verificar o instalar el componente. Comprueba la conexión e inténtalo más tarde.".into())
+            Err(
+                if matches!(
+                    error,
+                    crate::components::ComponentError::Cancelled
+                        | crate::components::ComponentError::Download(
+                            crate::components::distribution::AssetDownloadError::Cancelled
+                        )
+                ) {
+                    "Descarga cancelada.".into()
+                } else {
+                    "No se pudo verificar o instalar el componente. Comprueba la conexión e inténtalo más tarde.".into()
+                },
+            )
         }
     }
+}
+
+#[tauri::command]
+pub(crate) fn cancel_component_install(
+    id: ComponentId,
+    state: State<'_, LocalState>,
+) -> Result<bool, String> {
+    state
+        .component_manager
+        .cancel_component_install(id)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

@@ -175,10 +175,29 @@ pub(crate) fn migrate(connection: &Connection) -> rusqlite::Result<()> {
         CREATE INDEX IF NOT EXISTS idx_playlist_items_batch_status_position ON playlist_items(batch_id,status,position);
         CREATE INDEX IF NOT EXISTS idx_media_jobs_playlist_batch ON media_jobs(playlist_batch_id,job_id);
         CREATE INDEX IF NOT EXISTS idx_progress_v2_jobs_updated ON progress_v2_jobs(updated_at_ms DESC);
-        UPDATE jobs SET status='queued', detail='Recuperada tras reiniciar la aplicación' WHERE status='running';
-        UPDATE playlist_items SET status='queued' WHERE status='running';
-        UPDATE playlist_batches SET status='queued' WHERE status='running';
         "
+    )?;
+    let resume_interrupted =
+        crate::downloads::read_download_behavior_settings(connection).resume_interrupted_downloads;
+    let (recovered_status, recovered_detail) = if resume_interrupted {
+        ("queued", "Recuperada tras reiniciar la aplicación")
+    } else {
+        (
+            "paused",
+            "Interrumpida · reanudación automática desactivada",
+        )
+    };
+    connection.execute(
+        "UPDATE jobs SET status=?1,detail=?2 WHERE status='running'",
+        rusqlite::params![recovered_status, recovered_detail],
+    )?;
+    connection.execute(
+        "UPDATE playlist_items SET status=?1 WHERE status='running'",
+        rusqlite::params![recovered_status],
+    )?;
+    connection.execute(
+        "UPDATE playlist_batches SET status=?1,updated_at=CURRENT_TIMESTAMP WHERE status='running'",
+        rusqlite::params![recovered_status],
     )?;
     apply_additive_migrations(connection, &[
         "ALTER TABLE playlist_items ADD COLUMN source_url TEXT NOT NULL DEFAULT ''",
@@ -231,9 +250,101 @@ pub(crate) fn migrate(connection: &Connection) -> rusqlite::Result<()> {
         "ALTER TABLE jobs ADD COLUMN cancel_cleanup INTEGER NOT NULL DEFAULT 1",
         "ALTER TABLE jobs ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal' CHECK(priority IN ('high','normal','low'))",
         "ALTER TABLE playlist_batches ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal' CHECK(priority IN ('high','normal','low'))",
+        "ALTER TABLE jobs ADD COLUMN completed_at_ms INTEGER",
+        "ALTER TABLE playlist_batches ADD COLUMN completed_at_ms INTEGER",
     ])?;
     connection.execute_batch(
-        "CREATE INDEX IF NOT EXISTS idx_playlist_items_job ON playlist_items(job_id);",
+        "UPDATE jobs
+            SET completed_at_ms=CAST(strftime('%s',updated_at) AS INTEGER)*1000
+          WHERE status='completed' AND completed_at_ms IS NULL;
+         UPDATE playlist_batches
+            SET completed_at_ms=CAST(strftime('%s',updated_at) AS INTEGER)*1000
+          WHERE status='completed' AND completed_at_ms IS NULL;
+         UPDATE playlist_batches
+            SET completed_at_ms=COALESCE(
+                (SELECT MAX(jobs.completed_at_ms)
+                   FROM playlist_items pi
+                   LEFT JOIN jobs ON jobs.id=pi.job_id
+                  WHERE pi.batch_id=playlist_batches.id),
+                CAST(strftime('%s',updated_at) AS INTEGER)*1000)
+          WHERE completed_at_ms IS NULL
+            AND EXISTS (SELECT 1 FROM playlist_items WHERE batch_id=playlist_batches.id)
+            AND NOT EXISTS (SELECT 1 FROM playlist_items WHERE batch_id=playlist_batches.id AND status<>'completed');
+         CREATE TRIGGER IF NOT EXISTS jobs_capture_completion_time
+         AFTER UPDATE OF status ON jobs
+         WHEN NEW.status='completed' AND OLD.status<>'completed'
+         BEGIN
+            UPDATE jobs
+               SET completed_at_ms=CAST((julianday('now')-2440587.5)*86400000 AS INTEGER)
+             WHERE id=NEW.id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS jobs_clear_completion_time
+         AFTER UPDATE OF status ON jobs
+         WHEN NEW.status<>'completed' AND OLD.status='completed'
+         BEGIN
+            UPDATE jobs SET completed_at_ms=NULL WHERE id=NEW.id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS jobs_capture_inserted_completion_time
+         AFTER INSERT ON jobs
+         WHEN NEW.status='completed' AND NEW.completed_at_ms IS NULL
+         BEGIN
+            UPDATE jobs
+               SET completed_at_ms=CAST((julianday('now')-2440587.5)*86400000 AS INTEGER)
+             WHERE id=NEW.id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS playlist_batches_capture_completion_time
+         AFTER UPDATE OF status ON playlist_batches
+         WHEN NEW.status='completed' AND OLD.status<>'completed'
+         BEGIN
+            UPDATE playlist_batches
+               SET completed_at_ms=CAST((julianday('now')-2440587.5)*86400000 AS INTEGER)
+             WHERE id=NEW.id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS playlist_batches_clear_completion_time
+         AFTER UPDATE OF status ON playlist_batches
+         WHEN NEW.status<>'completed' AND OLD.status='completed'
+         BEGIN
+            UPDATE playlist_batches SET completed_at_ms=NULL WHERE id=NEW.id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS playlist_batches_capture_inserted_completion_time
+         AFTER INSERT ON playlist_batches
+         WHEN NEW.status='completed' AND NEW.completed_at_ms IS NULL
+         BEGIN
+            UPDATE playlist_batches
+               SET completed_at_ms=CAST((julianday('now')-2440587.5)*86400000 AS INTEGER)
+             WHERE id=NEW.id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS playlist_items_capture_batch_completion_time
+         AFTER UPDATE OF status ON playlist_items
+         WHEN NEW.status='completed' AND OLD.status<>'completed'
+           AND NOT EXISTS (SELECT 1 FROM playlist_items WHERE batch_id=NEW.batch_id AND status<>'completed')
+         BEGIN
+            UPDATE playlist_batches
+               SET completed_at_ms=CAST((julianday('now')-2440587.5)*86400000 AS INTEGER)
+             WHERE id=NEW.batch_id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS playlist_items_clear_batch_completion_time
+         AFTER UPDATE OF status ON playlist_items
+         WHEN NEW.status<>'completed' AND OLD.status='completed'
+         BEGIN
+            UPDATE playlist_batches SET completed_at_ms=NULL WHERE id=NEW.batch_id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS playlist_items_capture_inserted_batch_completion_time
+         AFTER INSERT ON playlist_items
+         WHEN NEW.status='completed'
+           AND NOT EXISTS (SELECT 1 FROM playlist_items WHERE batch_id=NEW.batch_id AND status<>'completed')
+         BEGIN
+            UPDATE playlist_batches
+               SET completed_at_ms=COALESCE(completed_at_ms,CAST((julianday('now')-2440587.5)*86400000 AS INTEGER))
+             WHERE id=NEW.batch_id;
+         END;
+         CREATE TRIGGER IF NOT EXISTS playlist_items_clear_inserted_batch_completion_time
+         AFTER INSERT ON playlist_items
+         WHEN NEW.status<>'completed'
+         BEGIN
+            UPDATE playlist_batches SET completed_at_ms=NULL WHERE id=NEW.batch_id;
+         END;
+         CREATE INDEX IF NOT EXISTS idx_playlist_items_job ON playlist_items(job_id);",
     )
 }
 
@@ -351,6 +462,122 @@ mod tests {
             })
             .expect("foreign key check");
         assert_eq!(violations, 0);
+    }
+
+    #[test]
+    fn completion_timestamps_follow_job_and_playlist_status_transitions() {
+        let connection = Connection::open_in_memory().expect("in-memory SQLite connection");
+        migrate(&connection).expect("schema migration");
+
+        connection
+            .execute(
+                "INSERT INTO jobs(title,detail,status) VALUES ('fixture','','queued')",
+                [],
+            )
+            .expect("queued fixture job");
+        let job_id = connection.last_insert_rowid();
+        connection
+            .execute("UPDATE jobs SET status='completed' WHERE id=?1", [job_id])
+            .expect("complete fixture job");
+        let job_completed_at: i64 = connection
+            .query_row(
+                "SELECT completed_at_ms FROM jobs WHERE id=?1",
+                [job_id],
+                |row| row.get(0),
+            )
+            .expect("job completion timestamp");
+        assert!(job_completed_at > 0);
+
+        connection
+            .execute("UPDATE jobs SET status='queued' WHERE id=?1", [job_id])
+            .expect("requeue fixture job");
+        let cleared_job_timestamp: Option<i64> = connection
+            .query_row(
+                "SELECT completed_at_ms FROM jobs WHERE id=?1",
+                [job_id],
+                |row| row.get(0),
+            )
+            .expect("cleared job completion timestamp");
+        assert_eq!(cleared_job_timestamp, None);
+
+        connection
+            .execute(
+                "INSERT INTO playlist_batches(title,format,status) VALUES ('fixture','video','queued')",
+                [],
+            )
+            .expect("queued fixture playlist");
+        let batch_id = connection.last_insert_rowid();
+        connection
+            .execute(
+                "UPDATE playlist_batches SET status='completed' WHERE id=?1",
+                [batch_id],
+            )
+            .expect("complete fixture playlist");
+        let batch_completed_at: i64 = connection
+            .query_row(
+                "SELECT completed_at_ms FROM playlist_batches WHERE id=?1",
+                [batch_id],
+                |row| row.get(0),
+            )
+            .expect("playlist completion timestamp");
+        assert!(batch_completed_at > 0);
+
+        connection
+            .execute(
+                "UPDATE playlist_batches SET status='running' WHERE id=?1",
+                [batch_id],
+            )
+            .expect("resume fixture playlist");
+        let cleared_batch_timestamp: Option<i64> = connection
+            .query_row(
+                "SELECT completed_at_ms FROM playlist_batches WHERE id=?1",
+                [batch_id],
+                |row| row.get(0),
+            )
+            .expect("cleared playlist completion timestamp");
+        assert_eq!(cleared_batch_timestamp, None);
+
+        connection
+            .execute(
+                "INSERT INTO playlist_batches(title,format,status) VALUES ('items fixture','video','running')",
+                [],
+            )
+            .expect("playlist fixture with child items");
+        let item_batch_id = connection.last_insert_rowid();
+        connection
+            .execute(
+                "INSERT INTO playlist_items(batch_id,source_id,position,status) VALUES (?1,'first',1,'queued'),(?1,'second',2,'queued')",
+                [item_batch_id],
+            )
+            .expect("queued child items");
+        connection
+            .execute(
+                "UPDATE playlist_items SET status='completed' WHERE batch_id=?1 AND position=1",
+                [item_batch_id],
+            )
+            .expect("complete first child item");
+        let premature_batch_timestamp: Option<i64> = connection
+            .query_row(
+                "SELECT completed_at_ms FROM playlist_batches WHERE id=?1",
+                [item_batch_id],
+                |row| row.get(0),
+            )
+            .expect("batch remains incomplete");
+        assert_eq!(premature_batch_timestamp, None);
+        connection
+            .execute(
+                "UPDATE playlist_items SET status='completed' WHERE batch_id=?1 AND position=2",
+                [item_batch_id],
+            )
+            .expect("complete final child item");
+        let item_derived_batch_timestamp: i64 = connection
+            .query_row(
+                "SELECT completed_at_ms FROM playlist_batches WHERE id=?1",
+                [item_batch_id],
+                |row| row.get(0),
+            )
+            .expect("completion timestamp from child items");
+        assert!(item_derived_batch_timestamp > 0);
     }
 
     #[test]

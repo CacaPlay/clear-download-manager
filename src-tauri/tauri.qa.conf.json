@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Clear Download Manager QA",
+  "identifier": "lat.cacaplay.cacatools.downloadmanager.qa",
+  "build": {
+    "frontendDist": "../artifacts/qa-redesign/dist-optimized"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Clear Download Manager QA",
+        "width": 1123,
+        "height": 714,
+        "minWidth": 1123,
+        "minHeight": 714,
+        "decorations": true,
+        "resizable": true,
+        "center": true,
+        "visible": false,
+        "label": "main",
+        "maximized": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": false,
+    "createUpdaterArtifacts": false
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": []
+    }
+  }
+}

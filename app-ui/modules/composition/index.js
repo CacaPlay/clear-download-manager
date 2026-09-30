@@ -6,6 +6,8 @@ let appState = {};
 let previewMode = false;
 let lastRenderedSection = '';
 let lastRenderedSettingsCategory = '';
+let themeRenderPending = false;
+let themeRenderReleaseBound = false;
 
 const contextValue = (name, fallback) => compositionContext[name] || fallback;
 const icon = (...args) => contextValue('icon', () => '')(...args);
@@ -156,6 +158,18 @@ function restoreRenderContinuity(state) {
 
 
 function render() {
+  if (document.documentElement.dataset.themeTransitioning === 'true') {
+    themeRenderPending = true;
+    if (!themeRenderReleaseBound) {
+      themeRenderReleaseBound = true;
+      window.addEventListener('cdm:theme-transition-finished', () => {
+        if (!themeRenderPending || document.documentElement.dataset.themeTransitioning === 'true') return;
+        themeRenderPending = false;
+        render();
+      });
+    }
+    return;
+  }
   const continuity = captureRenderContinuity();
   try {
     const activeSection = appState.activeSection || 'Descargas';
@@ -165,7 +179,7 @@ function render() {
       && lastRenderedSection === 'Ajustes'
       && Boolean(lastRenderedSettingsCategory)
       && lastRenderedSettingsCategory !== settingsCategory;
-    const settingsOrder = ['general', 'downloads', 'multimedia', 'appearance', 'integrations', 'updates'];
+    const settingsOrder = ['general', 'downloads', 'multimedia', 'appearance', 'integrations', 'updates', 'components'];
     const previousIndex = settingsOrder.indexOf(lastRenderedSettingsCategory);
     const nextIndex = settingsOrder.indexOf(settingsCategory);
     const direction = nextIndex >= 0 && previousIndex >= 0 && nextIndex >= previousIndex ? 'down' : 'up';

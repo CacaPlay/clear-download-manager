@@ -110,17 +110,17 @@ export function bindVisualDiagnostics() {
 }
 
 export const appearancePresets = [
-  { id: 'caca-green', name: 'Caca verde', accent: '#00ff2a', tone: 8, intensity: 88 },
-  { id: 'caca-blue', name: 'Caca azul', accent: '#5f73ff', tone: 8, intensity: 84 },
-  { id: 'violet', name: 'Violeta', accent: '#8a5cff', tone: 8, intensity: 86 },
-  { id: 'cyan', name: 'Cian', accent: '#24b8e8', tone: 8, intensity: 82 },
-  { id: 'rose', name: 'Rosa', accent: '#e45e9d', tone: 8, intensity: 78 },
-  { id: 'amber', name: 'Ámbar', accent: '#f0a43b', tone: 8, intensity: 76 },
+  { id: 'cyan', name: 'Azul cian', accent: '#24b8e8', tone: 8, intensity: 82 },
+  { id: 'caca-green', name: 'Verde', accent: '#04d25a', tone: 8, intensity: 82 },
   { id: 'emerald', name: 'Esmeralda', accent: '#22c58b', tone: 8, intensity: 78 },
+  { id: 'teal', name: 'Turquesa', accent: '#12b8a5', tone: 8, intensity: 80 },
+  { id: 'caca-blue', name: 'Azul', accent: '#5f73ff', tone: 8, intensity: 84 },
   { id: 'indigo', name: 'Índigo', accent: '#6f7cff', tone: 8, intensity: 84 },
+  { id: 'violet', name: 'Violeta', accent: '#8a5cff', tone: 8, intensity: 86 },
   { id: 'magenta', name: 'Magenta', accent: '#d94fff', tone: 8, intensity: 80 },
+  { id: 'rose', name: 'Rosa', accent: '#e45e9d', tone: 8, intensity: 78 },
   { id: 'crimson', name: 'Carmesí', accent: '#f15972', tone: 8, intensity: 78 },
-  { id: 'teal', name: 'Turquesa', accent: '#12b8a5', tone: 8, intensity: 80 }
+  { id: 'amber', name: 'Ámbar', accent: '#f0a43b', tone: 8, intensity: 76 }
 ];
 
 export const defaultAppearance = { theme: 'system', preset: 'cyan', accent: '#24b8e8', progressActive: DEFAULT_PROGRESS_ACTIVE_COLOR, progressCompleted: DEFAULT_PROGRESS_COMPLETED_COLOR, progressPaused: DEFAULT_PROGRESS_PAUSED_COLOR, progressError: DEFAULT_PROGRESS_ERROR_COLOR, progressActiveCustomized: false, progressCompletedCustomized: false, iconColorMode: DEFAULT_ICON_COLOR_MODE, iconColor: DEFAULT_ICON_COLOR, tone: 8, intensity: 82, contrast: 108, scale: 100, textScale: 100, density: 'balanced', thumbnailSize: 'large', autoScale: false, motion: true, motionMode: 'system', surfaceMode: 'mica', radius: 'soft', revision: 0, appearanceRevision: APPEARANCE_REVISION };
@@ -247,7 +247,10 @@ export function loadStoredAppearance() {
     if (!['dark', 'light', 'system'].includes(inheritedTheme)) {
       try { inheritedTheme = JSON.parse(localStorage.getItem('cacatools.download-manager.v2') || '{}').theme; } catch {}
     }
-    const restoreHistoricalProgressDefault = (value, fallback) => String(value || '').toLowerCase() === '#24b8e8' ? fallback : value;
+    const restoreHistoricalProgressDefault = (value, fallback, customized) => {
+      const color = String(value || '').toLowerCase();
+      return !customized && ['#24b8e8', '#00ff2a'].includes(color) ? fallback : value;
+    };
     const preserveCustomIconColor = raw.iconColorMode === 'custom'
       && isHexColor(raw.iconColor)
       && String(raw.iconColor).toLowerCase() !== PREVIOUS_DEFAULT_ICON_COLOR;
@@ -260,8 +263,8 @@ export function loadStoredAppearance() {
       density: raw.density === 'normal' ? 'balanced' : raw.density,
        surfaceMode: raw.surfaceMode,
       radius: raw.radius || 'standard',
-      progressActive: restoreHistoricalProgressDefault(raw.progressActive, DEFAULT_PROGRESS_ACTIVE_COLOR),
-      progressCompleted: restoreHistoricalProgressDefault(raw.progressCompleted, DEFAULT_PROGRESS_COMPLETED_COLOR),
+       progressActive: restoreHistoricalProgressDefault(raw.progressActive, DEFAULT_PROGRESS_ACTIVE_COLOR, raw.progressActiveCustomized === true),
+       progressCompleted: restoreHistoricalProgressDefault(raw.progressCompleted, DEFAULT_PROGRESS_COMPLETED_COLOR, raw.progressCompletedCustomized === true),
       iconColorMode: preserveCustomIconColor ? 'custom' : DEFAULT_ICON_COLOR_MODE,
       iconColor: preserveCustomIconColor ? String(raw.iconColor) : DEFAULT_ICON_COLOR,
       appearanceRevision: APPEARANCE_REVISION
@@ -320,7 +323,10 @@ export function applyAccentVariables(root, appearance) {
   root.style.setProperty('--accent-gradient-soft', `linear-gradient(105deg,color-mix(in srgb, ${effectiveAccent} 22%, transparent),color-mix(in srgb, ${effectiveAccent} 10%, transparent))`);
   root.style.setProperty('--accent-contrast', accentVisual.detail);
   const iconAccent = appearance.iconColorMode === 'custom' && isHexColor(appearance.iconColor) ? appearance.iconColor : effectiveAccent;
+  const iconAccentVisual = accentPresentation(iconAccent, theme);
+  root.style.setProperty('--ui-icon-neutral', 'var(--text-secondary)');
   root.style.setProperty('--icon-accent', iconAccent);
+  root.style.setProperty('--ui-icon-accent-detail', iconAccentVisual.detail);
   root.style.setProperty('--focus-ring', `color-mix(in srgb, ${accentVisual.detail} 72%, transparent)`);
   root.style.setProperty('--progress-active', appearance.progressActive || defaultAppearance.progressActive);
   root.style.setProperty('--progress-completed', appearance.progressCompleted || defaultAppearance.progressCompleted);
@@ -370,7 +376,7 @@ function startNativeIconUpdateWorker(invoke) {
 export function applyBrandIconVariant(variant) {
   document.querySelectorAll('[data-cdm-brand-logo]').forEach((image) => {
     const base = image.dataset.brandIconBase || './app-ui/assets/brand';
-    const next = `${base}/clear-download-manager-${variant}.png`;
+    const next = `${base}/clear-download-manager-${variant}.webp`;
     if (image.getAttribute('src') !== next) image.setAttribute('src', next);
   });
 }
@@ -422,11 +428,7 @@ export function scheduleAppearanceLivePreview(value) {
     appearancePerformance.totalPreviewLatencyMs += latency;
     appearancePerformance.maxPreviewLatencyMs = Math.max(appearancePerformance.maxPreviewLatencyMs, latency);
       applyAccentVariables(document.documentElement, pending.value);
-      // Live slider previews are intentionally web-only.  Do not rewrite
-      // document-wide brand images here: the main download view owns its
-      // sidebar logo and renders it from the committed app accent.  Updating
-      // all images during a slider preview let stale renders put the cyan
-      // bootstrap image back over a committed green/red logo.
+      applyBrandIconVariant(iconVariantForColor(pending.value.accent));
       appearanceContext.onDownloadManagerAppearance?.(pending.value);
   });
 }
@@ -491,7 +493,7 @@ export function applyAppearance(value = appearanceContext.getAppState()?.appeara
   } : {
     bgApp: `hsl(215 54% ${tone - 2}%)`, bgSidebar: `hsl(214 51% ${tone + 1}%)`, bgSurface: `hsl(213 48% ${tone + 4}%)`, bgRaised: `hsl(212 46% ${tone + 7}%)`, bgInput: `hsl(214 48% ${tone + 2}%)`, bgHover: `hsl(212 45% ${tone + 10}%)`,
     borderSubtle: `hsl(212 35% ${tone + 10}%)`, borderStrong: `hsl(211 32% ${tone + 16}%)`, textPrimary: '#f5f7fc', textSecondary: `hsl(212 24% ${clamp(68 * appearance.contrast / 100, 60, 78)}%)`, textMuted: `hsl(212 24% ${clamp(61 * appearance.contrast / 100, 52, 72)}%)`,
-     success: '#00ff2a', warning: '#e2a93f', danger: '#ef6674', info: '#4ba3df', shadow: '0 24px 68px rgba(0,0,0,.34)'
+     success: '#04d25a', warning: '#e2a93f', danger: '#ef6674', info: '#4ba3df', shadow: '0 24px 68px rgba(0,0,0,.34)'
   };
   const tokens = {
     '--surface-base': palette.bgApp, '--surface-primary': palette.bgSurface, '--surface-secondary': palette.bgInput, '--surface-elevated': palette.bgRaised,

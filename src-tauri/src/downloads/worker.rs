@@ -2,11 +2,12 @@
 #![allow(clippy::items_after_test_module)]
 
 use super::{
-    bytes_look_like_html, canonical_google_docs_export_url, complete_verified_http_job,
-    current_downloads_dir, fail_job, finalize_http_job_owned, http_lease_is_current,
-    http_v1_observation, human_bytes, isolate_stale_partial, load_http_resume_state,
-    mark_http_finalizing, persist_http_representation, release_http_lease,
-    request_download_response_with_range_and_validator, response_content_range,
+    bytes_look_like_html, canonical_google_docs_export_url, categorized_download_dir,
+    category_folder_for_filename, complete_verified_http_job, current_downloads_dir, fail_job,
+    finalize_http_job_owned, http_lease_is_current, http_v1_observation, human_bytes,
+    isolate_stale_partial, load_http_resume_state, mark_http_finalizing,
+    original_or_generated_filename, persist_http_representation, read_download_behavior_settings,
+    release_http_lease, request_download_response_with_range_and_validator, response_content_range,
     response_is_unexpected_html, response_total_bytes, sanitize_filename, unique_destination,
     HTTP_STALE_LEASE,
 };
@@ -1081,13 +1082,26 @@ pub(crate) fn queue_http_download_inner(
     state: &LocalState,
 ) -> Result<DownloadQueueReceipt, String> {
     let parsed = parse_public_http_url(url, "El enlace capturado no es válido")?;
-    let downloads_dir = current_downloads_dir(state)?;
+    let downloads_root = current_downloads_dir(state)?;
+    let behavior = {
+        let connection = state
+            .connection
+            .lock()
+            .map_err(|_| "No se pudo bloquear la base local".to_string())?;
+        read_download_behavior_settings(&connection)
+    };
+    let filename = original_or_generated_filename(filename, None, behavior.use_original_file_names);
+    let downloads_dir = categorized_download_dir(
+        &downloads_root,
+        category_folder_for_filename(&filename),
+        behavior.create_category_folders,
+    );
     create_http_download_job(
         &state.db_path,
         state.active_downloads.clone(),
         &downloads_dir,
         &parsed,
-        filename,
+        &filename,
         "Descarga capturada desde el navegador",
         None,
     )

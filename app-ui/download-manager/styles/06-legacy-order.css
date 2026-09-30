@@ -1,9 +1,9 @@
-.dm-zen-secondary-row>.dm-zen-toolbar-actions select{min-width:13rem!important;max-width:18rem!important}
+.dm-zen-secondary-row>.dm-zen-toolbar-actions select{min-width:9rem!important;max-width:11rem!important}
 
 @media(max-width:1100px){
   .dm-zen-secondary-row{gap:.5rem}
   .dm-zen-secondary-row>.dm-zen-secondary-actions .dm-helper-chips button{padding-inline:.48rem!important;font-size:.7rem!important}
-  .dm-zen-secondary-row>.dm-zen-toolbar-actions select{min-width:11rem!important;max-width:14rem!important}
+  .dm-zen-secondary-row>.dm-zen-toolbar-actions select{min-width:8.5rem!important;max-width:10rem!important}
 }
 @media(max-width:820px){
   .dm-zen-secondary-row{align-items:stretch;flex-wrap:wrap;gap:.38rem}
@@ -267,37 +267,35 @@
 .dm-host .dm-category-toggle>[data-dm-category-label] { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 }
 
-/* Selection mode keeps the entry shortcuts and bulk actions on one toolbar
-   line. On narrow windows the row scrolls horizontally instead of wrapping. */
+/* Selection mode shares the normal toolbar flow; controls may wrap, but never
+   create a clipped horizontal strip or grow past their measured labels. */
 .dm-host .dm-zen-secondary-row:has(.dm-selection-tools) {
-  flex-wrap: nowrap !important;
+  flex-wrap: wrap !important;
   justify-content: space-between !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scrollbar-width: thin;
+  overflow: visible !important;
 }
 .dm-host .dm-zen-secondary-row:has(.dm-selection-tools) > .dm-zen-secondary-actions,
 .dm-host .dm-zen-secondary-row:has(.dm-selection-tools) > .dm-zen-toolbar-actions {
-  flex: 0 0 auto !important;
-  width: max-content !important;
-  max-width: none !important;
-  margin-left: auto !important;
+  flex: 0 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
   overflow: visible !important;
 }
-.dm-host .dm-zen-secondary-row:has(.dm-selection-tools) .dm-helper-chips,
 .dm-host .dm-zen-secondary-row:has(.dm-selection-tools) .dm-selection-tools {
-  flex: 0 0 auto !important;
-  flex-wrap: nowrap !important;
-  width: max-content !important;
-  min-width: max-content !important;
+  flex: 0 1 auto !important;
+  flex-wrap: wrap !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
   overflow: visible !important;
 }
 .dm-host .dm-zen-secondary-row:has(.dm-selection-tools) .dm-selection-tools > [data-dm-bulk-priority] {
   box-sizing: border-box !important;
-  flex: 0 0 auto !important;
-  width: max-content !important;
-  min-width: 8.7rem !important;
-  max-width: max-content !important;
+  flex: 0 0 8.5rem !important;
+  width: 8.5rem !important;
+  min-width: 0 !important;
+  max-width: 8.5rem !important;
   padding-inline: .5rem !important;
 }
 .dm-host .dm-helper-chips button:disabled,

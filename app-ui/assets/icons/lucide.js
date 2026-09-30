@@ -33,7 +33,7 @@ const ALIASES = Object.freeze({ playlist: 'listMusic', music: 'listMusic', http:
 export function playlistLogo(size = 32) {
   const safeHeight = Math.max(16, Math.min(96, Math.round(Number(size) || 32)));
   const safeWidth = Math.round(safeHeight * (961 / 643));
-  return `<span class="playlist-logo" data-icon="playlist-logo" style="--playlist-logo-width:${safeWidth}px;--playlist-logo-height:${safeHeight}px"><img src="./assets/playlist-logo.png" alt="" decoding="async"><i aria-hidden="true"></i></span>`;
+  return `<span class="playlist-logo" data-icon="playlist-logo" style="--playlist-logo-width:${safeWidth}px;--playlist-logo-height:${safeHeight}px"><img src="./assets/playlist-logo.webp" alt="" decoding="async"><i aria-hidden="true"></i></span>`;
 }
 
 // Wide supplied mark used only by playlist preparation surfaces. The two
@@ -42,8 +42,8 @@ export function playlistLogo(size = 32) {
 export function playlistPrepLogo(size = 28) {
   const safeHeight = Math.max(18, Math.min(64, Math.round(Number(size) || 28)));
   const safeWidth = Math.round(safeHeight * 1.5);
-  const accentImage = "./assets/file-types/playlist-prep-accent.png";
-  return `<span class="playlist-prep-logo" data-icon="playlist-prep-logo" style="--playlist-prep-logo-width:${safeWidth}px;--playlist-prep-logo-height:${safeHeight}px;--playlist-prep-accent-mask:url('${accentImage}')"><img class="playlist-prep-logo-neutral" src="./assets/file-types/playlist-prep-neutral.png" alt="" decoding="async"><i class="playlist-prep-logo-accent" style="-webkit-mask-image:url('${accentImage}');mask-image:url('${accentImage}')" aria-hidden="true"></i></span>`;
+  const accentImage = "./assets/file-types/playlist-prep-accent.webp";
+  return `<span class="playlist-prep-logo" data-icon="playlist-prep-logo" style="--playlist-prep-logo-width:${safeWidth}px;--playlist-prep-logo-height:${safeHeight}px;--playlist-prep-accent-mask:url('${accentImage}')"><img class="playlist-prep-logo-neutral" src="./assets/file-types/playlist-prep-neutral.webp" alt="" decoding="async"><i class="playlist-prep-logo-accent" style="-webkit-mask-image:url('${accentImage}');mask-image:url('${accentImage}')" aria-hidden="true"></i></span>`;
 }
 
 export function lucideIcon(name, size = 20) {

@@ -146,7 +146,7 @@ function lockThemeDescendantTransitions() {
   // descendants without changing their ordinary styles permanently.
   document.querySelectorAll('body *').forEach((node) => {
     if (!node?.style || themeTransitionLocks.has(node)) return;
-    const previous = ['transition-property', 'transition-duration', 'transition-delay']
+    const previous = ['transition-property', 'transition-duration', 'transition-delay', 'animation-play-state']
       .map((property) => ({
         property,
         value: node.style.getPropertyValue(property),
@@ -156,6 +156,7 @@ function lockThemeDescendantTransitions() {
     node.style.setProperty('transition-property', 'none', 'important');
     node.style.setProperty('transition-duration', '0s', 'important');
     node.style.setProperty('transition-delay', '0s', 'important');
+    node.style.setProperty('animation-play-state', 'paused', 'important');
   });
 }
 
@@ -169,18 +170,18 @@ function restoreThemeDescendantTransitions() {
   themeTransitionLocks.clear();
 }
 
-function cleanupTheme(rootNode, overlay) {
+function cleanupTheme(rootNode) {
   restoreThemeDescendantTransitions();
   rootNode?.removeAttribute('data-theme-transitioning');
   rootNode?.removeAttribute('data-motion-theme-transition');
   rootNode?.style.removeProperty('--motion-theme-x');
   rootNode?.style.removeProperty('--motion-theme-y');
-  overlay?.remove();
+  window.dispatchEvent(new Event('cdm:theme-transition-finished'));
 }
 
 /**
- * Applies a theme update immediately and masks the multi-surface repaint with
- * a root View Transition or a short old-surface crossfade fallback.
+ * Applies a theme update through the browser's captured old/new surfaces.
+ * When a capture cannot start, it commits atomically without a visual cover.
  */
 export function runThemeTransition(update, trigger = null) {
   if (typeof update !== 'function') return Promise.resolve({ used: false, reason: 'invalid-update' });
@@ -197,87 +198,64 @@ export function runThemeTransition(update, trigger = null) {
     rootNode.style.removeProperty('--motion-theme-x');
     rootNode.style.removeProperty('--motion-theme-y');
   }
-  if (origin && viewTransitionsSupported() && !activeTransition) {
-    // Set the suppression authority before View Transition captures its old
-    // snapshot.  The previous implementation set it inside the update
-    // callback, allowing descendant theme transitions to leak mixed frames
-    // into the old snapshot.
+  if (!origin || !viewTransitionsSupported() || activeTransition) {
     rootNode.dataset.themeTransitioning = 'true';
     lockThemeDescendantTransitions();
-    let transition;
-    try {
-      transition = document.startViewTransition(() => {
-        update();
-        // A rerender may have replaced part of the workspace; lock those new
-        // nodes before the new snapshot is presented.
-        lockThemeDescendantTransitions();
-      });
-    } catch {
-      // Fall through to the same opaque fallback used when the API is absent.
-      // Updating without a cover would expose the descendant repaint.
-      cleanupTheme(rootNode);
-      transition = null;
-    }
-    if (transition) {
-      activeTransition = transition;
-      Promise.resolve(transition.updateCallbackDone).catch(() => {});
-      Promise.resolve(transition.ready).catch(() => {});
-      return Promise.resolve(transition.finished)
-        .then(() => {
-          if (activeTransition !== transition) return { used: true, reason: 'superseded' };
-          activeTransition = null;
-          cleanupTheme(rootNode);
-          return { used: true, reason: 'finished' };
-        })
-        .catch((error) => {
-          if (activeTransition !== transition) return { used: false, reason: 'superseded', error };
-          activeTransition = null;
-          cleanupTheme(rootNode);
-          return { used: false, reason: 'rejected', error };
-        });
-    }
+    try { update(); }
+    finally { cleanupTheme(rootNode); }
+    return Promise.resolve({
+      used: false,
+      reason: !origin ? 'missing-origin' : !viewTransitionsSupported() ? 'unsupported' : 'transition-busy'
+    });
   }
 
-  if (activeTransition) finishActiveTransition();
-  let overlay = null;
+  // Set the suppression authority before View Transition captures its old
+  // snapshot. The previous implementation set it inside the update callback,
+  // allowing descendant transitions to leak mixed frames into the snapshot.
+  rootNode.dataset.themeTransitioning = 'true';
+  lockThemeDescendantTransitions();
+  let transition;
+  let updateApplied = false;
   try {
-    const bodyStyle = getComputedStyle(document.body);
-    const rootStyle = getComputedStyle(rootNode);
-    const bodyBackground = bodyStyle.backgroundColor;
-    const oldBackground = bodyBackground && bodyBackground !== 'rgba(0, 0, 0, 0)'
-      ? bodyBackground
-      : rootStyle.getPropertyValue('--bg').trim() || '#07111f';
-    overlay = document.createElement('div');
-    overlay.className = `motion-theme-fallback-overlay ${origin ? 'is-radial' : 'is-crossfade'}`;
-    overlay.style.background = oldBackground;
-    if (origin) {
-      overlay.style.setProperty('--motion-theme-x', origin.x);
-      overlay.style.setProperty('--motion-theme-y', origin.y);
-    }
-    document.body.append(overlay);
-    // Keep descendants frozen for the complete synchronous mutation phase.
-    // The overlay owns the old surface while the DOM commits the new one.
-    rootNode.dataset.themeTransitioning = 'true';
-    lockThemeDescendantTransitions();
-    update();
-    lockThemeDescendantTransitions();
-    requestAnimationFrame(() => overlay?.classList.add('is-revealing'));
+    transition = document.startViewTransition(() => {
+      updateApplied = true;
+      update();
+      // A rerender may have replaced part of the workspace; lock those new
+      // nodes before the new snapshot is presented.
+      lockThemeDescendantTransitions();
+    });
   } catch {
-    cleanupTheme(rootNode, overlay);
-    update();
-    return Promise.resolve({ used: false, reason: 'fallback-exception' });
+    // Some WebView versions expose the API but can still reject starting a
+    // transition. Apply the theme atomically rather than covering the whole
+    // app with a flat-color layer that hides its contents.
+    try { if (!updateApplied) update(); }
+    finally { cleanupTheme(rootNode); }
+    return Promise.resolve({ used: false, reason: 'exception' });
   }
-  return new Promise((resolve) => {
-    let settled = false;
-    const settle = () => {
-      if (settled) return;
-      settled = true;
-      cleanupTheme(rootNode, overlay);
-      resolve({ used: false, reason: 'fallback' });
-    };
-    overlay?.addEventListener('animationend', settle, { once: true });
-    window.setTimeout(settle, 480);
-  });
+  if (transition) {
+    activeTransition = transition;
+    Promise.resolve(transition.updateCallbackDone).catch(() => {});
+    Promise.resolve(transition.ready).catch(() => {});
+    return Promise.resolve(transition.finished)
+      .then(() => {
+        if (activeTransition !== transition) return { used: true, reason: 'superseded' };
+        activeTransition = null;
+        cleanupTheme(rootNode);
+        return { used: true, reason: 'finished' };
+      })
+      .catch((error) => {
+        if (activeTransition !== transition) return { used: false, reason: 'superseded', error };
+        activeTransition = null;
+        cleanupTheme(rootNode);
+        return { used: false, reason: 'rejected', error };
+      });
+  }
+
+  // The API contract returns a transition object. Keep a safe atomic fallback
+  // in case a nonstandard WebView violates that contract.
+  try { if (!updateApplied) update(); }
+  finally { cleanupTheme(rootNode); }
+  return Promise.resolve({ used: false, reason: 'missing-transition-object' });
 }
 
 export function activeViewTransition() {

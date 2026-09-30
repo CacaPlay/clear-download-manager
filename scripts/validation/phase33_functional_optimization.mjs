@@ -27,8 +27,9 @@ assert.match(manager, /search_video_suggestions_page/);
 assert.match(manager, /invokeSuggestionSearch\(context, query\.trim\(\), requestId, 10, 0\)/);
 assert.match(manager, /invokeSuggestionSearch\(context, query\.trim\(\), requestId, 10, 10\)/);
 assert.match(manager, /search_media_by_title_page/);
-assert.match(manager, /limit: 15, offset: 0/);
-assert.match(manager, /limit: 15, offset: 15/);
+assert.match(manager, /const searchPage = offset => invokeWithOptionalComponent\([\s\S]*?search_media_by_title_page[\s\S]*?\{ query, limit: 15, offset \}/);
+assert.match(manager, /await searchPage\(0\)/);
+assert.match(manager, /await searchPage\(15\)/);
 assert.match(unified, /suggestions\.slice\(0, 20\)/);
 
 const mergeRealResults = (first, second, limit) => {

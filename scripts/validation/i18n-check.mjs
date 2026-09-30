@@ -17,12 +17,56 @@ const runtimeTranslations = [
   ['Verificando e instalando la actualización firmada.', 'Verifying and installing the signed update.'],
   ['Progreso de descarga', 'Download progress'],
   ['Instalando actualización', 'Installing update'],
-  ['Media Tools y Torrent Engine se instalan como paquetes opcionales independientes.', 'Media Tools and Torrent Engine are installed as separate optional packages.'],
+  ['MediaTools y Torrent Engine se instalan como paquetes opcionales independientes.', 'MediaTools and Torrent Engine are installed as separate optional packages.'],
   ['Con la aplicación firmada', 'With the signed app']
 ];
 for (const [source, expected] of runtimeTranslations) {
   const actual = translateRuntimeText(source, 'en');
   if (actual !== expected) errors.push(`runtime en: "${source}" -> "${actual}" (expected "${expected}")`);
+}
+const componentPromptTranslations = [
+  ['COMPLEMENTO NECESARIO', 'REQUIRED COMPONENT'],
+  ['Descargar e instalar', 'Download and install'],
+  ['Se necesita MediaTools', 'MediaTools is required'],
+  ['Descarga y procesamiento de medios', 'Media download and processing'],
+  ['Descarga aproximada: 88.7 MB', 'Approximate download: 88.7 MB'],
+  ['Descargas BitTorrent', 'BitTorrent downloads'],
+  ['Solicitud aceptada. Esperando el estado del componente.', 'Request accepted. Waiting for component status.'],
+  ['Preparando descarga', 'Preparing download'],
+  ['Verificando integridad', 'Verifying integrity'],
+  ['Preparando instalación', 'Preparing installation'],
+  ['Activando componente', 'Activating component'],
+  ['Instalado', 'Installed']
+];
+for (const [spanish, english] of componentPromptTranslations) {
+  const actualEnglish = translateRuntimeText(spanish, 'en');
+  const actualSpanish = translateRuntimeText(english, 'es');
+  if (actualEnglish !== english) errors.push(`component prompt en: "${spanish}" -> "${actualEnglish}" (expected "${english}")`);
+  if (actualSpanish !== spanish) errors.push(`component prompt es: "${english}" -> "${actualSpanish}" (expected "${spanish}")`);
+}
+const existingComponentUiTranslations = [
+  ['Complementos', 'Components'],
+  ['Gestiona los componentes opcionales de Clear.', 'Manage Clear optional components.'],
+  ['Buscar actualizaciones', 'Check for updates'],
+  ['RESULTADOS DE VÍDEO', 'VIDEO RESULTS'],
+  ['Listo', 'Ready'],
+  ['Ctrl + K enfoca el buscador', 'Ctrl + K focuses search']
+];
+for (const [spanish, english] of existingComponentUiTranslations) {
+  if (translateRuntimeText(spanish, 'en') !== english) errors.push(`component UI en: "${spanish}" -> "${translateRuntimeText(spanish, 'en')}" (expected "${english}")`);
+  if (translateRuntimeText(english, 'es') !== spanish) errors.push(`component UI es: "${english}" -> "${translateRuntimeText(english, 'es')}" (expected "${spanish}")`);
+}
+for (const [english, spanish] of [
+  ['Preparing download MediaTools', 'Preparando descarga MediaTools'],
+  ['Verifying integrity MediaTools', 'Verificando integridad MediaTools'],
+  ['Preparing installation MediaTools', 'Preparando instalación MediaTools'],
+  ['Activating component MediaTools', 'Activando componente MediaTools'],
+  ['Installed MediaTools', 'Instalado MediaTools']
+]) {
+  if (translateRuntimeText(english, 'es') !== spanish) errors.push(`component phase es: "${english}" -> "${translateRuntimeText(english, 'es')}" (expected "${spanish}")`);
+}
+if (/\b(?:e instalar|Descarga y procesamiento|Descargas BitTorrent)\b/i.test(translateRuntimeText('Download and install', 'en'))) {
+  errors.push('component prompt contains a mixed Spanish/English string in the English locale');
 }
 const progressDialog = updateDialog({
   availableUpdate: { version: '0.95.4', notes: 'Update notes' },

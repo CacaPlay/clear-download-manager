@@ -7,6 +7,8 @@ pub mod catalog_tooling;
 #[cfg(feature = "maintainer-tooling")]
 pub mod component_catalog_tooling;
 mod components;
+#[cfg(feature = "qa-component-manager")]
+mod qa_build;
 mod tools;
 pub(crate) use app::bootstrap::{
     acquire_instance_lock, exit_application, focus_main_window, hide_main_window, install_tray,
@@ -39,11 +41,16 @@ pub(crate) use app::state::{
 compile_error!(
     "The GitHub updater and Microsoft Store distribution features are mutually exclusive."
 );
+#[cfg(all(feature = "qa-component-manager", feature = "github-updater"))]
+compile_error!("The QA component build must not include the production updater feature.");
 
 #[cfg(feature = "microsoft-store")]
 #[path = "store_update_manager.rs"]
 mod update_manager;
-#[cfg(not(feature = "microsoft-store"))]
+#[cfg(all(not(feature = "microsoft-store"), feature = "github-updater"))]
+mod update_manager;
+#[cfg(all(not(feature = "microsoft-store"), not(feature = "github-updater")))]
+#[path = "no_update_manager.rs"]
 mod update_manager;
 
 mod settings;
@@ -1028,6 +1035,9 @@ fn run_app() {
 
     builder = builder
         .setup(|app| {
+            #[cfg(feature = "qa-component-manager")]
+            qa_build::validate_runtime_configuration(app.config())
+                .map_err(std::io::Error::other)?;
             // Windows may create the WebView before the frontend applies the
             // `visible: false` window setting. Hide it at the native boundary
             // for startup launches so no blank window can flash on screen.
@@ -1040,9 +1050,13 @@ fn run_app() {
                 }
             }
             extension_bridge::initialize_app_bridge().map_err(std::io::Error::other)?;
-            let data_dir = match environment_path_override("CACATOOLS_DATA_DIR") {
-                Some(path) => path,
-                None => app.path().app_data_dir()?,
+            let data_dir = if cfg!(feature = "qa-component-manager") {
+                app.path().app_data_dir()?
+            } else {
+                match environment_path_override("CACATOOLS_DATA_DIR") {
+                    Some(path) => path,
+                    None => app.path().app_data_dir()?,
+                }
             };
             fs::create_dir_all(&data_dir)?;
             acquire_instance_lock(&data_dir).map_err(std::io::Error::other)?;
@@ -1050,7 +1064,7 @@ fn run_app() {
             // written only after the registry operation succeeds, so this is
             // a one-time default and never overrides a user's later choice in
             // the settings panel.
-            #[cfg(windows)]
+            #[cfg(all(windows, not(feature = "qa-component-manager")))]
             {
                 let startup_marker = data_dir.join("startup-default-v1");
                 if !startup_marker.exists()
@@ -1066,7 +1080,9 @@ fn run_app() {
                     let _ = extension_bridge::set_startup_enabled(true);
                 }
             }
-            let default_downloads_dir =
+            let default_downloads_dir = if cfg!(feature = "qa-component-manager") {
+                data_dir.join("Downloads")
+            } else {
                 match environment_path_override("CACATOOLS_DOWNLOADS_DIR") {
                     Some(path) => path,
                     None => app
@@ -1074,7 +1090,8 @@ fn run_app() {
                         .download_dir()
                         .unwrap_or_else(|_| data_dir.join("Downloads"))
                         .join("CacaTools"),
-                };
+                }
+            };
             let db_path = data_dir.join("cacatools.sqlite3");
             let connection = Connection::open(&db_path)?;
             migrate(&connection)?;
@@ -1279,10 +1296,12 @@ fn run_app() {
             commands::clipboard::start_file_drag,
             commands::system::runtime_status,
             commands::components::list_components,
+            commands::components::component_prompt_info,
             commands::components::verify_component,
             commands::components::install_component_from_package,
             commands::components::refresh_component_catalog,
             commands::components::install_component_from_catalog,
+            commands::components::cancel_component_install,
             commands::components::remove_component,
             commands::downloads::desktop_snapshot,
             commands::downloads::download_activity_snapshot,
@@ -1378,6 +1397,8 @@ fn run_app() {
             commands::settings::set_download_speed_limit,
             commands::settings::set_playlist_speed_limit,
             commands::settings::save_download_concurrency,
+            commands::settings::save_download_behavior_settings,
+            commands::settings::reset_application_preferences,
             commands::system::exit_application,
             commands::system::is_background_launch,
             commands::system::startup_status,

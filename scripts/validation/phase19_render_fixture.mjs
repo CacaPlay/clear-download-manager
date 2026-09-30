@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const previewPng = fs.readFileSync(path.resolve('app-ui/assets/brand/clear-download-manager-celeste.png'));
-const previewData = `data:image/png;base64,${previewPng.toString('base64')}`;
+const previewWebp = fs.readFileSync(path.resolve('app-ui/assets/brand/clear-download-manager-celeste.webp'));
+const previewData = `data:image/webp;base64,${previewWebp.toString('base64')}`;
 
 const [,, layout = 'zen-sidebar', theme = 'dark', output = '', accent = '#2f9bff', density = 'normal', sidebarMode = 'collapsed', inspectorMode = 'collapsed'] = process.argv;
 const preferences = {

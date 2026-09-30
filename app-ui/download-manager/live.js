@@ -110,39 +110,35 @@ function resetStatusLane(row) {
   const stage = row?.querySelector?.('.status-lane-text-stage');
   if (!stage) return;
   const current = stage.querySelector('.status-lane-current');
-  const enter = stage.querySelector('.status-lane-enter');
-  if (!current && !enter) return;
-  const stable = current || document.createElement('span');
+  if (!current) return;
+  const stable = current;
   stable.className = 'status-lane-current';
-  if (enter) stable.textContent = enter.textContent;
   stage.replaceChildren(stable);
 }
 
-function patchStatusLane(current, next, animate) {
+function patchStatusLane(current, next) {
   if (!current || !next) return;
   current.title = next.title;
   current.setAttribute('aria-label', next.getAttribute('aria-label') || '');
   const stage = current.querySelector('.status-lane-text-stage');
-  if (stage?.querySelector('.status-lane-enter')) resetStatusLane(current);
-  const currentText = current.querySelector('.status-lane-current');
   const nextText = next.querySelector('.status-lane-current') || next.querySelector('.status-lane-text-stage > span');
-  if (!currentText || !nextText || !stage) {
+  if (!stage || !nextText) {
     replaceNodeContents(current, next);
     return;
   }
-  if (currentText.textContent === nextText.textContent) return;
-  if (!animate || !statusMotionEnabled()) {
-    currentText.textContent = nextText.textContent;
-    return;
-  }
-  const exit = document.createElement('span');
-  exit.className = 'status-lane-exit';
-  exit.setAttribute('aria-hidden', 'true');
-  exit.textContent = currentText.textContent;
-  const enter = document.createElement('span');
-  enter.className = 'status-lane-enter';
-  enter.textContent = nextText.textContent;
-  stage.replaceChildren(exit, enter);
+  const currentText = stage.querySelector('.status-lane-current') || document.createElement('span');
+  currentText.className = 'status-lane-current';
+  currentText.textContent = nextText.textContent;
+  stage.replaceChildren(currentText);
+}
+
+function patchSublineLabel(current, next, selector) {
+  const currentLabel = current?.querySelector?.(selector);
+  const nextLabel = next?.querySelector?.(selector);
+  if (!currentLabel || !nextLabel) return;
+  currentLabel.hidden = nextLabel.hidden;
+  if (currentLabel.textContent !== nextLabel.textContent) currentLabel.textContent = nextLabel.textContent;
+  if (currentLabel.title !== nextLabel.title) currentLabel.title = nextLabel.title;
 }
 
 function patchProgressContent(current, next) {
@@ -252,8 +248,10 @@ function patchLiveDownloadRow(current, next) {
   const currentStatus = current.querySelector('.dm-item-status');
   const nextStatus = next.querySelector('.dm-item-status');
   if (currentStatus && nextStatus) {
-    patchStatusLane(currentStatus, nextStatus, previous !== nextVisualState);
+    patchStatusLane(currentStatus, nextStatus);
   }
+  patchSublineLabel(current.querySelector('.dm-item-subline'), next.querySelector('.dm-item-subline'), '.dm-item-date');
+  patchSublineLabel(current.querySelector('.dm-item-subline'), next.querySelector('.dm-item-subline'), '.dm-item-remaining');
   patchProgressContent(current.querySelector('.dm-item-progress'), next.querySelector('.dm-item-progress'));
   const currentPercentage = current.querySelector('.dm-item-percentage');
   const nextPercentage = next.querySelector('.dm-item-percentage');
@@ -268,7 +266,7 @@ function patchLiveDownloadRow(current, next) {
 
 function parseLiveRow(job, index, selectedId, recovery) {
   const template = document.createElement('template');
-  template.innerHTML = downloadRowMarkup(job, index, selectedId, null, null, recovery, runtimeState.selectionMode, runtimeState.selectedJobIds).trim();
+  template.innerHTML = downloadRowMarkup(job, index, selectedId, null, null, recovery, runtimeState.selectionMode, runtimeState.selectedJobIds, runtimeState.locale).trim();
   const row = template.content.firstElementChild;
   const recoveryNode = row?.nextElementSibling?.matches('.dm-inline-recovery[data-job-id]')
     ? row.nextElementSibling
@@ -291,7 +289,7 @@ function keyedDownloadRowsPatch(area, visible, selectedId, recoveryByJobId, chan
     const currentRecovery = currentRecoveries.get(key);
     const selected = isVisuallySelected(job.id, { selectedJobId: selectedId }, false);
     const needsActivityPatch = !changedJobIds || changedJobIds.has(key);
-    const state = currentRow && !needsActivityPatch ? null : downloadRowState(job);
+    const state = currentRow && !needsActivityPatch ? null : downloadRowState(job, runtimeState.locale);
     const needsLivePatch = !currentRow
       || (needsActivityPatch && (currentRow.dataset.dmRowStructure !== state.structureSignature
         || currentRow.dataset.dmRowLive !== state.liveSignature));
@@ -408,7 +406,7 @@ function patchVirtualListWindow(scroll, state) {
     const currentRow = currentRows.get(key);
     const currentRecovery = currentRecoveries.get(key);
     const needsActivityPatch = !changedJobIds || changedJobIds.has(key);
-    const rowState = currentRow && !needsActivityPatch ? null : downloadRowState(job);
+    const rowState = currentRow && !needsActivityPatch ? null : downloadRowState(job, runtimeState.locale);
     const needsLivePatch = !currentRow
       || (needsActivityPatch && (currentRow.dataset.dmRowStructure !== rowState.structureSignature
         || currentRow.dataset.dmRowLive !== rowState.liveSignature));

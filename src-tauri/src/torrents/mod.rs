@@ -683,13 +683,18 @@ pub(crate) fn choose_torrent_file(app: AppHandle) -> Result<Option<String>, Stri
 }
 pub(crate) fn queue_torrent_download(
     source: String,
+    destination_root: Option<PathBuf>,
     state: State<'_, LocalState>,
 ) -> Result<DownloadQueueReceipt, String> {
     let aria2_path = state
         .aria2_path()
         .ok_or_else(crate::components::torrent_engine_required_error)?;
     let (source, source_kind, label) = normalize_torrent_source(&source)?;
-    let downloads_dir = current_downloads_dir(&state)?.join("Torrents");
+    let downloads_root = match destination_root {
+        Some(path) => path,
+        None => current_downloads_dir(&state)?,
+    };
+    let downloads_dir = downloads_root.join("Torrents");
     fs::create_dir_all(&downloads_dir).map_err(|error| error.to_string())?;
     let destination = unique_directory(&downloads_dir, &label);
 

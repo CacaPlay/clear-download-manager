@@ -82,7 +82,16 @@ $SetupInstaller = Get-ChildItem -Path $BundleRoot -Recurse -File -Filter '*setup
   Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if ($SetupInstaller) {
   $SetupAssetName = ConvertTo-ReleaseAssetName $SetupInstaller.Name
-  Copy-Item -LiteralPath $SetupInstaller.FullName -Destination (Join-Path $OutputDirectory $SetupAssetName) -Force
+  $VersionedSetupPath = Join-Path $OutputDirectory $SetupAssetName
+  Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $VersionedSetupPath -Force
+  if ([IO.Path]::GetExtension($SetupInstaller.Name) -ieq '.exe') {
+    $StableInstallerName = 'ClearDownloadManagerSetup.exe'
+    $StableInstallerPath = Join-Path $OutputDirectory $StableInstallerName
+    Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $StableInstallerPath -Force
+    $VersionedHash = (Get-FileHash -LiteralPath $VersionedSetupPath -Algorithm SHA256).Hash
+    $StableHash = (Get-FileHash -LiteralPath $StableInstallerPath -Algorithm SHA256).Hash
+    if ($StableHash -cne $VersionedHash) { throw 'The fixed-name installer alias differs from the versioned NSIS installer.' }
+  }
 }
 
 $EncodedName = [Uri]::EscapeDataString($ArtifactAssetName).Replace('%2F', '/')
@@ -109,6 +118,7 @@ PUBLICACION DE CLEAR DOWNLOAD MANAGER $Version
    - $SignatureAssetName
    - latest.json
 $(if ($SetupInstaller -and $SetupAssetName -ne $ArtifactAssetName) { "   - $SetupAssetName (instalacion manual)" })
+$(if ($StableInstallerName) { "   - $StableInstallerName (enlace estable: https://github.com/$($UpdaterConfig.repository)/releases/latest/download/$StableInstallerName)" })
 3. Publica la Release, no la dejes como Draft.
 4. Comprueba esta direccion:
    https://github.com/$($UpdaterConfig.repository)/releases/latest/download/latest.json

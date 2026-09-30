@@ -27,7 +27,7 @@ check('navbar no tiene indicador compartido', !sidebar.includes('dm-nav-selectio
 check('navbar usa activación local dentro de 72px', tier2.includes('.dm-zen-nav > nav > button::before') && tier2.includes('width: 72px !important;') && tier2.includes('left: 0;') && tier2.includes('width: 3px;') && tier2.includes('height: 68%;'));
 check('section tiene nombre View Transition único por superficie', tier2.includes('view-transition-name: cdm-section-surface;'));
 check('settings usa una superficie direccional separada', composition.includes('runSettingsCategoryTransition') && composition.includes('settingsCategoryChanged') && tier2.includes('cdm-settings-panel'));
-check('theme usa origen del control y fallback', coordinator.includes('themeOrigin') && coordinator.includes('motion-theme-fallback-overlay'));
+check('theme usa la captura nativa del control y confirma limpieza', coordinator.includes('themeOrigin') && coordinator.includes('document.startViewTransition') && coordinator.includes('cdm:theme-transition-finished') && !coordinator.includes('motion-theme-fallback-overlay'));
 check('theme no toca la autoridad del icono nativo', !coordinator.includes('setIcon') && !coordinator.includes('applyNativeApplicationIcon'));
 check('progress tiene ratio compositor-friendly', shared.includes('--dm-progress-ratio') && tier2.includes('transform: scaleX(var(--dm-progress-ratio, 1));'));
 check('live patch sincroniza ratio sin reemplazar la fila', live.includes("getPropertyValue('--dm-progress-ratio')") && live.includes('patchProgressContent'));
@@ -35,7 +35,7 @@ check('processing queda en una única barra localizada', unified.includes('dm-pr
 check('Tier 1 no anima la fila completa al completar/error', !/\.dm-download-item\[data-status-transition="(?:completed|error)"\]\s*,[\s\S]{0,180}?\banimation\s*:/.test(tier1));
 check('Tier 2 no declara transition: all', !/transition\s*:\s*all\b/i.test(tier2));
 check('Tier 2 no declara will-change', !/\bwill-change\s*:/i.test(tier2));
-check('theme tiene collapse circular y fallback', tier2.includes('--motion-theme-duration: 350ms;') && tier2.includes('cdm-motion-theme-collapse') && tier2.includes('cdm-motion-theme-fallback-collapse') && tier2.includes('clip-path: circle(150vmax'));
+check('theme reveal nativo es breve y mantiene quieta la superficie', tier2.includes('--motion-theme-duration: 300ms;') && tier2.includes('view-transition-old(root)') && tier2.includes('clip-path: circle(0 at var(--motion-theme-x') && !tier2.includes('motion-theme-fallback-overlay') && tier2.includes('animation-play-state: paused !important;') && coordinator.includes("'animation-play-state'") && coordinator.includes('cdm:theme-transition-finished'));
 check('theme separa navegación y protege la geometría', composition.includes('themeTransitioning') && /data-theme-transitioning="true"\]\s+#app\[data-motion-navigation="true"\]/.test(tier2) && tier2.includes('transform: none !important;'));
 check('navbar no conserva rails/superficies legacy', !tier2.includes('dm-nav-selection-indicator') && tier2.includes('button.is-active::before'));
 check('botones tienen press/release explícitos', tier2.includes('--motion-button-press-duration: 105ms;') && tier2.includes('--motion-button-release-duration: 145ms;') && tier2.includes('translateY(1.5px) scale(.985)'));

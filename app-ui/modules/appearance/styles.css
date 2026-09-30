@@ -86,3 +86,38 @@ html[data-scale-mode="auto"] .auto-scale-setting { border-color: color-mix(in sr
 .settings-view .range-setting{min-height:3.7rem}.settings-view .select-setting{min-height:4rem}
 @media(max-width:1080px){.settings-layout{grid-template-columns:1fr}}
 @media(max-width:700px){.scale-setting{grid-template-columns:1fr;grid-template-areas:"copy" "stepper" "range"}.numeric-stepper{justify-content:stretch;grid-template-columns:2.55rem minmax(4.5rem,1fr) 2.55rem 3.2rem}.settings-actions{display:grid;grid-template-columns:1fr 1fr}.settings-save-state{grid-column:1/-1;margin:0}.settings-actions button{justify-content:center}}
+
+/* Shared accessible binary preference switch; app-specific surfaces may tune
+   its dimensions while the accent remains user-configurable. */
+input[type="checkbox"][role="switch"] {
+  appearance: none;
+  position: relative;
+  width: 3rem;
+  min-width: 3rem;
+  height: 1.7rem;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--text-secondary, #718096) 34%, var(--border-default, #cbd5e1));
+  border-radius: 999px;
+  background: var(--surface-secondary, #e8edf3);
+  cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease, transform .14s ease;
+}
+input[type="checkbox"][role="switch"]::before {
+  content: "";
+  display: block;
+  width: 1.28rem;
+  height: 1.28rem;
+  margin: .15rem;
+  border-radius: 50%;
+  background: var(--surface-primary, #fff);
+  box-shadow: 0 1px 3px rgba(12, 26, 42, .22);
+  transition: transform .18s ease;
+}
+input[type="checkbox"][role="switch"]:checked { border-color: var(--accent, var(--accent-base, #168fe0)); background: var(--accent, var(--accent-base, #168fe0)); }
+input[type="checkbox"][role="switch"]:checked::before { transform: translateX(1.28rem); }
+input[type="checkbox"][role="switch"]:active:not(:disabled) { transform: scale(.95); }
+input[type="checkbox"][role="switch"]:active:not(:disabled):not(:checked)::before { transform: scale(.9); }
+input[type="checkbox"][role="switch"]:checked:active:not(:disabled)::before { transform: translateX(1.28rem) scale(.9); }
+input[type="checkbox"][role="switch"]:focus-visible { outline: 2px solid var(--accent, var(--accent-base, #168fe0)); outline-offset: 3px; }
+input[type="checkbox"][role="switch"]:disabled { cursor: not-allowed; opacity: .56; }
+@media(prefers-reduced-motion:reduce){input[type="checkbox"][role="switch"],input[type="checkbox"][role="switch"]::before{transition:none}}

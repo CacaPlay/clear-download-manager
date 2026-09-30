@@ -2,22 +2,22 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "clear-download-manager@0.95.4",
-  "documentNamespace": "http://spdx.org/spdxdocs/clear-download-manager-0.95.4-ef4cbda3-22a2-4b94-9077-e9efe04bd7e2",
+  "name": "clear-download-manager@1.0.0",
+  "documentNamespace": "http://spdx.org/spdxdocs/clear-download-manager-1.0.0-4d14012c-d80e-40c4-af32-c8c64e4fc30c",
   "creationInfo": {
-    "created": "2026-09-27T00:42:01.831Z",
+    "created": "2026-09-30T16:04:57.647Z",
     "creators": [
       "Tool: npm/cli-11.16.0"
     ]
   },
   "documentDescribes": [
-    "SPDXRef-Package-clear-download-manager-0.95.4"
+    "SPDXRef-Package-clear-download-manager-1.0.0"
   ],
   "packages": [
     {
       "name": "clear-download-manager",
-      "SPDXID": "SPDXRef-Package-clear-download-manager-0.95.4",
-      "versionInfo": "0.95.4",
+      "SPDXID": "SPDXRef-Package-clear-download-manager-1.0.0",
+      "versionInfo": "1.0.0",
       "packageFileName": "",
       "primaryPackagePurpose": "APPLICATION",
       "downloadLocation": "NOASSERTION",
@@ -28,7 +28,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/clear-download-manager@0.95.4"
+          "referenceLocator": "pkg:npm/clear-download-manager@1.0.0"
         }
       ]
     },
@@ -933,17 +933,17 @@
   "relationships": [
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
-      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-0.95.4",
+      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-1.0.0",
       "relationshipType": "DESCRIBES"
     },
     {
       "spdxElementId": "SPDXRef-Package-tauri-apps.cli-2.11.5",
-      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-0.95.4",
+      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-1.0.0",
       "relationshipType": "DEV_DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-esbuild-0.28.1",
-      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-0.95.4",
+      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-1.0.0",
       "relationshipType": "DEV_DEPENDENCY_OF"
     },
     {

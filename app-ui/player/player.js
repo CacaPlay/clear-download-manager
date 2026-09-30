@@ -901,7 +901,7 @@ function setAudioCard(snapshot = {}) {
   if (!audioCard) return;
   const thumbnail = String(snapshot.thumbnail || '').trim();
   audioCard.classList.toggle('has-artwork', Boolean(thumbnail));
-  audioArtwork.src = thumbnail || '../assets/brand/clear-download-manager-celeste.png';
+  audioArtwork.src = thumbnail || '../assets/brand/clear-download-manager-celeste.webp';
   audioArtwork.alt = snapshot.title ? `Carátula de ${snapshot.title}` : '';
   audioSourceLabel.textContent = currentSource === 'playlist' ? 'PLAYLIST' : 'ARCHIVO LOCAL';
   audioTitleLabel.textContent = String(snapshot.title || 'Contenido de audio');

@@ -6,6 +6,7 @@ import { runtimeState, syncPreferences } from './state.js';
 import { bindVirtualListScroll } from './live.js';
 import { dmIcon } from './view/icons.js';
 import { mountFloatingMenus } from './floating.js';
+import { invokeWithOptionalComponent, optionalComponentProgressLabel, requestComponentManagerInstall } from '../modules/components/optional-install.js';
 function changeUiScale(context, delta) {
   const next = Math.max(50, Math.min(130, Math.round((runtimeState.preferences.uiScale + delta) / 5) * 5));
   if (next === runtimeState.preferences.uiScale) return;
@@ -32,7 +33,8 @@ function patchVisualSelection(root) {
   });
 }
 
-function patchSelectionControls(root, jobs) {
+function patchSelectionControls(root, jobs, context = {}) {
+  const translate = (key, fallback) => context.translate?.(key) || fallback;
   const selectedCount = runtimeState.selectedJobIds.size;
   const deleteButton = root.querySelector('[data-dm-bulk-delete]');
   if (deleteButton) {
@@ -47,9 +49,13 @@ function patchSelectionControls(root, jobs) {
   const activeSection = sectionForLayout(runtimeState.preferences);
   const visibleJobs = jobsForSection(runtimeState.liveJobs?.length ? runtimeState.liveJobs : jobs, runtimeState.preferences, activeSection);
   const allSelected = Boolean(visibleJobs.length) && visibleJobs.every((job) => runtimeState.selectedJobIds.has(Number(job.id)));
-  selectAllButton.title = allSelected ? 'Quitar selección visible' : 'Seleccionar todas las descargas visibles';
+  const actionLabel = allSelected
+    ? translate('Quitar selección visible', 'Quitar selección visible')
+    : translate('Seleccionar todas las descargas visibles', 'Seleccionar todas las descargas visibles');
+  selectAllButton.title = actionLabel;
+  selectAllButton.setAttribute('aria-label', actionLabel);
   const label = selectAllButton.querySelector('span');
-  if (label) label.textContent = allSelected ? 'Ninguna' : 'Todas';
+  if (label) label.textContent = allSelected ? translate('Ninguna', 'Ninguna') : translate('Visibles', 'Visibles');
   const icon = selectAllButton.querySelector('svg');
   if (icon) icon.outerHTML = dmIcon(allSelected ? 'x' : 'check', 18);
 }
@@ -227,6 +233,28 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     }
     await context.onAnalyzeSource?.(source, { query: source, alternatives: [] });
   });
+  const openRowContextMenu = (row, { x, y, above = y, alignRight = false } = {}) => {
+    const id = Number(row.dataset.dmSelectJob);
+    runtimeState.rowMenuJobId = id;
+    runtimeState.rowMenuOpenedAt = performance.now();
+    runtimeState.rowMenuAnchor = { x, y };
+    runtimeState.rowMenuPosition = {
+      left: Math.round(Math.max(8, x)),
+      top: Math.round(Math.max(8, y))
+    };
+    syncPreferences({ selectedJobId: id });
+    rerenderNow();
+    settleFloatingRowMenu(root, { x, y, above, alignRight });
+  };
+  root.addEventListener('keydown', (event) => {
+    if (!(event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) return;
+    const row = event.target.closest?.('[data-dm-select-job]');
+    if (!row) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = row.getBoundingClientRect();
+    openRowContextMenu(row, { x: rect.left, y: rect.bottom, above: rect.top });
+  });
   root.addEventListener('contextmenu', (event) => {
     // The native/WebView menu is never useful in CDM. A download row still
     // gets its own application menu below; blank areas intentionally do none.
@@ -236,17 +264,7 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
-    const id = Number(row.dataset.dmSelectJob);
-    runtimeState.rowMenuJobId = id;
-    runtimeState.rowMenuOpenedAt = performance.now();
-    runtimeState.rowMenuAnchor = { x: Number(event.clientX || 0), y: Number(event.clientY || 0) };
-    runtimeState.rowMenuPosition = {
-      left: Math.round(Math.max(8, event.clientX)),
-      top: Math.round(Math.max(8, event.clientY))
-    };
-    syncPreferences({ selectedJobId: id });
-    rerenderNow();
-    settleFloatingRowMenu(root, { x: event.clientX, y: event.clientY, above: event.clientY });
+    openRowContextMenu(row, { x: Number(event.clientX || 0), y: Number(event.clientY || 0) });
   });
   root.addEventListener('dblclick', async (event) => {
     const row = event.target.closest?.('[data-dm-select-job]');
@@ -670,7 +688,7 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
         if (runtimeState.selectedJobIds.has(id)) runtimeState.selectedJobIds.delete(id);
         else runtimeState.selectedJobIds.add(id);
         patchVisualSelection(root);
-        patchSelectionControls(root, jobs);
+        patchSelectionControls(root, jobs, context);
         return;
       }
       syncPreferences({ selectedJobId: id });
@@ -693,7 +711,7 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     runtimeState.rowMenuJobId = null;
     runtimeState.rowMenuPosition = null;
     patchVisualSelection(root);
-    patchSelectionControls(root, runtimeState.liveJobs || []);
+    patchSelectionControls(root, runtimeState.liveJobs || [], context);
     rerenderNow();
   });
   // Floating row menus live outside .dm-host to avoid clipped panels, so
@@ -730,7 +748,7 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     if (input.checked) runtimeState.selectedJobIds.add(id);
     else runtimeState.selectedJobIds.delete(id);
     patchVisualSelection(root);
-    patchSelectionControls(root, jobs);
+    patchSelectionControls(root, jobs, context);
   });
 
   root.querySelectorAll('[data-dm-open-playlist-player]').forEach((button) => button.addEventListener('click', async (event) => {
@@ -755,6 +773,15 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     runtimeState.rowMenuAnchor = null;
     rerenderNow();
   }));
+  root.querySelectorAll('[data-dm-add-menu-toggle]').forEach((button) => button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    runtimeState.addMenuOpen = !runtimeState.addMenuOpen;
+    rerenderNow();
+  }));
+  root.querySelector('[data-dm-sort-select]')?.addEventListener('change', (event) => {
+    syncPreferences({ sortOrder: event.currentTarget.value });
+    rerenderNow();
+  });
   root.querySelector('[data-dm-select-all-visible]')?.addEventListener('click', (event) => {
     event.stopPropagation();
     const activeSection = sectionForLayout(runtimeState.preferences);
@@ -800,6 +827,13 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
   });
   root.querySelector('[data-dm-unified-submit]')?.addEventListener('click', () => { void submitUnifiedInput(context, undefined, rerender); });
   root.querySelector('[data-dm-unified-clear]')?.addEventListener('click', () => {
+    runtimeState.unifiedComponentPromptResolve?.(false);
+    runtimeState.unifiedComponentPromptResolve = null;
+    runtimeState.unifiedComponentPrompt = null;
+    runtimeState.unifiedComponentPromptAccepted = false;
+    runtimeState.unifiedComponentPromptDeclined = false;
+    runtimeState.unifiedComponentProgress = null;
+    runtimeState.unifiedComponentError = '';
     runtimeState.unifiedQuery = '';
     runtimeState.unifiedSuggestions = [];
     runtimeState.unifiedActiveIndex = -1;
@@ -1014,7 +1048,7 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     await submitUnifiedInput(context, value, rerender);
   }));
   root.querySelectorAll('[data-dm-add-torrent]').forEach((button) => button.addEventListener('click', () => { runtimeState.addMenuOpen = false; runtimeState.modal = 'torrent'; runtimeState.torrentSource = ''; runtimeState.torrentBusy = false; rerenderNow(); }));
-  root.querySelectorAll('[data-dm-video-search]').forEach((button) => button.addEventListener('click', () => { runtimeState.addMenuOpen = false; runtimeState.modal = 'video-search'; runtimeState.videoSearchResults = []; rerenderNow(); }));
+  root.querySelectorAll('[data-dm-video-search]').forEach((button) => button.addEventListener('click', () => { runtimeState.addMenuOpen = false; runtimeState.modal = 'video-search'; runtimeState.videoSearchResults = []; runtimeState.videoSearchComponentPrompt = null; runtimeState.videoSearchPhase = ''; rerenderNow(); }));
   root.querySelectorAll('[data-dm-modal-close]').forEach((button) => button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -1022,6 +1056,13 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     if (clipboardPrompt && !runtimeState.modal) {
       void context.onClipboardPreviewAction?.(clipboardPrompt, 'cancel', false);
       return;
+    }
+    if (runtimeState.modal === 'video-search' && runtimeState.videoSearchPromptResolve) {
+      const resolvePrompt = runtimeState.videoSearchPromptResolve;
+      runtimeState.videoSearchPromptResolve = null;
+      runtimeState.videoSearchComponentPrompt = null;
+      runtimeState.videoSearchBusy = false;
+      resolvePrompt(false);
     }
     runtimeState.modal = '';
     runtimeState.modalJobId = null;
@@ -1035,8 +1076,6 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
   root.querySelectorAll('[data-dm-modal-action]').forEach((button) => button.addEventListener('click', async () => {
     const action = button.dataset.dmModalAction;
     if (action === 'install-update') {
-      runtimeState.modal = '';
-      rerenderNow();
       await context.onInstallUpdate?.();
       return;
     }
@@ -1221,17 +1260,73 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     const query = root.querySelector('#dm-video-query')?.value.trim() || '';
     if (!query) return;
     const requestId = ++runtimeState.videoSearchRequestId;
+    runtimeState.videoSearchPromptResolve?.(false);
+    runtimeState.videoSearchPromptResolve = null;
+    runtimeState.videoSearchComponentPrompt = null;
+    runtimeState.videoSearchPromptAccepted = false;
+    runtimeState.videoSearchProgress = null;
+    runtimeState.videoSearchComponentError = '';
+    runtimeState.videoSearchPhase = 'Buscando coincidencias…';
     const isCurrent = () => runtimeState.videoSearchRequestId === requestId
       && runtimeState.modal === 'video-search'
       && runtimeState.videoSearchQuery === query;
     runtimeState.videoSearchQuery = query; runtimeState.videoSearchBusy = true; rerenderNow();
+    let declinedComponentPrompt = false;
+    const searchPage = offset => invokeWithOptionalComponent(
+      (command, args) => context.invoke?.(command, args),
+      'search_media_by_title_page',
+      { query, limit: 15, offset },
+      {
+        beforePrompt: info => {
+          if (!isCurrent()) return;
+          runtimeState.videoSearchComponentPrompt = info;
+          runtimeState.videoSearchPromptAccepted = false;
+          runtimeState.videoSearchProgress = null;
+          runtimeState.videoSearchBusy = false;
+          runtimeState.videoSearchPhase = '';
+          rerenderNow();
+        },
+        promptInstall: () => isCurrent()
+          ? new Promise(resolve => {
+            runtimeState.videoSearchPromptResolve = accepted => {
+              runtimeState.videoSearchPromptResolve = null;
+              if (!accepted) declinedComponentPrompt = true;
+              resolve(accepted);
+            };
+          })
+          : false,
+        onInstallRequested: info => {
+          runtimeState.videoSearchRequestId += 1;
+          runtimeState.videoSearchPromptResolve = null;
+          runtimeState.videoSearchComponentPrompt = null;
+          runtimeState.videoSearchPromptAccepted = false;
+          runtimeState.videoSearchProgress = null;
+          runtimeState.videoSearchComponentError = '';
+          runtimeState.videoSearchBusy = false;
+          runtimeState.videoSearchPhase = '';
+          runtimeState.modal = '';
+          rerenderNow();
+          return requestComponentManagerInstall(info.componentId);
+        },
+        onProgress: progress => {
+          if (!isCurrent()) return;
+          runtimeState.videoSearchComponentPrompt = null;
+          runtimeState.videoSearchProgress = { ...progress };
+          runtimeState.videoSearchComponentError = '';
+          runtimeState.videoSearchPhase = optionalComponentProgressLabel(progress);
+          runtimeState.videoSearchBusy = !['done', 'error', 'cancelled'].includes(progress?.phase);
+          rerenderNow();
+        }
+      }
+    );
     try {
-      const first = await context.invoke?.('search_media_by_title_page', { query, limit: 15, offset: 0 }) || [];
+      const first = await searchPage(0) || [];
       if (isCurrent()) {
         runtimeState.videoSearchResults = Array.isArray(first) ? first : [];
         rerenderNow();
       }
-      const second = await context.invoke?.('search_media_by_title_page', { query, limit: 15, offset: 15 }) || [];
+      if (!isCurrent()) return;
+      const second = await searchPage(15) || [];
       if (isCurrent()) {
         const merged = [...(Array.isArray(first) ? first : []), ...(Array.isArray(second) ? second : [])];
         const seen = new Set();
@@ -1246,13 +1341,47 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     catch (error) {
       if (isCurrent()) {
         runtimeState.videoSearchResults = [];
-        context.onToast?.(String(error), 'error');
+        if (!declinedComponentPrompt) {
+          if (error?.code === 'CDM_OPTIONAL_COMPONENT_FLOW_STOP') {
+            const terminal = ['error', 'cancelled'].includes(runtimeState.videoSearchProgress?.phase);
+            if (!terminal) {
+              runtimeState.videoSearchProgress = null;
+              runtimeState.videoSearchComponentError = runtimeState.videoSearchPromptAccepted
+                ? 'No se pudo instalar MediaTools. Reintenta la búsqueda.'
+                : 'No se pudo comprobar la disponibilidad de MediaTools. Reintenta la búsqueda.';
+            }
+          } else context.onToast?.(String(error), 'error');
+        }
       }
     }
     if (isCurrent()) {
       runtimeState.videoSearchBusy = false;
+      runtimeState.videoSearchPhase = '';
+      if (!['error', 'cancelled'].includes(runtimeState.videoSearchProgress?.phase)) runtimeState.videoSearchProgress = null;
+      runtimeState.videoSearchPromptAccepted = false;
       rerenderNow();
     }
+  });
+  root.querySelector('[data-action="install-optional-component"]')?.addEventListener('click', () => {
+    const resolve = runtimeState.videoSearchPromptResolve;
+    if (!resolve) return;
+    runtimeState.videoSearchPromptAccepted = true;
+    runtimeState.videoSearchPromptResolve = null;
+    rerenderNow();
+    resolve(true);
+  });
+  root.querySelector('[data-action="dismiss-optional-component"]')?.addEventListener('click', () => {
+    const resolve = runtimeState.videoSearchPromptResolve;
+    runtimeState.videoSearchPromptResolve = null;
+    runtimeState.videoSearchComponentPrompt = null;
+    runtimeState.videoSearchPromptAccepted = false;
+    runtimeState.videoSearchBusy = false;
+    runtimeState.videoSearchPhase = '';
+    rerenderNow();
+    resolve?.(false);
+  });
+  root.querySelector('[data-dm-retry-video-search]')?.addEventListener('click', () => {
+    root.querySelector('[data-dm-run-video-search]')?.click();
   });
   root.querySelectorAll('[data-dm-analyze-result]').forEach((button) => button.addEventListener('click', () => { const url = button.dataset.dmAnalyzeResult; runtimeState.modal = ''; void context.onAnalyzeSource?.(url, { query: url, alternatives: [] }); }));
   root.querySelectorAll('.dm-search-thumb').forEach((thumb) => {

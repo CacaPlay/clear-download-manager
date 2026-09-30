@@ -23,11 +23,11 @@ fn default_appearance_accent() -> String {
 }
 
 fn default_progress_active() -> String {
-    "#00ff2a".into()
+    "#22a9d6".into()
 }
 
 fn default_progress_completed() -> String {
-    "#00ff2a".into()
+    "#04d25a".into()
 }
 
 fn default_progress_paused() -> String {
@@ -694,7 +694,7 @@ impl AppearanceSettings {
             surface_mode,
             radius,
             revision: self.revision,
-            appearance_revision: 11,
+            appearance_revision: 13,
         })
     }
 }
@@ -722,7 +722,41 @@ fn migrate_appearance(mut appearance: AppearanceSettings) -> AppearanceSettings 
         }
         appearance.appearance_revision = 11;
     }
+    if appearance.appearance_revision < 13 {
+        if !appearance.progress_active_customized
+            && appearance.progress_active.eq_ignore_ascii_case("#00ff2a")
+        {
+            appearance.progress_active = default_progress_active();
+        }
+        if !appearance.progress_completed_customized
+            && appearance
+                .progress_completed
+                .eq_ignore_ascii_case("#00ff2a")
+        {
+            appearance.progress_completed = default_progress_completed();
+        }
+        appearance.appearance_revision = 13;
+    }
     appearance
+}
+
+#[cfg(test)]
+mod appearance_migration_tests {
+    use super::*;
+
+    #[test]
+    fn updates_only_uncustomized_legacy_progress_defaults() {
+        let mut appearance: AppearanceSettings = serde_json::from_str(
+            r##"{"appearanceRevision":12,"progressActive":"#00ff2a","progressCompleted":"#00ff2a","progressActiveCustomized":true,"progressCompletedCustomized":false}"##,
+        )
+        .expect("appearance settings");
+
+        appearance = migrate_appearance(appearance);
+
+        assert_eq!(appearance.progress_active, "#00ff2a");
+        assert_eq!(appearance.progress_completed, "#04d25a");
+        assert_eq!(appearance.appearance_revision, 13);
+    }
 }
 
 pub(crate) fn read_appearance_settings(
@@ -741,7 +775,7 @@ pub(crate) fn read_appearance_settings(
     if let Some(json) = read_key(APPEARANCE_SETTINGS_KEY)? {
         let appearance =
             serde_json::from_str::<AppearanceSettings>(&json).map_err(|error| error.to_string())?;
-        let needs_migration = appearance.appearance_revision < 11;
+        let needs_migration = appearance.appearance_revision < 13;
         let migrated = migrate_appearance(appearance);
         let normalized = migrated.clone().validate()?;
         if needs_migration {

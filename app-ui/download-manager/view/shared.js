@@ -60,7 +60,7 @@ function inspectorLogMarkup(job) {
 
 function categoryLabel(value) {
   return ({
-    all: 'Categorías',
+    all: 'Todas',
     __pending: 'Pendientes',
     __running: 'En ejecución',
     __completed: 'Completadas',
@@ -72,14 +72,15 @@ function categoryLabel(value) {
   })[value] || String(value || 'Categorías');
 }
 
-export function categoryOptions(jobs, selected, open = false) {
+export function categoryOptions(jobs, selected, open = false, translate = null) {
   const statusOptions = [['__pending', 'Pendientes'], ['__running', 'En ejecución'], ['__completed', 'Completadas'], ['__failed', 'Con errores']];
   const categoryValues = categoriesFromJobs(jobs).filter((category) => !statusOptions.some(([value]) => value === category));
-  const items = [['all', 'Todo'], ...statusOptions, ...categoryValues.map((category) => [category, categoryLabel(category)])];
+  const t = (label) => translate?.(label) || label;
+  const items = [['all', 'Todas'], ...statusOptions, ...categoryValues.map((category) => [category, categoryLabel(category)])];
   const selectedValue = items.some(([value]) => value === selected) ? selected : 'all';
   return `<div class="dm-category-control ${open ? 'is-open' : ''}" data-dm-category-control>
-    <button type="button" class="dm-category-toggle" data-dm-category-toggle aria-haspopup="listbox" aria-expanded="${open ? 'true' : 'false'}" aria-label="Filtrar categorías">${dmIcon('list', 16)}<span data-dm-category-label>${escapeHtml(categoryLabel(selectedValue))}</span>${dmIcon('chevron', 15)}</button>
-    <div class="dm-category-menu floating-position-root" data-dm-category-menu role="listbox" aria-label="Categorías disponibles" ${open ? '' : 'hidden'}><div class="motion-inner">${items.map(([value, label]) => `<button type="button" role="option" data-dm-category-option="${escapeHtml(value)}" aria-selected="${value === selectedValue ? 'true' : 'false'}" class="${value === selectedValue ? 'is-active' : ''}">${escapeHtml(label)}</button>`).join('')}</div></div>
+    <button type="button" class="dm-category-toggle" data-dm-category-toggle aria-haspopup="listbox" aria-expanded="${open ? 'true' : 'false'}" aria-label="${escapeHtml(t('Filtrar categorías'))}">${dmIcon('list', 16)}<span data-dm-category-label>${escapeHtml(t(categoryLabel(selectedValue)))}</span>${dmIcon('chevron', 15)}</button>
+    <div class="dm-category-menu floating-position-root" data-dm-category-menu role="listbox" aria-label="${escapeHtml(t('Categorías disponibles'))}" ${open ? '' : 'hidden'}><div class="motion-inner">${items.map(([value, label]) => `<button type="button" role="option" data-dm-category-option="${escapeHtml(value)}" aria-selected="${value === selectedValue ? 'true' : 'false'}" class="${value === selectedValue ? 'is-active' : ''}">${escapeHtml(t(label))}</button>`).join('')}</div></div>
   </div>`;
 }
 
@@ -156,11 +157,13 @@ export function jobActionButton(job) {
     if (['queued', 'paused'].includes(job.status)) return `<button class="dm-icon-button" data-dm-playlist-action="resume" data-playlist-batch-id="${job.playlistBatchId}" aria-label="Reanudar playlist">${dmIcon('play')}</button>`;
     if (job.status === 'failed') return `<button class="dm-icon-button" data-dm-playlist-action="retry" data-playlist-batch-id="${job.playlistBatchId}" aria-label="Reintentar elementos fallidos">${dmIcon('retry')}</button>`;
     if (job.destination) return `<button class="dm-icon-button" data-dm-reveal-path="${escapeHtml(job.destination)}" aria-label="Abrir carpeta de playlist">${dmIcon('folder')}</button>`;
+    if (job.status === 'completed') return `<button class="dm-icon-button" data-dm-open-download-directory aria-label="Abrir carpeta de descargas">${dmIcon('folder')}</button>`;
     return `<span class="dm-action-placeholder" aria-hidden="true"></span>`;
   }
   if (job.status === 'running') return `<button class="dm-icon-button" data-dm-job-action="pause" data-job-id="${job.id}" aria-label="Pausar">${dmIcon('pause')}</button>`;
   if (resumableStatuses.has(job.status)) return `<button class="dm-icon-button" data-dm-job-action="resume" data-job-id="${job.id}" aria-label="Iniciar o reanudar">${dmIcon('play')}</button>`;
   if (job.destination) return `<button class="dm-icon-button" data-dm-job-action="reveal" data-job-id="${job.id}" aria-label="Mostrar archivo">${dmIcon('folder')}</button>`;
+  if (job.status === 'completed') return `<button class="dm-icon-button" data-dm-open-download-directory aria-label="Abrir carpeta de descargas">${dmIcon('folder')}</button>`;
   return `<span class="dm-action-placeholder" aria-hidden="true"></span>`;
 }
 
@@ -291,7 +294,7 @@ export function settingsFields(preferences) {
     <label class="dm-setting-field"><span><strong>Color principal</strong><small>Se aplica a foco, selección, bordes y acciones principales.</small></span><input type="color" data-dm-setting="accent" value="${preferences.accent}"></label>
     <label class="dm-text-scale-setting dm-accent-intensity-setting"><span><strong>Intensidad del acento</strong><small>No modifica texto, éxito, advertencia ni error.</small></span><input type="range" min="40" max="100" step="1" value="${displayedIntensity}" data-dm-setting="accentIntensity"><output>${displayedIntensity}%</output></label>
     <div class="dm-semantic-color-group"><header><strong>Colores semánticos</strong><small>Completado, espera, pausa y error permanecen independientes del acento principal.</small></header><div><label>Completado<input type="color" data-dm-setting="success" value="${displayedSuccess}"></label><label>En espera<input type="color" data-dm-setting="warning" value="${preferences.warning}"></label><label>En pausa<input type="color" data-dm-setting="progressPaused" value="${preferences.progressPaused}"></label><label>Error<input type="color" data-dm-setting="danger" value="${preferences.danger}"></label></div></div>
-    <label class="dm-switch-row"><span><strong>Filas compactas</strong><small>Reduce separación sin ocultar progreso ni acciones.</small></span><input type="checkbox" data-dm-setting="compactRows" ${preferences.compactRows ? 'checked' : ''}></label>
+    <label class="dm-switch-row"><span><strong>Filas compactas</strong><small>Reduce separación sin ocultar progreso ni acciones.</small></span><input type="checkbox" role="switch" data-dm-setting="compactRows" ${preferences.compactRows ? 'checked' : ''}></label>
   </div>`;
 }
 
@@ -310,11 +313,11 @@ function updaterSettings(context = {}) {
       : '';
   return `<article class="dm-settings-feature ${configured ? 'is-ready' : 'is-pending'}">
     <div class="dm-settings-feature-head"><span>${dmIcon('download', 20)}</span><div><strong>Actualizaciones automáticas</strong><small>${configured ? `Canal ${escapeHtml(updater.channel || 'stable')} · ${escapeHtml(updater.repository || 'repositorio configurado')}` : 'El código está preparado; la publicación requiere endpoint y firma válidos.'}</small></div><i>${configured ? 'Listo' : 'Sin configurar'}</i></div>
-    <label class="dm-switch-row"><span><strong>Comprobar automáticamente</strong><small>Busca al iniciar y cada 6 horas cuando el actualizador firmado está configurado.</small></span><input type="checkbox" data-dm-auto-update ${context.autoUpdateEnabled !== false ? 'checked' : ''} ${configured ? '' : 'disabled'}></label>
+    <label class="dm-switch-row"><span><strong>Comprobar automáticamente</strong><small>Busca al iniciar y cada 6 horas cuando el actualizador firmado está configurado.</small></span><input type="checkbox" role="switch" data-dm-auto-update ${context.autoUpdateEnabled !== false ? 'checked' : ''} ${configured ? '' : 'disabled'}></label>
     ${update ? `<div class="dm-update-available"><b>Versión ${escapeHtml(update.version)}</b><span>${escapeHtml(update.notes || 'Nueva versión disponible.')}</span></div>` : ''}
     ${updaterMessage ? `<p class="dm-settings-message ${messageTone}">${escapeHtml(updaterMessage)}</p>` : ''}
-    ${updateProgressMarkup(context)}
-    <div class="dm-settings-feature-actions"><button type="button" data-dm-check-update ${!configured || context.updaterCheckBusy || context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterCheckBusy ? 'Comprobando…' : 'Buscar actualización'}</button>${update ? `<button type="button" data-dm-dismiss-update>Más tarde</button><button type="button" class="is-primary" data-dm-install-update ${context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterInstallBusy ? 'Instalando…' : 'Descargar e instalar'}</button>` : ''}</div>
+    <div data-dm-update-progress-slot>${updateProgressMarkup(context)}</div>
+    <div class="dm-settings-feature-actions"><button type="button" data-dm-check-update ${!configured || context.updaterCheckBusy || context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterCheckBusy ? 'Comprobando…' : 'Buscar actualización'}</button>${update ? `<button type="button" data-dm-dismiss-update>Más tarde</button><button type="button" class="is-primary" data-dm-install-update data-dm-update-idle-label="Descargar e instalar" ${context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterInstallBusy ? 'Instalando…' : 'Descargar e instalar'}</button>` : ''}</div>
   </article>`;
 }
 
@@ -322,14 +325,16 @@ export function updateProgressMarkup(context = {}) {
   if (!context.updaterInstallBusy) return '';
   const progress = context.updaterProgress || {};
   const phase = progress.phase === 'install' ? 'install' : 'download';
-  const rawPercent = Number(progress.percent);
-  const percent = phase === 'download' && Number.isFinite(rawPercent)
+  const rawPercent = progress.percent;
+  const percent = phase === 'download' && typeof rawPercent === 'number' && Number.isFinite(rawPercent)
     ? Math.max(0, Math.min(100, Math.round(rawPercent)))
     : phase === 'install' ? 100 : null;
   const downloaded = Number(progress.downloadedBytes);
   const total = Number(progress.contentLength);
+  const bytesPerSecond = Number(progress.bytesPerSecond);
   const hasDownloaded = Number.isFinite(downloaded) && downloaded > 0;
   const hasTotal = Number.isFinite(total) && total > 0;
+  const hasSpeed = phase === 'download' && Number.isFinite(bytesPerSecond) && bytesPerSecond > 0;
   const detail = phase === 'install'
     ? 'Verificando e instalando la actualización firmada.'
     : percent === null
@@ -338,8 +343,72 @@ export function updateProgressMarkup(context = {}) {
   const transfer = hasTotal
     ? `${formatBytes(downloaded)} / ${formatBytes(total)}`
     : hasDownloaded ? formatBytes(downloaded) : '';
+  const speed = hasSpeed ? `${formatBytes(Math.round(bytesPerSecond))}/s` : '';
+  const transferDetails = [transfer, hasTotal && percent !== null ? `${percent}%` : '', speed].filter(Boolean).join(' · ');
   const progressLabel = phase === 'install' ? 'Instalando actualización' : 'Progreso de descarga';
-  return `<div class="dm-update-progress" role="status" aria-live="polite"><div class="dm-update-progress-track ${percent === null ? 'is-indeterminate' : ''}" role="progressbar" aria-label="${progressLabel}" aria-valuemin="0" aria-valuemax="100" ${percent === null ? 'aria-valuetext="Descargando actualización"' : `aria-valuenow="${percent}"`}><i style="width:${percent === null ? 28 : percent}%"></i></div><span>${detail}</span>${transfer ? `<small>${transfer}${hasTotal && percent !== null ? ` · ${percent}%` : ''}</small>` : ''}</div>`;
+  return `<div class="dm-update-progress" data-dm-update-progress role="status" aria-live="polite"><div class="dm-update-progress-track ${percent === null ? 'is-indeterminate' : ''}" data-dm-update-progress-track role="progressbar" aria-label="${progressLabel}" aria-valuemin="0" aria-valuemax="100" ${percent === null ? 'aria-valuetext="Descargando actualización"' : `aria-valuenow="${percent}"`}><i data-dm-update-progress-fill style="width:${percent === null ? 28 : percent}%"></i></div><span data-dm-update-progress-detail>${detail}</span><small data-dm-update-progress-details ${transferDetails ? '' : 'hidden'}>${transferDetails}</small></div>`;
+}
+
+export function patchUpdateProgressSlots(root, context = {}) {
+  if (!root?.querySelectorAll) return 0;
+  const markup = updateProgressMarkup(context);
+  const slots = [...root.querySelectorAll('[data-dm-update-progress-slot]')];
+  for (const slot of slots) {
+    if (!markup) {
+      if (slot.innerHTML) slot.innerHTML = '';
+      continue;
+    }
+    if (!slot.querySelector?.('[data-dm-update-progress]')) slot.innerHTML = markup;
+    const progressElement = slot.querySelector?.('[data-dm-update-progress]');
+    const track = progressElement?.querySelector?.('[data-dm-update-progress-track]');
+    const fill = progressElement?.querySelector?.('[data-dm-update-progress-fill]');
+    const detail = progressElement?.querySelector?.('[data-dm-update-progress-detail]');
+    const details = progressElement?.querySelector?.('[data-dm-update-progress-details]');
+    if (!track || !fill || !detail || !details) continue;
+
+    const progress = context.updaterProgress || {};
+    const phase = progress.phase === 'install' ? 'install' : 'download';
+    const rawPercent = progress.percent;
+    const percent = phase === 'download' && typeof rawPercent === 'number' && Number.isFinite(rawPercent)
+      ? Math.max(0, Math.min(100, Math.round(rawPercent)))
+      : phase === 'install' ? 100 : null;
+    const downloaded = Number(progress.downloadedBytes);
+    const total = Number(progress.contentLength);
+    const bytesPerSecond = Number(progress.bytesPerSecond);
+    const hasDownloaded = Number.isFinite(downloaded) && downloaded > 0;
+    const hasTotal = Number.isFinite(total) && total > 0;
+    const hasSpeed = phase === 'download' && Number.isFinite(bytesPerSecond) && bytesPerSecond > 0;
+    const transfer = hasTotal ? `${formatBytes(downloaded)} / ${formatBytes(total)}` : hasDownloaded ? formatBytes(downloaded) : '';
+    const transferDetails = [transfer, hasTotal && percent !== null ? `${percent}%` : '', hasSpeed ? `${formatBytes(Math.round(bytesPerSecond))}/s` : ''].filter(Boolean).join(' · ');
+    track.classList.toggle('is-indeterminate', percent === null);
+    track.setAttribute('aria-label', phase === 'install' ? 'Instalando actualización' : 'Progreso de descarga');
+    if (percent === null) {
+      track.removeAttribute('aria-valuenow');
+      track.setAttribute('aria-valuetext', 'Descargando actualización');
+    } else {
+      track.removeAttribute('aria-valuetext');
+      track.setAttribute('aria-valuenow', String(percent));
+    }
+    fill.style.width = `${percent === null ? 28 : percent}%`;
+    detail.textContent = phase === 'install'
+      ? 'Verificando e instalando la actualización firmada.'
+      : percent === null
+        ? 'Descargando la actualización firmada…'
+        : `Descargando la actualización firmada (${percent}%).`;
+    details.textContent = transferDetails;
+    details.hidden = !transferDetails;
+  }
+
+  const busy = Boolean(context.updaterInstallBusy);
+  const phase = context.updaterProgress?.phase === 'install' ? 'install' : 'download';
+  for (const button of root.querySelectorAll('[data-dm-install-update], [data-dm-modal-action="install-update"]')) {
+    button.disabled = busy;
+    button.textContent = busy ? (phase === 'install' ? 'Instalando…' : 'Descargando…') : button.dataset?.dmUpdateIdleLabel || button.textContent;
+  }
+  for (const button of root.querySelectorAll('[data-dm-check-update], [data-dm-dismiss-update]')) button.disabled = busy;
+  const updateModal = root.querySelector?.('.dm-modal-backdrop[data-dm-modal="update"]');
+  for (const button of updateModal?.querySelectorAll('[data-dm-modal-close]') || []) button.disabled = busy;
+  return slots.length;
 }
 
 function extensionSettings(context = {}) {
@@ -357,7 +426,7 @@ function extensionSettings(context = {}) {
 function generalSettings(context = {}) {
   return `<div class="dm-settings-section-body">
     <label class="dm-window-setting"><span><strong>Al pulsar cerrar</strong><small>Minimizar siempre conserva la aplicación en la barra de tareas.</small></span><select data-dm-close-action><option value="tray" ${context.windowBehavior?.closeAction !== 'exit' ? 'selected' : ''}>Cerrar a la bandeja</option><option value="exit" ${context.windowBehavior?.closeAction === 'exit' ? 'selected' : ''}>Salir completamente</option></select></label>
-    ${context.startupStatus ? `<label class="dm-switch-row dm-startup-setting"><span><strong>Iniciar con Windows</strong><small>Se inicia en segundo plano y se muestra al recibir una descarga.</small></span><input type="checkbox" data-dm-startup ${context.startupStatus.enabled ? 'checked' : ''} ${context.startupStatus.supported === false ? 'disabled' : ''}></label>` : ''}
+    ${context.startupStatus ? `<label class="dm-switch-row dm-startup-setting"><span><strong>Iniciar con Windows</strong><small>Se inicia en segundo plano y se muestra al recibir una descarga.</small></span><input type="checkbox" role="switch" data-dm-startup ${context.startupStatus.enabled ? 'checked' : ''} ${context.startupStatus.supported === false ? 'disabled' : ''}></label>` : ''}
     <aside class="dm-settings-local-note">${dmIcon('shield', 18)}<span><strong>Configuración local</strong><small>Las preferencias se guardan únicamente en este equipo.</small></span></aside>
   </div>`;
 }
@@ -387,7 +456,7 @@ function multimediaSettings(context = {}) {
     <label class="dm-setting-field"><span><strong>Salida predeterminada</strong><small>Se reutiliza al analizar el siguiente enlace compatible.</small></span><select data-dm-media-output><option value="video_mp4" ${outputMode === 'video_mp4' ? 'selected' : ''}>MP4 · vídeo + audio</option><option value="video_webm" ${outputMode === 'video_webm' ? 'selected' : ''}>WebM · vídeo + audio</option><option value="audio_best" ${outputMode === 'audio_best' ? 'selected' : ''}>Original / mejor audio disponible</option><option value="audio_mp3" ${outputMode === 'audio_mp3' ? 'selected' : ''}>MP3 320 kbps · compatibilidad</option><option value="audio_m4a" ${outputMode === 'audio_m4a' ? 'selected' : ''}>M4A · compatibilidad</option><option value="source" ${outputMode === 'source' ? 'selected' : ''}>Original, sin conversión cuando sea posible</option></select></label>
     <label class="dm-setting-field"><span><strong>Calidad de vídeo predeterminada</strong><small>Si la fuente no ofrece esa calidad, el analizador elige la mejor compatible sin superar el límite.</small></span><select data-dm-media-quality><option value="best" ${quality === 'best' ? 'selected' : ''}>Mejor disponible</option><option value="2160" ${quality === '2160' ? 'selected' : ''}>Hasta 2160p</option><option value="1440" ${quality === '1440' ? 'selected' : ''}>Hasta 1440p</option><option value="1080" ${quality === '1080' ? 'selected' : ''}>Hasta 1080p</option><option value="720" ${quality === '720' ? 'selected' : ''}>Hasta 720p</option><option value="480" ${quality === '480' ? 'selected' : ''}>Hasta 480p</option><option value="360" ${quality === '360' ? 'selected' : ''}>Hasta 360p</option><option value="240" ${quality === '240' ? 'selected' : ''}>Hasta 240p</option><option value="144" ${quality === '144' ? 'selected' : ''}>Hasta 144p</option></select></label>
     <label class="dm-setting-field"><span><strong>Formato de playlist</strong><small>Se conserva entre playlists y se reajusta solo si resulta incompatible.</small></span><select data-dm-playlist-format>${['Original / mejor audio disponible','M4A','Opus','MP3 320 kbps','MP3 V0','Vídeo · MP4 720p','Vídeo · MP4 480p','Vídeo · MP4 1080p','Vídeo · mejor disponible'].map((value) => `<option ${playlistFormat === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
-    <article class="dm-settings-feature dm-media-session-settings ${session.useBraveCookies || cookiesPath ? 'is-ready' : 'is-pending'}"><div class="dm-settings-feature-head"><span>${dmIcon('shield', 20)}</span><div><strong>Sesión para YouTube y plataformas compatibles</strong><small>Se configura una sola vez y se aplica a análisis, descargas y playlists.</small></div><i>${session.useBraveCookies || cookiesPath ? 'Configurada' : 'Anónima'}</i></div><p class="dm-settings-message">${escapeHtml(sessionLabel)}</p><div class="dm-settings-feature-actions"><label class="dm-switch-row"><span><strong>Usar cookies de Brave</strong><small>Con tu consentimiento, yt-dlp lee el perfil local y puede enviar al sitio del contenido las cookies que correspondan. Al extraerlas, usa una copia temporal local.</small></span><input type="checkbox" data-dm-media-session-consent ${session.useBraveCookies ? 'checked' : ''}></label><button type="button" data-dm-choose-media-cookies>${dmIcon('file', 16)} Elegir cookies Netscape (.txt)</button>${cookiesPath ? `<button type="button" data-dm-clear-media-cookies>Quitar archivo</button>` : ''}</div><small class="dm-settings-message">Clear guarda la preferencia y, si eliges un archivo, su ruta local; no guarda los valores de las cookies en su base SQLite. Desactivar la opción no borra las cookies de Brave ni el archivo original.</small></article>
+    <article class="dm-settings-feature dm-media-session-settings ${session.useBraveCookies || cookiesPath ? 'is-ready' : 'is-pending'}"><div class="dm-settings-feature-head"><span>${dmIcon('shield', 20)}</span><div><strong>Sesión para YouTube y plataformas compatibles</strong><small>Se configura una sola vez y se aplica a análisis, descargas y playlists.</small></div><i>${session.useBraveCookies || cookiesPath ? 'Configurada' : 'Anónima'}</i></div><p class="dm-settings-message">${escapeHtml(sessionLabel)}</p><div class="dm-settings-feature-actions"><label class="dm-switch-row"><span><strong>Usar cookies de Brave</strong><small>Con tu consentimiento, yt-dlp lee el perfil local y puede enviar al sitio del contenido las cookies que correspondan. Al extraerlas, usa una copia temporal local.</small></span><input type="checkbox" role="switch" data-dm-media-session-consent ${session.useBraveCookies ? 'checked' : ''}></label><button type="button" data-dm-choose-media-cookies>${dmIcon('file', 16)} Elegir cookies Netscape (.txt)</button>${cookiesPath ? `<button type="button" data-dm-clear-media-cookies>Quitar archivo</button>` : ''}</div><small class="dm-settings-message">Clear guarda la preferencia y, si eliges un archivo, su ruta local; no guarda los valores de las cookies en su base SQLite. Desactivar la opción no borra las cookies de Brave ni el archivo original.</small></article>
     <aside class="dm-settings-explanation"><strong>Preferencias persistentes activas</strong><span>La preferencia de Brave se conserva y se aplica a análisis, descargas y playlists hasta que la desactives.</span></aside>
   </div>`;
 }
