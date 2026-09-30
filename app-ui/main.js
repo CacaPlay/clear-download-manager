@@ -1,4 +1,4 @@
-import { renderDownloadManager, bindDownloadManager, patchDownloadManagerAppearance, patchDownloadManagerLive, forceDownloadManagerAllView, clearDownloadManagerSearchState, setOptimisticJobStatus, isTransientUiOpen } from './download-manager/index.js?v=0.95.5-ui-redesign-20260929-r1';
+import { renderDownloadManager, bindDownloadManager, patchDownloadManagerAppearance, patchDownloadManagerLive, forceDownloadManagerAllView, clearDownloadManagerSearchState, setOptimisticJobStatus, isTransientUiOpen } from './download-manager/index.js?v=0.95.5-ui-redesign-20260930-r2';
 import { runtimeState } from './download-manager/state.js';
 import { clearFloatingLayer } from './download-manager/floating.js';
 import {
@@ -7,9 +7,9 @@ import {
   displayedScalePercent, normalizeAppearance, loadStoredAppearance, storeAppearanceLocally,
   automaticScalePercent, scheduleAppearanceLivePreview, applyAppearance, markAppearancePersistence,
   applyBrandIconVariant, iconVariantForColor
-} from './modules/appearance/index.js?v=0.95.5-ui-redesign-20260929-r1';
+} from './modules/appearance/index.js?v=0.95.5-ui-redesign-20260930-r2';
 import { bindAppearanceSync } from './modules/appearance/sync.js?v=0.95.0-verify-appearance';
-import { configureSettings, settingsMarkup, setSettingsAdvancedOpen, syncAccentPresetSelection } from './modules/settings/index.js?v=0.95.5-ui-redesign-20260929-r1';
+import { configureSettings, settingsMarkup, setSettingsAdvancedOpen, syncAccentPresetSelection } from './modules/settings/index.js?v=0.95.5-ui-redesign-20260930-r2';
 import {
   configureMedia, mediaSizeLabel, outputModeIsAudio, preferredVideoFormat, preferredFormatForOutput
 } from './modules/media/index.js';
@@ -43,15 +43,15 @@ import {
   configureRuntime, snapshotSignature, bindDynamicListEvents,
   loadSnapshot, startSnapshotRefreshLoop,
   rememberQueueSpeed, animateDownloadProgressBars, runProgressAcceptanceAutopilot
-} from './modules/runtime/index.js?v=0.95.0-verify-20260911-r3';
+} from './modules/runtime/index.js?v=0.95.0-ui-theme-render-20260930-r1';
 import {
   configureComposition, render, bindThumbnailFallbacks, start
-} from './modules/composition/index.js?v=0.95.0-verify-20260911-r3';
-import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, translate } from './modules/i18n/index.js?v=0.95.5-ui-redesign-20260929-r1';
-import { localizeDom } from './modules/i18n/runtime.js?v=0.95.5-ui-redesign-20260929-r1';
+} from './modules/composition/index.js?v=0.95.0-ui-theme-render-20260930-r1';
+import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, translate } from './modules/i18n/index.js?v=0.95.5-ui-redesign-20260930-r2';
+import { localizeDom } from './modules/i18n/runtime.js?v=0.95.5-ui-redesign-20260930-r2';
 import { patchUpdateProgressSlots } from './download-manager/view/shared.js';
 import { createComponentDiscoveryScheduler } from './modules/updates/component-discovery.js';
-import { runThemeTransition } from './modules/motion/coordinator.js';
+import { runThemeTransition } from './modules/motion/coordinator.js?v=0.95.5-theme-capture-20260930-r3';
 
 // CDM uses its own context menus for downloads and no browser context menu on
 // empty content. Keep this at document capture phase so every main-view area

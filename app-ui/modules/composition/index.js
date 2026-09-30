@@ -6,6 +6,8 @@ let appState = {};
 let previewMode = false;
 let lastRenderedSection = '';
 let lastRenderedSettingsCategory = '';
+let themeRenderPending = false;
+let themeRenderReleaseBound = false;
 
 const contextValue = (name, fallback) => compositionContext[name] || fallback;
 const icon = (...args) => contextValue('icon', () => '')(...args);
@@ -156,6 +158,18 @@ function restoreRenderContinuity(state) {
 
 
 function render() {
+  if (document.documentElement.dataset.themeTransitioning === 'true') {
+    themeRenderPending = true;
+    if (!themeRenderReleaseBound) {
+      themeRenderReleaseBound = true;
+      window.addEventListener('cdm:theme-transition-finished', () => {
+        if (!themeRenderPending || document.documentElement.dataset.themeTransitioning === 'true') return;
+        themeRenderPending = false;
+        render();
+      });
+    }
+    return;
+  }
   const continuity = captureRenderContinuity();
   try {
     const activeSection = appState.activeSection || 'Descargas';

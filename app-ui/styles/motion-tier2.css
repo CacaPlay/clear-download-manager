@@ -3,7 +3,7 @@
    determinate progress remain owned by the existing application code. */
 :root {
   --motion-nav-duration: 220ms;
-  --motion-theme-duration: 350ms;
+  --motion-theme-duration: 300ms;
   --motion-progress-duration: 200ms;
   --motion-selection-duration: 170ms;
   --motion-button-press-duration: 105ms;
@@ -59,14 +59,13 @@ html[data-theme-transitioning="true"] #app *::after {
   transition-property: none !important;
   transition-duration: 0s !important;
   transition-delay: 0s !important;
+  animation-play-state: paused !important;
 }
 html[data-theme-transitioning="true"] #app[data-motion-navigation="true"] .desktop-shell > .workspace > *,
 html[data-theme-transitioning="true"] #app[data-motion-navigation="true"] > .dm-host > .dm-root > .dm-zen-main > .dm-zen-content,
 html[data-theme-transitioning="true"] #app[data-motion-navigation="true"] > .module-page,
 html[data-theme-transitioning="true"] #app[data-motion-navigation="true"] > .settings-view {
-  animation: none !important;
-  transform: none !important;
-  opacity: 1 !important;
+  animation-play-state: paused !important;
 }
 html[data-theme-transitioning="true"]::view-transition-old(cdm-section-surface),
 html[data-theme-transitioning="true"]::view-transition-new(cdm-section-surface),
@@ -88,32 +87,6 @@ html[data-theme-transitioning="true"]::view-transition-new(root) {
   from { clip-path: circle(150vmax at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh)); opacity: 1; }
   to { clip-path: circle(0 at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh)); opacity: 1; }
 }
-.motion-theme-fallback-overlay {
-  position: fixed;
-  z-index: 20000;
-  inset: 0;
-  pointer-events: none;
-  opacity: 1;
-  clip-path: none;
-}
-.motion-theme-fallback-overlay.is-radial {
-  clip-path: circle(150vmax at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh));
-}
-.motion-theme-fallback-overlay.is-radial.is-revealing {
-  animation: cdm-motion-theme-fallback-collapse var(--motion-theme-duration) var(--motion-theme-ease) both;
-}
-.motion-theme-fallback-overlay.is-crossfade.is-revealing {
-  animation: cdm-motion-theme-fallback-crossfade var(--motion-theme-duration) var(--motion-theme-ease) both;
-}
-@keyframes cdm-motion-theme-fallback-collapse {
-  from { clip-path: circle(150vmax at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh)); opacity: 1; }
-  to { clip-path: circle(0 at var(--motion-theme-x, 50vw) var(--motion-theme-y, 50vh)); opacity: 1; }
-}
-@keyframes cdm-motion-theme-fallback-crossfade {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
 /* Determinate fill authority: this existing data path is preserved exactly. */
 .dm-host .dm-item-progress .dm-progress i {
   width: 100% !important;

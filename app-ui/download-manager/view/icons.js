@@ -86,10 +86,10 @@ const NAV_ICON_ASSETS = Object.freeze({
   moon: { base: 'moon-base.webp' }
 });
 
-export function dmNavIcon(name, size = 26) {
+export function dmNavIcon(name, size = 28) {
   const asset = NAV_ICON_ASSETS[name];
   if (!asset) return '';
-  const safeSize = Math.max(18, Math.min(40, Math.round(Number(size) || 26)));
+  const safeSize = Math.max(18, Math.min(40, Math.round(Number(size) || 28)));
   // These custom properties are consumed by CSS in download-manager/styles,
   // so their URLs must resolve from that stylesheet directory.
   const base = `../../assets/icons/navigation/${asset.base}`;

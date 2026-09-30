@@ -57,12 +57,21 @@ test('navbar icon masks use the selected accent without tinting their fixed surf
   mustMatch(css, /\.dm-nav-icon::before/, 'base icon mask must be rendered');
   mustMatch(css, /\.dm-nav-icon::after/, 'accent icon mask must be rendered separately');
   mustMatch(css, /background-color:\s*var\(--dm-accent/, 'the accent mask should use the selected accent');
-  mustMatch(css, /\.dm-host\[data-dm-theme="light"\] \.dm-nav-icon::before\s*\{\s*background-color:\s*var\(--dm-nav-icon-color,\s*#657d93\)/, 'light mode must use the slate neutral instead of near-black icon color');
+  mustMatch(css, /\.dm-host\[data-dm-theme="light"\] \.dm-nav-icon::before\s*\{\s*background-color:\s*var\(--dm-nav-icon-color,\s*#3f6682\)/, 'light mode must use a vivid higher-contrast slate instead of near-black icon color');
   mustMatch(css, /mask-image:\s*var\(--dm-nav-accent-mask, none\)/, 'the supplied recolorable area must stay a separate mask');
   mustMatch(css, /\.dm-nav-icon:not\(\[data-nav-accent="true"\]\)::after\s*\{\s*display:\s*none;/, 'single-layer nav icons must not render the accent pseudo-element as a solid square');
-  mustMatch(css, /button\.is-active::after\s*\{[\s\S]{0,200}inset:\s*8px[\s\S]{0,180}background:\s*var\(--dm-surface-2\)/, 'selected navigation surface must be inset from the full click target');
+  mustMatch(css, /nav button:is\(:hover,\s*\.is-active\)::after,[\s\S]{0,120}> footer button:is\(:hover,\s*\.is-active\)::after\s*\{[\s\S]{0,240}inset:\s*8px[\s\S]{0,180}background:\s*var\(--dm-surface-2\)/, 'primary and utility navigation must share the same inset hover/selected surface');
+  mustMatch(css, /nav button:hover\s*\{[^}]*background:\s*transparent\s*!important/, 'hover must not paint an oversized surface on the full click target');
+  mustMatch(css, /> footer button:hover\s*\{[^}]*background:\s*transparent\s*!important/, 'utility navigation hover must use the same compact inset surface');
   mustMatch(css, /nav button\.is-active\s*\{[^}]*appearance:\s*none\s*!important/, 'the compact active surface must replace the browser default button face');
-  mustMatch(css, /button\.is-active::before\s*\{[\s\S]{0,200}height:\s*30px/, 'the selected marker must stay compact');
+  mustMatch(css, /> footer button:is\(:hover,\s*\.is-active\)::after\s*\{[\s\S]{0,180}inset:\s*8px[\s\S]{0,180}background:\s*var\(--dm-surface-2\)/, 'News and utility navigation hover/selection must share the inset surface');
+  mustMatch(css, /\.dm-zen-nav nav button\s*>\s*\*[\s\S]{0,280}z-index:\s*3\s*!important/, 'hover surfaces must stay behind all non-selected navigation icons');
+  mustMatch(css, /#app \.dm-host\.dm-host \.dm-zen-nav nav button\.is-active::before\s*\{[\s\S]{0,140}left:\s*8px\s*!important[\s\S]{0,100}top:\s*8px\s*!important[\s\S]{0,80}width:\s*20px\s*!important[\s\S]{0,80}height:\s*56px\s*!important[\s\S]{0,220}border-top:\s*2px solid var\(--dm-accent\)\s*!important[\s\S]{0,180}border-bottom:\s*2px solid var\(--dm-accent\)\s*!important[\s\S]{0,160}border-radius:\s*12px 0 0 12px\s*!important/, 'the selected marker must curve around the inset surface corners');
+  mustMatch(css, /#app \.dm-host\.dm-host\.dm-host \.dm-zen-nav > footer button\.is-active::before\s*\{[\s\S]{0,140}left:\s*8px\s*!important[\s\S]{0,100}top:\s*8px\s*!important[\s\S]{0,80}width:\s*20px\s*!important[\s\S]{0,80}height:\s*56px\s*!important[\s\S]{0,220}border-top:\s*2px solid var\(--dm-accent\)\s*!important[\s\S]{0,180}border-bottom:\s*2px solid var\(--dm-accent\)\s*!important[\s\S]{0,160}border-radius:\s*12px 0 0 12px\s*!important/, 'the selected News/utility marker must match the downloads/components curved corner marker');
+  assert.equal((css.match(/mask-composite:\s*intersect\s*!important/g) || []).length, 2, 'both selected markers must taper toward their upper and lower ends');
+  assert.ok((css.match(/drop-shadow\(0 0 1px color-mix\(in srgb, var\(--dm-accent\) 45%, transparent\)\)/g) || []).length >= 2, 'selected marker glow should remain faint');
+  assert.ok(icons.includes('export function dmNavIcon(name, size = 28)'), 'navbar icons should be slightly larger than before');
+  mustMatch(responsiveCss, /\.dm-host\[data-dm-theme="light"\]\s*\{\s*--dm-progress-number:\s*#465d73/, 'light-mode progress numbers must use a soft slate rather than near-black');
   for (const name of ['downloads', 'components', 'news', 'settings', 'sun', 'moon']) {
     assert.ok(icons.includes(`${name}: { base: '${name}-base.webp'`), `asset registry must map ${name}`);
   }
