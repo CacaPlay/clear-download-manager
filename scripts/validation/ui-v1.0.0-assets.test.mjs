@@ -27,6 +27,7 @@ test('navbar renders the user-supplied icon family through an accessible nav-ico
   mustMatch(icons, /aria-hidden="true"/, 'decorative navbar artwork must be hidden from assistive technology');
   mustMatch(icons, /data-nav-accent="true"/, 'two-tone nav icons must mark when their accent layer exists');
   mustMatch(sidebar, /dmNavIcon\(/, 'the sidebar must render the supplied icon family');
+  mustMatch(sidebar, /id === activeSection \? ' style="appearance:none!important;background:transparent!important;background-color:transparent!important;background-image:none!important"'/, 'the selected button must not retain the browser default button face');
   for (const name of ['downloads', 'components', 'news', 'settings', 'sun', 'moon']) {
     mustMatch(sidebar, new RegExp(`dmNavIcon\\(['"]${name}['"]\\)`), `sidebar must render ${name}`);
   }
@@ -56,8 +57,12 @@ test('navbar icon masks use the selected accent without tinting their fixed surf
   mustMatch(css, /\.dm-nav-icon::before/, 'base icon mask must be rendered');
   mustMatch(css, /\.dm-nav-icon::after/, 'accent icon mask must be rendered separately');
   mustMatch(css, /background-color:\s*var\(--dm-accent/, 'the accent mask should use the selected accent');
+  mustMatch(css, /\.dm-host\[data-dm-theme="light"\] \.dm-nav-icon::before\s*\{\s*background-color:\s*var\(--dm-nav-icon-color,\s*#657d93\)/, 'light mode must use the slate neutral instead of near-black icon color');
   mustMatch(css, /mask-image:\s*var\(--dm-nav-accent-mask, none\)/, 'the supplied recolorable area must stay a separate mask');
   mustMatch(css, /\.dm-nav-icon:not\(\[data-nav-accent="true"\]\)::after\s*\{\s*display:\s*none;/, 'single-layer nav icons must not render the accent pseudo-element as a solid square');
+  mustMatch(css, /button\.is-active::after\s*\{[\s\S]{0,200}inset:\s*8px[\s\S]{0,180}background:\s*var\(--dm-surface-2\)/, 'selected navigation surface must be inset from the full click target');
+  mustMatch(css, /nav button\.is-active\s*\{[^}]*appearance:\s*none\s*!important/, 'the compact active surface must replace the browser default button face');
+  mustMatch(css, /button\.is-active::before\s*\{[\s\S]{0,200}height:\s*30px/, 'the selected marker must stay compact');
   for (const name of ['downloads', 'components', 'news', 'settings', 'sun', 'moon']) {
     assert.ok(icons.includes(`${name}: { base: '${name}-base.webp'`), `asset registry must map ${name}`);
   }
