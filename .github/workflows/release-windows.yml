@@ -110,7 +110,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ github.workflow_sha }}
-          path: release-tools
+          path: output/release-tools
           persist-credentials: false
           sparse-checkout: |
             scripts/assemble-yt-dlp-corresponding-source.py
@@ -123,7 +123,7 @@ jobs:
         run: |
           npm run source:yt-dlp:fetch -- --staging-directory output/yt-dlp-source-inputs
           if ($LASTEXITCODE -ne 0) { throw 'Fetching pinned yt-dlp source inputs failed.' }
-          python release-tools/scripts/assemble-yt-dlp-corresponding-source.py --staging-directory output/yt-dlp-source-inputs --output-directory output/release-assets
+          python output/release-tools/scripts/assemble-yt-dlp-corresponding-source.py --staging-directory output/yt-dlp-source-inputs --output-directory output/release-assets
           if ($LASTEXITCODE -ne 0) { throw 'Assembling the yt-dlp corresponding-source archive failed.' }
           $archive = Get-Item -LiteralPath 'output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz' -ErrorAction Stop
           $sha256 = (Get-FileHash -LiteralPath $archive.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
