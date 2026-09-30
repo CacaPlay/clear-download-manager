@@ -5,7 +5,17 @@ const listeners = new Map();
 const register = (name) => ({ addListener(handler) { listeners.set(name, handler); } });
 const calls = [];
 const searchAttempts = new Map();
+const settledCaptures = new Set();
 let nativeStatus = 'accepted';
+
+async function waitFor(predicate, description) {
+  const deadline = Date.now() + 3000;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  assert.fail(`Timed out waiting for ${description}. Observed calls: ${calls.join(', ')}`);
+}
 
 globalThis.chrome = {
   runtime: {
@@ -24,7 +34,11 @@ globalThis.chrome = {
         : message.action === 'capabilities'
           ? { ok: true, protocolVersion: 1, actions: ['ping', 'capabilities', 'browser_download_capture', 'get_status'], sourceTypes: ['direct_file', 'generic_url'] }
           : { ok: ['accepted', 'review_opened'].includes(nativeStatus), status: nativeStatus };
-      setTimeout(() => callback(response), 0);
+      const responseDelay = message.action === 'browser_download_capture' && message.payload?.downloadId === 10 ? 180 : 0;
+      setTimeout(() => {
+        if (message.action === 'browser_download_capture') settledCaptures.add(message.payload?.downloadId);
+        callback(response);
+      }, responseDelay);
     }
   },
   storage: { local: { get: async (defaults) => ({ ...defaults, browserCaptureMode: 'automatic' }), set: async () => {}, remove: async () => {} } },
@@ -58,7 +72,7 @@ const created = listeners.get('downloads.onCreated');
 assert.equal(typeof created, 'function');
 
 await created({ id: 10, url: 'https://example.com/file.zip', finalUrl: 'https://example.com/file.zip', filename: 'file.zip', mime: 'application/zip', state: 'in_progress', startTime: 'now', incognito: false });
-await new Promise((resolve) => setTimeout(resolve, 140));
+await waitFor(() => settledCaptures.has(10) && calls.includes('cancel:10'), 'accepted capture cancellation');
 assert.deepEqual(calls, ['pause:10', 'cancel:10']);
 assert.equal(searchAttempts.get(10), 2, 'debe reintentar metadatos cuando Chrome aún reporta .crdownload');
 
@@ -68,14 +82,14 @@ assert.equal(typeof determining, 'function');
 let suggested = 0;
 const asyncFilenameDecision = determining({ id: 12, url: 'https://example.com/setup.exe', finalUrl: 'https://example.com/setup.exe', filename: 'setup.exe', mime: 'application/x-msdownload', state: 'in_progress', startTime: 'review', incognito: false }, () => { suggested += 1; });
 assert.equal(asyncFilenameDecision, true, 'La extensión debe mantener abierto el evento mientras confirma la captura');
-await new Promise((resolve) => setTimeout(resolve, 40));
+await waitFor(() => suggested === 1 && calls.includes('cancel:12'), 'filename suggestion and review cancellation');
 assert.equal(suggested, 1, 'La sugerencia de nombre debe resolverse exactamente una vez');
 assert.ok(calls.includes('cancel:12'), 'La copia de Chromium debe cancelarse después de abrir la revisión HTTP');
 assert.equal(calls.includes('pause:12'), false, 'La decisión temprana de nombre no debe pausar la descarga');
 
 nativeStatus = 'temporary_failure';
 await created({ id: 11, url: 'https://example.com/file.pdf', finalUrl: 'https://example.com/file.pdf', filename: 'file.pdf', mime: 'application/pdf', state: 'in_progress', startTime: 'later', incognito: false });
-await new Promise((resolve) => setTimeout(resolve, 20));
+await waitFor(() => settledCaptures.has(11) && calls.includes('pause:11'), 'uncertain capture response with browser pause');
 // An uncertain/temporary host response deliberately leaves the browser copy
 // paused; resuming could create two transfers before the user reviews CDM.
 assert.deepEqual(calls, ['pause:10', 'cancel:10', 'cancel:12', 'pause:11']);
