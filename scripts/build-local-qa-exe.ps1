@@ -1,3 +1,5 @@
+param([string]$OutputFile = 'Clear Download Manager QA v1.0.0.exe')
+
 $ErrorActionPreference = 'Stop'
 
 $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -9,7 +11,12 @@ $BuildScriptPath = Join-Path $ProjectRoot 'src-tauri\build.rs'
 $OutputRoot = Join-Path $ProjectRoot 'artifacts\qa-redesign'
 $TargetRoot = Join-Path $OutputRoot 'cargo-target'
 $FrontendDist = Join-Path $OutputRoot 'dist-optimized'
-$OutputExe = Join-Path $OutputRoot 'Clear Download Manager QA.exe'
+$OutputFile = [string]$OutputFile.Trim()
+if ([string]::IsNullOrWhiteSpace($OutputFile) -or [IO.Path]::GetFileName($OutputFile) -cne $OutputFile -or [IO.Path]::GetExtension($OutputFile) -cne '.exe') { throw 'QA output must be a standalone .exe filename without a directory.' }
+if ($OutputFile -ceq 'Clear Download Manager QA.exe') { throw 'The approved baseline executable is immutable; choose a new output filename.' }
+$OutputExe = Join-Path $OutputRoot $OutputFile
+$BaselineExe = Join-Path $OutputRoot 'Clear Download Manager QA.exe'
+$BaselineHash = if (Test-Path -LiteralPath $BaselineExe) { (Get-FileHash -LiteralPath $BaselineExe -Algorithm SHA256).Hash } else { $null }
 
 $ExpectedIdentifier = 'lat.cacaplay.cacatools.downloadmanager.qa'
 $ExpectedEndpoint = 'http://127.0.0.1:49301/component-catalog-v1.json'
@@ -86,13 +93,9 @@ try {
 
   $BuiltExe = Join-Path $TargetRoot 'release\cacatools-desktop.exe'
   if (-not (Test-Path -LiteralPath $BuiltExe)) { throw 'The standalone QA executable was not produced.' }
-  try {
-    Copy-Item -LiteralPath $BuiltExe -Destination $OutputExe -Force
-  }
-  catch {
-    $BuildStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $OutputExe = Join-Path $OutputRoot "Clear Download Manager QA $BuildStamp.exe"
-    Copy-Item -LiteralPath $BuiltExe -Destination $OutputExe
+  Copy-Item -LiteralPath $BuiltExe -Destination $OutputExe -Force
+  if ($BaselineHash -and (Get-FileHash -LiteralPath $BaselineExe -Algorithm SHA256).Hash -cne $BaselineHash) {
+    throw 'The approved baseline executable changed during the QA build.'
   }
   $ArtifactHash = (Get-FileHash -LiteralPath $OutputExe -Algorithm SHA256).Hash.ToLowerInvariant()
   $Artifact = Get-Item -LiteralPath $OutputExe

@@ -2,7 +2,7 @@
   "name": "clear-download-manager",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "version": "0.95.4",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "python -m http.server 4173 --bind 127.0.0.1",
@@ -157,7 +157,8 @@
     "check:subwindows": "node scripts/validation/phase34_subwindow_responsiveness.mjs",
     "check:subwindows:interaction": "python scripts/validation/phase34_subwindow_interaction.py",
     "check:pre2i-stabilization": "node scripts/validation/pre2i-stabilization.mjs && python scripts/validation/pre2i_player_interaction.py",
-    "test:optional-component-flow": "node --test scripts/validation/optional-component-install.test.mjs scripts/validation/app-complements-navigation.test.mjs"
+    "test:optional-component-flow": "node --test scripts/validation/optional-component-install.test.mjs scripts/validation/app-complements-navigation.test.mjs",
+    "test:ui-v1.0.0": "node --test scripts/validation/ui-v1.0.0-assets.test.mjs scripts/validation/ui-v1.0.0-theme-motion.test.mjs scripts/validation/update-discovery.test.mjs scripts/validation/update-notice.test.mjs scripts/validation/v1-settings-reset.test.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.5",

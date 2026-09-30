@@ -2520,7 +2520,7 @@ html[data-motion-mode="system"][data-reduced-motion="true"] .dm-host.dm-host .dm
 }
 
 /* A new application update gets a restrained blue ring until Novedades opens. */
-.dm-host .dm-news-entry.has-app-update:not(.is-active) {
+.dm-host .dm-news-entry:is(.has-app-update,.has-component-update):not(.is-active) {
   animation: dm-news-attention-pulse 2.2s ease-in-out infinite;
 }
 @keyframes dm-news-attention-pulse {
@@ -2528,11 +2528,11 @@ html[data-motion-mode="system"][data-reduced-motion="true"] .dm-host.dm-host .dm
   50% { box-shadow: 0 0 0 .3rem color-mix(in srgb, #22a9d6 15%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dm-host .dm-news-entry.has-app-update:not(.is-active) { animation: none !important; }
+  .dm-host .dm-news-entry:is(.has-app-update,.has-component-update):not(.is-active) { animation: none !important; }
 }
 html[data-motion-mode="off"] .dm-host .dm-news-entry.has-app-update:not(.is-active),
 html[data-motion-mode="reduced"] .dm-host .dm-news-entry.has-app-update:not(.is-active),
-html[data-motion-mode="system"][data-reduced-motion="true"] .dm-host .dm-news-entry.has-app-update:not(.is-active) {
+html[data-motion-mode="system"][data-reduced-motion="true"] .dm-host .dm-news-entry:is(.has-app-update,.has-component-update):not(.is-active) {
   animation: none !important;
 }
 
@@ -2674,3 +2674,77 @@ html[data-motion-mode="system"][data-reduced-motion="true"] .dm-host .dm-news-en
   min-width: 0 !important;
   font-size: calc(.86rem * var(--dm-text-scale, 1)) !important;
 }
+
+
+/* Supplied navigation artwork: transparent masks keep the fixed white glyphs
+   separate from the recolorable cyan details and the selected-state marker. */
+.dm-host .dm-nav-icon {
+  position: relative; display: inline-block; flex: 0 0 var(--dm-nav-icon-size, 26px);
+  width: var(--dm-nav-icon-size, 26px); height: var(--dm-nav-icon-size, 26px);
+  color: var(--dm-text, #e9f0f7); pointer-events: none;
+}
+.dm-host .dm-nav-icon::before,
+.dm-host .dm-nav-icon::after {
+  content: ""; position: absolute; inset: 0; display: block;
+  -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-size: contain; mask-size: contain;
+}
+.dm-host .dm-nav-icon::before {
+  background-color: var(--dm-nav-icon-color, #e9f0f7);
+  -webkit-mask-image: var(--dm-nav-base-mask); mask-image: var(--dm-nav-base-mask);
+}
+.dm-host .dm-nav-icon::after {
+  background-color: var(--dm-accent, #24b8e8);
+  -webkit-mask-image: var(--dm-nav-accent-mask, none); mask-image: var(--dm-nav-accent-mask, none);
+}
+.dm-host .dm-theme-toggle-icons { position: relative; display: block; width: 26px; height: 26px; }
+.dm-host .dm-theme-toggle-icons > .dm-nav-icon { position: absolute; inset: 0; transition: opacity .18s ease, transform .24s cubic-bezier(.2,.75,.25,1); }
+.dm-host[data-dm-theme="dark"] .dm-theme-toggle-icons [data-nav-icon="sun"],
+.dm-host:not([data-dm-theme="light"]) .dm-theme-toggle-icons [data-nav-icon="sun"] { opacity: 1; transform: rotate(0) scale(1); }
+.dm-host[data-dm-theme="dark"] .dm-theme-toggle-icons [data-nav-icon="moon"],
+.dm-host:not([data-dm-theme="light"]) .dm-theme-toggle-icons [data-nav-icon="moon"] { opacity: 0; transform: rotate(-30deg) scale(.72); }
+.dm-host[data-dm-theme="light"] .dm-theme-toggle-icons [data-nav-icon="sun"] { opacity: 0; transform: rotate(30deg) scale(.72); }
+.dm-host[data-dm-theme="light"] .dm-theme-toggle-icons [data-nav-icon="moon"] { opacity: 1; transform: rotate(0) scale(1); }
+.dm-host .dm-zen-nav nav button.is-active,
+.dm-host .dm-zen-nav > footer button.is-active {
+  color: var(--dm-text, #e9f0f7) !important;
+  background: transparent !important;
+}
+.dm-host .dm-zen-nav nav button.is-active { border-color: transparent !important; }
+.dm-host .dm-zen-nav nav button.is-active::before,
+.dm-host .dm-zen-nav > footer button.is-active::before {
+  content: "" !important; position: absolute !important; z-index: 0 !important;
+  left: 0 !important; top: 25% !important; width: 2px !important; height: 50% !important;
+  border-radius: 999px !important; background: var(--dm-accent) !important;
+}
+.dm-host .dm-zen-nav nav button.is-active > *,
+.dm-host .dm-zen-nav > footer button.is-active > * { position: relative !important; z-index: 1 !important; }
+.dm-host .dm-zen-nav nav .dm-nav-selection-indicator {
+  width: 2px !important; height: 50% !important; top: 25% !important;
+  left: 0 !important; right: auto !important; clip-path: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dm-host .dm-theme-toggle-icons > .dm-nav-icon { transition: none !important; }
+}
+html[data-motion-mode="off"] .dm-host .dm-theme-toggle-icons > .dm-nav-icon,
+html[data-motion-mode="reduced"] .dm-host .dm-theme-toggle-icons > .dm-nav-icon,
+html[data-motion-mode="system"][data-reduced-motion="true"] .dm-host .dm-theme-toggle-icons > .dm-nav-icon { transition: none !important; }
+
+
+/* Keep selectable navigation/filter surfaces neutral; only the compact marker
+   and supplied icon accents follow the chosen interface color. */
+#app .dm-host.dm-host .dm-news-filters button.is-active,
+#app .dm-host.dm-host .dm-filter.is-active {
+  color: var(--dm-text) !important;
+  border-color: var(--dm-accent) !important;
+  background: var(--dm-surface-2) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dm-accent) 60%, transparent) !important;
+}
+
+.dm-host .dm-news-component-update { display:grid; grid-template-columns:2.5rem minmax(0,1fr) auto; align-items:center; gap:.8rem; margin:.4rem 0 .9rem; padding:.85rem 1rem; border:1px solid var(--dm-border); border-radius:.8rem; background:var(--dm-surface-2); color:var(--dm-text); }
+.dm-host .dm-news-component-update > span { display:grid; place-items:center; width:2.4rem; height:2.4rem; color:var(--dm-muted); }
+.dm-host .dm-news-component-update > div { display:grid; gap:.18rem; min-width:0; }
+.dm-host .dm-news-component-update small { color:var(--dm-muted); line-height:1.4; }
+.dm-host .dm-news-component-update > button { min-height:2.25rem; padding:.35rem .75rem; border:1px solid var(--dm-accent); border-radius:.55rem; color:var(--dm-text); background:var(--dm-surface); white-space:nowrap; }
+@media(max-width:620px) { .dm-host .dm-news-component-update { grid-template-columns:2.5rem minmax(0,1fr); } .dm-host .dm-news-component-update > button { grid-column:2; justify-self:start; } }

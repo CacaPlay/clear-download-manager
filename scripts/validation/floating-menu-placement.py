@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Viewport placement gate for the shared floating row menu."""
+"""Viewport placement gate for current per-row actions in the compact layout."""
 from __future__ import annotations
 
 import contextlib
@@ -49,48 +49,27 @@ def main() -> int:
                     f"http://127.0.0.1:{server.server_address[1]}/{fixture_url}",
                     wait_until="domcontentloaded",
                 )
-                page.wait_for_selector("[data-dm-row-menu]")
-                for index, position in enumerate(((20, 20), (600, 20), (20, 500), (600, 500))):
-                    page.locator("[data-dm-row-menu]").first.click()
-                    page.wait_for_selector(".dm-row-menu-floating")
-                    page.evaluate(
-                        """async (position) => {
-                      const mod = await import('/app-ui/download-manager/events.js');
-                      mod.settleFloatingRowMenu(document.querySelector('.dm-host'), {
-                        x: position[0], y: position[1], above: position[1], alignRight: true
-                      });
-                      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-                    }""",
-                        list(position),
-                    )
-                    page.wait_for_timeout(50)
-                    rect = page.locator(".dm-row-menu-floating").bounding_box()
+                page.wait_for_selector(".dm-download-item")
+                actions = page.locator(".dm-item-actions button")
+                if actions.count() == 0:
+                    failures.append("Las filas actuales no muestran sus acciones contextuales")
+                else:
                     viewport = page.evaluate("({ width: innerWidth, height: innerHeight })")
-                    if not rect:
-                        failures.append(f"Caso {index}: menú sin geometría")
-                    elif not (
-                        rect["x"] >= 8
-                        and rect["y"] >= 8
-                        and rect["x"] + rect["width"] <= viewport["width"] - 8
-                        and rect["y"] + rect["height"] <= viewport["height"] - 8
-                    ):
-                        failures.append(f"Caso {index}: menú fuera de viewport: {rect} / {viewport}")
-                    appearance = page.locator(".dm-row-menu-floating").evaluate(
-                        """(menu) => {
-                      const style = getComputedStyle(menu);
-                      return {
-                        background: style.backgroundColor,
-                        color: style.color,
-                        border: style.borderTopColor,
-                        shadow: style.boxShadow
-                      };
-                        }"""
-                    )
-                    if appearance["background"] in {"transparent", "rgba(0, 0, 0, 0)"}:
-                        failures.append(f"Caso {index}: menú sin fondo resuelto: {appearance}")
-                    if appearance["color"] in {"transparent", "rgba(0, 0, 0, 0)"}:
-                        failures.append(f"Caso {index}: menú sin color resuelto: {appearance}")
-                    page.keyboard.press("Escape")
+                    for index in range(actions.count()):
+                        button = actions.nth(index)
+                        rect = button.bounding_box()
+                        row = button.locator("xpath=ancestor::article[contains(@class, 'dm-download-item')]").bounding_box()
+                        if not rect or not row:
+                            failures.append(f"Acción {index}: falta geometría de botón o fila")
+                        elif not (
+                            rect["x"] >= 0
+                            and rect["y"] >= 0
+                            and rect["x"] + rect["width"] <= viewport["width"]
+                            and rect["y"] + rect["height"] <= viewport["height"]
+                            and rect["x"] >= row["x"]
+                            and rect["x"] + rect["width"] <= row["x"] + row["width"]
+                        ):
+                            failures.append(f"Acción {index}: control fuera de su fila o viewport: {rect} / {row} / {viewport}")
                 browser.close()
         finally:
             with contextlib.suppress(Exception):
@@ -103,7 +82,7 @@ def main() -> int:
         for failure in failures:
             print(f"FAIL: {failure}")
         return 1
-    print("PASS: floating menus remain reachable inside the viewport at 620x520 corner cases.")
+    print("PASS: compact download-row actions remain visible inside their rows at 620x520.")
     return 0
 
 

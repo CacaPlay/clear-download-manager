@@ -1,11 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Clear Download Manager",
-  "version": "0.95.4",
+  "version": "1.0.0",
   "identifier": "lat.cacaplay.cacatools.downloadmanager",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://127.0.0.1:4173/?v=0.95.4-extension-0.95.4",
+    "devUrl": "http://127.0.0.1:4173/?v=1.0.0-extension-0.95.4",
     "beforeBuildCommand": "npm run build:web",
     "frontendDist": "../dist",
     "removeUnusedCommands": true

@@ -82,6 +82,6 @@ assert.ok(downloadActions.includes("invokeWithOptionalComponent(context.invoke, 
 assert.ok(optionalInstallTests.includes('declining component installation') && optionalInstallTests.includes('installation progress') && optionalInstallTests.includes('safe message'), 'Optional component consent, progress, and safe-error tests are required.');
 assert.ok(settings.includes('data-component-action') && settings.includes('component-catalog-check'), 'Settings must expose remote install and catalog refresh actions.');
 const normalizedDocs = docs.replace(/\s+/g, ' ');
-assert.ok(normalizedDocs.includes('signed catalog') && normalizedDocs.includes('binary release gate remains fail-closed') && normalizedDocs.includes('production trust root is empty'), 'Remote distribution, trust provisioning, and pending legal review must remain explicit.');
+assert.ok(normalizedDocs.includes('signed catalog') && normalizedDocs.includes('binary release gate remains fail-closed') && normalizedDocs.includes('Core embeds the production verification key and key ID') && normalizedDocs.includes('does not yet publish `component-catalog-v1.json`'), 'Remote distribution, trust provisioning, and pending legal review must remain explicit.');
 
 console.log('OK: Core package excludes optional runtimes; remote component installs require the fixed signed catalog, exact package pins, and passing source gates.');

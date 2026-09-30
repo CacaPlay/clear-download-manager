@@ -78,3 +78,13 @@ El archivo privado histórico
 `CacaPlay/cacatools-download-manager-releases-private-archive` debe permanecer
 privado. Esta guía no autoriza cambios de GitHub, tags, publicación ni copia de
 artefactos.
+
+
+## v1.0.0 fixed-name installer
+
+The signed release package includes the versioned NSIS setup and a byte-identical
+`ClearDownloadManagerSetup.exe` alias. After the user accepts the isolated QA
+build and v1.0.0 is published, the fixed direct link is
+`https://github.com/CacaPlay/clear-download-manager/releases/latest/download/ClearDownloadManagerSetup.exe`.
+The release artifact checksum inventory covers both names; the updater continues
+to use its versioned signed archive and `latest.json`.

@@ -492,3 +492,24 @@ html[data-motion-mode="system"][data-reduced-motion="true"] #app button:active {
     transform: none;
   }
 }
+
+
+/* Theme changes use one viewport snapshot so all surfaces switch together. */
+html::view-transition-old(root),
+html::view-transition-new(root) { animation-duration: 260ms; animation-timing-function: cubic-bezier(.2,.75,.25,1); }
+html::view-transition-old(root) { animation-name: cdm-theme-old-fade; }
+html::view-transition-new(root) { animation-name: cdm-theme-new-reveal; }
+@keyframes cdm-theme-old-fade { to { opacity: 0; } }
+@keyframes cdm-theme-new-reveal {
+  from { clip-path: circle(0 at var(--theme-origin-x, 50vw) var(--theme-origin-y, 50vh)); }
+  to { clip-path: circle(150vmax at var(--theme-origin-x, 50vw) var(--theme-origin-y, 50vh)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html::view-transition-old(root), html::view-transition-new(root) { animation: none !important; }
+}
+html[data-motion-mode="off"]::view-transition-old(root),
+html[data-motion-mode="off"]::view-transition-new(root),
+html[data-motion-mode="reduced"]::view-transition-old(root),
+html[data-motion-mode="reduced"]::view-transition-new(root),
+html[data-motion-mode="system"][data-reduced-motion="true"]::view-transition-old(root),
+html[data-motion-mode="system"][data-reduced-motion="true"]::view-transition-new(root) { animation: none !important; }

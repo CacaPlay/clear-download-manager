@@ -77,6 +77,24 @@ const iconMarkupCache = new Map();
 const unknownIconNames = new Set();
 
 export const dmIconNames = Object.freeze(Object.keys(ICON_PATHS));
+const NAV_ICON_ASSETS = Object.freeze({
+  downloads: { base: 'downloads-base.webp', accent: 'downloads-accent.webp' },
+  components: { base: 'components-base.webp', accent: 'components-accent.webp' },
+  news: { base: 'news-base.webp' },
+  settings: { base: 'settings-base.webp' },
+  sun: { base: 'sun-base.webp' },
+  moon: { base: 'moon-base.webp' }
+});
+
+export function dmNavIcon(name, size = 26) {
+  const asset = NAV_ICON_ASSETS[name];
+  if (!asset) return '';
+  const safeSize = Math.max(18, Math.min(40, Math.round(Number(size) || 26)));
+  const base = `./app-ui/assets/icons/navigation/${asset.base}`;
+  const accent = asset.accent ? `./app-ui/assets/icons/navigation/${asset.accent}` : '';
+  return `<span class="dm-nav-icon" data-nav-icon="${name}" style="--dm-nav-icon-size:${safeSize}px;--dm-nav-base-mask:url('${base}');${accent ? `--dm-nav-accent-mask:url('${accent}')` : ''}" aria-hidden="true"></span>`;
+}
+
 
 export function dmFileAsset(type, className = '') {
   const normalizedType = String(type || '').toLowerCase();

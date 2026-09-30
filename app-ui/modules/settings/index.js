@@ -4,7 +4,7 @@ import { iconVariantForColor } from '../appearance/index.js';
 let settingsContext = {};
 let appState = {};
 let advancedOpen = false;
-let APP_VERSION = '0.95.4';
+let APP_VERSION = '1.0.0';
 let THUMBNAIL_CACHE_VERSION = 1;
 
 const contextValue = (name, fallback) => settingsContext[name] || fallback;

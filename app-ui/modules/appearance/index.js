@@ -110,17 +110,17 @@ export function bindVisualDiagnostics() {
 }
 
 export const appearancePresets = [
-  { id: 'caca-green', name: 'Caca verde', accent: '#00ff2a', tone: 8, intensity: 88 },
-  { id: 'caca-blue', name: 'Caca azul', accent: '#5f73ff', tone: 8, intensity: 84 },
-  { id: 'violet', name: 'Violeta', accent: '#8a5cff', tone: 8, intensity: 86 },
-  { id: 'cyan', name: 'Cian', accent: '#24b8e8', tone: 8, intensity: 82 },
-  { id: 'rose', name: 'Rosa', accent: '#e45e9d', tone: 8, intensity: 78 },
-  { id: 'amber', name: 'Ámbar', accent: '#f0a43b', tone: 8, intensity: 76 },
+  { id: 'cyan', name: 'Azul cian', accent: '#24b8e8', tone: 8, intensity: 82 },
+  { id: 'caca-green', name: 'Verde', accent: '#04d25a', tone: 8, intensity: 82 },
   { id: 'emerald', name: 'Esmeralda', accent: '#22c58b', tone: 8, intensity: 78 },
+  { id: 'teal', name: 'Turquesa', accent: '#12b8a5', tone: 8, intensity: 80 },
+  { id: 'caca-blue', name: 'Azul', accent: '#5f73ff', tone: 8, intensity: 84 },
   { id: 'indigo', name: 'Índigo', accent: '#6f7cff', tone: 8, intensity: 84 },
+  { id: 'violet', name: 'Violeta', accent: '#8a5cff', tone: 8, intensity: 86 },
   { id: 'magenta', name: 'Magenta', accent: '#d94fff', tone: 8, intensity: 80 },
+  { id: 'rose', name: 'Rosa', accent: '#e45e9d', tone: 8, intensity: 78 },
   { id: 'crimson', name: 'Carmesí', accent: '#f15972', tone: 8, intensity: 78 },
-  { id: 'teal', name: 'Turquesa', accent: '#12b8a5', tone: 8, intensity: 80 }
+  { id: 'amber', name: 'Ámbar', accent: '#f0a43b', tone: 8, intensity: 76 }
 ];
 
 export const defaultAppearance = { theme: 'system', preset: 'cyan', accent: '#24b8e8', progressActive: DEFAULT_PROGRESS_ACTIVE_COLOR, progressCompleted: DEFAULT_PROGRESS_COMPLETED_COLOR, progressPaused: DEFAULT_PROGRESS_PAUSED_COLOR, progressError: DEFAULT_PROGRESS_ERROR_COLOR, progressActiveCustomized: false, progressCompletedCustomized: false, iconColorMode: DEFAULT_ICON_COLOR_MODE, iconColor: DEFAULT_ICON_COLOR, tone: 8, intensity: 82, contrast: 108, scale: 100, textScale: 100, density: 'balanced', thumbnailSize: 'large', autoScale: false, motion: true, motionMode: 'system', surfaceMode: 'mica', radius: 'soft', revision: 0, appearanceRevision: APPEARANCE_REVISION };
@@ -493,7 +493,7 @@ export function applyAppearance(value = appearanceContext.getAppState()?.appeara
   } : {
     bgApp: `hsl(215 54% ${tone - 2}%)`, bgSidebar: `hsl(214 51% ${tone + 1}%)`, bgSurface: `hsl(213 48% ${tone + 4}%)`, bgRaised: `hsl(212 46% ${tone + 7}%)`, bgInput: `hsl(214 48% ${tone + 2}%)`, bgHover: `hsl(212 45% ${tone + 10}%)`,
     borderSubtle: `hsl(212 35% ${tone + 10}%)`, borderStrong: `hsl(211 32% ${tone + 16}%)`, textPrimary: '#f5f7fc', textSecondary: `hsl(212 24% ${clamp(68 * appearance.contrast / 100, 60, 78)}%)`, textMuted: `hsl(212 24% ${clamp(61 * appearance.contrast / 100, 52, 72)}%)`,
-     success: '#00ff2a', warning: '#e2a93f', danger: '#ef6674', info: '#4ba3df', shadow: '0 24px 68px rgba(0,0,0,.34)'
+     success: '#04d25a', warning: '#e2a93f', danger: '#ef6674', info: '#4ba3df', shadow: '0 24px 68px rgba(0,0,0,.34)'
   };
   const tokens = {
     '--surface-base': palette.bgApp, '--surface-primary': palette.bgSurface, '--surface-secondary': palette.bgInput, '--surface-elevated': palette.bgRaised,

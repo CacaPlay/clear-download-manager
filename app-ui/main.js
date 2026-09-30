@@ -50,6 +50,7 @@ import {
 import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, translate } from './modules/i18n/index.js?v=0.95.5-ui-redesign-20260929-r1';
 import { localizeDom } from './modules/i18n/runtime.js?v=0.95.5-ui-redesign-20260929-r1';
 import { patchUpdateProgressSlots } from './download-manager/view/shared.js';
+import { createComponentDiscoveryScheduler } from './modules/updates/component-discovery.js';
 
 // CDM uses its own context menus for downloads and no browser context menu on
 // empty content. Keep this at document capture phase so every main-view area
@@ -61,16 +62,20 @@ const previewView = qs.get('view') || 'home';
 const previewAccent = qs.get('accent') || '';
 const previewPreset = qs.get('preset') || '';
 configureAppearance({ previewAccent, previewPreset, getAppState: () => appState, onDownloadManagerAppearance: patchDownloadManagerAppearance });
-const APP_VERSION = '0.95.4';
-const APP_UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+const APP_VERSION = '1.0.0';
+const APP_UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 const storeManagedDistribution = document.querySelector('meta[name="cdm-distribution"]')?.content === 'microsoft-store';
 const initialLocale = loadLocale();
-const BUILD_ID = 'CDM-0.95.4-20260922-release-migration';
+const BUILD_ID = 'CDM-1.0.0-20260930-release-candidate';
 let deferredDownloadManagerRefresh = false;
 let deferredDownloadManagerRefreshTimer = 0;
 let componentProgressRenderTimer = 0;
 let snapshotRefreshTimer = 0;
 let appUpdateCheckTimer = 0;
+let appUpdateOnlineListenerBound = false;
+let themeTransitionToken = 0;
+let activeThemeTransition = null;
+let componentDiscoveryScheduler = null;
 let lastFullSnapshotAt = 0;
 const DOWNLOAD_ACTIVITY_REFRESH_MS = 250;
 const BACKGROUND_SNAPSHOT_REFRESH_MS = 1000;
@@ -506,12 +511,42 @@ function applyAppAppearance(value = appState.appearance, options = {}) {
   return result;
 }
 
-// Theme changes are committed atomically.  The download-manager surface must
-// not animate through a document snapshot: that animation can temporarily
-// change the available width and make rows appear to resize or shift.
-function applyThemeWithMotion(value = appState.appearance, options = {}) {
-  applyAppAppearance(value, options);
-  return Promise.resolve({ used: false, reason: 'theme-static' });
+// Commit the theme synchronously across the app and its attached surfaces,
+// then let the WebView reveal the new snapshot without changing layout widths.
+function applyThemeWithMotion(value = appState.appearance, options = {}, anchor = document.activeElement) {
+  const appearance = normalizeAppearance(value);
+  const requestedTheme = appearance.theme === 'system'
+    ? (window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+    : appearance.theme;
+  const currentTheme = document.documentElement.dataset.theme || 'dark';
+  const token = ++themeTransitionToken;
+  activeThemeTransition?.skipTransition?.();
+  activeThemeTransition = null;
+  const motionMode = appearance.motionMode || (appearance.motion === false ? 'off' : 'system');
+  const reducedMotion = motionMode === 'off' || motionMode === 'reduced'
+    || (motionMode === 'system' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  if (currentTheme === requestedTheme || reducedMotion || typeof document.startViewTransition !== 'function') {
+    applyAppAppearance(value, options);
+    return Promise.resolve({ used: false, reason: currentTheme === requestedTheme ? 'theme-unchanged' : reducedMotion ? 'reduced-motion' : 'unsupported' });
+  }
+  const rect = anchor instanceof Element ? anchor.getBoundingClientRect() : null;
+  const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+  const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+  const root = document.documentElement;
+  root.style.setProperty('--theme-origin-x', `${Math.round(x)}px`);
+  root.style.setProperty('--theme-origin-y', `${Math.round(y)}px`);
+  const transition = document.startViewTransition(() => {
+    if (token === themeTransitionToken) applyAppAppearance(value, options);
+  });
+  activeThemeTransition = transition;
+  return transition.finished.then(() => ({ used: true, reason: 'theme-transition' }), () => ({ used: false, reason: 'theme-transition-interrupted' }))
+    .finally(() => {
+      if (token === themeTransitionToken) {
+        activeThemeTransition = null;
+        root.style.removeProperty('--theme-origin-x');
+        root.style.removeProperty('--theme-origin-y');
+      }
+    });
 }
 
 configureSettings({
@@ -804,8 +839,6 @@ function displayWindowsPath(path) {
   if (value.startsWith('\\\\?\\UNC\\')) return `\\\\${value.slice(8)}`;
   return value.startsWith('\\\\?\\') ? value.slice(4) : value;
 }
-
-
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 }
@@ -992,6 +1025,44 @@ async function persistDownloadBehaviorSettings(settings) {
   const saved = await invoke('save_download_behavior_settings', { settings: normalized });
   appState.downloadBehaviorSettings = normalizeDownloadBehaviorSettings(saved || normalized);
   return appState.downloadBehaviorSettings;
+}
+
+function verifiedComponentUpdates(components = appState.components) {
+  return (Array.isArray(components) ? components : []).filter((component) =>
+    component?.state === 'update-available'
+    && typeof component.version === 'string'
+    && typeof component.availableVersion === 'string'
+    && component.version !== component.availableVersion
+  );
+}
+
+async function checkComponentCatalog() {
+  try {
+    const components = await invoke('refresh_component_catalog');
+    appState.components = Array.isArray(components) ? components : [];
+    appState.componentUpdates = verifiedComponentUpdates(appState.components);
+    requestDownloadManagerRender({ force: true });
+    return appState.components;
+  } catch (error) {
+    // A failed signature/network check never leaves an actionable stale notice.
+    appState.componentUpdates = [];
+    requestDownloadManagerRender({ force: true });
+    throw error;
+  }
+}
+
+function startComponentCatalogDiscovery() {
+  if (previewMode || componentDiscoveryScheduler) return false;
+  componentDiscoveryScheduler = createComponentDiscoveryScheduler({
+    check: checkComponentCatalog,
+    isOnline: () => navigator.onLine !== false,
+    intervalMs: 15 * 60 * 1000,
+    addOnlineListener: (listener) => window.addEventListener('online', listener),
+    removeOnlineListener: (listener) => window.removeEventListener('online', listener)
+  });
+  componentDiscoveryScheduler.start();
+  window.addEventListener('pagehide', () => componentDiscoveryScheduler?.stop(), { once: true });
+  return true;
 }
 
 function newsMessages() {
@@ -1212,6 +1283,10 @@ function startAutomaticAppUpdateChecks() {
   if (!appUpdateCheckTimer) {
     appUpdateCheckTimer = window.setInterval(() => runAutomaticAppUpdateCheck(), APP_UPDATE_CHECK_INTERVAL_MS);
   }
+  if (!appUpdateOnlineListenerBound) {
+    window.addEventListener('online', () => runAutomaticAppUpdateCheck({ force: true }));
+    appUpdateOnlineListenerBound = true;
+  }
   runAutomaticAppUpdateCheck({ force: true });
   return true;
 }
@@ -1334,6 +1409,7 @@ function downloadsPageMarkup() {
     experienceSettings: appState.experienceSettings,
     clipboardPrompt: appState.clipboardPrompt,
     newsMessages: newsMessages(),
+    componentUpdates: verifiedComponentUpdates(),
     locale: currentLocale,
     newsFilter: runtimeState.newsFilter,
     translate: (key, ...args) => t(key, ...args),
@@ -1349,8 +1425,8 @@ function downloadsPageMarkup() {
       void persistExperienceSettings({ newsDismissedIds: ids });
       requestDownloadManagerRender({ force: true });
     },
-    newsHasAttention: newsAttention(newsMessages(), appState.experienceSettings),
-    newsUpdateAvailable: Boolean(appState.availableUpdate?.version),
+    newsHasAttention: newsAttention(newsMessages(), appState.experienceSettings) || verifiedComponentUpdates().length > 0,
+    newsUpdateAvailable: Boolean(appState.availableUpdate?.version) || verifiedComponentUpdates().length > 0,
     previewMode,
     invoke,
     onNewDownload: openDownloadDialog,
@@ -1420,12 +1496,12 @@ function bindEvents() {
     appState.activeSection = button.dataset.sectionJump || 'Inicio';
     render();
   }));
-  document.querySelector('[data-dm-open-complements]')?.addEventListener('click', () => {
+  document.querySelectorAll('[data-dm-open-complements]').forEach((button) => button.addEventListener('click', () => {
     appState.settingsReturnSection = 'Descargas';
     appState.settingsCategory = 'components';
     appState.activeSection = 'Ajustes';
     render();
-  });
+  }));
   document.querySelector('.settings-back')?.addEventListener('click', () => {
     appState.activeSection = appState.settingsReturnSection || 'Descargas';
     render();
@@ -1568,7 +1644,7 @@ function bindEvents() {
     if (button.disabled) return;
     button.disabled = true;
     try {
-      appState.components = await invoke('refresh_component_catalog');
+      await checkComponentCatalog();
       showToast('Catálogo de componentes verificado', 'success');
     } catch (error) {
       showToast(friendlyError(error), 'error');
@@ -1965,6 +2041,7 @@ function bindEvents() {
     updaterProgress: appState.updaterProgress,
     experienceSettings: appState.experienceSettings,
     newsMessages: newsMessages(),
+    componentUpdates: verifiedComponentUpdates(),
     locale: currentLocale,
     newsFilter: runtimeState.newsFilter,
     translate: (key, ...args) => t(key, ...args),
@@ -1980,8 +2057,8 @@ function bindEvents() {
       void persistExperienceSettings({ newsDismissedIds: ids });
       requestDownloadManagerRender({ force: true });
     },
-    newsHasAttention: newsAttention(newsMessages(), appState.experienceSettings),
-    newsUpdateAvailable: Boolean(appState.availableUpdate?.version),
+    newsHasAttention: newsAttention(newsMessages(), appState.experienceSettings) || verifiedComponentUpdates().length > 0,
+    newsUpdateAvailable: Boolean(appState.availableUpdate?.version) || verifiedComponentUpdates().length > 0,
     invoke,
     onNewDownload: openDownloadDialog,
     onBeforeOpenPreparation: () => {
@@ -2238,7 +2315,7 @@ void bindAppearanceSync({
     void applyThemeWithMotion(appState.appearance, { updateNativeIcon: true });
   },
   onSystemTheme: () => {
-    applyAppAppearance(appState.appearance, { updateNativeIcon: false });
+    void applyThemeWithMotion(appState.appearance, { updateNativeIcon: false });
   }
 });
 
@@ -2267,6 +2344,7 @@ void startupPromise.then(() => {
   if (!previewMode && !settingsMigrationTriggeredReload) {
     applyAppAppearance(appState.appearance, { updateNativeIcon: true });
     startAutomaticAppUpdateChecks();
+    startComponentCatalogDiscovery();
   }
 }).catch(() => {});
 if (!previewMode) {

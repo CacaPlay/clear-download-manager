@@ -147,7 +147,7 @@ test('approved owner attestation clears only retained asset distribution rights'
   const brand = assetRights.groups.find((group) => group.id === 'clear-brand-assets');
   const generated = assetRights.groups.find((group) => group.id === 'generated-tauri-platform-icons');
   const product = assetRights.groups.find((group) => group.id === 'clear-product-art');
-  assert.equal(brand.assetCount, 62);
+  assert.equal(brand.assetCount, 68);
   assert.equal(brand.clearanceScope, 'DISTRIBUTION_RIGHTS_ONLY');
   assert.equal(brand.licenseTreatment, 'EXCLUDED_FROM_GPL');
   assert.equal(brand.status, 'CLEAR');
@@ -155,14 +155,17 @@ test('approved owner attestation clears only retained asset distribution rights'
   assert.equal(generated.assetCount, 8);
   assert.equal(generated.status, 'CLEAR');
   assert.equal(generated.ownerAttestationStatus, 'CONFIRMED');
-  assert.equal(product.assetCount, 95);
+  assert.equal(product.assetCount, 136);
   assert.equal(product.status, 'CLEAR');
   assert.equal(product.ownerAttestationStatus, 'CONFIRMED');
   assert.deepEqual(product.attestationSubgroups.map((group) => [group.id, group.assetCount, group.status]), [
-    ['clear-product-file-type-icons', 70, 'CONFIRMED'],
-    ['clear-product-other-art', 25, 'CONFIRMED'],
+    ['clear-product-file-type-icons', 105, 'CONFIRMED'],
+    ['clear-product-other-art', 31, 'CONFIRMED'],
   ]);
-  assert.equal(assetRights.unknownProvenance.assetCount, 165);
+  assert.equal(assetRights.unknownProvenance.assetCount, 212);
+  const navbar = assetRights.groups.find((group) => group.id === 'clear-supplied-navigation-icons');
+  assert.equal(navbar.assetCount, 8);
+  assert.equal(navbar.ownerAttestationStatus, 'CONFIRMED');
   assert.equal(assetRights.unknownProvenance.status, 'CLEAR');
   assert.equal(assetRights.ownerStatement.status, 'APPROVED');
   assert.equal(assetRights.ownerStatement.approvedAt, '2026-09-25');
@@ -202,6 +205,15 @@ test('PR5 owner review records explicit approval while preserving evidence limit
   assert.equal(pr5Register.decision.ACCOUNT_TO_TERMS_CHAIN, 'PASS_OWNER_DECLARATION_AND_PUBLIC_TERMS');
   assert.equal(pr5Register.decision.OUTPUT_RIGHTS, 'SUPPORTED_BY_SECTION_3_1_AND_OWNER_AUTHORIZATION');
   assert.equal(pr5Register.decision.GPL_RELICENSING_READINESS, 'PASS_FOR_REVIEWED_PR5_DIFF');
+});
+
+test('release preparation adds a stable installer alias from the verified versioned setup bytes', () => {
+  const script = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-update-release.ps1'), 'utf8');
+  assert.match(script, /\$StableInstallerName = 'ClearDownloadManagerSetup\.exe'/);
+  assert.match(script, /Copy-Item -LiteralPath \$SetupInstaller\.FullName -Destination \$StableInstallerPath/);
+  assert.match(script, /\$StableHash -cne \$VersionedHash/);
+  const guide = fs.readFileSync(path.join(repositoryRoot, 'docs/RELEASE-GUIDE.md'), 'utf8');
+  assert.match(guide, /releases\/latest\/download\/ClearDownloadManagerSetup\.exe/);
 });
 
 test('release pipeline builds once, verifies the uploaded artifact, and gates publication', () => {
