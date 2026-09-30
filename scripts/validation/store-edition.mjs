@@ -24,7 +24,7 @@ assert.equal(extension.version, packageVersion, 'La fuente de la extensión debe
 assert.equal(extensionConfig.chromiumExtensionIds?.[0], publicId, 'La app debe autorizar el ID oficial de Chrome.');
 assert.equal(extensionConfig.storeAppUserModelId, storeAppId, 'El host de Store debe abrir el AUMID correcto.');
 assert.ok(['chrome', 'edge', 'brave'].every((browser) => extensionConfig.browsers?.includes(browser)), 'El puente debe incluir navegadores Chromium de uso esperado.');
-assert.equal(compatibility.maximumTestedAppVersion, '0.95.x', 'La extensión debe declarar compatibilidad con la versión publicada.');
+assert.equal(compatibility.maximumTestedAppVersion, `${packageVersion.split('.').slice(0, 2).join('.')}.x`, 'La extensión debe declarar compatibilidad con la serie actual publicada.');
 
 const sdkCompatibility = read('extension/sdk/compatibility.js');
 const desktopBridge = read('src-tauri/src/extension_bridge.rs');
@@ -46,7 +46,7 @@ const githubUpdater = read('src-tauri/src/update_manager.rs');
 assert.match(cargo, /default\s*=\s*\["github-updater"\]/, 'La edición normal debe conservar el updater de GitHub.');
 assert.match(cargo, /github-updater\s*=\s*\["dep:tauri-plugin-updater"\]/, 'El plugin debe activarse por feature.');
 assert.match(cargo, /tauri-plugin-updater\s*=\s*\{\s*version\s*=\s*"2\.10\.1",\s*optional\s*=\s*true\s*\}/, 'El plugin updater debe ser opcional para MSIX.');
-assert.ok(rustEntry.includes('#[path = "store_update_manager.rs"]') && rustEntry.includes('#[cfg(not(feature = "microsoft-store"))]'), 'Rust debe seleccionar un gestor distinto por distribución.');
+assert.ok(rustEntry.includes('#[cfg(feature = "microsoft-store")]') && rustEntry.includes('#[path = "store_update_manager.rs"]') && rustEntry.includes('#[cfg(all(not(feature = "microsoft-store"), feature = "github-updater"))]'), 'Rust debe seleccionar un gestor distinto por distribución.');
 assert.ok(storeUpdater.includes('store_managed: true') && storeUpdater.includes('microsoft-store'), 'La edición Store debe declarar actualizaciones administradas por Store.');
 assert.ok(githubUpdater.includes('store_managed: false'), 'La edición GitHub debe seguir exponiendo su propio actualizador.');
 

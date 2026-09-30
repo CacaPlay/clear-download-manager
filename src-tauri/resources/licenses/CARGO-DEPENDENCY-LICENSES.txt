@@ -1,7 +1,7 @@
 Clear Download Manager — resolved Rust dependency license inventory
 Generated from both desktop and native-host Cargo.lock files with cargo metadata --locked --all-features --filter-platform x86_64-pc-windows-msvc.
 License expressions are declarations from each upstream Cargo package; OR means alternatives and AND means combined terms.
-Resolved registry packages: 362
+Resolved registry packages: 363
 
 PROJECT | PACKAGE | VERSION | DECLARED LICENSE
 desktop | adler2 | 2.0.1 | 0BSD OR MIT OR Apache-2.0
@@ -276,6 +276,7 @@ desktop | tinystr | 0.8.3 | Unicode-3.0
 desktop | tinyvec | 1.12.0 | Zlib OR Apache-2.0 OR MIT
 desktop | tinyvec_macros | 0.1.1 | MIT OR Apache-2.0 OR Zlib
 desktop | tokio | 1.53.1 | MIT
+desktop | tokio-macros | 2.7.2 | MIT
 desktop | tokio-rustls | 0.26.4 | MIT OR Apache-2.0
 desktop | tokio-util | 0.7.19 | MIT
 desktop | toml | 0.9.12+spec-1.1.0 | MIT OR Apache-2.0
