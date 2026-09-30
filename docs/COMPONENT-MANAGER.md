@@ -58,15 +58,16 @@ after the catalog freshness window expires.
 The signed catalog uses an inline Ed25519 signature in
 `component-catalog-v1.json`; the signature covers the payload serialized with
 `serde_json::to_vec(payload)`. Component Manager has its own production trust
-domain, separate from the legacy Tool Catalog. Its production trust root is empty,
-so production catalog refresh and remote installation remain
-fail-closed until the distributor provisions the matching protected secret
-and approves the public key in a reviewed Core change. Public verification
-keys and key IDs are not secrets and may be embedded in the application and
-versioned in the repository. The private signing key must remain only in the
-protected `release` environment and must never be committed or printed in
-logs. Test-only keys and loopback HTTP are compiled into tests only. Do not
-reuse a test signing key for a release.
+domain, separate from the legacy Tool Catalog. Core embeds the production
+verification key and key ID. The current latest GitHub release does not yet
+publish `component-catalog-v1.json`, so production catalog refresh and remote
+installation are not available from that release. They become available only
+after the distributor publishes a catalog signed by the matching private key.
+Public verification keys and key IDs are not secrets and may be embedded in
+the application and versioned in the repository. The private signing key must
+remain only in the protected `release` environment and must never be committed
+or printed in logs. Test-only keys and loopback HTTP are compiled into tests
+only. Do not reuse a test signing key for a release.
 
 If an update fails, the currently active component remains selected. The
 manager stages the replacement in a version-specific directory and changes
