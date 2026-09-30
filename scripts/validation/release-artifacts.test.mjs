@@ -250,7 +250,9 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   assert.match(buildTest, /npm run source:archive/);
   assert.match(buildTest, /npm run test:release-artifacts/);
   assert.match(buildTest, /npm run source:yt-dlp:fetch/);
-  assert.match(buildTest, /scripts\/assemble-yt-dlp-corresponding-source\.py/);
+  assert.match(buildTest, /name: Checkout pinned release tooling[\s\S]*?ref:\s*\$\{\{\s*github\.workflow_sha\s*\}\}[\s\S]*?path:\s*release-tools/);
+  assert.match(buildTest, /python release-tools\/scripts\/assemble-yt-dlp-corresponding-source\.py/);
+  assert.doesNotMatch(buildTest, /python scripts\/assemble-yt-dlp-corresponding-source\.py/);
   assert.match(buildTest, /03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb/);
   assert.match(buildTest, /yt_dlp_source_artifact_id:\s*\$\{\{\s*steps\.yt_dlp_source_artifact\.outputs\.artifact-id\s*\}\}/);
   assert.match(buildTest, /id:\s*yt_dlp_source_artifact[\s\S]*?yt-dlp-2026\.08\.19-win64-corresponding-source\.tar\.xz/);
@@ -742,7 +744,9 @@ test('release workflow retries an existing immutable tag from main without inher
   assert.match(release, /GITHUB_EVENT_NAME.*push/);
   assert.match(release, /\$global:LASTEXITCODE\s*=\s*0/);
   assert.match(release, /ref:\s*\$\{\{\s*env\.RELEASE_TAG\s*\}\}/);
-  assert.equal((release.match(/uses:\s*actions\/checkout@/g) ?? []).length, (release.match(/ref:\s*\$\{\{\s*env\.RELEASE_TAG\s*\}\}/g) ?? []).length);
+  assert.equal((release.match(/uses:\s*actions\/checkout@/g) ?? []).length, 5);
+  assert.equal((release.match(/ref:\s*\$\{\{\s*env\.RELEASE_TAG\s*\}\}/g) ?? []).length, 4);
+  assert.equal((release.match(/ref:\s*\$\{\{\s*github\.workflow_sha\s*\}\}/g) ?? []).length, 1);
   assert.match(release, /-Tag\s+\$env:RELEASE_TAG/);
   assert.match(release, /-ReleaseTag\s+\$env:RELEASE_TAG/);
   assert.match(release, /\$tag\s*=\s*\$env:RELEASE_TAG/);
