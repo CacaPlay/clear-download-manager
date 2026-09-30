@@ -4,19 +4,31 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing immutable release tag to publish
+        required: true
+        type: string
 
 permissions: {}
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
 
 jobs:
   validate-release-ref:
     runs-on: ubuntu-latest
     permissions: {}
     steps:
-      - name: Require a v* tag ref
+      - name: Require a valid v* release tag
         shell: bash
         run: |
-          if [[ "$GITHUB_REF_TYPE" != "tag" || ! "$GITHUB_REF_NAME" =~ ^v[^/]+$ ]]; then
-            echo "Release workflows only run from a v* tag; received $GITHUB_REF_TYPE:$GITHUB_REF_NAME." >&2
+          if [[ ! "$RELEASE_TAG" =~ ^v[^/]+$ ]]; then
+            echo "Release workflows require a v* release tag; received '$RELEASE_TAG'." >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == "push" && ( "$GITHUB_REF_TYPE" != "tag" || "$GITHUB_REF_NAME" != "$RELEASE_TAG" ) ]]; then
+            echo "Push release workflows must run from the requested tag; received $GITHUB_REF_TYPE:$GITHUB_REF_NAME for '$RELEASE_TAG'." >&2
             exit 1
           fi
 
@@ -29,7 +41,7 @@ jobs:
       - name: Refuse an existing release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
           REPOSITORY: ${{ github.repository }}
         shell: pwsh
         run: |
@@ -42,6 +54,7 @@ jobs:
           if (($result -join "`n") -notmatch '(?i)not found|HTTP 404') {
             throw "Could not confirm that release $($env:RELEASE_TAG) is absent. Refusing to continue."
           }
+          $global:LASTEXITCODE = 0
           Write-Host "OK: no existing release for $($env:RELEASE_TAG)."
 
   build-test:
@@ -57,6 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          ref: ${{ env.RELEASE_TAG }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -161,6 +175,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          ref: ${{ env.RELEASE_TAG }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -216,7 +231,7 @@ jobs:
       - name: Prepare signed Core/update files and CDM source archive
         shell: pwsh
         run: |
-          ./scripts/prepare-update-release.ps1 -Clean -Tag $env:GITHUB_REF_NAME -ReleaseNotes "Release $env:GITHUB_REF_NAME"
+          ./scripts/prepare-update-release.ps1 -Clean -Tag $env:RELEASE_TAG -ReleaseNotes "Release $env:RELEASE_TAG"
           if ($LASTEXITCODE -ne 0) { throw 'Preparing latest.json and updater files failed.' }
           $sourceArchives = @(Get-ChildItem source-input -File -Filter 'clear-download-manager-source.tar')
           if ($sourceArchives.Count -ne 1) { throw 'Expected exactly one source archive artifact from build-test.' }
@@ -232,7 +247,7 @@ jobs:
         run: |
           $ytDlpSources = @(Get-ChildItem yt-dlp-source-input -File -Filter 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz')
           if ($ytDlpSources.Count -ne 1) { throw 'Expected exactly one verified yt-dlp source archive.' }
-          ./scripts/assemble-component-release-assets.ps1 -ReleaseTag $env:GITHUB_REF_NAME -Sequence ([UInt64]$env:GITHUB_RUN_NUMBER) -KeyId 'component-catalog-2026-01' -OutputDirectory 'output/component-release-assets' -YtDlpSourceArchive $ytDlpSources[0].FullName
+          ./scripts/assemble-component-release-assets.ps1 -ReleaseTag $env:RELEASE_TAG -Sequence ([UInt64]$env:GITHUB_RUN_NUMBER) -KeyId 'component-catalog-2026-01' -OutputDirectory 'output/component-release-assets' -YtDlpSourceArchive $ytDlpSources[0].FullName
           if ($LASTEXITCODE -ne 0) { throw 'Assembling release component packages and catalog payload failed.' }
           ./scripts/validation/inspect-component-packages.ps1 -PackageDirectory 'output/component-release-assets' -RuntimeManifestPath 'src-tauri/resources/bin/runtime-manifest.json'
           if ($LASTEXITCODE -ne 0) { throw 'Optional component package inspection failed.' }
@@ -272,7 +287,7 @@ jobs:
         id: release_artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: cdm-release-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: cdm-release-${{ env.RELEASE_TAG }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: output/update-release/*
           if-no-files-found: error
           compression-level: 0
@@ -286,6 +301,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          ref: ${{ env.RELEASE_TAG }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -342,6 +358,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          ref: ${{ env.RELEASE_TAG }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -358,7 +375,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          $tag = $env:GITHUB_REF_NAME
+          $tag = $env:RELEASE_TAG
           $encodedTag = [Uri]::EscapeDataString($tag)
           $releasePath = "repos/$($env:GITHUB_REPOSITORY)/releases/tags/$encodedTag"
           $existing = gh api $releasePath 2>&1
@@ -368,6 +385,7 @@ jobs:
           if (($existing -join "`n") -notmatch '(?i)not found|HTTP 404') {
             throw "Could not confirm that release $tag is absent. Refusing to publish."
           }
+          $global:LASTEXITCODE = 0
           $releaseFiles = @(Get-ChildItem output/update-release -File | Sort-Object Name | ForEach-Object { $_.FullName })
           if ($releaseFiles.Count -lt 2) { throw 'The verified release artifact is incomplete.' }
           gh release create $tag --verify-tag --repo $env:GITHUB_REPOSITORY --title "Clear Download Manager $tag" --generate-notes @releaseFiles
@@ -375,7 +393,7 @@ jobs:
       - name: Verify updater endpoint
         shell: pwsh
         run: |
-          $releaseTag = [Uri]::EscapeDataString($env:GITHUB_REF_NAME)
+          $releaseTag = [Uri]::EscapeDataString($env:RELEASE_TAG)
           $latestUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$releaseTag/latest.json"
           $latest = Invoke-RestMethod -Uri $latestUrl -Headers @{ 'User-Agent' = 'Clear-Download-Manager-Release-Gate' }
           $platform = $latest.platforms.'windows-x86_64'
