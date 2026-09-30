@@ -44,12 +44,12 @@
   ],
   "correspondingSourceArchive": {
     "assetName": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
-    "bytes": 89850212,
+    "bytes": 89850884,
     "internalManifestEntries": 8185,
-    "internalManifestSha256": "49aa6c027a0e2741e5a06bab50dfff8e780c5ad34f5bf65f497b3dc227ba357b",
+    "internalManifestSha256": "2ffd7003748e9529954f135fb83a9e7c15cdb5fb42b1302db80ce4b417e6669b",
     "path": "output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
-    "sha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472",
-    "sourcePackageManifestSha256": "49aa6c027a0e2741e5a06bab50dfff8e780c5ad34f5bf65f497b3dc227ba357b",
+    "sha256": "03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb",
+    "sourcePackageManifestSha256": "2ffd7003748e9529954f135fb83a9e7c15cdb5fb42b1302db80ce4b417e6669b",
     "generatedFromPinnedInputs": true,
     "assemblyScript": "scripts/assemble-yt-dlp-corresponding-source.py"
   },
@@ -58,8 +58,8 @@
     "verifiedDownloadCount": 40,
     "inventoryCount": 1,
     "archiveName": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
-    "bytes": 89850212,
-    "sha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472"
+    "bytes": 89850884,
+    "sha256": "03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb"
   },
   "humanReview": {
     "required": true,

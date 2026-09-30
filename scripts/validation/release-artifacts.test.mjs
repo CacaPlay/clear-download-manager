@@ -251,7 +251,7 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   assert.match(buildTest, /npm run test:release-artifacts/);
   assert.match(buildTest, /npm run source:yt-dlp:fetch/);
   assert.match(buildTest, /scripts\/assemble-yt-dlp-corresponding-source\.py/);
-  assert.match(buildTest, /b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472/);
+  assert.match(buildTest, /03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb/);
   assert.match(buildTest, /yt_dlp_source_artifact_id:\s*\$\{\{\s*steps\.yt_dlp_source_artifact\.outputs\.artifact-id\s*\}\}/);
   assert.match(buildTest, /id:\s*yt_dlp_source_artifact[\s\S]*?yt-dlp-2026\.08\.19-win64-corresponding-source\.tar\.xz/);
   assert.doesNotMatch(buildTest, /check:binary-release/);
@@ -545,8 +545,8 @@ test('yt-dlp source candidate is hash-pinned and approved against its explicit r
   assert.deepEqual(entry.technicalBlockers, []);
   assert.equal(entry.sourceArchivePath, 'output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
   assert.equal(entry.sourceArchiveGenerated, true);
-  assert.equal(entry.sourceArchiveBytes, 89850212);
-  assert.equal(entry.sourceArchiveSha256, 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472');
+  assert.equal(entry.sourceArchiveBytes, 89850884);
+  assert.equal(entry.sourceArchiveSha256, '03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb');
   assert.equal(entry.releaseAssetSha256, entry.sourceArchiveSha256);
   assert.match(entry.buildInputsSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(entry.runtimeFiles, [{
@@ -573,8 +573,8 @@ test('yt-dlp source candidate is hash-pinned and approved against its explicit r
     verifiedDownloadCount: 40,
     inventoryCount: 1,
     archiveName: 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz',
-    bytes: 89850212,
-    sha256: 'b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472',
+    bytes: 89850884,
+    sha256: '03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb',
   });
   const pyinstallerRelease = buildInputs.upstreamBuildRecipe.pyinstallerDistribution;
   assert.deepEqual(pyinstallerRelease, {

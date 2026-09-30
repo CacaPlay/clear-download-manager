@@ -100,20 +100,20 @@
       "distributionMethod": "corresponding-source-archive",
       "sourceArchivePath": "output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
       "sourceArchiveGenerated": true,
-      "sourceArchiveSha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472",
+      "sourceArchiveSha256": "03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb",
       "buildInputsPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-build-inputs.json",
-      "buildInputsSha256": "b4d7230c13e12a85c97313f95d307fff531dc3e4216af6a179a6545c911db5d7",
+      "buildInputsSha256": "ed9eccf0231bb37367a53913b30a3b0d92b3c687b02fb976ba0cf7955960b6e4",
       "releaseAssetName": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
-      "releaseAssetSha256": "b08bbf1e221ceef5b1f8a066be3ed8a7554d89782506b0a51be07f01959da472",
+      "releaseAssetSha256": "03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb",
       "writtenOfferPath": null,
       "writtenOfferSha256": null,
       "humanReview": {
         "required": true,
         "status": "APPROVED",
         "reviewRecordPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md",
-        "reviewRecordSha256": "a95817b65a6d34a283a0661117e1bb006dfa6b2a1560ebd88b5ca70f2108e884"
+        "reviewRecordSha256": "fa3d0d7b24995ffd9786fd0beb1fed4e3d982dd1bd4db5eca5d7412e20619b26"
       },
-      "sourceArchiveBytes": 89850212,
+      "sourceArchiveBytes": 89850884,
       "technicalStatus": "READY_FOR_HUMAN_REVIEW",
       "technicalBlockers": []
     }
