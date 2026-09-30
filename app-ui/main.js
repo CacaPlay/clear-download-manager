@@ -51,6 +51,7 @@ import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, t
 import { localizeDom } from './modules/i18n/runtime.js?v=0.95.5-ui-redesign-20260929-r1';
 import { patchUpdateProgressSlots } from './download-manager/view/shared.js';
 import { createComponentDiscoveryScheduler } from './modules/updates/component-discovery.js';
+import { runThemeTransition } from './modules/motion/coordinator.js';
 
 // CDM uses its own context menus for downloads and no browser context menu on
 // empty content. Keep this at document capture phase so every main-view area
@@ -73,8 +74,8 @@ let componentProgressRenderTimer = 0;
 let snapshotRefreshTimer = 0;
 let appUpdateCheckTimer = 0;
 let appUpdateOnlineListenerBound = false;
-let themeTransitionToken = 0;
 let activeThemeTransition = null;
+let pendingThemeRequest = null;
 let componentDiscoveryScheduler = null;
 let lastFullSnapshotAt = 0;
 const DOWNLOAD_ACTIVITY_REFRESH_MS = 250;
@@ -511,17 +512,20 @@ function applyAppAppearance(value = appState.appearance, options = {}) {
   return result;
 }
 
-// Commit the theme synchronously across the app and its attached surfaces,
-// then let the WebView reveal the new snapshot without changing layout widths.
+// Commit the theme as one app-wide update, then reveal the captured snapshot.
+// A quick second request waits for the active reveal instead of cancelling it.
 function applyThemeWithMotion(value = appState.appearance, options = {}, anchor = document.activeElement) {
+  if (activeThemeTransition) {
+    return new Promise((resolve) => {
+      pendingThemeRequest?.resolve({ used: false, reason: 'superseded' });
+      pendingThemeRequest = { value, options, anchor, resolve };
+    });
+  }
   const appearance = normalizeAppearance(value);
   const requestedTheme = appearance.theme === 'system'
     ? (window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
     : appearance.theme;
   const currentTheme = document.documentElement.dataset.theme || 'dark';
-  const token = ++themeTransitionToken;
-  activeThemeTransition?.skipTransition?.();
-  activeThemeTransition = null;
   const motionMode = appearance.motionMode || (appearance.motion === false ? 'off' : 'system');
   const reducedMotion = motionMode === 'off' || motionMode === 'reduced'
     || (motionMode === 'system' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
@@ -529,24 +533,18 @@ function applyThemeWithMotion(value = appState.appearance, options = {}, anchor 
     applyAppAppearance(value, options);
     return Promise.resolve({ used: false, reason: currentTheme === requestedTheme ? 'theme-unchanged' : reducedMotion ? 'reduced-motion' : 'unsupported' });
   }
-  const rect = anchor instanceof Element ? anchor.getBoundingClientRect() : null;
-  const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
-  const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
-  const root = document.documentElement;
-  root.style.setProperty('--theme-origin-x', `${Math.round(x)}px`);
-  root.style.setProperty('--theme-origin-y', `${Math.round(y)}px`);
-  const transition = document.startViewTransition(() => {
-    if (token === themeTransitionToken) applyAppAppearance(value, options);
-  });
+  const transition = runThemeTransition(() => applyAppAppearance(value, options), anchor);
   activeThemeTransition = transition;
-  return transition.finished.then(() => ({ used: true, reason: 'theme-transition' }), () => ({ used: false, reason: 'theme-transition-interrupted' }))
-    .finally(() => {
-      if (token === themeTransitionToken) {
-        activeThemeTransition = null;
-        root.style.removeProperty('--theme-origin-x');
-        root.style.removeProperty('--theme-origin-y');
-      }
+  return Promise.resolve(transition).then((result) => {
+    if (activeThemeTransition === transition) activeThemeTransition = null;
+    const queued = pendingThemeRequest;
+    pendingThemeRequest = null;
+    if (!queued) return result;
+    return applyThemeWithMotion(queued.value, queued.options, queued.anchor).then((queuedResult) => {
+      queued.resolve(queuedResult);
+      return queuedResult;
     });
+  });
 }
 
 configureSettings({

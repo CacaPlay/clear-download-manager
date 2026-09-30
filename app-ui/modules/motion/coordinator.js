@@ -238,7 +238,6 @@ export function runThemeTransition(update, trigger = null) {
     }
   }
 
-  if (activeTransition) finishActiveTransition();
   let overlay = null;
   try {
     const bodyStyle = getComputedStyle(document.body);

@@ -28,14 +28,19 @@ test('selected settings and download filters stay on neutral surfaces', async ()
   mustMatch(dmCss, /#app \.dm-host\.dm-host \.dm-news-filters button\.is-active,[\s\S]{0,500}background: var\(--dm-surface-2\) !important/, 'selected News filters must use a neutral surface');
 });
 
-test('theme state is committed before a cancellable reveal and reduced motion skips it', async () => {
-  const main = await readFile(mainPath, 'utf8');
+test('theme state commits atomically, queues rapid changes, and respects reduced motion', async () => {
+  const [main, coordinator] = await Promise.all([
+    readFile(mainPath, 'utf8'),
+    readFile(path.join(root, 'app-ui/modules/motion/coordinator.js'), 'utf8')
+  ]);
   const body = main.match(/function applyThemeWithMotion\([\s\S]*?\n\}/)?.[0] || '';
   assert.ok(body, 'theme transition function must exist');
-  const transitionAt = body.indexOf('document.startViewTransition(() => {');
-  const commitAt = body.indexOf('applyAppAppearance(value, options);', transitionAt);
-  assert.ok(transitionAt >= 0, 'theme reveal must use a single captured transition');
-  assert.ok(commitAt > transitionAt, 'all synchronized appearance state must commit inside the transition callback');
+  assert.ok(main.includes("import { runThemeTransition } from './modules/motion/coordinator.js';"), 'the app must use the atomic theme transition coordinator');
+  mustMatch(body, /runThemeTransition\(/, 'theme reveal must use the atomic app-wide transition');
+  assert.ok(!body.includes('skipTransition'), 'theme changes must not cancel a visible transition');
+  mustMatch(body, /pendingThemeRequest|queuedThemeRequest/, 'rapid theme requests must be queued instead of interrupting the active reveal');
   mustMatch(body, /motionMode|prefers-reduced-motion|reducedMotion/, 'reduced motion must bypass the reveal');
-  mustMatch(body, /skipTransition|themeTransitionToken/, 'stale theme transitions must not win after rapid toggles');
+  const coordinatorTheme = coordinator.match(/export function runThemeTransition\([\s\S]*?(?=\nexport function activeViewTransition)/)?.[0] || '';
+  assert.ok(coordinatorTheme.includes('themeTransitioning') && coordinatorTheme.includes('lockThemeDescendantTransitions'), 'theme transitions must suppress individual section animations');
+  assert.ok(!coordinatorTheme.includes('finishActiveTransition'), 'theme changes must not skip an already visible document transition');
 });

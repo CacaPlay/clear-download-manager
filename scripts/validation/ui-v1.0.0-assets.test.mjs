@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const iconsPath = path.join(root, 'app-ui/download-manager/view/icons.js');
 const sidebarPath = path.join(root, 'app-ui/download-manager/view/zen-sidebar.js');
+const baseCssPath = path.join(root, 'app-ui/download-manager/styles/01-base.css');
+const responsiveCssPath = path.join(root, 'app-ui/download-manager/styles/04-responsive.css');
 const cssPath = path.join(root, 'app-ui/download-manager/styles/03-components.css');
 const assetRoot = path.join(root, 'app-ui/assets/icons/navigation');
 
@@ -21,7 +23,9 @@ test('navbar renders the user-supplied icon family through an accessible nav-ico
   ]);
   mustMatch(icons, /export function dmNavIcon\(/, 'icons.js must expose dmNavIcon');
   mustMatch(icons, /class="dm-nav-icon"[^>]*data-nav-icon=/, 'the icon wrapper needs its semantic icon key');
+  mustMatch(icons, /\.\.\/\.\.\/assets\/icons\/navigation\//, 'mask URLs must resolve from the Download Manager stylesheet directory');
   mustMatch(icons, /aria-hidden="true"/, 'decorative navbar artwork must be hidden from assistive technology');
+  mustMatch(icons, /data-nav-accent="true"/, 'two-tone nav icons must mark when their accent layer exists');
   mustMatch(sidebar, /dmNavIcon\(/, 'the sidebar must render the supplied icon family');
   for (const name of ['downloads', 'components', 'news', 'settings', 'sun', 'moon']) {
     mustMatch(sidebar, new RegExp(`dmNavIcon\\(['"]${name}['"]\\)`), `sidebar must render ${name}`);
@@ -44,11 +48,16 @@ test('new navbar masks are lossless WebP files small enough for the shipped UI',
 });
 
 test('navbar icon masks use the selected accent without tinting their fixed surfaces', async () => {
-  const [css, icons] = await Promise.all([readFile(cssPath, 'utf8'), readFile(iconsPath, 'utf8')]);
+  const [css, baseCss, responsiveCss, icons] = await Promise.all([
+    readFile(cssPath, 'utf8'), readFile(baseCssPath, 'utf8'), readFile(responsiveCssPath, 'utf8'), readFile(iconsPath, 'utf8')
+  ]);
+  assert.ok(baseCss.includes('nav span:not(.dm-nav-icon)') && responsiveCss.includes('nav span:not(.dm-nav-icon)'), 'collapsed navigation must hide labels without hiding the new icon wrappers');
+  mustMatch(css, /nav button > span:not\(\.dm-nav-icon\)/, 'collapsed navigation must hide labels without hiding the new icon wrappers');
   mustMatch(css, /\.dm-nav-icon::before/, 'base icon mask must be rendered');
   mustMatch(css, /\.dm-nav-icon::after/, 'accent icon mask must be rendered separately');
   mustMatch(css, /background-color:\s*var\(--dm-accent/, 'the accent mask should use the selected accent');
   mustMatch(css, /mask-image:\s*var\(--dm-nav-accent-mask, none\)/, 'the supplied recolorable area must stay a separate mask');
+  mustMatch(css, /\.dm-nav-icon:not\(\[data-nav-accent="true"\]\)::after\s*\{\s*display:\s*none;/, 'single-layer nav icons must not render the accent pseudo-element as a solid square');
   for (const name of ['downloads', 'components', 'news', 'settings', 'sun', 'moon']) {
     assert.ok(icons.includes(`${name}: { base: '${name}-base.webp'`), `asset registry must map ${name}`);
   }
