@@ -4,7 +4,7 @@ import { bindAppearanceSync } from './modules/appearance/sync.js?v=0.95.0-verify
 import { bindDestinationPickerState, chooseDestinationDirectory } from './modules/downloads/destination-picker.js?v=0.45.1';
 import { loadLocale, resolveLocale } from './modules/i18n/index.js';
 import { localizeDom } from './modules/i18n/runtime.js';
-import { invokeWithOptionalComponent } from './modules/components/optional-install.js';
+import { invokeWithOptionalComponent, optionalComponentProgressLabel, renderOptionalComponentProgress } from './modules/components/optional-install.js';
 
 document.addEventListener('contextmenu', (event) => event.preventDefault(), true);
 
@@ -190,7 +190,8 @@ const state = {
   playlistFormat: storedMediaDownloadPreferences.playlistFormat,
   destination: 'Descargas\\CacaTools',
   filename: handoffFilename,
-  filenameTouched: Boolean(handoffFilename),
+  filenameTouched: false,
+  useOriginalFileNames: true,
   formatError: '',
   items: [],
   sizeGeneration: 0,
@@ -199,6 +200,7 @@ const state = {
   submitted: false,
   analysisRequestId: 0,
   activeAnalysisRequestId: 0,
+  componentProgress: null,
   closeRequested: false,
   visibleStart: 0,
   visibleEnd: 24,
@@ -215,6 +217,10 @@ const invoke = async (command, args = {}) => {
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+}
+
+function mediaReferenceIcon(kind) {
+  return `<span class="media-reference-art" data-media-art="${kind}" aria-hidden="true"></span>`;
 }
 
 function normalizedFormatLabel(value) {
@@ -245,6 +251,27 @@ function analysisIsCurrent(requestId, generation) {
     && state.sizeGeneration === generation;
 }
 
+async function closePreparationAndReturnToMain() {
+  if (!state.closeRequested) {
+    state.closeRequested = true;
+    state.sizeGeneration += 1;
+    state.analysisRequestId += 1;
+    state.activeAnalysisRequestId = 0;
+    state.sizeQueue = [];
+    state.listController?.abort();
+  }
+  await invoke('preparation_window_action', { label: windowLabel, action: 'close' }).catch(() => {});
+  await invoke('wake_main_window').catch(() => invoke('show_main_window').catch(() => {}));
+}
+
+async function routeOptionalInstallToComponentManager(info) {
+  const emitTo = window.__TAURI__?.event?.emitTo;
+  if (typeof emitTo !== 'function') throw new Error('No se pudo abrir Complementos. Inténtalo de nuevo.');
+  await emitTo('main', 'component-manager-install-request', { componentId: info.componentId });
+  await closePreparationAndReturnToMain();
+  return true;
+}
+
 async function invokeMediaAnalysisWithRetry(url, generation = state.sizeGeneration, requestId = state.activeAnalysisRequestId) {
   const source = String(url || '').trim();
   const attempts = isTikTokSource(source) ? 3 : 1;
@@ -257,7 +284,13 @@ async function invokeMediaAnalysisWithRetry(url, generation = state.sizeGenerati
          useBraveCookies: Boolean(state.sessionConsent),
          cookiesPath: state.cookiesPath || null,
          windowLabel
-       }, { onProgress: updateComponentInstallProgress });
+       }, {
+         onProgress: progress => {
+           if (analysisIsCurrent(requestId, generation)) updateComponentInstallProgress(progress);
+         },
+         onPromptCancelled: closePreparationAndReturnToMain,
+         onInstallRequested: routeOptionalInstallToComponentManager
+       });
     }
     catch (error) {
       lastError = error;
@@ -454,7 +487,7 @@ function rowProgressLabel(item) {
 
 function playlistRow(item, index) {
   const sourceThumbnail = safeThumbnail(item.thumbnail, item.id);
-  const thumbnail = sourceThumbnail || './assets/brand/clear-download-manager-celeste.png';
+  const thumbnail = sourceThumbnail || './assets/brand/clear-download-manager-celeste.webp';
   const thumbnailClass = sourceThumbnail ? '' : ' is-placeholder';
   const unresolved = !item.sourceUrl || (item.resolutionState && !['ready', 'download_queued', 'completed'].includes(item.resolutionState));
   return `<article class="track-card ${item.selected ? 'selected is-selected' : ''} ${unresolved ? 'is-unresolved' : ''}" data-track-id="${escapeHtml(item.id)}" data-track-index="${index}" tabindex="0" aria-selected="${item.selected ? 'true' : 'false'}">
@@ -472,7 +505,7 @@ function mediaMarkup() {
   const analysis = state.analysis || {};
   chooseFormat();
   const sourceThumbnail = safeThumbnail(analysis.thumbnail);
-  const thumbnail = sourceThumbnail || './assets/brand/clear-download-manager-celeste.png';
+  const thumbnail = sourceThumbnail || './assets/brand/clear-download-manager-celeste.webp';
   const formats = formatsForOutputMode();
   const formatOptions = formats.map((format) => `<option value="${escapeHtml(format.id || '')}" ${String(format.id || '') === state.selectedFormat ? 'selected' : ''}>${escapeHtml(formatLabel(format))}</option>`).join('');
   const formatError = formatCompatibilityMessage();
@@ -484,13 +517,13 @@ function mediaMarkup() {
       <div class="media-copy"><div class="eyebrow">MULTIMEDIA · CONTENIDO</div><h2 class="media-title">${escapeHtml(analysis.title || 'Contenido multimedia')}</h2><div class="media-meta">${escapeHtml(analysis.creator || 'Origen multimedia')} · ${escapeHtml(analysis.duration_label || '—')}</div></div>
     </article>
     <section class="media-options">
-      <article class="panel"><div class="panel-head"><div class="icon-box" data-role="panel-icon-format">${icon('settings')}</div><div><div class="panel-kicker">1. PREPARACIÓN</div><h2>Formato y calidad</h2></div></div>
+      <article class="panel"><div class="panel-head"><div class="icon-box media-art-icon" data-role="panel-icon-format">${mediaReferenceIcon('format')}</div><div><div class="panel-kicker">1. PREPARACIÓN</div><h2>Formato y calidad</h2></div></div>
         <label class="field-group"><span class="field-label">Formato de salida</span><div class="control"><select data-role="output"><option value="video_mp4" ${state.outputMode === 'video_mp4' ? 'selected' : ''}>MP4 · vídeo</option><option value="video_webm" ${state.outputMode === 'video_webm' ? 'selected' : ''}>WebM · vídeo</option><option value="audio_best" ${state.outputMode === 'audio_best' ? 'selected' : ''}>Mejor audio disponible</option><option value="audio_mp3" ${state.outputMode === 'audio_mp3' ? 'selected' : ''}>MP3 320 kbps</option><option value="audio_m4a" ${state.outputMode === 'audio_m4a' ? 'selected' : ''}>M4A</option></select>${icon('chevron-down')}</div></label>
          <label class="field-group"><span class="field-label">Calidad / formato</span><div class="control"><select data-role="quality">${formatOptions}</select>${icon('chevron-down')}</div>${formatError ? `<span class="inline-note" role="alert">${escapeHtml(formatError)}</span>` : ''}</label>
       </article>
-      <article class="panel"><div class="panel-head"><div class="icon-box" data-role="panel-icon-destination">${icon('folder')}</div><div><div class="panel-kicker">2. DESTINO</div><h2>Destino y archivo</h2></div></div>
+      <article class="panel"><div class="panel-head"><div class="icon-box media-art-icon" data-role="panel-icon-destination">${mediaReferenceIcon('destination')}</div><div><div class="panel-kicker">2. DESTINO</div><h2>Destino y archivo</h2></div></div>
         <label class="field-group"><span class="field-label">Guardar en</span>${destination}</label>
-        <label class="field-group"><span class="field-label">Nombre del archivo</span><div class="control"><input data-role="filename" aria-label="Nombre del archivo" value="${escapeHtml(state.filename)}" placeholder="Automático (título original)" maxlength="180" autocomplete="off"></div></label>
+        <label class="field-group"><span class="field-label">Nombre del archivo</span><div class="control"><input data-role="filename" aria-label="Nombre del archivo" value="${escapeHtml(state.filenameTouched ? state.filename : (state.useOriginalFileNames ? handoffFilename : ''))}" placeholder="${state.useOriginalFileNames ? 'Automático (título original)' : 'Nombre asignado por Clear'}" maxlength="180" autocomplete="off"></div></label>
       </article>
     </section>
   </div>`;
@@ -512,7 +545,7 @@ function directFileDescriptor(filename = '', contentType = '') {
 }
 
 function httpFileVisual(descriptor) {
-  return `<div class="http-file-visual file-${escapeHtml(descriptor.kind)}" role="img" aria-label="${escapeHtml(descriptor.label)}"><span class="http-file-sheet"><img class="http-file-sheet-image" src="./assets/http-file-sheet.png" alt="" aria-hidden="true" draggable="false"><b>${escapeHtml(descriptor.extension)}</b></span></div>`;
+  return `<div class="http-file-visual file-${escapeHtml(descriptor.kind)}" role="img" aria-label="${escapeHtml(descriptor.label)}"><span class="http-file-sheet"><img class="http-file-sheet-image" src="./assets/http-file-sheet.webp" alt="" aria-hidden="true" draggable="false"><b>${escapeHtml(descriptor.extension)}</b></span></div>`;
 }
 
 function httpFilenameForQueue() {
@@ -543,7 +576,7 @@ function httpCompactStateMarkup() {
   const destination = `<div class="http-compact-control"><span class="http-field-label">Guardar en</span><div class="control split"><span data-role="destination-path" title="${escapeHtml(destinationLabel)}">${escapeHtml(destinationLabel)}</span><button type="button" class="btn" data-action="change-folder">Cambiar</button></div></div>`;
   return `<section class="http-compact-ready">
     <div class="http-file-anchor">${httpFileVisual(descriptor)}${sizeMarkup}</div>
-    <div class="http-compact-fields"><label class="http-compact-control"><span class="http-field-label">Nombre</span><div class="control"><input data-role="filename" aria-label="Nombre del archivo" value="${escapeHtml(state.filename || direct.filename)}" maxlength="180" autocomplete="off"></div></label>${destination}</div>
+    <div class="http-compact-fields"><label class="http-compact-control"><span class="http-field-label">Nombre</span><div class="control"><input data-role="filename" aria-label="Nombre del archivo" value="${escapeHtml(state.filenameTouched ? state.filename : (state.useOriginalFileNames ? direct.filename : ''))}" placeholder="${state.useOriginalFileNames ? '' : 'Nombre asignado por Clear'}" maxlength="180" autocomplete="off"></div></label>${destination}</div>
     <div class="http-compact-actions"><button type="button" class="btn" data-action="close">Cancelar</button><button type="button" class="btn primary strong" data-action="download" ${state.busy || state.submitted || state.error ? 'disabled' : ''}>Iniciar descarga</button></div>
   </section>`;
 }
@@ -558,7 +591,7 @@ function directMarkup() {
   return `<div class="http-layout">
     <article class="panel accent-rail http-info"><div class="file-hero"><div class="file-poster"><div class="file-sheet" data-role="file-ext">.${escapeHtml(extension)}</div></div><div><div class="eyebrow">ARCHIVO DISPONIBLE</div><h2 class="file-title" data-role="file-name">${escapeHtml(filename)}</h2><div class="file-domain">${escapeHtml(domain)}</div></div></div>
       <div class="file-facts"><div class="fact"><span>Tipo de archivo</span><strong data-role="file-type">${escapeHtml(state.direct?.contentType || 'Archivo directo')}</strong></div><div class="fact"><span>Protocolo</span><strong>HTTPS/HTTP</strong></div><div class="fact"><span>Estado</span><strong>Listo para descargar</strong></div></div><div class="http-note">Se descargará como archivo original.</div></article>
-    <article class="panel http-destination"><div class="panel-head"><div class="icon-box" data-role="destination-icon">${icon('folder')}</div><div><div class="panel-kicker">DESTINO</div><h3>Destino y opciones</h3></div></div><label class="field-group"><span class="field-label">Guardar en</span>${destination}</label><label class="field-group"><span class="field-label">Nombre del archivo</span><div class="control"><input data-role="filename" aria-label="Nombre del archivo" value="${escapeHtml(state.filename)}" placeholder="Automático (nombre original)" maxlength="180" autocomplete="off"></div></label></article>
+    <article class="panel http-destination"><div class="panel-head"><div class="icon-box" data-role="destination-icon">${icon('folder')}</div><div><div class="panel-kicker">DESTINO</div><h3>Destino y opciones</h3></div></div><label class="field-group"><span class="field-label">Guardar en</span>${destination}</label><label class="field-group"><span class="field-label">Nombre del archivo</span><div class="control"><input data-role="filename" aria-label="Nombre del archivo" value="${escapeHtml(state.filenameTouched ? state.filename : '')}" placeholder="${state.useOriginalFileNames ? 'Automático (nombre original)' : 'Nombre asignado por Clear'}" maxlength="180" autocomplete="off"></div></label></article>
   </div>`;
 }
 
@@ -593,12 +626,12 @@ function render() {
       ? `<section class="state-message">${icon('link')}<h2>Preparar una descarga</h2><p>Pega un enlace multimedia, playlist o archivo directo y pulsa Analizar.</p></section>`
       : isPlaylist ? playlistMarkup() : isDirect ? directMarkup() : mediaMarkup();
   const confirmLabel = isPlaylist ? `Descargar ${selectedItems().length} seleccionados` : isDirect ? 'Iniciar descarga' : 'Descargar';
-  const titlebar = `<header class="titlebar" data-tauri-drag-region><div class="titlebar-left" data-tauri-drag-region><img class="cdm-brand-logo" data-cdm-brand-logo data-brand-icon-base="./assets/brand" src="./assets/brand/clear-download-manager-${brandIconVariant}.png" alt="Clear Download Manager"><span>${title} - Clear Download Manager</span></div><div class="window-buttons">${httpCompact ? '' : `<button type="button" data-action="maximize" aria-label="Maximizar/restaurar" title="Maximizar/restaurar">${icon('maximize')}</button>`}<button type="button" data-action="close" aria-label="Cerrar" title="Cerrar">${icon('x')}</button></div></header>`;
+  const titlebar = `<header class="titlebar" data-tauri-drag-region><div class="titlebar-left" data-tauri-drag-region><img class="cdm-brand-logo" data-cdm-brand-logo data-brand-icon-base="./assets/brand" src="./assets/brand/clear-download-manager-${brandIconVariant}.webp" alt="Clear Download Manager"><span>${title} - Clear Download Manager</span></div><div class="window-buttons">${httpCompact ? '' : `<button type="button" data-action="maximize" aria-label="Maximizar/restaurar" title="Maximizar/restaurar">${icon('maximize')}</button>`}<button type="button" data-action="close" aria-label="Cerrar" title="Cerrar">${icon('x')}</button></div></header>`;
   if (httpCompact) {
     root.innerHTML = `<section class="app-window http-compact-window" data-window-type="http" aria-labelledby="window-title">${titlebar}<main class="content http-compact-content"><h1 id="window-title" class="visually-hidden">${title}</h1>${body}</main></section>`;
   } else {
     const footerStatus = state.busy ? 'Analizando contenido' : state.error ? 'No se puede confirmar esta fuente' : 'Listo para confirmar';
-    root.innerHTML = `<section class="app-window" data-window-type="${isPlaylist ? 'playlist' : 'multimedia'}" aria-labelledby="window-title">${titlebar}<section class="page-header"><div class="header-icon" data-role="header-icon">${isPlaylist ? playlistPrepLogo(24) : icon('download', 20)}</div><div class="header-copy"><div class="eyebrow">CLEAR DOWNLOAD MANAGER · CENTRO DE DESCARGAS</div><h1 id="window-title">${title}</h1></div></section><form class="url-row" data-role="source-form"><div>${platformLogo(state.source)}</div><input class="url-input" data-role="url" value="${escapeHtml(state.source)}" placeholder="Pega un enlace multimedia, playlist o archivo directo" aria-label="Enlace de descarga"><button type="submit" class="btn" data-action="analyze" ${state.busy ? 'disabled' : ''}>${state.busy ? 'Analizando…' : 'Analizar'}</button></form><main class="content" style="position:relative">${body}<div class="loading-overlay" data-role="loading-overlay" ${state.busy ? '' : 'hidden'}><div class="loading-card"><div class="spinner"></div><strong data-role="loading-title">${escapeHtml(state.phase)}</strong><span data-role="loading-detail">Espera a que termine el análisis para confirmar la descarga.</span></div></div></main><footer class="footer"><div class="status"><span class="status-dot"></span><span>${footerStatus}</span></div><div class="actions"><button type="button" class="btn" data-action="close">Cerrar</button><button type="button" class="btn primary strong" data-action="download" ${confirmBlocked ? 'disabled' : ''}>${confirmLabel}</button></div></footer></section>`;
+    root.innerHTML = `<section class="app-window" data-window-type="${isPlaylist ? 'playlist' : 'multimedia'}" aria-labelledby="window-title">${titlebar}<section class="page-header"><div class="header-icon${isPlaylist ? '' : ' media-art-icon'}" data-role="header-icon">${isPlaylist ? playlistPrepLogo(24) : mediaReferenceIcon('download')}</div><div class="header-copy"><div class="eyebrow">CLEAR DOWNLOAD MANAGER · CENTRO DE DESCARGAS</div><h1 id="window-title">${title}</h1></div></section><form class="url-row" data-role="source-form"><div>${platformLogo(state.source)}</div><input class="url-input" data-role="url" value="${escapeHtml(state.source)}" placeholder="Pega un enlace multimedia, playlist o archivo directo" aria-label="Enlace de descarga"><button type="submit" class="btn" data-action="analyze" ${state.busy ? 'disabled' : ''}>${state.busy ? 'Analizando…' : 'Analizar'}</button></form><main class="content" style="position:relative">${body}<div class="loading-overlay" data-role="loading-overlay" ${state.busy ? '' : 'hidden'}><div class="loading-card">${state.componentProgress ? renderOptionalComponentProgress(state.componentProgress) : `<div class="spinner"></div><strong data-role="loading-title">${escapeHtml(state.phase)}</strong><span data-role="loading-detail">Espera a que termine el análisis para confirmar la descarga.</span>`}</div></div></main><footer class="footer"><div class="status"><span class="status-dot"></span><span>${footerStatus}</span></div><div class="actions"><button type="button" class="btn" data-action="close">Cerrar</button><button type="button" class="btn primary strong" data-action="download" ${confirmBlocked ? 'disabled' : ''}>${confirmLabel}</button></div></footer></section>`;
   }
   // HTTP and multimedia renderers share the same runtime catalog.  Applying
   // it after either branch prevents compact HTTP states from retaining the
@@ -676,7 +709,7 @@ function bindSubwindowThumbnailLifecycle() {
       }
       image.dataset.thumbnailFallback = '1';
       image.dataset.thumbnailPlaceholder = '1';
-      image.src = './assets/brand/clear-download-manager-celeste.png';
+      image.src = './assets/brand/clear-download-manager-celeste.webp';
     };
     image.addEventListener('load', markLoaded, { signal: abortController.signal });
     image.addEventListener('error', markFailed, { signal: abortController.signal });
@@ -714,7 +747,7 @@ function renderVisibleRows() {
   content.innerHTML = state.items.slice(start, end).map((item, offset) => playlistRow(item, start + offset)).join('');
   bindSubwindowThumbnailLifecycle();
   content.querySelectorAll('img[data-track-thumb-key]').forEach((image) => {
-    image.addEventListener('error', () => { image.src = './assets/brand/clear-download-manager-celeste.png'; image.classList.add('is-fallback'); }, { once: true, signal: abortController.signal });
+    image.addEventListener('error', () => { image.src = './assets/brand/clear-download-manager-celeste.webp'; image.classList.add('is-fallback'); }, { once: true, signal: abortController.signal });
   });
 }
 
@@ -772,6 +805,7 @@ async function analyzeSource() {
   state.sizeQueue = [];
   state.sizeActive = 0;
   state.error = '';
+  state.componentProgress = null;
   state.analysis = null;
   state.direct = null;
   state.busy = true;
@@ -874,10 +908,12 @@ async function chooseDestination() {
   } catch (error) { showError(error); }
 }
 
-function updateComponentInstallProgress({ component, state: phase, progressPercent }) {
-  const label = component === 'media-tools' ? 'Media Tools' : 'Torrent Engine';
-  const stage = phase === 'verifying' ? 'Verificando' : phase === 'installing' ? 'Instalando' : 'Descargando';
-  state.phase = `${stage} ${label} · ${Math.round(progressPercent)}%`;
+function updateComponentInstallProgress(progress = {}) {
+  const label = optionalComponentProgressLabel(progress);
+  if (!label) return;
+  state.componentProgress = { ...progress };
+  state.phase = label;
+  state.busy = true;
   render();
 }
 
@@ -885,6 +921,7 @@ function showError(error) {
   state.error = friendlyAnalysisError(error, state.source);
   state.busy = false;
   state.submitted = false;
+  state.componentProgress = null;
   render();
 }
 
@@ -913,12 +950,12 @@ async function confirmDownload() {
       const items = selectedItems().map((item) => ({ sourceId: item.sourceId, sourceUrl: item.sourceUrl, metadataUrl: item.metadataUrl, selectedSourceUrl: item.selectedSourceUrl, resolutionState: item.resolutionState || 'ready', providerId: item.providerId, title: item.title, creator: item.creator, thumbnail: item.thumbnail, durationLabel: item.durationLabel, expectedDurationSeconds: item.expectedDurationSeconds }));
       await invokeWithOptionalComponent(invoke, 'queue_playlist_selection', { playlistTitle: state.analysis?.title || 'Playlist', items, format: state.playlistFormat }, { onProgress: updateComponentInstallProgress });
     } else if (state.direct) {
-      await invoke('queue_http_download', { url: state.direct.url, filename: httpFilenameForQueue(), extensionFilename: null, extensionMime: null, extensionExpectedExtension: null });
+      await invoke('queue_http_download', { url: state.direct.url, filename: state.filenameTouched && state.filename.trim() ? httpFilenameForQueue() : null, extensionFilename: handoffFilename || state.direct.filename, extensionMime: null, extensionExpectedExtension: null });
     } else {
       const selectedSelector = state.videoQuality !== 'best' && selectorHasUnsafeBestFallback(state.selectedFormat, state.videoQuality)
         ? videoSelectorForQuality(state.videoQuality)
         : (state.selectedFormat || format?.id || videoSelectorForQuality(state.videoQuality));
-      await invokeWithOptionalComponent(invoke, 'queue_media_download_secure', { url: state.source, title: state.analysis?.title || 'Contenido multimedia', thumbnail: state.analysis?.thumbnail || null, formatSelector: selectedSelector, outputMode: state.outputMode, expectedDurationSeconds: Number(state.analysis?.duration_seconds || 0) || null, filename: state.filename.trim() || null, useBraveCookies: Boolean(state.sessionConsent), cookiesPath: state.cookiesPath || null }, { onProgress: updateComponentInstallProgress });
+      await invokeWithOptionalComponent(invoke, 'queue_media_download_secure', { url: state.source, title: state.analysis?.title || 'Contenido multimedia', thumbnail: state.analysis?.thumbnail || null, formatSelector: selectedSelector, outputMode: state.outputMode, expectedDurationSeconds: Number(state.analysis?.duration_seconds || 0) || null, filename: state.filenameTouched && state.filename.trim() ? state.filename.trim() : null, useBraveCookies: Boolean(state.sessionConsent), cookiesPath: state.cookiesPath || null }, { onProgress: updateComponentInstallProgress });
     }
     state.busy = false;
     // The preparation surface is only for choosing options. Once confirmed,
@@ -926,13 +963,24 @@ async function confirmDownload() {
     // and no extra click for the user.
     await invoke('preparation_window_action', { label: windowLabel, action: 'close' }).catch(() => {});
     await invoke('wake_main_window').catch(() => invoke('show_main_window').catch(() => {}));
-  } catch (error) { showError(error); }
+  } catch (error) {
+    if (/download_location_cancelled/.test(String(error?.message || error))) {
+      state.busy = false;
+      state.submitted = false;
+      state.phase = '';
+      render();
+      return;
+    }
+    showError(error);
+  }
 }
 
-document.addEventListener('submit', (event) => { if (event.target.matches('[data-role="source-form"]')) { event.preventDefault(); state.source = String(event.target.querySelector('[data-role="url"]')?.value || '').trim(); void analyzeSource(); } }, { signal: abortController.signal });
+document.addEventListener('submit', (event) => { if (event.target.matches('[data-role="source-form"]')) { event.preventDefault(); if (state.busy) return; state.source = String(event.target.querySelector('[data-role="url"]')?.value || '').trim(); void analyzeSource(); } }, { signal: abortController.signal });
 document.addEventListener('click', (event) => {
   const actionNode = event.target.closest?.('[data-action]');
   const action = actionNode?.dataset.action;
+  if (action === 'install-optional-component') { resolveOptionalComponentPrompt(true); return; }
+  if (action === 'dismiss-optional-component') { resolveOptionalComponentPrompt(false); return; }
   if (['maximize', 'close'].includes(action)) {
     if (action === 'close') {
       if (state.closeRequested) return;
@@ -1049,7 +1097,11 @@ async function bootstrap() {
     state.sessionConsent = Boolean(session?.useBraveCookies);
     state.cookiesPath = String(session?.cookiesPath || '');
   } catch {}
-  try { const settings = await invoke('desktop_settings'); if (settings?.downloads_dir) state.destination = settings.downloads_dir; } catch {}
+  try {
+    const settings = await invoke('desktop_settings');
+    if (settings?.downloads_dir) state.destination = settings.downloads_dir;
+    state.useOriginalFileNames = settings?.downloadBehavior?.useOriginalFileNames !== false;
+  } catch {}
   render();
   markSubwindowLifecycle('dom-rendered');
   // Preparation windows are created hidden. Ask the native owner to show the

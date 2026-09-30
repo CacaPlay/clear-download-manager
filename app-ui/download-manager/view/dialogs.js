@@ -1,6 +1,7 @@
 import { escapeHtml } from '../core/model.js';
 import { dmFileAsset, dmIcon, dmPlaylistLogo } from './icons.js';
 import { dialogShell, updateProgressMarkup } from './shared.js';
+import { renderInlineOptionalComponentPrompt, renderOptionalComponentProgress } from '../../modules/components/optional-install.js';
 
 
 function progressiveThumbnailMarkup(item, index, iconSize = 34) {
@@ -20,15 +21,33 @@ function matchReasonMarkup(item) {
 
 export function videoSearchDialog(state) {
   const results = state.videoSearchResults || [];
+  const progress = state.videoSearchProgress;
+  const terminalProgress = ['error', 'cancelled'].includes(String(progress?.phase || ''));
+  const searchResults = state.videoSearchBusy
+    ? progress
+      ? renderOptionalComponentProgress(progress)
+      : `<div class="dm-search-loading"><i></i><strong>${escapeHtml(state.videoSearchPhase || 'Buscando coincidencias…')}</strong></div>`
+    : terminalProgress
+      ? `<div class="dm-search-component-state">${renderOptionalComponentProgress(progress)}<button type="button" data-dm-retry-video-search>Reintentar búsqueda</button></div>`
+      : progress?.phase === 'done' && !results.length
+        ? renderOptionalComponentProgress(progress)
+      : state.videoSearchComponentError
+        ? `<div class="dm-search-component-state" role="alert"><strong>${escapeHtml(state.videoSearchComponentError)}</strong><button type="button" data-dm-retry-video-search>Reintentar búsqueda</button></div>`
+    : state.videoSearchComponentPrompt
+      ? renderInlineOptionalComponentPrompt(state.videoSearchComponentPrompt, { accepted: state.videoSearchPromptAccepted })
+      : results.length
+        ? results.map((item, index) => `<article class="dm-search-card"><span class="dm-search-thumb">${progressiveThumbnailMarkup(item, index, 34)}<small>${escapeHtml(item.duration_label || item.duration || '—')}</small></span><div><em>#${index + 1} · ${escapeHtml(item.extractor || 'Vídeo')}</em><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.creator || item.uploader || '')}</span>${matchReasonMarkup(item)}</div><button data-dm-analyze-result="${escapeHtml(item.source_url || item.url || '')}">${dmIcon('eye')} Analizar</button></article>`).join('')
+        : `<div class="dm-search-empty">${dmIcon('search', 38)}<strong>Busca un vídeo por su título</strong><span>También puedes escribir artista, canal o palabras clave.</span></div>`;
   const body = `<section class="dm-video-search-box"><label>${dmIcon('search')}<input id="dm-video-query" value="${escapeHtml(state.videoSearchQuery || '')}" placeholder="Título, artista, canal o descripción"><button data-dm-run-video-search>Buscar</button></label><p>La búsqueda se realiza mediante el resolvedor local. Nada se envía a CacaTools.</p></section>
-    <section class="dm-search-results">${state.videoSearchBusy ? `<div class="dm-search-loading"><i></i><strong>Buscando coincidencias…</strong></div>` : results.length ? results.map((item, index) => `<article class="dm-search-card"><span class="dm-search-thumb">${progressiveThumbnailMarkup(item, index, 34)}<small>${escapeHtml(item.duration_label || item.duration || '—')}</small></span><div><em>#${index + 1} · ${escapeHtml(item.extractor || 'Vídeo')}</em><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.creator || item.uploader || '')}</span>${matchReasonMarkup(item)}</div><button data-dm-analyze-result="${escapeHtml(item.source_url || item.url || '')}">${dmIcon('eye')} Analizar</button></article>`).join('') : `<div class="dm-search-empty">${dmIcon('search', 38)}<strong>Busca un vídeo por su título</strong><span>También puedes escribir artista, canal o palabras clave.</span></div>`}</section>`;
+    <section class="dm-search-results">${searchResults}</section>`;
   return dialogShell('video-search', 'Buscar vídeos', body);
 }
 
 export function torrentDialog(state) {
   const source = escapeHtml(state.torrentSource || '');
   const body = `<section class="dm-torrent-dialog">
-      <label class="dm-torrent-source"><span>Magnet o archivo .torrent</span><div>${dmIcon('magnet')}<input id="dm-torrent-source" value="${source}" placeholder="magnet:?xt=urn:btih:… o C:\\ruta\\archivo.torrent" autocomplete="off" spellcheck="false"><button type="button" class="dm-torrent-icon-action" data-dm-choose-torrent title="Elegir archivo torrent" aria-label="Elegir archivo torrent">${dmIcon('folder')}</button><button type="button" class="dm-torrent-icon-action" data-dm-paste-torrent title="Pegar enlace magnet" aria-label="Pegar enlace magnet">${dmIcon('clipboard')}</button></div></label>
+      <div class="dm-torrent-intro"><span>${dmIcon('magnet', 24)}</span><p>Pega un enlace magnet o selecciona un archivo .torrent para añadirlo.</p></div>
+      <label class="dm-torrent-source"><span>ENLACE MAGNET O ARCHIVO .TORRENT</span><div>${dmIcon('link')}<input id="dm-torrent-source" value="${source}" placeholder="Pega un enlace magnet aquí o elige un archivo .torrent…" autocomplete="off" spellcheck="false"><button type="button" class="dm-torrent-icon-action" data-dm-choose-torrent title="Elegir archivo torrent" aria-label="Elegir archivo torrent">${dmIcon('folder')}</button><button type="button" class="dm-torrent-icon-action" data-dm-paste-torrent title="Pegar enlace magnet" aria-label="Pegar enlace magnet">${dmIcon('clipboard')}</button></div></label>
     </section>`;
   const footer = `<button data-dm-modal-close>Cancelar</button><button class="dm-primary-button" data-dm-queue-torrent ${state.torrentBusy ? 'disabled' : ''}>${state.torrentBusy ? 'Añadiendo…' : 'Añadir a la cola'}</button>`;
   return dialogShell('torrent', 'Nueva descarga torrent', body, footer);
@@ -84,8 +103,8 @@ export function updateDialog(context = {}) {
   </section>`;
   const busyLabel = context.updaterProgress?.phase === 'install' ? 'Instalando…' : 'Descargando…';
   const progress = updateProgressMarkup(context);
-  const footer = `<button data-dm-modal-close ${context.updaterInstallBusy ? 'disabled' : ''}>Más tarde</button><button class="dm-primary-button" data-dm-modal-action="install-update" ${context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterInstallBusy ? busyLabel : 'Instalar ahora'}</button>`;
-  return dialogShell('update', 'Actualización disponible', `${body}${progress}`, footer);
+  const footer = `<button data-dm-modal-close ${context.updaterInstallBusy ? 'disabled' : ''}>Más tarde</button><button class="dm-primary-button" data-dm-modal-action="install-update" data-dm-update-idle-label="Instalar ahora" ${context.updaterInstallBusy ? 'disabled' : ''}>${context.updaterInstallBusy ? busyLabel : 'Instalar ahora'}</button>`;
+  return dialogShell('update', 'Actualización disponible', `${body}<div data-dm-update-progress-slot>${progress}</div>`, footer);
 }
 
 export function renameDialog(job) {

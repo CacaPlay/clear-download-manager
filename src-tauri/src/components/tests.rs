@@ -626,15 +626,36 @@ fn start_remote_component_fixture(
     sequence: u64,
     tamper_media_package: bool,
 ) -> (String, thread::JoinHandle<()>) {
+    start_remote_component_fixture_with_corrupt_media_file(
+        temp,
+        version,
+        sequence,
+        tamper_media_package,
+        false,
+    )
+}
+
+fn start_remote_component_fixture_with_corrupt_media_file(
+    temp: &Path,
+    version: &str,
+    sequence: u64,
+    tamper_media_package: bool,
+    corrupt_media_file: bool,
+) -> (String, thread::JoinHandle<()>) {
     use ed25519_dalek::Signer;
 
     let pins = fixture_pins();
     let media_path = temp.join(format!("media-{version}.zip"));
     let torrent_path = temp.join(format!("torrent-{version}.zip"));
+    let media_overrides: &[(&str, &[u8])] = if corrupt_media_file {
+        &[("yt-dlp.exe", b"trusted yt-DLP")]
+    } else {
+        &[]
+    };
     write_package(
         &media_path,
         &package_manifest(ComponentId::MediaTools, version, &pins),
-        &[],
+        media_overrides,
     );
     write_package(
         &torrent_path,
@@ -746,6 +767,111 @@ fn component_status_starts_missing_and_capabilities_fail_closed() {
 }
 
 #[test]
+fn component_install_cancel_is_accepted_only_during_download() {
+    let operation = ComponentOperationControl::new();
+    assert!(!operation.request_cancel().unwrap());
+    operation
+        .transition(ComponentInstallPhase::Download)
+        .unwrap();
+    assert!(operation.request_cancel().unwrap());
+    assert!(operation.is_cancelled());
+    assert!(matches!(
+        operation.transition(ComponentInstallPhase::Verify),
+        Err(ComponentError::Cancelled)
+    ));
+
+    let verifying = ComponentOperationControl::new();
+    verifying
+        .transition(ComponentInstallPhase::Download)
+        .unwrap();
+    verifying.transition(ComponentInstallPhase::Verify).unwrap();
+    assert!(!verifying.request_cancel().unwrap());
+    verifying
+        .transition(ComponentInstallPhase::Install)
+        .unwrap();
+    verifying
+        .transition(ComponentInstallPhase::Activate)
+        .unwrap();
+}
+
+#[test]
+fn component_install_cancel_race_with_verify_transition_is_serialized() {
+    for _ in 0..32 {
+        let operation = Arc::new(ComponentOperationControl::new());
+        operation
+            .transition(ComponentInstallPhase::Download)
+            .unwrap();
+        let gate = Arc::new(std::sync::Barrier::new(3));
+        let cancel_operation = operation.clone();
+        let cancel_gate = gate.clone();
+        let cancel = std::thread::spawn(move || {
+            cancel_gate.wait();
+            cancel_operation.request_cancel().unwrap()
+        });
+        let verify_operation = operation.clone();
+        let verify_gate = gate.clone();
+        let verify = std::thread::spawn(move || {
+            verify_gate.wait();
+            verify_operation.transition(ComponentInstallPhase::Verify)
+        });
+        gate.wait();
+        let cancel_accepted = cancel.join().unwrap();
+        let verify_result = verify.join().unwrap();
+        assert_eq!(
+            cancel_accepted,
+            matches!(verify_result, Err(ComponentError::Cancelled))
+        );
+    }
+}
+
+#[test]
+fn catalog_failure_emits_terminal_error_clears_state_and_allows_retry() {
+    let temp = tempdir().expect("temp dir");
+    let manager = ComponentManager::new_with_trust(
+        temp.path().join("remote-components"),
+        incompatible_fixture_pins(),
+        component_test_trust(),
+    )
+    .expect("create manager with test trust root");
+    let mut failed_events = Vec::new();
+    let failed = manager.install_component_from_catalog_at(
+        ComponentId::MediaTools,
+        "https://example.com/not-the-component-catalog.json",
+        REMOTE_CATALOG_NOW,
+        false,
+        |event| failed_events.push(event),
+    );
+    assert!(matches!(failed, Err(ComponentError::CatalogFetch(_))));
+    assert_eq!(
+        failed_events
+            .iter()
+            .map(|event| event.phase)
+            .collect::<Vec<_>>(),
+        [
+            ComponentInstallPhase::Preparing,
+            ComponentInstallPhase::Error
+        ]
+    );
+    assert_eq!(
+        manager.component_status(ComponentId::MediaTools).state,
+        ComponentState::Error
+    );
+
+    let (endpoint, server) = start_remote_component_fixture(temp.path(), "1.0.0", 1, false);
+    let installed = manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |_| {},
+        )
+        .expect("retry after catalog failure");
+    server.join().expect("finish retried package fixture");
+    assert_eq!(installed.state, ComponentState::Installed);
+}
+
+#[test]
 fn signed_remote_component_catalog_downloads_verifies_installs_and_activates_atomically() {
     let temp = tempdir().expect("temp dir");
     let (endpoint, server) = start_remote_component_fixture(temp.path(), "1.0.0", 1, false);
@@ -763,19 +889,29 @@ fn signed_remote_component_catalog_downloads_verifies_installs_and_activates_ato
             &endpoint,
             REMOTE_CATALOG_NOW,
             true,
-            |state, received, total| progress.push((state, received, total)),
+            |event| progress.push(event),
         )
         .expect("install verified remote component");
     server.join().expect("complete local HTTP fixture");
 
     assert_eq!(installed.state, ComponentState::Installed);
     assert_eq!(installed.version.as_deref(), Some("1.0.0"));
-    assert!(progress
-        .iter()
-        .any(|(state, _, _)| *state == ComponentState::Verifying));
-    assert!(progress
-        .iter()
-        .any(|(state, _, _)| *state == ComponentState::Installing));
+    assert_eq!(
+        progress.iter().map(|event| event.phase).collect::<Vec<_>>(),
+        [
+            ComponentInstallPhase::Preparing,
+            ComponentInstallPhase::Download,
+            ComponentInstallPhase::Download,
+            ComponentInstallPhase::Verify,
+            ComponentInstallPhase::Install,
+            ComponentInstallPhase::Activate,
+            ComponentInstallPhase::Done,
+        ]
+    );
+    assert_eq!(progress[0].total_bytes, None);
+    assert_eq!(progress[0].progress_ratio, None);
+    assert!(progress[1].total_bytes.is_some_and(|total| total > 0));
+    assert_eq!(progress[2].progress_ratio, Some(1.0));
     assert_eq!(
         fs::read(
             manager
@@ -825,7 +961,7 @@ fn signed_catalog_update_activates_new_component_version() {
             &first_endpoint,
             REMOTE_CATALOG_NOW,
             true,
-            |_, _, _| {},
+            |_| {},
         )
         .expect("install original remote component");
     first_server.join().expect("complete initial transfer");
@@ -841,7 +977,7 @@ fn signed_catalog_update_activates_new_component_version() {
             &update_endpoint,
             REMOTE_CATALOG_NOW,
             true,
-            |_, _, _| {},
+            |_| {},
         )
         .expect("activate newer signed component");
     update_server.join().expect("complete update transfer");
@@ -874,7 +1010,7 @@ fn failed_remote_update_preserves_the_previously_active_component() {
             &first_endpoint,
             REMOTE_CATALOG_NOW,
             true,
-            |_, _, _| {},
+            |_| {},
         )
         .expect("install original remote component");
     first_server
@@ -886,12 +1022,13 @@ fn failed_remote_update_preserves_the_previously_active_component() {
     let (update_endpoint, update_server) =
         start_remote_component_fixture(temp.path(), "2.0.0", 2, true);
 
+    let mut progress = Vec::new();
     let result = manager.install_component_from_catalog_at(
         ComponentId::MediaTools,
         &update_endpoint,
         REMOTE_CATALOG_NOW,
         true,
-        |_, _, _| {},
+        |event| progress.push(event),
     );
     update_server
         .join()
@@ -906,6 +1043,10 @@ fn failed_remote_update_preserves_the_previously_active_component() {
     let status = manager.component_status(ComponentId::MediaTools);
     assert_eq!(status.version.as_deref(), Some("1.0.0"));
     assert_eq!(status.state, ComponentState::UpdateAvailable);
+    assert!(progress
+        .iter()
+        .any(|event| event.phase == ComponentInstallPhase::Download));
+    assert_eq!(progress.last().unwrap().phase, ComponentInstallPhase::Error);
     assert_eq!(
         manager
             .resolve_capability(Capability::MediaExtraction)
@@ -913,6 +1054,111 @@ fn failed_remote_update_preserves_the_previously_active_component() {
         original_path
     );
     assert_eq!(staging_entries(manager.root()), 0);
+}
+
+#[test]
+fn failed_remote_verification_emits_error_and_allows_retry() {
+    let temp = tempdir().expect("temp dir");
+    let manager = ComponentManager::new_with_trust(
+        temp.path().join("remote-components"),
+        fixture_pins(),
+        component_test_trust(),
+    )
+    .expect("create manager with test trust root");
+    let (endpoint, server) = start_remote_component_fixture_with_corrupt_media_file(
+        temp.path(),
+        "1.0.0",
+        1,
+        false,
+        true,
+    );
+    let mut progress = Vec::new();
+    let result = manager.install_component_from_catalog_at(
+        ComponentId::MediaTools,
+        &endpoint,
+        REMOTE_CATALOG_NOW,
+        true,
+        |event| progress.push(event),
+    );
+    server.join().expect("finish failed verification fixture");
+
+    assert!(matches!(result, Err(ComponentError::HashMismatch { .. })));
+    assert!(progress
+        .iter()
+        .any(|event| event.phase == ComponentInstallPhase::Verify));
+    assert_eq!(progress.last().unwrap().phase, ComponentInstallPhase::Error);
+    assert_eq!(
+        manager.component_status(ComponentId::MediaTools).state,
+        ComponentState::Error
+    );
+    assert_eq!(staging_entries(manager.root()), 0);
+
+    let (retry_endpoint, retry_server) =
+        start_remote_component_fixture(temp.path(), "1.0.0", 2, false);
+    let installed = manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &retry_endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |_| {},
+        )
+        .expect("retry after verification failure");
+    retry_server
+        .join()
+        .expect("finish successful retry fixture");
+    assert_eq!(installed.state, ComponentState::Installed);
+}
+
+#[test]
+fn failed_remote_install_emits_error_and_allows_retry() {
+    let temp = tempdir().expect("temp dir");
+    let root = temp.path().join("remote-components");
+    let manager =
+        ComponentManager::new_with_trust(root.clone(), fixture_pins(), component_test_trust())
+            .expect("create manager with test trust root");
+    let component_root = root.join(ComponentId::MediaTools.as_str());
+    fs::create_dir_all(&component_root).expect("prepare managed component root");
+    fs::write(component_root.join("versions"), b"injected non-directory")
+        .expect("prepare deterministic install failure");
+    let (endpoint, server) = start_remote_component_fixture(temp.path(), "1.0.0", 1, false);
+    let mut progress = Vec::new();
+    let result = manager.install_component_from_catalog_at(
+        ComponentId::MediaTools,
+        &endpoint,
+        REMOTE_CATALOG_NOW,
+        true,
+        |event| progress.push(event),
+    );
+    server.join().expect("finish install failure fixture");
+
+    assert!(matches!(result, Err(ComponentError::InvalidPackage(_))));
+    assert!(progress
+        .iter()
+        .any(|event| event.phase == ComponentInstallPhase::Install));
+    assert_eq!(progress.last().unwrap().phase, ComponentInstallPhase::Error);
+    assert_eq!(
+        manager.component_status(ComponentId::MediaTools).state,
+        ComponentState::Error
+    );
+    assert_eq!(staging_entries(manager.root()), 0);
+
+    fs::remove_file(component_root.join("versions")).expect("remove injected failure");
+    let (retry_endpoint, retry_server) =
+        start_remote_component_fixture(temp.path(), "1.0.0", 2, false);
+    let installed = manager
+        .install_component_from_catalog_at(
+            ComponentId::MediaTools,
+            &retry_endpoint,
+            REMOTE_CATALOG_NOW,
+            true,
+            |_| {},
+        )
+        .expect("retry after install failure");
+    retry_server
+        .join()
+        .expect("finish successful retry fixture");
+    assert_eq!(installed.state, ComponentState::Installed);
 }
 
 #[cfg(windows)]
@@ -1297,7 +1543,7 @@ fn signed_catalog_reinstall_repairs_corruption_and_remove_deactivates_component(
             &endpoint,
             REMOTE_CATALOG_NOW,
             true,
-            |_, _, _| {},
+            |_| {},
         )
         .expect("install signed remote component");
     server.join().expect("complete initial transfer");
@@ -1321,7 +1567,7 @@ fn signed_catalog_reinstall_repairs_corruption_and_remove_deactivates_component(
             &repair_endpoint,
             REMOTE_CATALOG_NOW,
             true,
-            |_, _, _| {},
+            |_| {},
         )
         .expect("repair from the current signed catalog package");
     repair_server.join().expect("complete repair transfer");
@@ -1354,6 +1600,32 @@ fn remove_deactivates_and_removes_a_verified_component() {
     manager
         .install_component_from_package(&package)
         .expect("install package");
+    let media_package = make_package(temp.path(), ComponentId::MediaTools, "1.0.0", &pins);
+    manager
+        .install_component_from_package(&media_package)
+        .expect("install independent Media Tools component");
+    let unmanaged_file = manager
+        .component_root(ComponentId::TorrentEngine)
+        .join("user-note.txt");
+    fs::write(&unmanaged_file, b"leave unmanaged file untouched").unwrap();
+    assert!(matches!(
+        manager.remove_component(ComponentId::TorrentEngine),
+        Err(ComponentError::InvalidPackage(_))
+    ));
+    assert_eq!(
+        fs::read(&unmanaged_file).unwrap(),
+        b"leave unmanaged file untouched"
+    );
+    assert!(manager.resolve_capability(Capability::Bittorrent).is_ok());
+    fs::remove_file(unmanaged_file).unwrap();
+    let before = manager.component_status(ComponentId::TorrentEngine);
+    assert!(before.reclaimable_bytes.is_some_and(|bytes| bytes > 0));
+    let active_operation = manager.operation.lock().expect("hold active operation");
+    assert!(matches!(
+        manager.remove_component(ComponentId::TorrentEngine),
+        Err(ComponentError::Busy(ComponentId::TorrentEngine))
+    ));
+    drop(active_operation);
 
     manager
         .remove_component(ComponentId::TorrentEngine)
@@ -1363,10 +1635,60 @@ fn remove_deactivates_and_removes_a_verified_component() {
         manager.component_status(ComponentId::TorrentEngine).state,
         ComponentState::Missing
     );
+    assert!(manager
+        .component_status(ComponentId::TorrentEngine)
+        .reclaimable_bytes
+        .is_none());
+    assert_eq!(
+        manager.component_status(ComponentId::MediaTools).state,
+        ComponentState::Installed
+    );
     assert!(matches!(
         manager.resolve_capability(Capability::Bittorrent),
         Err(ComponentError::Missing(ComponentId::TorrentEngine))
     ));
+    let prompt = manager.component_prompt_info(Capability::Bittorrent);
+    assert_eq!(prompt.component_id, ComponentId::TorrentEngine);
+    assert!(!prompt.installed);
+    assert_eq!(prompt.package_bytes, None);
+}
+
+#[cfg(windows)]
+#[test]
+fn component_file_hashing_works_with_a_small_thread_stack() {
+    const CHILD_MARKER: &str = "CDM_HASH_FILE_SMALL_STACK_CHILD";
+    const TEST_NAME: &str =
+        "components::tests::component_file_hashing_works_with_a_small_thread_stack";
+
+    if std::env::var_os(CHILD_MARKER).is_some() {
+        let temp = tempdir().expect("temp dir");
+        let path = temp.path().join("component-runtime.bin");
+        let contents = b"component runtime hash fixture";
+        fs::write(&path, contents).expect("write component fixture");
+        let expected = sha256_bytes(contents);
+        let actual = thread::Builder::new()
+            .stack_size(256 * 1024)
+            .spawn(move || hash_file(&path))
+            .expect("spawn small-stack worker")
+            .join()
+            .expect("hash worker must not overflow its stack")
+            .expect("hash component fixture");
+
+        assert_eq!(actual, expected);
+        return;
+    }
+
+    let output = Command::new(std::env::current_exe().expect("test executable"))
+        .args(["--exact", TEST_NAME, "--nocapture"])
+        .env(CHILD_MARKER, "child")
+        .output()
+        .expect("run isolated small-stack test process");
+    assert!(
+        output.status.success(),
+        "isolated small-stack process failed: {}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 fn staging_entries(root: &Path) -> usize {

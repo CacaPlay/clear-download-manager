@@ -64,6 +64,7 @@ const extensionCategory = new Map([
   ['xls', 'Documentos'], ['xlsx', 'Documentos'], ['xlsm', 'Documentos'], ['ods', 'Documentos'], ['csv', 'Documentos'], ['tsv', 'Documentos'], ['numbers', 'Documentos'],
   ['ppt', 'Documentos'], ['pptx', 'Documentos'], ['pptm', 'Documentos'], ['odp', 'Documentos'], ['key', 'Documentos'], ['torrent', 'Torrents']
 ]);
+const DOWNLOAD_SORT_ORDERS = new Set(['newest', 'oldest', 'name', 'size']);
 
 const archiveExtensions = new Set(['zip', '7z', 'rar', 'tar', 'gz', 'bz2', 'xz', 'zst', 'cab', 'jar']);
 const packageExtensions = new Set(['exe', 'msi', 'msix', 'appx', 'appxbundle', 'apk', 'deb', 'rpm', 'dmg']);
@@ -181,6 +182,7 @@ export function normalizePreferences(value = {}) {
     query: String(value.query || '').slice(0, 180),
     filter: String(value.filter || 'all'),
     category: String(value.category || 'all'),
+    sortOrder: DOWNLOAD_SORT_ORDERS.has(String(value.sortOrder || '')) ? String(value.sortOrder) : 'newest',
     inspectorTab: ['summary', 'files', 'connections', 'log'].includes(value.inspectorTab) ? value.inspectorTab : 'summary',
     commandPanel: ['overview', 'connections', 'logs', 'scheduler'].includes(value.commandPanel) ? value.commandPanel : 'overview',
     uiScale: Math.round(clampNumber(value.uiScale, 50, 130) / 5) * 5,
@@ -304,6 +306,55 @@ function compareByInsertion(left, right) {
   return String(left?.id ?? '').localeCompare(String(right?.id ?? ''), 'en');
 }
 
+export function sortDownloadJobs(jobs, order = 'newest') {
+  const entries = Array.isArray(jobs) ? jobs : [];
+  const selectedOrder = DOWNLOAD_SORT_ORDERS.has(String(order)) ? String(order) : 'newest';
+  return [...entries].sort((left, right) => {
+    if (selectedOrder === 'oldest') return -compareByInsertion(left, right);
+    if (selectedOrder === 'name') {
+      const byName = String(left?.title || '').localeCompare(String(right?.title || ''), 'es', { sensitivity: 'base', numeric: true });
+      return byName || compareByInsertion(left, right);
+    }
+    if (selectedOrder === 'size') {
+      const sizeOf = (job) => {
+        const value = Number(job?.finalSize ?? job?.totalBytes ?? job?.downloadedBytes);
+        return Number.isFinite(value) && value >= 0 ? value : -1;
+      };
+      const sizeDifference = sizeOf(right) - sizeOf(left);
+      return sizeDifference || compareByInsertion(left, right);
+    }
+    return compareByInsertion(left, right);
+  });
+}
+
+export function completionDateParts(timestamp, locale = 'es', now = new Date()) {
+  const numericTimestamp = Number(timestamp);
+  if (!Number.isFinite(numericTimestamp) || numericTimestamp <= 0) return null;
+  const completedAt = new Date(numericTimestamp);
+  const reference = now instanceof Date ? now : new Date(now);
+  if (!Number.isFinite(completedAt.getTime()) || !Number.isFinite(reference.getTime())) return null;
+
+  const dayKey = (value) => `${value.getFullYear()}-${value.getMonth()}-${value.getDate()}`;
+  const today = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  const language = String(locale || 'es').toLowerCase().startsWith('en') ? 'en-US' : 'es-ES';
+  const isEnglish = language === 'en-US';
+  const sameDay = dayKey(completedAt) === dayKey(today);
+  const previousDay = dayKey(completedAt) === dayKey(yesterday);
+  const dateLabel = sameDay
+    ? (isEnglish ? 'Today' : 'Hoy')
+    : previousDay
+      ? (isEnglish ? 'Yesterday' : 'Ayer')
+      : new Intl.DateTimeFormat(language, { day: 'numeric', month: 'short' })
+        .format(completedAt)
+        .replace(/\.$/, '');
+  const sentenceCaseDateLabel = dateLabel.replace(/\p{L}[\p{L}\p{M}]*/gu, (word) => (
+    word[0].toLocaleUpperCase(language) + word.slice(1)
+  ));
+  const timeLabel = new Intl.DateTimeFormat(language, { hour: 'numeric', minute: '2-digit', hourCycle: 'h12' }).format(completedAt);
+  return { dateLabel: sentenceCaseDateLabel, timeLabel };
+}
+
 function normalizePlaylistBatch(batch, index) {
   const batchId = Number(batch?.batch_id ?? batch?.id ?? 0) || index + 1;
   const total = Math.max(0, Number(batch?.total_items ?? batch?.total ?? 0) || 0);
@@ -385,6 +436,10 @@ function normalizePlaylistBatch(batch, index) {
     sourceUrl: String(batch?.source_url || batch?.sourceUrl || ''),
     createdAt: String(batch?.created_at || batch?.createdAt || ''),
     updatedAt: String(batch?.updated_at || batch?.updatedAt || batch?.created_at || batch?.createdAt || ''),
+    completedAtMs: (() => {
+      const value = Number(batch?.completed_at_ms ?? batch?.completedAtMs);
+      return Number.isSafeInteger(value) && value > 0 ? value : null;
+    })(),
     destination,
     category: 'Playlist',
     origin: 'yt-dlp',
@@ -481,6 +536,12 @@ export function normalizeJobs(snapshot = {}, pendingJobs = []) {
       sourceUrl: String(job.source_url || job.sourceUrl || ''),
       createdAt: String(job.created_at || job.createdAt || ''),
       updatedAt: String(job.updated_at || job.updatedAt || job.created_at || job.createdAt || ''),
+      completedAtMs: (() => {
+        const value = Number(job.completed_at_ms ?? job.completedAtMs);
+        if (Number.isSafeInteger(value) && value > 0) return value;
+        const legacyValue = job.status === 'completed' ? Date.parse(String(job.updated_at || job.updatedAt || '')) : NaN;
+        return Number.isFinite(legacyValue) && legacyValue > 0 ? legacyValue : null;
+      })(),
       destination: String(job.destination || job.output_path || job.outputPath || ''),
       activeConnections: Math.max(0, Number(job.active_connections ?? job.activeConnections ?? 0) || 0),
       maxConnections: Math.max(0, Number(job.max_connections ?? job.maxConnections ?? 0) || 0),
@@ -527,7 +588,10 @@ export function jobsForSection(jobs, preferences, section = preferences.section)
   else if (section === 'completed') scoped = jobs.filter((job) => job.status === 'completed');
   else if (section === 'history') scoped = jobs.filter((job) => terminal.has(job.status));
   const ignoreStatusFilter = ['news', 'queue', 'running', 'completed', 'history'].includes(section);
-  return filteredJobs(scoped, ignoreStatusFilter ? { ...preferences, filter: 'all' } : preferences);
+  return sortDownloadJobs(
+    filteredJobs(scoped, ignoreStatusFilter ? { ...preferences, filter: 'all' } : preferences),
+    preferences.sortOrder
+  );
 }
 
 export const LONG_LIST_VIRTUALIZATION_POLICIES = Object.freeze({

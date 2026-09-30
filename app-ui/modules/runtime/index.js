@@ -608,6 +608,13 @@ async function loadSnapshot({ includeSettings = false, includeSchedules = true, 
         http: Number.isSafeInteger(httpConcurrency) && httpConcurrency >= 1 && httpConcurrency <= 8 ? httpConcurrency : 2,
         multimedia: Number.isSafeInteger(multimediaConcurrency) && multimediaConcurrency >= 1 && multimediaConcurrency <= 4 ? multimediaConcurrency : 1
       };
+      const downloadBehavior = desktopSettings?.downloadBehavior || {};
+      appState.downloadBehaviorSettings = {
+        createCategoryFolders: downloadBehavior.createCategoryFolders !== false,
+        useOriginalFileNames: downloadBehavior.useOriginalFileNames !== false,
+        askForDownloadLocation: downloadBehavior.askForDownloadLocation === true,
+        resumeInterruptedDownloads: downloadBehavior.resumeInterruptedDownloads !== false
+      };
       if (remoteAppearance) {
         const remoteRevision = Number(remoteAppearance.appearanceRevision || 0);
         const remoteLegacyScale = remoteRevision < 6 && Number(remoteAppearance.scale || 120) === 120 ? 125 : Number(remoteAppearance.scale ?? 125);

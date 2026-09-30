@@ -4,8 +4,8 @@ import path from 'node:path';
 const [,, layout = 'command-center', theme = 'dark', dialog = 'video', stage = 'selection', output = ''] = process.argv;
 const root = process.cwd();
 const query = `?preview=1&view=downloads&dialog=${encodeURIComponent(dialog)}&playlist=${encodeURIComponent(stage)}`;
-const previewPng = fs.readFileSync(path.join(root, 'app-ui/assets/brand/clear-download-manager-celeste.png'));
-const previewData = `data:image/png;base64,${previewPng.toString('base64')}`;
+const previewWebp = fs.readFileSync(path.join(root, 'app-ui/assets/brand/clear-download-manager-celeste.webp'));
+const previewData = `data:image/webp;base64,${previewWebp.toString('base64')}`;
 const cache = new Map();
 
 function moduleUrl(filename) {
@@ -23,7 +23,7 @@ function moduleUrl(filename) {
   if (file.endsWith(`${path.sep}app-ui${path.sep}main.js`)) {
     source = source
       .replace('const qs = new URLSearchParams(window.location.search);', `const qs = new URLSearchParams(${JSON.stringify(query)});`)
-      .replaceAll('./app-ui/assets/brand/clear-download-manager-celeste.png', previewData)
+      .replaceAll('./app-ui/assets/brand/clear-download-manager-celeste.webp', previewData)
       .replace('const visual = downloadManagerVisualPreferences();', `const visual = { theme: ${JSON.stringify(theme)}, layout: ${JSON.stringify(layout)} };`);
     const fixtureState = `
 if (previewMode) {

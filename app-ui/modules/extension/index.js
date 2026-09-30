@@ -15,14 +15,24 @@ const forceDownloadManagerAllView = (...args) => contextValue('forceDownloadMana
 
 function optionalComponentInstallOptions() {
   return {
-    confirmInstall: async (message) => {
+    beforePrompt: async () => {
       await forceExtensionForeground();
-      return globalThis.confirm?.call(globalThis, message) ?? false;
     },
-    onProgress: ({ component, state, progressPercent }) => {
-      const label = component === 'media-tools' ? 'Media Tools' : 'Torrent Engine';
-      const stage = state === 'verifying' ? 'Verificando' : state === 'installing' ? 'Instalando' : 'Descargando';
-      showToast(`${stage} ${label} · ${Math.round(progressPercent)}%`, 'info');
+    onProgress: ({ componentId, phase, bytesDownloaded, totalBytes, progressRatio, bytesPerSecond }) => {
+      const label = componentId === 'media-tools' ? 'MediaTools' : 'Torrent Engine';
+      const stage = ({ preparing: 'Preparando descarga', download: 'Descargando', verify: 'Verificando integridad', install: 'Preparando instalación', activate: 'Activando componente' })[phase];
+      if (!stage) return;
+      const format = (value) => {
+        if (!Number.isSafeInteger(value) || value < 0) return '';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let amount = value;
+        let unit = 0;
+        while (amount >= 1000 && unit < units.length - 1) { amount /= 1000; unit += 1; }
+        return `${amount.toFixed(unit ? 1 : 0)} ${units[unit]}`;
+      };
+      const metrics = phase === 'download' && totalBytes
+        ? ` · ${format(bytesDownloaded)} / ${format(totalBytes)}${Number.isFinite(progressRatio) ? ` · ${Math.round(progressRatio * 100)}%` : ''}${Number.isFinite(bytesPerSecond) ? ` · ${format(Math.round(bytesPerSecond))}/s` : ''}` : '';
+      showToast(`${stage} ${label}${metrics}`, 'info');
     }
   };
 }
@@ -97,8 +107,8 @@ async function queueExtensionSourceInBackground(source, payload = {}) {
   if (!inspected?.requires_media_resolver && inspected?.kind !== 'generic_url') {
     return invoke('queue_http_download', {
       url: normalized,
-      filename: inspected?.suggested_filename || null,
-      extensionFilename: payload.filename || null,
+      filename: null,
+      extensionFilename: payload.filename || inspected?.suggested_filename || null,
       extensionMime: payload.mime || null,
       extensionExpectedExtension: payload.expectedExtension || null
     });

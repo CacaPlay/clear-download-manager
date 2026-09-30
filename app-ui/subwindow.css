@@ -189,6 +189,15 @@ svg.icon{width:1.25em;height:1.25em;fill:none;stroke:currentColor;stroke-width:2
 .state-message strong { max-width: 720px; color: var(--danger); line-height: 1.45; }
 .state-message p { max-width: 560px; margin: 0; line-height: 1.5; }
 .state-message > .icon { width: 32px; height: 32px; color: var(--sp-accent); }
+.optional-component-inline-state { text-align:left; }
+.optional-component-inline-prompt { width:min(640px,100%); display:grid; gap:18px; padding:22px; border:1px solid color-mix(in srgb,var(--sp-accent) 22%,transparent); border-radius:var(--radius); background:var(--sp-panel); color:var(--sp-text); text-align:left; box-shadow:0 10px 28px rgba(0,0,0,.12); }
+.optional-component-inline-copy>span { color:var(--sp-accent); font-size:var(--font-xs); font-weight:800; letter-spacing:.1em; }
+.optional-component-inline-copy h2 { margin:6px 0 0; color:var(--sp-text); font-size:var(--font-lg); }
+.optional-component-inline-copy p { max-width:none; margin:7px 0 0; color:var(--sp-muted); line-height:1.5; }
+.optional-component-inline-actions { display:flex; justify-content:flex-end; gap:8px; }
+.optional-component-inline-actions button { min-height:36px; padding:0 12px; border:1px solid color-mix(in srgb,var(--sp-text) 14%,transparent); border-radius:8px; background:var(--sp-panel-2); color:var(--sp-text); cursor:pointer; }
+.optional-component-inline-actions button.primary { border-color:var(--sp-accent); background:var(--sp-accent); color:#fff; }
+.optional-component-inline-actions button:focus-visible { outline:2px solid color-mix(in srgb,var(--sp-accent) 65%,transparent); outline-offset:2px; }
 .track-scroll { overscroll-behavior: contain; }
 
 /* Beta 0.95.0 · playlist selection uses the card and accent rail as the
@@ -308,3 +317,79 @@ svg.icon{width:1.25em;height:1.25em;fill:none;stroke:currentColor;stroke-width:2
 .http-file-sheet { width: calc(132px * var(--ui-scale)); height: calc(164px * var(--ui-scale)); display: grid; place-items: center; position: relative; overflow: visible; border-radius: 11px; background: transparent; color: #4a586a; box-shadow: none; }
 .http-file-sheet-image { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; object-position: center; }
 .http-file-sheet b { position: relative; z-index: 1; font-size: calc(22px * var(--ui-scale)); letter-spacing: .04em; font-weight: 850; }
+html[data-theme="light"] #subwindow-root .http-file-sheet-image {
+  filter: drop-shadow(0 0 1.2px color-mix(in srgb, var(--sp-muted) 78%, var(--sp-text)));
+}
+
+/* Multimedia prep art keeps its supplied navy field; only the blue strokes
+   are composited with the current accent. */
+#subwindow-root .header-icon.media-art-icon,
+#subwindow-root .icon-box.media-art-icon {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+#subwindow-root .header-icon.media-art-icon::after { display: none; }
+#subwindow-root .media-reference-art {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--media-art-base) center / 100% 100% no-repeat;
+}
+#subwindow-root .media-reference-art::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: var(--sp-accent);
+  -webkit-mask: var(--media-art-accent-mask) center / 100% 100% no-repeat;
+  mask: var(--media-art-accent-mask) center / 100% 100% no-repeat;
+}
+#subwindow-root .media-reference-art[data-media-art="download"] {
+  --media-art-base: url("./assets/media-preparation/multimedia-download-base.webp");
+  --media-art-accent-mask: url("./assets/media-preparation/multimedia-download-accent.webp");
+}
+#subwindow-root .media-reference-art[data-media-art="format"] {
+  --media-art-base: url("./assets/media-preparation/multimedia-format-base.webp");
+  --media-art-accent-mask: url("./assets/media-preparation/multimedia-format-accent.webp");
+}
+#subwindow-root .media-reference-art[data-media-art="destination"] {
+  --media-art-base: url("./assets/media-preparation/multimedia-destination-base.webp");
+  --media-art-accent-mask: url("./assets/media-preparation/multimedia-destination-accent.webp");
+  background-size: 145% 145%;
+  background-position: center 100%;
+}
+#subwindow-root .media-reference-art[data-media-art="destination"]::after {
+  -webkit-mask-size: 145% 145%;
+  -webkit-mask-position: center 100%;
+  mask-size: 145% 145%;
+  mask-position: center 100%;
+}
+
+/* Shared reference treatment for the standalone media preparation window. */
+#subwindow-root .titlebar { background: var(--sp-panel); border-bottom-color: color-mix(in srgb, var(--sp-text) 10%, transparent); }
+#subwindow-root .window-buttons button:hover { background: color-mix(in srgb, var(--sp-accent) 10%, var(--sp-panel)); color: var(--sp-text); }
+#subwindow-root .page-header { border-bottom-color: color-mix(in srgb, var(--sp-text) 9%, transparent); }
+#subwindow-root .header-icon,
+#subwindow-root .icon-box { border-color: color-mix(in srgb, var(--sp-accent) 20%, var(--line-strong)); background: color-mix(in srgb, var(--sp-accent) 9%, var(--sp-panel)); color: var(--sp-accent); }
+#subwindow-root .eyebrow { color: var(--sp-accent); }
+#subwindow-root .panel { border-color: color-mix(in srgb, var(--sp-text) 12%, transparent); box-shadow: 0 8px 26px color-mix(in srgb, var(--sp-text) 4%, transparent); }
+#subwindow-root .url-input,
+#subwindow-root .control,
+#subwindow-root .platform-slot { border-color: color-mix(in srgb, var(--sp-text) 14%, transparent); background: var(--sp-panel); }
+#subwindow-root .url-input:focus,
+#subwindow-root .control:focus-within { border-color: color-mix(in srgb, var(--sp-accent) 58%, var(--line-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sp-accent) 14%, transparent); }
+#subwindow-root .btn { border-color: color-mix(in srgb, var(--sp-text) 14%, transparent); border-radius: calc(10px * var(--ui-scale)); background: var(--sp-panel); }
+#subwindow-root .btn:hover { border-color: color-mix(in srgb, var(--sp-accent) 28%, var(--line-strong)); background: color-mix(in srgb, var(--sp-accent) 6%, var(--sp-panel)); }
+#subwindow-root .btn.primary,
+#subwindow-root .btn.primary.strong { border-color: color-mix(in srgb, var(--sp-accent) 58%, var(--line-strong)); background: color-mix(in srgb, var(--sp-accent) 25%, var(--sp-panel)); color: var(--sp-text); }
+#subwindow-root .btn.primary:hover,
+#subwindow-root .btn.primary.strong:hover { background: color-mix(in srgb, var(--sp-accent) 34%, var(--sp-panel)); }
+#subwindow-root :is(button, input, select, textarea):focus-visible { outline: 2px solid color-mix(in srgb, var(--sp-accent) 75%, transparent); outline-offset: 2px; }
+#subwindow-root .media-hero,
+#subwindow-root .media-options .panel { border-radius: var(--radius-xl); }
+#subwindow-root .media-options .panel { background: var(--sp-panel); }

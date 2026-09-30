@@ -59,11 +59,11 @@ export function newsPanel(context = {}) {
   const history = Array.isArray(context.experienceSettings?.installedUpdateHistory) ? context.experienceSettings.installedUpdateHistory : [];
   const iconFor = (message) => message.type === 'update' ? 'download' : message.type === 'extension' ? 'link' : message.type === 'release' ? 'sparkles' : message.type === 'manual' ? 'globe' : 'shield';
   const assetFor = (message) => message.type === 'update' || message.type === 'release'
-    ? './app-ui/assets/news/Novedad.png'
+    ? './app-ui/assets/news/Novedad.webp'
     : message.type === 'extension'
-      ? './app-ui/assets/news/Extension.png'
+      ? './app-ui/assets/news/Extension.webp'
       : message.type === 'manual'
-        ? './app-ui/assets/news/Imagenes.png'
+        ? './app-ui/assets/news/Imagenes.webp'
         : '';
   const semanticIcon = (asset, mode = 'green') => {
     if (!asset) return '';
@@ -97,9 +97,9 @@ export function newsPanel(context = {}) {
   }).join('');
   const historyMarkup = history.filter((entry) => !(context.experienceSettings?.dismissedHistoryIds || []).includes(entry.id)).map((entry) => `<article class="dm-news-history-row"><span>${dmIcon('check', 20)}</span><div><small>${t('installed', 'Instalada')} · ${escapeHtml(localeDate(entry.installedAt))}</small><strong>Clear Download Manager ${escapeHtml(entry.version)}</strong><small>${escapeHtml(entry.summary || '')}</small></div><button type="button" aria-label="${t('close', 'Cerrar')}" data-dm-news-action="dismiss-history" data-history-id="${escapeHtml(entry.id)}">×</button></article>`).join('');
   const content = filter === 'history' ? (historyMarkup || `<div class="dm-section-empty dm-news-empty">${dmIcon('history', 42)}<strong>${t('historyTitle', 'Actualizaciones anteriores')}</strong><span>${t('noNewsDescription', 'Las actualizaciones y avisos aparecerán aquí.')}</span></div>`) : (markup || `<div class="dm-section-empty dm-news-empty">${dmIcon('bell', 42)}<strong>${t('noNews', 'No hay novedades nuevas')}</strong><span>${t('noNewsDescription', 'Las actualizaciones y avisos aparecerán aquí.')}</span></div>`);
-  const support = filter === 'history' ? '' : `<aside class="dm-news-support"><span class="dm-news-support-media">${semanticIcon('./app-ui/assets/news/Apoyo.png')}</span><div><strong>${t('support', 'Apoya el proyecto')}</strong><small>${t('supportDescription', 'Tu apoyo ayuda a mantener Clear Download Manager en desarrollo.')}</small></div><button type="button" data-dm-news-action="support">${t('supportAction', 'Apoyar')}</button></aside>`;
-  const headerActions = `<div class="dm-news-header-actions"><button type="button" data-dm-news-action="check-update" title="${t('checkUpdates', 'Buscar actualizaciones')}">${dmIcon('retry', 16)}<span>${t('checkUpdates', 'Buscar actualizaciones')}</span></button><button type="button" data-dm-news-action="feedback" title="${t('feedback', 'Comentarios y sugerencias')}">${dmIcon('clipboard', 16)}<span>${t('feedback', 'Comentarios y sugerencias')}</span></button></div>`;
-  return `<section class="dm-section-page dm-news-page">${sectionHeading('news', null, headerActions)}<nav class="dm-news-filters" aria-label="${t('news', 'Novedades')}"><button type="button" class="${filter === 'all' ? 'is-active' : ''}" data-dm-news-filter="all">${t('all', 'Todas')}</button><button type="button" class="${filter === 'updates' ? 'is-active' : ''}" data-dm-news-filter="updates">${t('updates', 'Actualizaciones')}</button><button type="button" class="${filter === 'extension' ? 'is-active' : ''}" data-dm-news-filter="extension">${t('extension', 'Extensión')}</button><button type="button" class="${filter === 'history' ? 'is-active' : ''}" data-dm-news-filter="history">${t('history', 'Historial')}</button></nav><div class="dm-news-list">${content}</div>${support}</section>`;
+  const support = filter === 'history' ? '' : `<aside class="dm-news-support"><span class="dm-news-support-media">${semanticIcon('./app-ui/assets/news/Apoyo.webp')}</span><div><strong>${t('support', 'Apoya el proyecto')}</strong><small>${t('supportDescription', 'Tu apoyo ayuda a mantener Clear Download Manager en desarrollo.')}</small></div><button type="button" data-dm-news-action="support">${t('supportAction', 'Apoyar')}</button></aside>`;
+  const headerActions = `<div class="dm-news-header-actions"><button type="button" data-dm-news-action="check-update" title="${t('checkUpdates', 'Buscar actualizaciones')}"><span>${t('checkUpdates', 'Buscar actualizaciones')}</span></button><button type="button" data-dm-news-action="feedback" title="${t('feedback', 'Comentarios y sugerencias')}"><span>${t('feedback', 'Comentarios y sugerencias')}</span></button></div>`;
+  return `<section class="dm-section-page dm-news-page">${sectionHeading('news')}<nav class="dm-news-filters" aria-label="${t('news', 'Novedades')}"><button type="button" class="${filter === 'all' ? 'is-active' : ''}" data-dm-news-filter="all">${t('all', 'Todas')}</button><button type="button" class="${filter === 'updates' ? 'is-active' : ''}" data-dm-news-filter="updates">${t('updates', 'Actualizaciones')}</button><button type="button" class="${filter === 'extension' ? 'is-active' : ''}" data-dm-news-filter="extension">${t('extension', 'Extensión')}</button><button type="button" class="${filter === 'history' ? 'is-active' : ''}" data-dm-news-filter="history">${t('history', 'Historial')}</button>${headerActions}</nav><div class="dm-news-list">${content}</div>${support}</section>`;
 }
 
 export function mediaOverview(jobs) {

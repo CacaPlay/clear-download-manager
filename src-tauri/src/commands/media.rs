@@ -222,6 +222,10 @@ pub(crate) fn queue_media_download(
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<MediaQueueReceipt, String> {
+    if state.media_runtime().is_none() {
+        return Err(crate::components::media_tools_required_error());
+    }
+    let destination_root = crate::downloads::choose_job_download_root(&app, &state)?;
     let receipt = crate::media::queue_media_download(
         url,
         title,
@@ -229,6 +233,7 @@ pub(crate) fn queue_media_download(
         format_selector,
         output_mode,
         expected_duration_seconds,
+        destination_root,
         state,
     )?;
     emit_download_queued(&app, &receipt, "media");
@@ -248,6 +253,10 @@ pub(crate) fn queue_media_download_named(
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<MediaQueueReceipt, String> {
+    if state.media_runtime().is_none() {
+        return Err(crate::components::media_tools_required_error());
+    }
+    let destination_root = crate::downloads::choose_job_download_root(&app, &state)?;
     let receipt = crate::media::queue_media_download_named(
         url,
         title,
@@ -256,6 +265,7 @@ pub(crate) fn queue_media_download_named(
         output_mode,
         expected_duration_seconds,
         filename,
+        destination_root,
         state,
     )?;
     emit_download_queued(&app, &receipt, "media");
@@ -277,6 +287,10 @@ pub(crate) fn queue_media_download_secure(
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<MediaQueueReceipt, String> {
+    if state.media_runtime().is_none() {
+        return Err(crate::components::media_tools_required_error());
+    }
+    let destination_root = crate::downloads::choose_job_download_root(&app, &state)?;
     let receipt = crate::media::queue_media_download_secure(
         url,
         title,
@@ -287,6 +301,7 @@ pub(crate) fn queue_media_download_secure(
         filename,
         use_brave_cookies,
         cookies_path,
+        destination_root,
         state,
     )?;
     emit_download_queued(&app, &receipt, "media");

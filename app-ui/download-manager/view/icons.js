@@ -52,26 +52,26 @@ const ICON_PATHS = Object.freeze({
 
 const ICON_ALIASES = Object.freeze({ doc: 'document', app: 'package', software: 'package', disk: 'disc', torrent: 'magnet', list: 'queue' });
 const FILE_TYPE_ASSETS = Object.freeze({
-  archive: { neutral: './app-ui/assets/file-types/archive-neutral.png', accent: './app-ui/assets/file-types/archive-accent.png' },
-  document: { neutral: './app-ui/assets/file-types/document-neutral.png', accent: './app-ui/assets/file-types/document-accent.png' },
-  ebook: { neutral: './app-ui/assets/file-types/ebook-neutral.png', accent: './app-ui/assets/file-types/ebook-accent.png' },
-  package: { neutral: './app-ui/assets/file-types/package-neutral.png', accent: './app-ui/assets/file-types/package-accent.png' },
-  torrent: { neutral: './app-ui/assets/file-types/torrent-neutral.png', accent: './app-ui/assets/file-types/torrent-accent.png' },
-  font: { neutral: './app-ui/assets/file-types/font-neutral.png', accent: './app-ui/assets/file-types/font-accent.png' },
-  text: { neutral: './app-ui/assets/file-types/text-neutral.png', accent: './app-ui/assets/file-types/text-accent.png' },
-  sheet: { neutral: './app-ui/assets/file-types/sheet-neutral.png', accent: './app-ui/assets/file-types/sheet-accent.png' },
-  code: { neutral: './app-ui/assets/file-types/code-neutral.png', accent: './app-ui/assets/file-types/code-accent.png' },
-  image: { neutral: './app-ui/assets/file-types/image-neutral.png', accent: './app-ui/assets/file-types/image-accent.png' },
-  disk: { neutral: './app-ui/assets/file-types/disk-neutral.png', accent: './app-ui/assets/file-types/disk-accent.png' },
-  audio: { neutral: './app-ui/assets/file-types/audio-neutral.png', accent: './app-ui/assets/file-types/audio-accent.png', flat: './app-ui/assets/file-types/audio-flat.png' },
-  video: { neutral: './app-ui/assets/file-types/video-neutral.png', accent: './app-ui/assets/file-types/video-accent.png' },
-  pdf: { neutral: './app-ui/assets/file-types/pdf-neutral.png', accent: './app-ui/assets/file-types/pdf-accent.png' },
-  presentation: { neutral: './app-ui/assets/file-types/presentation-neutral.png', accent: './app-ui/assets/file-types/presentation-accent.png' },
+  archive: { neutral: './app-ui/assets/file-types/archive-neutral.webp', accent: './app-ui/assets/file-types/archive-accent.webp' },
+  document: { neutral: './app-ui/assets/file-types/document-neutral.webp', accent: './app-ui/assets/file-types/document-accent.webp' },
+  ebook: { neutral: './app-ui/assets/file-types/ebook-neutral.webp', accent: './app-ui/assets/file-types/ebook-accent.webp' },
+  package: { neutral: './app-ui/assets/file-types/package-neutral.webp', accent: './app-ui/assets/file-types/package-accent.webp' },
+  torrent: { neutral: './app-ui/assets/file-types/torrent-neutral.webp', accent: './app-ui/assets/file-types/torrent-accent.webp' },
+  font: { neutral: './app-ui/assets/file-types/font-neutral.webp', accent: './app-ui/assets/file-types/font-accent.webp' },
+  text: { neutral: './app-ui/assets/file-types/text-neutral.webp', accent: './app-ui/assets/file-types/text-accent.webp' },
+  sheet: { neutral: './app-ui/assets/file-types/sheet-neutral.webp', accent: './app-ui/assets/file-types/sheet-accent.webp' },
+  code: { neutral: './app-ui/assets/file-types/code-neutral.webp', accent: './app-ui/assets/file-types/code-accent.webp' },
+  image: { neutral: './app-ui/assets/file-types/image-neutral.webp', accent: './app-ui/assets/file-types/image-accent.webp' },
+  disk: { neutral: './app-ui/assets/file-types/disk-neutral.webp', accent: './app-ui/assets/file-types/disk-accent.webp' },
+  audio: { neutral: './app-ui/assets/file-types/audio-neutral.webp', accent: './app-ui/assets/file-types/audio-accent.webp', flat: './app-ui/assets/file-types/audio-flat.webp' },
+  video: { neutral: './app-ui/assets/file-types/video-neutral.webp', accent: './app-ui/assets/file-types/video-accent.webp' },
+  pdf: { neutral: './app-ui/assets/file-types/pdf-neutral.webp', accent: './app-ui/assets/file-types/pdf-accent.webp' },
+  presentation: { neutral: './app-ui/assets/file-types/presentation-neutral.webp', accent: './app-ui/assets/file-types/presentation-accent.webp' },
   // Unknown files use the supplied rounded image geometry instead of the old
   // generic document glyph.  Real image thumbnails still take precedence in
   // fileGlyph and are not replaced by this fallback.
-  generic: { neutral: './app-ui/assets/file-types/generic-neutral.png', accent: './app-ui/assets/file-types/generic-accent.png' },
-  'playlist-prep': { neutral: './app-ui/assets/file-types/playlist-prep-neutral.png', accent: './app-ui/assets/file-types/playlist-prep-accent.png' }
+  generic: { neutral: './app-ui/assets/file-types/generic-neutral.webp', accent: './app-ui/assets/file-types/generic-accent.webp' },
+  'playlist-prep': { neutral: './app-ui/assets/file-types/playlist-prep-neutral.webp', accent: './app-ui/assets/file-types/playlist-prep-accent.webp' }
 });
 const iconMarkupCache = new Map();
 const unknownIconNames = new Set();
@@ -91,7 +91,7 @@ export function dmFileAsset(type, className = '') {
 export function dmPlaylistLogo(size = 22) {
   const safeHeight = Math.max(10, Math.min(48, Math.round(Number(size) || 22)));
   const safeWidth = Math.round(safeHeight * (961 / 643));
-  return `<span class="dm-playlist-logo" data-icon="playlist-logo" style="--playlist-logo-width:${safeWidth}px;--playlist-logo-height:${safeHeight}px"><img src="./app-ui/assets/playlist-logo.png" alt="" decoding="async"><i aria-hidden="true"></i></span>`;
+  return `<span class="dm-playlist-logo" data-icon="playlist-logo" style="--playlist-logo-width:${safeWidth}px;--playlist-logo-height:${safeHeight}px"><img src="./app-ui/assets/playlist-logo.webp" alt="" decoding="async"><i aria-hidden="true"></i></span>`;
 }
 
 export function dmIcon(name, size = 20) {

@@ -247,7 +247,10 @@ export function loadStoredAppearance() {
     if (!['dark', 'light', 'system'].includes(inheritedTheme)) {
       try { inheritedTheme = JSON.parse(localStorage.getItem('cacatools.download-manager.v2') || '{}').theme; } catch {}
     }
-    const restoreHistoricalProgressDefault = (value, fallback) => String(value || '').toLowerCase() === '#24b8e8' ? fallback : value;
+    const restoreHistoricalProgressDefault = (value, fallback, customized) => {
+      const color = String(value || '').toLowerCase();
+      return !customized && ['#24b8e8', '#00ff2a'].includes(color) ? fallback : value;
+    };
     const preserveCustomIconColor = raw.iconColorMode === 'custom'
       && isHexColor(raw.iconColor)
       && String(raw.iconColor).toLowerCase() !== PREVIOUS_DEFAULT_ICON_COLOR;
@@ -260,8 +263,8 @@ export function loadStoredAppearance() {
       density: raw.density === 'normal' ? 'balanced' : raw.density,
        surfaceMode: raw.surfaceMode,
       radius: raw.radius || 'standard',
-      progressActive: restoreHistoricalProgressDefault(raw.progressActive, DEFAULT_PROGRESS_ACTIVE_COLOR),
-      progressCompleted: restoreHistoricalProgressDefault(raw.progressCompleted, DEFAULT_PROGRESS_COMPLETED_COLOR),
+       progressActive: restoreHistoricalProgressDefault(raw.progressActive, DEFAULT_PROGRESS_ACTIVE_COLOR, raw.progressActiveCustomized === true),
+       progressCompleted: restoreHistoricalProgressDefault(raw.progressCompleted, DEFAULT_PROGRESS_COMPLETED_COLOR, raw.progressCompletedCustomized === true),
       iconColorMode: preserveCustomIconColor ? 'custom' : DEFAULT_ICON_COLOR_MODE,
       iconColor: preserveCustomIconColor ? String(raw.iconColor) : DEFAULT_ICON_COLOR,
       appearanceRevision: APPEARANCE_REVISION
@@ -320,7 +323,10 @@ export function applyAccentVariables(root, appearance) {
   root.style.setProperty('--accent-gradient-soft', `linear-gradient(105deg,color-mix(in srgb, ${effectiveAccent} 22%, transparent),color-mix(in srgb, ${effectiveAccent} 10%, transparent))`);
   root.style.setProperty('--accent-contrast', accentVisual.detail);
   const iconAccent = appearance.iconColorMode === 'custom' && isHexColor(appearance.iconColor) ? appearance.iconColor : effectiveAccent;
+  const iconAccentVisual = accentPresentation(iconAccent, theme);
+  root.style.setProperty('--ui-icon-neutral', 'var(--text-secondary)');
   root.style.setProperty('--icon-accent', iconAccent);
+  root.style.setProperty('--ui-icon-accent-detail', iconAccentVisual.detail);
   root.style.setProperty('--focus-ring', `color-mix(in srgb, ${accentVisual.detail} 72%, transparent)`);
   root.style.setProperty('--progress-active', appearance.progressActive || defaultAppearance.progressActive);
   root.style.setProperty('--progress-completed', appearance.progressCompleted || defaultAppearance.progressCompleted);
@@ -370,7 +376,7 @@ function startNativeIconUpdateWorker(invoke) {
 export function applyBrandIconVariant(variant) {
   document.querySelectorAll('[data-cdm-brand-logo]').forEach((image) => {
     const base = image.dataset.brandIconBase || './app-ui/assets/brand';
-    const next = `${base}/clear-download-manager-${variant}.png`;
+    const next = `${base}/clear-download-manager-${variant}.webp`;
     if (image.getAttribute('src') !== next) image.setAttribute('src', next);
   });
 }
@@ -422,11 +428,7 @@ export function scheduleAppearanceLivePreview(value) {
     appearancePerformance.totalPreviewLatencyMs += latency;
     appearancePerformance.maxPreviewLatencyMs = Math.max(appearancePerformance.maxPreviewLatencyMs, latency);
       applyAccentVariables(document.documentElement, pending.value);
-      // Live slider previews are intentionally web-only.  Do not rewrite
-      // document-wide brand images here: the main download view owns its
-      // sidebar logo and renders it from the committed app accent.  Updating
-      // all images during a slider preview let stale renders put the cyan
-      // bootstrap image back over a committed green/red logo.
+      applyBrandIconVariant(iconVariantForColor(pending.value.accent));
       appearanceContext.onDownloadManagerAppearance?.(pending.value);
   });
 }

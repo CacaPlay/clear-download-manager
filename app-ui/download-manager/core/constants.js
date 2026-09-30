@@ -39,6 +39,7 @@ export const DEFAULT_DOWNLOAD_MANAGER_PREFERENCES = Object.freeze({
   compactRows: false,
   filter: 'all',
   category: 'all',
+  sortOrder: 'newest',
   query: '',
   selectedJobId: null,
   inspectorTab: 'summary',
@@ -66,10 +67,7 @@ export const COMMAND_NAV_ITEMS = Object.freeze([
 ]);
 
 export const ZEN_NAV_ITEMS = Object.freeze([
-  ['downloads', 'Descargas', 'download'],
-  ['queue', 'Cola', 'queue'],
-  ['running', 'Activas', 'play'],
-  ['completed', 'Completadas', 'check']
+  ['downloads', 'Descargas', 'download']
 ]);
 
 export const ENGINE_ITEMS = Object.freeze([

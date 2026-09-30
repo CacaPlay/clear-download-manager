@@ -2,6 +2,7 @@ import { loadDownloadManagerPreferences, longListVirtualizationPolicy, saveDownl
 
 export const runtimeState = {
   preferences: loadDownloadManagerPreferences(),
+  locale: 'es',
   modal: '',
   modalJobId: null,
   modalNewsId: '',
@@ -10,6 +11,12 @@ export const runtimeState = {
   videoSearchQuery: '',
   videoSearchBusy: false,
   videoSearchResults: [],
+  videoSearchComponentPrompt: null,
+  videoSearchPromptAccepted: false,
+  videoSearchPromptResolve: null,
+  videoSearchPhase: '',
+  videoSearchProgress: null,
+  videoSearchComponentError: '',
   videoSearchRequestId: 0,
   recoveryBusy: false,
   recoveryResult: null,
@@ -38,6 +45,12 @@ export const runtimeState = {
   unifiedSuggestions: [],
   unifiedActiveIndex: -1,
   unifiedSuggestionQuery: '',
+  unifiedComponentPrompt: null,
+  unifiedComponentPromptAccepted: false,
+  unifiedComponentPromptDeclined: false,
+  unifiedComponentPromptResolve: null,
+  unifiedComponentProgress: null,
+  unifiedComponentError: '',
   unifiedRequestId: 0,
   liveJobs: [],
   previousVisualStateByJobId: new Map(),
@@ -98,7 +111,7 @@ export const MAX_THUMBNAIL_CACHE_ENTRIES = 128;
 export const THUMBNAIL_FAILURE_TTL_MS = 30 * 1000;
 
 function virtualListKey(preferences, section) {
-  return [section, preferences.filter, preferences.category, preferences.query].join('|');
+  return [section, preferences.filter, preferences.category, preferences.sortOrder, preferences.query].join('|');
 }
 
 function virtualListState(preferences, section, policy) {
@@ -213,6 +226,13 @@ export function forceDownloadManagerAllView({ clearQuery = true } = {}) {
   runtimeState.mobileInspectorOpen = false;
   runtimeState.settingsOpen = false;
   if (clearQuery) {
+    runtimeState.unifiedComponentPromptResolve?.(false);
+    runtimeState.unifiedComponentPromptResolve = null;
+    runtimeState.unifiedComponentPrompt = null;
+    runtimeState.unifiedComponentPromptAccepted = false;
+    runtimeState.unifiedComponentPromptDeclined = false;
+    runtimeState.unifiedComponentProgress = null;
+    runtimeState.unifiedComponentError = '';
     runtimeState.unifiedQuery = '';
     runtimeState.unifiedSuggestions = [];
     runtimeState.unifiedActiveIndex = -1;
@@ -222,10 +242,24 @@ export function forceDownloadManagerAllView({ clearQuery = true } = {}) {
 }
 
 export function clearDownloadManagerSearchState() {
+  runtimeState.videoSearchPromptResolve?.(false);
+  runtimeState.videoSearchPromptResolve = null;
+  runtimeState.unifiedComponentPromptResolve?.(false);
+  runtimeState.unifiedComponentPromptResolve = null;
+  runtimeState.unifiedComponentPrompt = null;
+  runtimeState.unifiedComponentPromptAccepted = false;
+  runtimeState.unifiedComponentPromptDeclined = false;
+  runtimeState.unifiedComponentProgress = null;
+  runtimeState.unifiedComponentError = '';
   runtimeState.modal = '';
   runtimeState.videoSearchQuery = '';
   runtimeState.videoSearchBusy = false;
   runtimeState.videoSearchResults = [];
+  runtimeState.videoSearchComponentPrompt = null;
+  runtimeState.videoSearchPromptAccepted = false;
+  runtimeState.videoSearchPhase = '';
+  runtimeState.videoSearchProgress = null;
+  runtimeState.videoSearchComponentError = '';
   runtimeState.videoSearchRequestId += 1;
   runtimeState.unifiedQuery = '';
   runtimeState.unifiedFocused = false;

@@ -2,13 +2,16 @@
 
 use super::response_classification;
 use super::{
-    canonical_google_docs_export_url, create_http_download_job, current_downloads_dir,
-    deduplicate_storage_paths, filename_extension, filename_from_url, job_final_storage_paths,
-    job_is_active, job_partial_storage_paths, load_job_storage_record,
+    canonical_google_docs_export_url, categorized_download_dir, category_folder_for_filename,
+    category_folder_for_media_mode, choose_job_download_root, create_http_download_job,
+    current_downloads_dir, deduplicate_storage_paths, filename_extension, filename_from_url,
+    job_final_storage_paths, job_is_active, job_partial_storage_paths, load_job_storage_record,
+    original_or_generated_filename, read_download_behavior_settings,
     read_download_concurrency_settings, remote_download_probe, remove_managed_storage_path,
     run_download_worker, sanitize_filename, schedule_job_deletion_after_idle, stop_job_internal,
     stop_job_internal_without_wait, validate_managed_candidate, wait_for_job_idle,
     CancelJobReceipt, DeleteJobReceipt, DeletePlaylistReceipt, JobStoragePreview,
+    DOWNLOAD_DIRECTORY_PICKER_LOCK, DOWNLOAD_LOCATION_CANCELLED,
 };
 use crate::extension_bridge;
 use crate::{
@@ -32,7 +35,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
-use std::sync::{Mutex, OnceLock};
+use std::sync::Mutex;
 use std::time::Duration;
 use std::time::UNIX_EPOCH;
 use tauri::{AppHandle, State};
@@ -75,6 +78,7 @@ impl BrowserDownloadCaptureService {
     pub(crate) fn accept(
         request_id: &str,
         capture: Value,
+        app: &AppHandle,
         state: &LocalState,
     ) -> Result<Value, String> {
         if capture
@@ -117,6 +121,29 @@ impl BrowserDownloadCaptureService {
                 json!({ "ok": false, "status": "duplicate", "requestId": request_id, "jobId": job_id }),
             );
         }
+        let destination_root = match choose_job_download_root(app, state) {
+            Ok(Some(path)) => path,
+            Ok(None) => current_downloads_dir(state)?,
+            Err(error) if error == DOWNLOAD_LOCATION_CANCELLED => {
+                return Self::respond(
+                    request_id,
+                    json!({ "ok": false, "status": "cancelled", "requestId": request_id }),
+                )
+            }
+            Err(error) => {
+                return Self::respond(
+                    request_id,
+                    json!({ "ok": false, "status": "temporary_failure", "requestId": request_id, "error": error }),
+                )
+            }
+        };
+        let behavior = {
+            let connection = state
+                .connection
+                .lock()
+                .map_err(|_| "No se pudo bloquear la base local".to_string())?;
+            read_download_behavior_settings(&connection)
+        };
         let captured_filename = capture
             .get("filename")
             .and_then(Value::as_str)
@@ -129,17 +156,27 @@ impl BrowserDownloadCaptureService {
             .and_then(Value::as_str)
             .map(str::trim)
             .filter(|value| !value.is_empty());
-        let filename = resolve_download_filename(
+        let source_filename = resolve_download_filename(
             &parsed,
             &parsed,
             captured_filename,
             content_disposition,
             mime,
         );
+        let filename = original_or_generated_filename(
+            &source_filename,
+            None,
+            behavior.use_original_file_names,
+        );
+        let destination = categorized_download_dir(
+            &destination_root,
+            category_folder_for_filename(&filename),
+            behavior.create_category_folders,
+        );
         let receipt = match create_http_download_job(
             &state.db_path,
             state.active_downloads.clone(),
-            &current_downloads_dir(state)?,
+            &destination,
             &parsed,
             &filename,
             "Descarga capturada desde el navegador",
@@ -352,24 +389,27 @@ pub(crate) fn desktop_settings(
     state: State<'_, LocalState>,
 ) -> Result<DesktopSettingsSnapshot, String> {
     let downloads_dir = current_downloads_dir(&state)?;
-    let download_concurrency = {
+    let (download_concurrency, download_behavior) = {
         let connection = state
             .connection
             .lock()
             .map_err(|_| "No se pudo bloquear la base local".to_string())?;
-        read_download_concurrency_settings(&connection)
+        (
+            read_download_concurrency_settings(&connection),
+            read_download_behavior_settings(&connection),
+        )
     };
     Ok(DesktopSettingsSnapshot {
         downloads_dir: downloads_dir.to_string_lossy().to_string(),
         download_concurrency,
+        download_behavior,
     })
 }
 pub(crate) async fn choose_download_directory(
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<Option<String>, String> {
-    static DESTINATION_PICKER_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    let _picker_guard = DESTINATION_PICKER_LOCK
+    let _picker_guard = DOWNLOAD_DIRECTORY_PICKER_LOCK
         .get_or_init(|| Mutex::new(()))
         .try_lock()
         .map_err(|_| "Ya hay un selector de destino abierto".to_string())?;
@@ -446,9 +486,19 @@ pub(crate) async fn queue_http_download(
     extension_filename: Option<String>,
     extension_mime: Option<String>,
     extension_expected_extension: Option<String>,
+    destination_root: Option<PathBuf>,
     state: State<'_, LocalState>,
 ) -> Result<DownloadQueueReceipt, String> {
-    let downloads_dir = current_downloads_dir(&state)?;
+    let default_downloads_dir = current_downloads_dir(&state)?;
+    let destination_root = destination_root.unwrap_or(default_downloads_dir);
+    let behavior = {
+        let connection = state
+            .connection
+            .lock()
+            .map_err(|_| "No se pudo bloquear la base local".to_string())?;
+        read_download_behavior_settings(&connection)
+    };
+    let explicit_filename = filename.clone();
     let db_path = state.db_path.clone();
     let active_downloads = state.active_downloads.clone();
     let prepared = tauri::async_runtime::spawn_blocking(move || {
@@ -460,11 +510,11 @@ pub(crate) async fn queue_http_download(
             .as_ref()
             .map(|metadata| metadata.final_url.clone())
             .unwrap_or(request_url);
-        let resolved_filename = resolve_extension_download_filename(
+        let source_filename = resolve_extension_download_filename(
             &original_url,
             &final_url,
             extension_filename.as_deref(),
-            filename.as_deref(),
+            None,
             probe
                 .as_ref()
                 .and_then(|metadata| metadata.content_disposition.as_deref()),
@@ -479,37 +529,77 @@ pub(crate) async fn queue_http_download(
             .and_then(|metadata| metadata.content_type.as_deref())
             .map(response_classification::is_html_content_type_for_queue)
             .unwrap_or(false);
-        Ok::<_, String>((original_url, final_url, resolved_filename, html))
+        let resolved_filename = original_or_generated_filename(
+            &source_filename,
+            filename.as_deref(),
+            behavior.use_original_file_names,
+        );
+        Ok::<_, String>((
+            original_url,
+            final_url,
+            source_filename,
+            resolved_filename,
+            html,
+        ))
     })
     .await
     .map_err(|error| format!("No se pudo preparar la descarga: {error}"))??;
-    let (original_url, final_url, resolved_filename, html) = prepared;
+    let (original_url, final_url, source_filename, resolved_filename, html) = prepared;
     if html {
         if response_classification::is_supported_media_host(&original_url)
             || response_classification::is_supported_media_host(&final_url)
         {
+            let media_root = categorized_download_dir(
+                &destination_root,
+                category_folder_for_media_mode("video_mp4"),
+                behavior.create_category_folders,
+            );
+            let media_filename = explicit_filename
+                .as_deref()
+                .map(crate::downloads::sanitize_filename)
+                .filter(|value| !value.is_empty())
+                .or_else(|| {
+                    (behavior.use_original_file_names
+                        && !source_filename
+                            .to_ascii_lowercase()
+                            .starts_with("descarga."))
+                    .then(|| source_filename.clone())
+                });
             let media_receipt = crate::media::queue_media_download_named(
                 original_url.to_string(),
-                resolved_filename.clone(),
+                source_filename
+                    .rsplit_once('.')
+                    .map(|(stem, _)| stem)
+                    .unwrap_or(&source_filename)
+                    .to_string(),
                 None,
                 "bestvideo+bestaudio/best".into(),
                 "video_mp4".into(),
                 None,
-                Some(resolved_filename.clone()),
+                media_filename,
+                Some(destination_root),
                 state,
             )?;
             return Ok(DownloadQueueReceipt {
                 job_id: media_receipt.job_id,
-                filename: resolved_filename.clone(),
-                destination: downloads_dir
-                    .join(resolved_filename)
-                    .to_string_lossy()
-                    .to_string(),
+                filename: media_receipt.title,
+                destination: media_root.to_string_lossy().to_string(),
                 resumable: false,
             });
         }
         return Err("html_direct_unsupported: el enlace devolvió una página HTML y no pertenece a una plataforma multimedia soportada".into());
     }
+    let downloads_dir = categorized_download_dir(
+        &destination_root,
+        category_folder_for_filename(
+            if behavior.use_original_file_names && explicit_filename.is_none() {
+                &source_filename
+            } else {
+                &resolved_filename
+            },
+        ),
+        behavior.create_category_folders,
+    );
     create_http_download_job(
         &db_path,
         active_downloads,
@@ -534,7 +624,7 @@ pub(crate) async fn accept_browser_download_capture(
     if foreground {
         return BrowserDownloadCaptureService::prepare(&request_id, capture, app, &state).await;
     }
-    BrowserDownloadCaptureService::accept(&request_id, capture, &state)
+    BrowserDownloadCaptureService::accept(&request_id, capture, &app, &state)
 }
 pub(crate) fn set_job_status(
     id: i64,

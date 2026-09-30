@@ -74,6 +74,24 @@ the active pointer only after package validation succeeds. Users can verify,
 repair through the approved catalog, or remove an inactive component. There is
 no background service and no silent mandatory update.
 
+Installation progress comes from backend operation events: catalog preparation,
+package download, verification, staging, activation, and completion are shown
+as separate phases. Download bytes, total, percentage, and speed are displayed
+only when the backend has measured them or the verified signed catalog supplies
+the package size. Download can be cancelled while bytes are being transferred;
+verification, staging, and activation are not force-cancelled. A failed or
+cancelled operation returns to a retryable state and refreshes the component
+status.
+
+Media Tools and Torrent Engine can each be removed from Settings > Components
+without removing CDM Core or the other optional component. Removal is rejected
+while a Component Manager operation or active runtime task is using components.
+Only files under the manager-owned component directory are removed. The UI
+shows reclaimable space only when a safe scan can total those managed files;
+after removal it refreshes installed capabilities immediately. If a later task
+needs a removed capability, the app offers the same contextual install flow
+again.
+
 ## Local development and tests
 
 The legacy local `.cdmcomponent` builder remains available for isolated V1

@@ -1,14 +1,15 @@
-import { renderDownloadManager, bindDownloadManager, patchDownloadManagerAppearance, patchDownloadManagerLive, forceDownloadManagerAllView, clearDownloadManagerSearchState, setOptimisticJobStatus, isTransientUiOpen } from './download-manager/index.js?v=0.95.0-verify-20260911-r5';
+import { renderDownloadManager, bindDownloadManager, patchDownloadManagerAppearance, patchDownloadManagerLive, forceDownloadManagerAllView, clearDownloadManagerSearchState, setOptimisticJobStatus, isTransientUiOpen } from './download-manager/index.js?v=0.95.5-ui-redesign-20260929-r1';
 import { runtimeState } from './download-manager/state.js';
 import { clearFloatingLayer } from './download-manager/floating.js';
 import {
   configureAppearance, appearancePresets, defaultAppearance, APPEARANCE_REVISION, THUMBNAIL_CACHE_VERSION,
   visualDiagnosticsSnapshot, bindVisualDiagnostics, thumbnailSrc, clamp,
   displayedScalePercent, normalizeAppearance, loadStoredAppearance, storeAppearanceLocally,
-  automaticScalePercent, scheduleAppearanceLivePreview, applyAppearance, markAppearancePersistence
-} from './modules/appearance/index.js?v=0.95.0-verify-20260911-r4';
+  automaticScalePercent, scheduleAppearanceLivePreview, applyAppearance, markAppearancePersistence,
+  applyBrandIconVariant, iconVariantForColor
+} from './modules/appearance/index.js?v=0.95.5-ui-redesign-20260929-r1';
 import { bindAppearanceSync } from './modules/appearance/sync.js?v=0.95.0-verify-appearance';
-import { configureSettings, settingsMarkup, setSettingsAdvancedOpen } from './modules/settings/index.js?v=0.95.0-verify-20260911-r3';
+import { configureSettings, settingsMarkup, setSettingsAdvancedOpen, syncAccentPresetSelection } from './modules/settings/index.js?v=0.95.5-ui-redesign-20260929-r1';
 import {
   configureMedia, mediaSizeLabel, outputModeIsAudio, preferredVideoFormat, preferredFormatForOutput
 } from './modules/media/index.js';
@@ -46,8 +47,9 @@ import {
 import {
   configureComposition, render, bindThumbnailFallbacks, start
 } from './modules/composition/index.js?v=0.95.0-verify-20260911-r3';
-import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, translate } from './modules/i18n/index.js';
-import { localizeDom } from './modules/i18n/runtime.js';
+import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, translate } from './modules/i18n/index.js?v=0.95.5-ui-redesign-20260929-r1';
+import { localizeDom } from './modules/i18n/runtime.js?v=0.95.5-ui-redesign-20260929-r1';
+import { patchUpdateProgressSlots } from './download-manager/view/shared.js';
 
 // CDM uses its own context menus for downloads and no browser context menu on
 // empty content. Keep this at document capture phase so every main-view area
@@ -60,6 +62,7 @@ const previewAccent = qs.get('accent') || '';
 const previewPreset = qs.get('preset') || '';
 configureAppearance({ previewAccent, previewPreset, getAppState: () => appState, onDownloadManagerAppearance: patchDownloadManagerAppearance });
 const APP_VERSION = '0.95.4';
+const APP_UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 const storeManagedDistribution = document.querySelector('meta[name="cdm-distribution"]')?.content === 'microsoft-store';
 const initialLocale = loadLocale();
 const BUILD_ID = 'CDM-0.95.4-20260922-release-migration';
@@ -67,6 +70,7 @@ let deferredDownloadManagerRefresh = false;
 let deferredDownloadManagerRefreshTimer = 0;
 let componentProgressRenderTimer = 0;
 let snapshotRefreshTimer = 0;
+let appUpdateCheckTimer = 0;
 let lastFullSnapshotAt = 0;
 const DOWNLOAD_ACTIVITY_REFRESH_MS = 250;
 const BACKGROUND_SNAPSHOT_REFRESH_MS = 1000;
@@ -186,7 +190,7 @@ function saveAutoUpdatePreference(enabled) {
 }
 function shouldCheckForAppUpdate() {
   const last = Number(appState.experienceSettings?.lastUpdateCheckAt || 0);
-  return !last || Date.now() - last >= 6 * 60 * 60 * 1000;
+  return !last || Date.now() - last >= APP_UPDATE_CHECK_INTERVAL_MS;
 }
 function markAppUpdateCheck() {
   const timestamp = Date.now();
@@ -284,8 +288,8 @@ const navItems = [
 
 const demoPlaylist = [
   { id: 'p1', title: 'Cafuné — Tek It (I Watch The Moon)', creator: 'Cafuné', duration: '3:14', selected: true, tone: 1 },
-  { id: 'p2', title: 'Mitski — My Love Mine All Mine', creator: 'LatinHype', duration: '2:19', selected: true, tone: 2, thumbnail: './app-ui/assets/brand/clear-download-manager-celeste.png' },
-  { id: 'p3', title: 'Jace June — Come Home', creator: 'Jace June', duration: '2:49', selected: true, tone: 3, thumbnail: './app-ui/assets/brand/clear-download-manager-celeste.png' },
+  { id: 'p2', title: 'Mitski — My Love Mine All Mine', creator: 'LatinHype', duration: '2:19', selected: true, tone: 2, thumbnail: './app-ui/assets/brand/clear-download-manager-celeste.webp' },
+  { id: 'p3', title: 'Jace June — Come Home', creator: 'Jace June', duration: '2:49', selected: true, tone: 3, thumbnail: './app-ui/assets/brand/clear-download-manager-celeste.webp' },
   { id: 'p4', title: 'Hero', creator: 'Skyper', duration: '2:21', selected: true, tone: 4 },
   { id: 'p5', title: 'Die With A Smile', creator: 'Lady Gaga', duration: '4:12', selected: true, tone: 5 },
   { id: 'p6', title: 'Imogen Heap — Headlock', creator: 'Imogen Heap', duration: '3:35', selected: true, tone: 6 },
@@ -323,6 +327,17 @@ const previewSections = { home: 'Inicio', downloads: 'Descargas', documents: 'Do
 
 
 const MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cacatools.media-download-preferences.v1';
+const V1_SETTINGS_RESET_MIGRATION_KEY = 'clear-download-manager/settings-defaults-reset-v1.0.0';
+const LOCAL_APPLICATION_PREFERENCE_KEYS = [
+  'cacatools.desktop.appearance.v2',
+  'cacatools.desktop.appearance.v1',
+  'cacatools.download-manager.v2',
+  'cacatools.download-manager.v1',
+  MEDIA_DOWNLOAD_PREFERENCES_KEY,
+  'clear-download-manager/locale-v1',
+  AUTO_UPDATE_STORAGE_KEY,
+  LAST_UPDATE_CHECK_KEY
+];
 const VIDEO_QUALITY_VALUES = new Set(['best', '2160', '1440', '1080', '720', '480', '360', '240', '144']);
 function videoSelectorForQuality(value) {
   const quality = normalizeVideoQuality(value);
@@ -388,6 +403,7 @@ const appState = {
   toolUpdateChecking: false,
   toolUpdateApplying: false,
   components: [],
+  componentOperations: {},
   downloadSchedules: previewMode ? [
     { id: 1, job_id: 2, action: 'resume', run_at: '2026-08-01 08:30:00', repeat_daily: false, enabled: true, last_run_at: null },
     { id: 2, job_id: 1, action: 'pause', run_at: '2026-08-01 23:00:00', repeat_daily: true, enabled: true, last_run_at: null }
@@ -440,6 +456,12 @@ const appState = {
   bandwidthCustomValue: 1,
   bandwidthCustomUnit: 'MB',
   downloadConcurrency: { http: 2, multimedia: 1 },
+  downloadBehaviorSettings: {
+    createCategoryFolders: true,
+    useOriginalFileNames: true,
+    askForDownloadLocation: false,
+    resumeInterruptedDownloads: true
+  },
   autoUpdateEnabled: loadAutoUpdatePreference(),
   extensionBridgeStatus: previewMode ? { prepared: true, registered: false, hostName: 'lat.cacaplay.cacatools.downloadmanager', protocolVersion: 1 } : null,
   startupStatus: previewMode ? { supported: false, enabled: false, mode: 'background' } : null,
@@ -635,11 +657,18 @@ async function bindAppUpdateProgress() {
       const payload = event?.payload && typeof event.payload === 'object' ? event.payload : {};
       appState.updaterProgress = payload;
       if (payload.phase === 'install') appState.updaterMessage = 'Verificando e instalando la actualización firmada…';
-      requestDownloadManagerRender({ force: true });
+      patchCurrentAppUpdateProgress();
     });
   } catch (error) {
     console.warn('No se pudo registrar el progreso del actualizador.', error);
   }
+}
+
+function patchCurrentAppUpdateProgress() {
+  return patchUpdateProgressSlots(document.querySelector('.dm-host'), {
+    updaterInstallBusy: appState.updaterInstallBusy,
+    updaterProgress: appState.updaterProgress
+  });
 }
 
 async function bindComponentDownloadProgress() {
@@ -648,16 +677,11 @@ async function bindComponentDownloadProgress() {
   try {
     await listen('component-download-progress', (event) => {
       const payload = event?.payload && typeof event.payload === 'object' ? event.payload : {};
-      const id = String(payload.id || '');
+      const id = String(payload.componentId || '');
       if (!['media-tools', 'torrent-engine'].includes(id)) return;
-      const state = String(payload.state || 'downloading');
-      if (!['downloading', 'verifying', 'installing'].includes(state)) return;
-      const progressPercent = Number(payload.progressPercent);
-      if (!Number.isFinite(progressPercent)) return;
-      const current = Array.isArray(appState.components) ? appState.components : [];
-      appState.components = current.map((component) => component.id === id
-        ? { ...component, state, progressPercent: Math.max(0, Math.min(100, progressPercent)) }
-        : component);
+      const phase = String(payload.phase || '');
+      if (!['preparing', 'download', 'verify', 'install', 'activate', 'done', 'error', 'cancelled'].includes(phase)) return;
+      appState.componentOperations = { ...(appState.componentOperations || {}), [id]: { ...payload } };
       if (appState.activeSection !== 'Ajustes' || componentProgressRenderTimer) return;
       componentProgressRenderTimer = window.setTimeout(() => {
         componentProgressRenderTimer = 0;
@@ -666,6 +690,43 @@ async function bindComponentDownloadProgress() {
     });
   } catch (error) {
     console.warn('No se pudo registrar el progreso de componentes.', error);
+  }
+}
+
+function openComponentManagerForInstall(componentId) {
+  const id = String(componentId || '');
+  if (!['media-tools', 'torrent-engine'].includes(id)) return;
+  appState.settingsReturnSection = 'Descargas';
+  appState.settingsCategory = 'components';
+  appState.activeSection = 'Ajustes';
+  appState.activeTool = null;
+  render();
+
+  const deadline = Date.now() + 2500;
+  const focusAndStart = () => {
+    if (appState.activeSection !== 'Ajustes' || appState.settingsCategory !== 'components') return;
+    const row = document.querySelector(`[data-component-row="${id}"]`);
+    if (!row) {
+      if (Date.now() < deadline) window.setTimeout(focusAndStart, 50);
+      return;
+    }
+    row.scrollIntoView?.({ block: 'center' });
+    row.focus({ preventScroll: true });
+    const installButton = row.querySelector('[data-component-action="install"]');
+    if (installButton && !installButton.disabled) installButton.click();
+  };
+  window.requestAnimationFrame(() => window.setTimeout(focusAndStart, 0));
+}
+
+async function bindComponentManagerInstallRequests() {
+  const listen = window.__TAURI__?.event?.listen;
+  if (typeof listen !== 'function') return;
+  try {
+    await listen('component-manager-install-request', event => {
+      openComponentManagerForInstall(event?.payload?.componentId);
+    });
+  } catch (error) {
+    console.warn('No se pudo abrir Component Manager desde la preparación multimedia.', error);
   }
 }
 
@@ -720,6 +781,7 @@ configureComposition({
   flushDeferredDownloadManagerRefresh,
   shouldCheckForAppUpdate,
   checkForAppUpdate,
+  startAutomaticAppUpdateChecks,
   startSnapshotRefreshLoop,
   runProgressAcceptanceAutopilot,
   clearFloatingLayer,
@@ -783,6 +845,27 @@ async function invoke(command, args = {}) {
   const tauriInvoke = window.__TAURI__?.core?.invoke;
   if (!tauriInvoke) throw new Error('Tauri no disponible');
   return tauriInvoke(command, args);
+}
+
+async function applyV1SettingsResetMigration() {
+  if (previewMode) return false;
+  try {
+    if (localStorage.getItem(V1_SETTINGS_RESET_MIGRATION_KEY) === '1') return false;
+  } catch { return false; }
+
+  try {
+    await invoke('reset_application_preferences');
+  } catch (error) {
+    console.warn('No se pudieron restablecer los ajustes para la versión 1.0.0; se volverá a intentar al iniciar.', error);
+    return false;
+  }
+
+  LOCAL_APPLICATION_PREFERENCE_KEYS.forEach((key) => {
+    try { localStorage.removeItem(key); } catch {}
+  });
+  try { localStorage.setItem(V1_SETTINGS_RESET_MIGRATION_KEY, '1'); } catch {}
+  window.location.reload();
+  return true;
 }
 
 let experiencePersistPromise = Promise.resolve();
@@ -889,6 +972,26 @@ async function persistDownloadConcurrency(settings) {
   const saved = await invoke('save_download_concurrency', { settings: normalized });
   appState.downloadConcurrency = normalizeDownloadConcurrency(saved);
   return appState.downloadConcurrency;
+}
+
+function normalizeDownloadBehaviorSettings(raw = {}) {
+  return {
+    createCategoryFolders: raw?.createCategoryFolders !== false,
+    useOriginalFileNames: raw?.useOriginalFileNames !== false,
+    askForDownloadLocation: raw?.askForDownloadLocation === true,
+    resumeInterruptedDownloads: raw?.resumeInterruptedDownloads !== false
+  };
+}
+
+async function persistDownloadBehaviorSettings(settings) {
+  const normalized = normalizeDownloadBehaviorSettings(settings);
+  if (previewMode) {
+    appState.downloadBehaviorSettings = normalized;
+    return normalized;
+  }
+  const saved = await invoke('save_download_behavior_settings', { settings: normalized });
+  appState.downloadBehaviorSettings = normalizeDownloadBehaviorSettings(saved || normalized);
+  return appState.downloadBehaviorSettings;
 }
 
 function newsMessages() {
@@ -1043,12 +1146,13 @@ function withTimeout(promise, timeoutMs, message = 'La operación tardó demasia
 
 function friendlyError(error) {
   const raw = String(error?.message || error || '');
+  if (/download_location_cancelled/i.test(raw)) return 'No se eligió una carpeta; la descarga no se inició.';
   if (/timed out|tardó demasiado|timeout/i.test(raw)) return 'La operación tardó demasiado.';
   if (/cancel|cancelad/i.test(raw)) return 'La descarga fue cancelada.';
   if (/metadata_incomplete|no se encontraron canciones|no se encontró la canción/i.test(raw)) return 'No se encontró la canción.';
   if (/provider_failed|download_not_allowed/i.test(raw)) return 'No se encontró una versión disponible para descargar.';
   if (/component catalog|component package|signing key|signature|corresponding.source|component download/i.test(raw)) return 'Clear no pudo verificar el catálogo o el paquete opcional. No se activó una versión nueva.';
-  if (/archivo final|ffmpeg_unavailable|enoent|ffmpeg.*(missing|not found)|yt.?dlp.*(missing|not found)/i.test(raw)) return 'No están disponibles las herramientas multimedia necesarias. Instálalas desde Ajustes > Componentes.';
+  if (/archivo final|ffmpeg_unavailable|enoent|ffmpeg.*(missing|not found)|yt.?dlp.*(missing|not found)/i.test(raw)) return 'No están disponibles las herramientas multimedia necesarias. Instálalas desde Ajustes > Complementos.';
   return raw || 'No se pudo completar la operación.';
 }
 
@@ -1097,6 +1201,21 @@ async function checkForAppUpdate({ silent = false } = {}) {
   }
 }
 
+function runAutomaticAppUpdateCheck({ force = false } = {}) {
+  if (!appState.autoUpdateEnabled || previewMode || storeManagedDistribution || appState.updaterStatus?.storeManaged) return;
+  if (appState.updaterStatus?.configured === false || (!force && !shouldCheckForAppUpdate())) return;
+  void checkForAppUpdate({ silent: true });
+}
+
+function startAutomaticAppUpdateChecks() {
+  if (previewMode) return false;
+  if (!appUpdateCheckTimer) {
+    appUpdateCheckTimer = window.setInterval(() => runAutomaticAppUpdateCheck(), APP_UPDATE_CHECK_INTERVAL_MS);
+  }
+  runAutomaticAppUpdateCheck({ force: true });
+  return true;
+}
+
 async function installAvailableAppUpdate() {
   if (previewMode || storeManagedDistribution || appState.updaterStatus?.storeManaged || appState.updaterInstallBusy) return;
   const activeDownloads = Array.isArray(appState.snapshot?.jobs)
@@ -1109,7 +1228,7 @@ async function installAvailableAppUpdate() {
   appState.updaterInstallBusy = true;
   appState.updaterProgress = { phase: 'download', percent: null, downloadedBytes: 0, contentLength: null };
   appState.updaterMessage = 'Descargando y verificando la actualización firmada…';
-  requestDownloadManagerRender({ force: true });
+  patchCurrentAppUpdateProgress();
   try {
     await invoke('install_app_update');
     const installedVersion = String(appState.availableUpdate?.version || '');
@@ -1120,7 +1239,7 @@ async function installAvailableAppUpdate() {
     appState.updaterMessage = String(error);
     appState.updaterProgress = null;
     appState.updaterInstallBusy = false;
-    requestDownloadManagerRender({ force: true });
+    patchCurrentAppUpdateProgress();
     showToast(appState.updaterMessage, 'error');
   }
 }
@@ -1219,7 +1338,7 @@ function downloadsPageMarkup() {
     newsFilter: runtimeState.newsFilter,
     translate: (key, ...args) => t(key, ...args),
     formatDate: (value) => formatLocaleDate(value, currentLocale()),
-    onSupport: () => { void invoke('open_external_url', { url: 'https://www.paypal.com/donate/?hosted_button_id=JV9DUQKE265HY' }).catch((error) => showToast(friendlyError(error), 'error')); },
+    onSupport: () => { void invoke('open_external_url', { url: 'https://cdm.cacaplay.lat' }).catch((error) => showToast(friendlyError(error), 'error')); },
     onDismissHistory: (id) => {
       const ids = [...(appState.experienceSettings?.dismissedHistoryIds || []), String(id || '')].filter(Boolean).slice(-32);
       void persistExperienceSettings({ dismissedHistoryIds: ids });
@@ -1231,6 +1350,7 @@ function downloadsPageMarkup() {
       requestDownloadManagerRender({ force: true });
     },
     newsHasAttention: newsAttention(newsMessages(), appState.experienceSettings),
+    newsUpdateAvailable: Boolean(appState.availableUpdate?.version),
     previewMode,
     invoke,
     onNewDownload: openDownloadDialog,
@@ -1300,9 +1420,31 @@ function bindEvents() {
     appState.activeSection = button.dataset.sectionJump || 'Inicio';
     render();
   }));
+  document.querySelector('[data-dm-open-complements]')?.addEventListener('click', () => {
+    appState.settingsReturnSection = 'Descargas';
+    appState.settingsCategory = 'components';
+    appState.activeSection = 'Ajustes';
+    render();
+  });
   document.querySelector('.settings-back')?.addEventListener('click', () => {
     appState.activeSection = appState.settingsReturnSection || 'Descargas';
     render();
+  });
+  document.querySelector('[data-settings-reset-all]')?.addEventListener('click', async (event) => {
+    if (!window.confirm(t('¿Restablecer los ajustes de Clear Download Manager? Las descargas, el historial y los archivos se conservarán.'))) return;
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      if (!previewMode) await invoke('reset_application_preferences');
+      LOCAL_APPLICATION_PREFERENCE_KEYS.forEach((key) => {
+        try { localStorage.removeItem(key); } catch {}
+      });
+      showToast(t('Se restablecieron los ajustes.'), 'success');
+      window.setTimeout(() => window.location.reload(), 900);
+    } catch (error) {
+      button.disabled = false;
+      showToast(String(error), 'error');
+    }
   });
   document.querySelectorAll('[data-settings-category]').forEach((button) => button.addEventListener('click', () => {
     appState.settingsCategory = button.dataset.settingsCategory || 'general';
@@ -1352,9 +1494,21 @@ function bindEvents() {
   });
   const httpConcurrencyInput = document.querySelector('#http-concurrency-input');
   const multimediaConcurrencyInput = document.querySelector('#multimedia-concurrency-input');
+  document.querySelectorAll('[data-settings-step]').forEach((button) => button.addEventListener('click', () => {
+    const input = document.getElementById(button.dataset.settingsStep || '');
+    if (!input || input.disabled) return;
+    const min = Number(input.min || 0);
+    const max = Number(input.max || Number.MAX_SAFE_INTEGER);
+    const current = Number(input.value || min);
+    const delta = Math.sign(Number(button.dataset.settingsStepDelta || 0));
+    input.value = String(Math.min(max, Math.max(min, current + delta)));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }));
   const saveDownloadConcurrency = async () => {
     const inputs = [httpConcurrencyInput, multimediaConcurrencyInput].filter(Boolean);
+    const stepButtons = [...document.querySelectorAll('[data-settings-step]')];
     inputs.forEach((input) => { input.disabled = true; });
+    stepButtons.forEach((button) => { button.disabled = true; });
     try {
       await persistDownloadConcurrency({
         http: Number(httpConcurrencyInput?.value),
@@ -1363,12 +1517,28 @@ function bindEvents() {
       render();
       showToast('Descargas simultáneas guardadas', 'success');
     } catch (error) {
-      inputs.forEach((input) => { input.disabled = false; });
       showToast(String(error), 'error');
+      render();
     }
   };
   httpConcurrencyInput?.addEventListener('change', saveDownloadConcurrency);
   multimediaConcurrencyInput?.addEventListener('change', saveDownloadConcurrency);
+  document.querySelectorAll('[data-download-behavior]').forEach((control) => control.addEventListener('change', async (event) => {
+    const key = event.currentTarget.dataset.downloadBehavior;
+    if (!['createCategoryFolders', 'useOriginalFileNames', 'askForDownloadLocation', 'resumeInterruptedDownloads'].includes(key)) return;
+    const previous = normalizeDownloadBehaviorSettings(appState.downloadBehaviorSettings);
+    const next = { ...previous, [key]: Boolean(event.currentTarget.checked) };
+    event.currentTarget.disabled = true;
+    try {
+      await persistDownloadBehaviorSettings(next);
+      showToast('Preferencia de descarga guardada', 'success');
+    } catch (error) {
+      appState.downloadBehaviorSettings = previous;
+      showToast(String(error), 'error');
+    } finally {
+      render();
+    }
+  }));
   document.querySelector('.tool-update-check')?.addEventListener('click', async () => {
     if (appState.toolUpdateChecking || appState.toolUpdateApplying) return;
     appState.toolUpdateChecking = true;
@@ -1414,26 +1584,33 @@ function bindEvents() {
     button.disabled = true;
     try {
       if (action === 'install') {
-        appState.components = (Array.isArray(appState.components) ? appState.components : []).map((component) => component.id === id
-          ? { ...component, state: 'downloading', progressPercent: 0 }
-          : component);
-        render();
         const installed = await invoke('install_component_from_catalog', { id });
         if (!installed) return;
       } else if (action === 'verify') {
         await invoke('verify_component', { id });
       } else if (action === 'remove') {
         await invoke('remove_component', { id });
+        appState.componentOperations = { ...(appState.componentOperations || {}) };
+        delete appState.componentOperations[id];
+      } else if (action === 'cancel') {
+        const accepted = await invoke('cancel_component_install', { id });
+        if (!accepted) showToast('La descarga ya no se puede cancelar en esta fase.', 'info');
       }
-      [appState.components, appState.runtimeStatus, appState.mediaRuntimeStatus] = await Promise.all([
-        invoke('list_components'),
-        invoke('runtime_status'),
-        invoke('media_runtime_status')
-      ]);
-      showToast(action === 'remove' ? 'Componente quitado' : action === 'verify' ? 'Verificación terminada' : 'Componente instalado', 'success');
+      if (action !== 'cancel') {
+        showToast(action === 'remove' ? 'Componente quitado' : action === 'verify' ? 'Verificación terminada' : 'Componente instalado', 'success');
+      }
     } catch (error) {
       showToast(friendlyError(error), 'error');
     } finally {
+      try {
+        [appState.components, appState.runtimeStatus, appState.mediaRuntimeStatus] = await Promise.all([
+          invoke('list_components'),
+          invoke('runtime_status'),
+          invoke('media_runtime_status')
+        ]);
+      } catch (refreshError) {
+        console.warn('Could not refresh Component Manager status after the operation.', refreshError);
+      }
       button.disabled = false;
       render();
     }
@@ -1467,11 +1644,8 @@ function bindEvents() {
     appState.appearance = normalizeAppearance({ ...appState.appearance, ...preset, preset: preset.id, appearanceRevision: APPEARANCE_REVISION });
     storeAppearanceLocally(appState.appearance);
     applyAppAppearance(appState.appearance);
-    document.querySelectorAll('.settings-accent-swatch').forEach((entry) => {
-      const isActive = entry === button;
-      entry.classList.toggle('is-active', isActive);
-      entry.setAttribute('aria-pressed', String(isActive));
-    });
+    syncAccentPresetSelection(document, preset.id, icon('check', 14));
+    applyBrandIconVariant(iconVariantForColor(appState.appearance.accent));
     const colorInput = document.querySelector('#accent-color');
     const colorCode = document.querySelector('.settings-custom-color code');
     if (colorInput) colorInput.value = appState.appearance.accent;
@@ -1513,8 +1687,8 @@ function bindEvents() {
     const value = displayedScalePercent(rawValue);
     if (disableAuto) {
       appState.appearance.autoScale = false;
-      const auto = document.querySelector('#auto-scale-select');
-      if (auto) auto.value = 'false';
+      const auto = document.querySelector('#auto-scale-toggle');
+      if (auto) auto.checked = false;
     }
     if (scaleRange) { scaleRange.value = String(value); scaleRange.disabled = false; syncRangeVisual(scaleRange); }
     if (scaleNumber) { scaleNumber.value = String(value); scaleNumber.disabled = false; }
@@ -1532,6 +1706,7 @@ function bindEvents() {
     });
     scheduleAppearanceLivePreview(appState.appearance);
     if (patch.accent) {
+      syncAccentPresetSelection(document, null, icon('check', 14));
       const colorCode = document.querySelector('.settings-custom-color code');
       if (colorCode) colorCode.textContent = appState.appearance.accent.toUpperCase();
     }
@@ -1545,8 +1720,8 @@ function bindEvents() {
       ?? document.querySelector(`[data-appearance-field="${field}"]`)?.value
       ?? fallback;
     const color = document.querySelector('#accent-color')?.value || appState.appearance.accent;
-    const autoScaleValue = document.querySelector('#auto-scale-select')?.value;
-    const autoScale = autoScaleValue == null ? appState.appearance.autoScale : autoScaleValue === 'true';
+    const autoScaleControl = document.querySelector('#auto-scale-toggle');
+    const autoScale = autoScaleControl == null ? appState.appearance.autoScale : Boolean(autoScaleControl.checked);
     const scale = displayedScalePercent(scaleNumber?.value ?? scaleRange?.value ?? appState.appearance.scale);
     appState.appearance = normalizeAppearance({
       ...appState.appearance,
@@ -1623,7 +1798,7 @@ function bindEvents() {
   document.querySelector('#accent-color')?.addEventListener('change', () => scheduleAppearancePersist(0));
   document.querySelector('#intensity-range')?.addEventListener('change', () => scheduleAppearancePersist(0));
   document.querySelectorAll('[data-appearance-field]').forEach((control) => {
-    if (control.id !== 'accent-color' && control.id !== 'intensity-range' && control.id !== 'auto-scale-select') {
+    if (control.id !== 'accent-color' && control.id !== 'intensity-range' && control.id !== 'auto-scale-toggle') {
       control.addEventListener('input', () => {
         const field = control.dataset.appearanceField;
         if (field === 'progressActive') appState.appearance.progressActiveCustomized = true;
@@ -1646,8 +1821,8 @@ function bindEvents() {
   scaleNumber?.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); setScaleControls(event.currentTarget.value); updateAppearanceFromControls({ commit: true }); } });
   scaleDecrease?.addEventListener('click', () => { setScaleControls(Number(scaleNumber?.value || appState.appearance.scale) - 5); updateAppearanceFromControls({ commit: true }); });
   scaleIncrease?.addEventListener('click', () => { setScaleControls(Number(scaleNumber?.value || appState.appearance.scale) + 5); updateAppearanceFromControls({ commit: true }); });
-  document.querySelector('#auto-scale-select')?.addEventListener('change', (event) => {
-    const disabled = event.target.value === 'true';
+  document.querySelector('#auto-scale-toggle')?.addEventListener('change', (event) => {
+    const disabled = Boolean(event.currentTarget.checked);
     [scaleRange, scaleNumber, scaleDecrease, scaleIncrease].filter(Boolean).forEach((element) => { element.disabled = disabled; });
     document.querySelector('.settings-scale-control')?.classList.toggle('is-disabled', disabled);
     const manualValue = displayedScalePercent(appState.appearance.scale);
@@ -1699,6 +1874,7 @@ function bindEvents() {
     }
     await persistExperienceSettings({ [key]: value });
     appState.autoUpdateEnabled = appState.experienceSettings.automaticUpdateChecks !== false;
+    if (key === 'automaticUpdateChecks' && appState.autoUpdateEnabled) startAutomaticAppUpdateChecks();
     showToast('Preferencia guardada', 'success');
     render();
   }));
@@ -1793,7 +1969,7 @@ function bindEvents() {
     newsFilter: runtimeState.newsFilter,
     translate: (key, ...args) => t(key, ...args),
     formatDate: (value) => formatLocaleDate(value, currentLocale()),
-    onSupport: () => { void invoke('open_external_url', { url: 'https://www.paypal.com/donate/?hosted_button_id=JV9DUQKE265HY' }).catch((error) => showToast(friendlyError(error), 'error')); },
+    onSupport: () => { void invoke('open_external_url', { url: 'https://cdm.cacaplay.lat' }).catch((error) => showToast(friendlyError(error), 'error')); },
     onDismissHistory: (id) => {
       const ids = [...(appState.experienceSettings?.dismissedHistoryIds || []), String(id || '')].filter(Boolean).slice(-32);
       void persistExperienceSettings({ dismissedHistoryIds: ids });
@@ -1805,6 +1981,7 @@ function bindEvents() {
       requestDownloadManagerRender({ force: true });
     },
     newsHasAttention: newsAttention(newsMessages(), appState.experienceSettings),
+    newsUpdateAvailable: Boolean(appState.availableUpdate?.version),
     invoke,
     onNewDownload: openDownloadDialog,
     onBeforeOpenPreparation: () => {
@@ -1870,6 +2047,7 @@ function bindEvents() {
     onAutoUpdateChange: (enabled) => {
       appState.autoUpdateEnabled = Boolean(enabled);
       void persistExperienceSettings({ automaticUpdateChecks: appState.autoUpdateEnabled });
+      if (appState.autoUpdateEnabled) startAutomaticAppUpdateChecks();
       requestDownloadManagerRender({ force: true });
     },
     onChooseDownloadDirectory: chooseDownloadDirectory,
@@ -2064,24 +2242,42 @@ void bindAppearanceSync({
   }
 });
 
-const nativeClipboardFocusBinding = !previewMode ? bindNativeClipboardFocus() : Promise.resolve();
-const destinationPickerStateBinding = !previewMode ? bindDestinationPickerState() : Promise.resolve();
-const preparationModalStateBinding = !previewMode ? bindPreparationModalState() : Promise.resolve();
-const appUpdateProgressBinding = !previewMode ? bindAppUpdateProgress() : Promise.resolve();
-const componentDownloadProgressBinding = !previewMode ? bindComponentDownloadProgress() : Promise.resolve();
-const startupPromise = start();
+const settingsMigrationPromise = applyV1SettingsResetMigration();
+let settingsMigrationTriggeredReload = false;
+const nativeClipboardFocusBinding = settingsMigrationPromise.then((reset) => !reset && !previewMode ? bindNativeClipboardFocus() : undefined);
+const destinationPickerStateBinding = settingsMigrationPromise.then((reset) => !reset && !previewMode ? bindDestinationPickerState() : undefined);
+const preparationModalStateBinding = settingsMigrationPromise.then((reset) => !reset && !previewMode ? bindPreparationModalState() : undefined);
+const appUpdateProgressBinding = settingsMigrationPromise.then((reset) => !reset && !previewMode ? bindAppUpdateProgress() : undefined);
+const componentDownloadProgressBinding = settingsMigrationPromise.then((reset) => !reset && !previewMode ? bindComponentDownloadProgress() : undefined);
+const componentManagerInstallRequestBinding = settingsMigrationPromise.then((reset) => !reset && !previewMode ? bindComponentManagerInstallRequests() : undefined);
+window.addEventListener('cdm:component-manager-install-request', event => {
+  openComponentManagerForInstall(event?.detail?.componentId);
+});
+const startupPromise = settingsMigrationPromise.then(async (reset) => {
+  if (reset) {
+    settingsMigrationTriggeredReload = true;
+    return;
+  }
+  await start();
+});
 // The startup snapshot hydrates the persisted accent asynchronously.  Apply
 // the native icon once, after that snapshot is ready, then leave it alone while
 // ordinary renders and download updates occur.
 void startupPromise.then(() => {
-  if (!previewMode) applyAppAppearance(appState.appearance, { updateNativeIcon: true });
+  if (!previewMode && !settingsMigrationTriggeredReload) {
+    applyAppAppearance(appState.appearance, { updateNativeIcon: true });
+    startAutomaticAppUpdateChecks();
+  }
 }).catch(() => {});
 if (!previewMode) {
-  clipboardFocusWatcher.start();
   // A launch can complete without emitting a new focus event. Check only
   // after the real startup lifecycle has hydrated settings and rendered the
   // main surface, so the coordinator can present the suggestion safely.
-  void Promise.all([nativeClipboardFocusBinding, destinationPickerStateBinding, preparationModalStateBinding, appUpdateProgressBinding, componentDownloadProgressBinding, startupPromise])
-    .then(() => clipboardFocusWatcher.checkNow())
+  void Promise.all([nativeClipboardFocusBinding, destinationPickerStateBinding, preparationModalStateBinding, appUpdateProgressBinding, componentDownloadProgressBinding, componentManagerInstallRequestBinding, startupPromise])
+    .then((results) => {
+      if (settingsMigrationTriggeredReload) return;
+      clipboardFocusWatcher.start();
+      return clipboardFocusWatcher.checkNow();
+    })
     .catch(() => {});
 }

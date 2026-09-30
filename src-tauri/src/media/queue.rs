@@ -7,18 +7,18 @@ pub(crate) struct MediaQueueReceipt {
     pub(crate) sequential: bool,
 }
 use rusqlite::params;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
 use super::{
-    current_downloads_dir, normalize_tiktok_source_value, run_media_worker_with_options,
-    safe_format_selector, safe_remote_thumbnail_url, saved_media_session_for_db,
-    validate_media_session_options, validate_media_url, validate_netscape_cookie_file,
-    MediaSessionOptions,
+    normalize_tiktok_source_value, run_media_worker_with_options, safe_format_selector,
+    safe_remote_thumbnail_url, saved_media_session_for_db, validate_media_session_options,
+    validate_media_url, validate_netscape_cookie_file, MediaSessionOptions,
 };
 use crate::LocalState;
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn queue_media_download(
     url: String,
     title: String,
@@ -26,6 +26,7 @@ pub(crate) fn queue_media_download(
     format_selector: String,
     output_mode: String,
     expected_duration_seconds: Option<f64>,
+    destination_root: Option<PathBuf>,
     state: State<'_, LocalState>,
 ) -> Result<MediaQueueReceipt, String> {
     queue_media_download_with_filename(
@@ -36,6 +37,7 @@ pub(crate) fn queue_media_download(
         output_mode,
         expected_duration_seconds,
         None,
+        destination_root,
         saved_media_session_for_db(&state.db_path),
         state,
     )
@@ -50,6 +52,7 @@ pub(crate) fn queue_media_download_named(
     output_mode: String,
     expected_duration_seconds: Option<f64>,
     filename: Option<String>,
+    destination_root: Option<PathBuf>,
     state: State<'_, LocalState>,
 ) -> Result<MediaQueueReceipt, String> {
     queue_media_download_with_filename(
@@ -60,6 +63,7 @@ pub(crate) fn queue_media_download_named(
         output_mode,
         expected_duration_seconds,
         filename,
+        destination_root,
         saved_media_session_for_db(&state.db_path),
         state,
     )
@@ -76,6 +80,7 @@ pub(crate) fn queue_media_download_secure(
     filename: Option<String>,
     use_brave_cookies: bool,
     cookies_path: Option<String>,
+    destination_root: Option<PathBuf>,
     state: State<'_, LocalState>,
 ) -> Result<MediaQueueReceipt, String> {
     let session = validate_media_session_options(use_brave_cookies, cookies_path)?;
@@ -87,6 +92,7 @@ pub(crate) fn queue_media_download_secure(
         output_mode,
         expected_duration_seconds,
         filename,
+        destination_root,
         session,
         state,
     )
@@ -121,6 +127,7 @@ fn queue_media_download_with_filename(
     output_mode: String,
     expected_duration_seconds: Option<f64>,
     filename: Option<String>,
+    destination_root: Option<PathBuf>,
     session: MediaSessionOptions,
     state: State<'_, LocalState>,
 ) -> Result<MediaQueueReceipt, String> {
@@ -157,7 +164,8 @@ fn queue_media_download_with_filename(
         .map(crate::downloads::sanitize_filename)
         .filter(|value| !value.is_empty())
         .unwrap_or_default();
-    let display_title = if requested_filename.is_empty() {
+    let custom_filename_supplied = !requested_filename.is_empty();
+    let display_title = if !custom_filename_supplied {
         title.clone()
     } else {
         Path::new(&requested_filename)
@@ -174,6 +182,16 @@ fn queue_media_download_with_filename(
         .connection
         .lock()
         .map_err(|_| "No se pudo bloquear la base local".to_string())?;
+    let behavior = crate::downloads::read_download_behavior_settings(&connection);
+    let downloads_root = match destination_root {
+        Some(path) => path,
+        None => super::current_downloads_dir(&state)?,
+    };
+    let destination_dir = crate::downloads::categorized_download_dir(
+        &downloads_root,
+        crate::downloads::category_folder_for_media_mode(&output_mode),
+        behavior.create_category_folders,
+    );
     connection
         .execute(
             "INSERT INTO jobs(title,detail,progress,status,updated_at) VALUES(?1,'En cola multimedia',0,'queued',CURRENT_TIMESTAMP)",
@@ -181,6 +199,11 @@ fn queue_media_download_with_filename(
         )
         .map_err(|error| error.to_string())?;
     let job_id = connection.last_insert_rowid();
+    let requested_filename = if custom_filename_supplied || behavior.use_original_file_names {
+        requested_filename
+    } else {
+        format!("descarga-{job_id}")
+    };
     connection
         .execute(
             "INSERT INTO media_jobs(job_id,source_url,download_url,thumbnail,format_selector,output_mode,destination_dir,requested_filename,expected_duration_seconds,resolution_state) VALUES(?1,?2,?2,?3,?4,?5,?6,?7,?8,'download_queued')",
@@ -190,7 +213,7 @@ fn queue_media_download_with_filename(
                 thumbnail,
                 selector,
                 output_mode,
-                current_downloads_dir(&state)?.to_string_lossy().to_string(),
+                destination_dir.to_string_lossy().to_string(),
                 requested_filename,
                 expected_duration_seconds,
             ],

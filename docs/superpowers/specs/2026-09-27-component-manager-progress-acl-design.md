@@ -51,6 +51,10 @@ Only the signed, validated catalog's `packageBytes` supplies an expected total o
 
 Use one event listener/model for Settings and contextual installation flows. Render the component name, true current phase, bytes and total when known, percent only when the backend supplies a ratio, and measured speed only when available. Smooth only the visual interpolation toward the latest real ratio; never synthesize progress. The progress display is non-interactive and has no button hover/cursor/hit target. Show Cancel only in `download`; show Retry for a terminal error; stop animations at terminal states. Refresh backend status after success, error, or cancellation and update component actions immediately.
 
+### Independent optional component removal
+
+Keep Media Tools and Torrent Engine independently removable from Settings without removing CDM Core. Remove is rejected while an active operation uses the selected component. The manager may report reclaimable bytes only when it can reliably total the files it owns; otherwise the UI omits the amount. Removal deletes only manager-owned component versions and metadata, never Core files or unrelated user files. After removal, refresh component status and capabilities immediately. A later action requiring the removed capability must again produce the contextual install prompt.
+
 ### Capability-driven prompt
 
 When a command reports a missing optional capability, return/propagate a structured capability identifier that can be mapped using the Component Manager's existing capability contract. Do not match user-facing error text or executable filenames. Resolve component details and optional package size from a verified signed catalog; when no validated catalog is available, omit the size. Show a compact accessible dialog with the component, purpose, known size if verified, Cancel, and Download and install. After a successful install, retry the original action once. Declining, install failure, or retry failure returns a short understandable message and leaves the user able to retry from Settings.
@@ -68,7 +72,7 @@ When a command reports a missing optional capability, return/propagate a structu
 
 - Catalog fetch fails and times out: operation emits terminal error and returns to retryable state.
 - Download with known content length reports exact byte totals and only reaches 100% after complete receipt.
-- Download without known content length reports received bytes with absent total/ratio.
+- Download without HTTP `Content-Length` still reports the validated signed catalog `packageBytes` as its total; before catalog verification, size and ratio remain absent. (The current catalog contract rejects a missing or invalid `packageBytes` before download.)
 - A streamed asset that exceeds the signed catalog's `packageBytes` is aborted on the first excess read, cleans its partial file, and returns an invalid-asset error before EOF.
 - A stalled transfer times out; progressing slow transfer remains eligible to continue.
 - Cancellation during download stops the transfer and removes its partial staging file; cancellation after transition to verify is rejected.
@@ -80,6 +84,8 @@ When a command reports a missing optional capability, return/propagate a structu
 - Tauri capability includes `dialog:allow-confirm` and no broader permission.
 - Media-extraction/merge/probe capability missing prompts for Media Tools; BitTorrent capability missing prompts for Torrent Engine.
 - Installed capability bypasses the prompt.
+- After independent removal, the corresponding capability is absent, Core remains installed, and a later action shows the contextual reinstall prompt.
+- Removal is blocked while the selected component is in use, deletes only manager-owned files, and reports reclaimable space only when measured reliably.
 - Prompt displays a size only when sourced from validated catalog data.
 - Progress has no interactive cursor/hover behavior; error/cancel stops motion and enables retry.
 - Success, failure, and cancellation each refresh component status from the backend.
@@ -91,4 +97,4 @@ When a command reports a missing optional capability, return/propagate a structu
 
 ## Acceptance Criteria
 
-The pasted-link flow no longer fails with `Command plugin:dialog|confirm not allowed by ACL`; component operations cannot remain indefinitely shown as downloading; every visible phase and numeric progress value reflects backend facts; download cancellation cleans only its partial staging data and cannot interrupt verify/install/activate; retry and capability prompts work from real capability state; and the clean local installer contains no optional runtimes outside the existing component architecture.
+The pasted-link flow no longer fails with `Command plugin:dialog|confirm not allowed by ACL`; component operations cannot remain indefinitely shown as downloading; every visible phase and numeric progress value reflects backend facts; download cancellation cleans only its partial staging data and cannot interrupt verify/install/activate; retry and capability prompts work from real capability state; either optional component can be removed independently without removing Core or unrelated files; and the clean local installer contains no optional runtimes outside the existing component architecture.

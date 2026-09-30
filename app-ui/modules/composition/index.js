@@ -165,7 +165,7 @@ function render() {
       && lastRenderedSection === 'Ajustes'
       && Boolean(lastRenderedSettingsCategory)
       && lastRenderedSettingsCategory !== settingsCategory;
-    const settingsOrder = ['general', 'downloads', 'multimedia', 'appearance', 'integrations', 'updates'];
+    const settingsOrder = ['general', 'downloads', 'multimedia', 'appearance', 'integrations', 'updates', 'components'];
     const previousIndex = settingsOrder.indexOf(lastRenderedSettingsCategory);
     const nextIndex = settingsOrder.indexOf(settingsCategory);
     const direction = nextIndex >= 0 && previousIndex >= 0 && nextIndex >= previousIndex ? 'down' : 'up';

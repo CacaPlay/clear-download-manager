@@ -1,5 +1,6 @@
 use crate::{
-    youtube_thumbnail_for_source, CurrencySnapshot, DownloadConcurrencySettings, DownloadPriority,
+    youtube_thumbnail_for_source, CurrencySnapshot, DownloadBehaviorSettings,
+    DownloadConcurrencySettings, DownloadPriority,
 };
 use rusqlite::{params, Connection};
 use serde::Serialize;
@@ -42,6 +43,7 @@ pub(crate) struct JobSnapshot {
     #[serde(rename = "speedLimitBps")]
     pub(crate) speed_limit_bps: Option<u64>,
     pub(crate) updated_at: String,
+    pub(crate) completed_at_ms: Option<i64>,
 }
 
 #[derive(Serialize)]
@@ -96,6 +98,7 @@ pub(crate) struct PlaylistBatchSummarySnapshot {
     pub(crate) speed_limit_bps: Option<u64>,
     pub(crate) created_at: String,
     pub(crate) updated_at: String,
+    pub(crate) completed_at_ms: Option<i64>,
 }
 
 #[derive(Serialize)]
@@ -120,6 +123,8 @@ pub(crate) struct DesktopSettingsSnapshot {
     pub(crate) downloads_dir: String,
     #[serde(rename = "downloadConcurrency")]
     pub(crate) download_concurrency: DownloadConcurrencySettings,
+    #[serde(rename = "downloadBehavior")]
+    pub(crate) download_behavior: DownloadBehaviorSettings,
 }
 
 #[derive(Serialize)]
@@ -251,7 +256,8 @@ pub(crate) fn read_download_activity(
                     COALESCE(media_jobs.resolution_state,''),
                     COALESCE(jobs.priority,'normal'),
                     jobs.updated_at,
-                    COALESCE((SELECT bytes_per_second FROM download_speed_limits WHERE job_id=jobs.id),-1)
+                    COALESCE((SELECT bytes_per_second FROM download_speed_limits WHERE job_id=jobs.id),-1),
+                    jobs.completed_at_ms
              FROM jobs
              LEFT JOIN download_jobs ON download_jobs.job_id=jobs.id
              LEFT JOIN media_jobs ON media_jobs.job_id=jobs.id
@@ -367,6 +373,7 @@ pub(crate) fn read_download_activity(
                     .filter(|value| *value >= 0)
                     .map(|value| value as u64),
                 updated_at: row.get(18)?,
+                completed_at_ms: row.get(20)?,
             })
         })
         .map_err(|error| error.to_string())?
@@ -405,7 +412,8 @@ pub(crate) fn read_download_activity(
                                 WHERE pi2.batch_id=pb.id
                                 ORDER BY dsl.updated_at DESC
                                 LIMIT 1),-1),
-                     COALESCE(MIN(jobs.id),9223372036854775807)
+                     COALESCE(MIN(jobs.id),9223372036854775807),
+                     pb.completed_at_ms
              FROM playlist_batches pb
              LEFT JOIN playlist_items pi ON pi.batch_id=pb.id
              LEFT JOIN jobs ON jobs.id=pi.job_id
@@ -486,6 +494,7 @@ pub(crate) fn read_download_activity(
                     .map(|value| value as u64),
                 created_at: row.get(20)?,
                 updated_at: row.get(21)?,
+                completed_at_ms: row.get(24)?,
             })
         })
         .map_err(|error| error.to_string())?
@@ -497,7 +506,7 @@ pub(crate) fn read_download_activity(
                 SUM(CASE WHEN status='running' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN status='queued' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN status='paused' THEN 1 ELSE 0 END),
-                SUM(CASE WHEN status='completed' AND date(updated_at,'localtime')=date('now','localtime') THEN 1 ELSE 0 END),
+                SUM(CASE WHEN status='completed' AND date(completed_at_ms / 1000,'unixepoch','localtime')=date('now','localtime') THEN 1 ELSE 0 END),
                 SUM(CASE WHEN status='failed' AND date(updated_at,'localtime')=date('now','localtime') THEN 1 ELSE 0 END)
              FROM jobs",
             [],

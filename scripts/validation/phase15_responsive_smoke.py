@@ -3,9 +3,9 @@ from pathlib import Path
 import json, base64
 root=Path(__file__).resolve().parents[2]
 css=(root/'app-ui/styles.css').read_text(); js0=(root/'app-ui/main.js').read_text()
-brand='data:image/png;base64,'+base64.b64encode((root/'app-ui/assets/brand/clear-download-manager-celeste.png').read_bytes()).decode()
+brand='data:image/webp;base64,'+base64.b64encode((root/'app-ui/assets/brand/clear-download-manager-celeste.webp').read_bytes()).decode()
 def html(query):
-  js=js0.replace("const qs = new URLSearchParams(window.location.search);", f"const qs = new URLSearchParams({query!r});",1).replace('./app-ui/assets/brand/clear-download-manager-celeste.png',brand)
+  js=js0.replace("const qs = new URLSearchParams(window.location.search);", f"const qs = new URLSearchParams({query!r});",1).replace('./app-ui/assets/brand/clear-download-manager-celeste.webp',brand)
   return f'<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>{css}</style></head><body><div id="app"></div><script>{js}</script></body></html>'
 views=[(1920,1080),(1536,864),(1366,768),(1100,720),(900,700)]
 pages=['?preview=1&view=home','?preview=1&view=downloads','?preview=1&view=currency','?preview=1&view=home&dialog=playlist&playlist=queue']

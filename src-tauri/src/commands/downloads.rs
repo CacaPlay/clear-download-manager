@@ -100,12 +100,14 @@ pub(crate) async fn queue_http_download(
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<DownloadQueueReceipt, String> {
+    let destination_root = crate::downloads::choose_job_download_root(&app, &state)?;
     let receipt = crate::downloads::queue_http_download(
         url,
         filename,
         extension_filename,
         extension_mime,
         extension_expected_extension,
+        destination_root,
         state,
     )
     .await?;

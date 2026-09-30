@@ -171,19 +171,32 @@ pub(crate) fn prepare_full_exit(app: &AppHandle) {
     }
 
     if let Ok(connection) = state.connection.lock() {
-        let _ = connection.execute_batch(
-            "UPDATE jobs
-                SET status='queued',
-                    detail='Interrumpida al salir · lista para continuar',
-                    updated_at=CURRENT_TIMESTAMP
-              WHERE status='running';
-             UPDATE playlist_items SET status='queued' WHERE status='running';
-             UPDATE playlist_batches
-                SET status='queued', updated_at=CURRENT_TIMESTAMP
-              WHERE status='running';
-             UPDATE torrent_jobs
-                SET speed_bps=0, eta_seconds=NULL, updated_at=CURRENT_TIMESTAMP
-              WHERE job_id IN (SELECT id FROM jobs WHERE status='queued');",
+        let resume_interrupted = crate::downloads::read_download_behavior_settings(&connection)
+            .resume_interrupted_downloads;
+        let (next_status, next_detail) = if resume_interrupted {
+            ("queued", "Interrumpida al salir · lista para continuar")
+        } else {
+            (
+                "paused",
+                "Interrumpida al salir · reanudación automática desactivada",
+            )
+        };
+        let _ = connection.execute(
+            "UPDATE jobs SET status=?1,detail=?2,updated_at=CURRENT_TIMESTAMP WHERE status='running'",
+            rusqlite::params![next_status, next_detail],
+        );
+        let _ = connection.execute(
+            "UPDATE playlist_items SET status=?1 WHERE status='running'",
+            rusqlite::params![next_status],
+        );
+        let _ = connection.execute(
+            "UPDATE playlist_batches SET status=?1,updated_at=CURRENT_TIMESTAMP WHERE status='running'",
+            rusqlite::params![next_status],
+        );
+        let _ = connection.execute(
+            "UPDATE torrent_jobs SET speed_bps=0,eta_seconds=NULL,updated_at=CURRENT_TIMESTAMP
+             WHERE job_id IN (SELECT id FROM jobs WHERE status IN ('queued','paused'))",
+            [],
         );
     };
 }

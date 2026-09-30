@@ -2,6 +2,7 @@ import { runtimeState, searchState, UNIFIED_SUGGESTION_CACHE_LIMIT, UNIFIED_SUGG
 import { bindDownloadManagerThumbnailFallbacks } from './thumbnails.js';
 import { loadLocale, resolveLocale } from '../modules/i18n/index.js';
 import { localizeDom } from '../modules/i18n/runtime.js';
+import { invokeWithOptionalComponent, requestComponentManagerInstall } from '../modules/components/optional-install.js';
 import { unifiedDetectionMarkup, unifiedSuggestionPanelMarkup } from './view/unified.js?v=0.45.1-runtime-20260903';
 function looksLikeUnifiedSource(value = '') {
   const input = String(value || '').trim();
@@ -63,7 +64,11 @@ function unifiedRenderContext(context) {
     unifiedFocused: runtimeState.unifiedFocused,
     unifiedSuggestionBusy: runtimeState.unifiedSuggestionBusy,
     unifiedSuggestions: runtimeState.unifiedSuggestions,
-    unifiedActiveIndex: runtimeState.unifiedActiveIndex
+    unifiedActiveIndex: runtimeState.unifiedActiveIndex,
+    unifiedComponentPrompt: runtimeState.unifiedComponentPrompt,
+    unifiedComponentPromptAccepted: runtimeState.unifiedComponentPromptAccepted,
+    unifiedComponentProgress: runtimeState.unifiedComponentProgress,
+    unifiedComponentError: runtimeState.unifiedComponentError
   };
 }
 
@@ -84,6 +89,30 @@ export function paintUnifiedSearch(context, input) {
   if (!panelHtml) existingPanel?.remove();
   else if (existingPanel) existingPanel.outerHTML = panelHtml;
   else search.insertAdjacentHTML('beforeend', panelHtml);
+  search.querySelector('.dm-unified-suggestions [data-action="install-optional-component"]')?.addEventListener('click', () => {
+    const resolve = runtimeState.unifiedComponentPromptResolve;
+    if (!resolve) return;
+    runtimeState.unifiedComponentPromptAccepted = true;
+    runtimeState.unifiedComponentPromptResolve = null;
+    paintUnifiedSearch(context, input);
+    resolve(true);
+  });
+  search.querySelector('.dm-unified-suggestions [data-action="dismiss-optional-component"]')?.addEventListener('click', () => {
+    const resolve = runtimeState.unifiedComponentPromptResolve;
+    runtimeState.unifiedComponentPromptResolve = null;
+    runtimeState.unifiedComponentPrompt = null;
+    runtimeState.unifiedComponentPromptAccepted = false;
+    runtimeState.unifiedComponentPromptDeclined = true;
+    runtimeState.unifiedComponentProgress = null;
+    runtimeState.unifiedComponentError = '';
+    paintUnifiedSearch(context, input);
+    resolve?.(false);
+  });
+  search.querySelector('.dm-unified-suggestions [data-dm-unified-retry-component]')?.addEventListener('click', () => {
+    runtimeState.unifiedComponentError = '';
+    runtimeState.unifiedComponentProgress = null;
+    scheduleUnifiedSuggestions(context, input);
+  });
   bindDownloadManagerThumbnailFallbacks(search);
   // Suggestions are painted incrementally while the main surface remains
   // mounted, so apply the same runtime locale pass used by full renders.
@@ -96,8 +125,54 @@ async function invokeSuggestionSearch(context, query, requestId = 0, limit = 10,
   if (cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value);
   if (cached) searchState.cache.delete(cacheKey);
   const timeout = new Promise((_, reject) => window.setTimeout(() => reject(new Error('suggestion-timeout')), UNIFIED_SUGGESTION_TIMEOUT_MS));
+  const isCurrent = () => requestId === runtimeState.unifiedRequestId && query === runtimeState.unifiedQuery;
+  const invokePage = () => invokeWithOptionalComponent(
+    (command, args) => context.invoke?.(command, args),
+    'search_video_suggestions_page',
+    { query, limit, offset },
+    {
+      beforePrompt: info => {
+        if (!isCurrent()) return;
+        runtimeState.unifiedComponentPrompt = info;
+        runtimeState.unifiedComponentPromptAccepted = false;
+        runtimeState.unifiedComponentPromptDeclined = false;
+        runtimeState.unifiedComponentProgress = null;
+        runtimeState.unifiedComponentError = '';
+        runtimeState.unifiedSuggestionBusy = false;
+        const input = document.querySelector('[data-dm-unified-input]');
+        if (input && input.value === runtimeState.unifiedQuery) paintUnifiedSearch(context, input);
+      },
+      promptInstall: () => isCurrent()
+        ? new Promise(resolve => {
+          runtimeState.unifiedComponentPromptResolve = accepted => {
+            runtimeState.unifiedComponentPromptDeclined = !accepted;
+            resolve(accepted);
+          };
+        })
+        : false,
+      onInstallRequested: info => {
+        runtimeState.unifiedRequestId += 1;
+        runtimeState.unifiedComponentPromptResolve = null;
+        runtimeState.unifiedComponentPrompt = null;
+        runtimeState.unifiedComponentPromptAccepted = false;
+        runtimeState.unifiedComponentPromptDeclined = false;
+        runtimeState.unifiedComponentProgress = null;
+        runtimeState.unifiedComponentError = '';
+        return requestComponentManagerInstall(info.componentId);
+      },
+      onProgress: progress => {
+        if (!isCurrent()) return;
+        runtimeState.unifiedComponentPrompt = null;
+        runtimeState.unifiedComponentProgress = { ...progress };
+        runtimeState.unifiedComponentError = '';
+        runtimeState.unifiedSuggestionBusy = !['done', 'error', 'cancelled'].includes(progress?.phase);
+        const input = document.querySelector('[data-dm-unified-input]');
+        if (input && input.value === runtimeState.unifiedQuery) paintUnifiedSearch(context, input);
+      }
+    }
+  );
   const request = Promise.race([
-    Promise.resolve(context.invoke?.('search_video_suggestions_page', { query, limit, offset }) || []),
+    Promise.resolve(invokePage()).then(result => result || []),
     timeout
   ]);
   searchState.cache.set(cacheKey, { value: request, expiresAt: Date.now() + UNIFIED_SUGGESTION_TIMEOUT_MS });
@@ -165,11 +240,23 @@ async function drainUnifiedSuggestionRequest(request) {
     const stale = requestId !== runtimeState.unifiedRequestId || query !== runtimeState.unifiedQuery;
     if (!stale && !firstDisplayed && !/search_cancelled/i.test(String(error?.message || error || ''))) {
       runtimeState.unifiedSuggestions = [];
+      if (error?.code === 'CDM_OPTIONAL_COMPONENT_FLOW_STOP' && !runtimeState.unifiedComponentPromptDeclined) {
+        const terminal = ['error', 'cancelled'].includes(runtimeState.unifiedComponentProgress?.phase);
+        if (!terminal) {
+          runtimeState.unifiedComponentError = runtimeState.unifiedComponentPromptAccepted
+            ? 'No se pudo instalar MediaTools. Reintenta la búsqueda.'
+            : 'No se pudo comprobar la disponibilidad de MediaTools. Reintenta la búsqueda.';
+          runtimeState.unifiedComponentProgress = null;
+          runtimeState.unifiedComponentPrompt = null;
+        }
+        runtimeState.unifiedComponentPromptAccepted = false;
+      }
     }
   } finally {
     const stale = requestId !== runtimeState.unifiedRequestId || query !== runtimeState.unifiedQuery;
     if (!stale) {
       runtimeState.unifiedSuggestionBusy = false;
+      runtimeState.unifiedComponentPromptAccepted = false;
       const liveInput = document.querySelector('[data-dm-unified-input]');
       if (liveInput && liveInput.value === query) paintUnifiedSearch(context, liveInput);
     }
@@ -178,6 +265,13 @@ async function drainUnifiedSuggestionRequest(request) {
 
 export function scheduleUnifiedSuggestions(context, input) {
   const query = String(input.value || '').slice(0, 240);
+  runtimeState.unifiedComponentPromptResolve?.(false);
+  runtimeState.unifiedComponentPromptResolve = null;
+  runtimeState.unifiedComponentPrompt = null;
+  runtimeState.unifiedComponentPromptAccepted = false;
+  runtimeState.unifiedComponentPromptDeclined = false;
+  runtimeState.unifiedComponentProgress = null;
+  runtimeState.unifiedComponentError = '';
   runtimeState.unifiedQuery = query;
   runtimeState.unifiedFocused = true;
   runtimeState.unifiedActiveIndex = -1;

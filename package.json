@@ -56,6 +56,7 @@
     "source:archive": "node scripts/create-source-archive.mjs",
     "source:yt-dlp:fetch": "python scripts/fetch-yt-dlp-corresponding-source-inputs.py",
     "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs",
+    "test:app-update-progress": "node --test scripts/validation/app-update-progress.test.mjs",
     "test:yt-dlp-source-fetch": "python -m unittest scripts.validation.test_yt_dlp_source_fetch -v",
     "verify:binaries": "node scripts/verify-binaries.mjs",
     "tauri": "tauri",
@@ -156,7 +157,7 @@
     "check:subwindows": "node scripts/validation/phase34_subwindow_responsiveness.mjs",
     "check:subwindows:interaction": "python scripts/validation/phase34_subwindow_interaction.py",
     "check:pre2i-stabilization": "node scripts/validation/pre2i-stabilization.mjs && python scripts/validation/pre2i_player_interaction.py",
-    "test:optional-component-flow": "node --test scripts/validation/optional-component-install.test.mjs"
+    "test:optional-component-flow": "node --test scripts/validation/optional-component-install.test.mjs scripts/validation/app-complements-navigation.test.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.5",

@@ -14,6 +14,7 @@ export const qualityGateIds = [
   ...releaseGateIds.filter((gate) => gate !== 'check:gpl-source'),
   'check:component-manager',
   'test:optional-component-flow',
+  'test:app-update-progress',
   'check:manifest',
   'check:source-release',
 ];

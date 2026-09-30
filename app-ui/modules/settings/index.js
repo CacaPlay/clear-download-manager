@@ -1,4 +1,5 @@
 import { DEFAULT_ICON_COLOR, DEFAULT_ICON_COLOR_MODE } from '../appearance/tokens.js';
+import { iconVariantForColor } from '../appearance/index.js';
 
 let settingsContext = {};
 let appState = {};
@@ -26,6 +27,15 @@ export function configureSettings(context = {}) {
   THUMBNAIL_CACHE_VERSION = context.THUMBNAIL_CACHE_VERSION || THUMBNAIL_CACHE_VERSION;
 }
 
+export function syncAccentPresetSelection(root, selectedPresetId, checkIconMarkup) {
+  root.querySelectorAll('.settings-accent-swatch:not(.settings-icon-color-swatch)').forEach((entry) => {
+    const isActive = Boolean(selectedPresetId) && entry.dataset.preset === selectedPresetId;
+    entry.classList.toggle('is-active', isActive);
+    entry.setAttribute('aria-pressed', String(isActive));
+    entry.innerHTML = `<i></i>${isActive ? checkIconMarkup : ''}`;
+  });
+}
+
 export function setSettingsAdvancedOpen(value) {
   advancedOpen = Boolean(value);
 }
@@ -37,8 +47,8 @@ function pageIntro(title, description = '') {
   return `<header class="settings-page-intro"><div><h2>${title}</h2>${description ? `<p>${description}</p>` : ''}</div></header>`;
 }
 
-function sectionHeading(iconName, title) {
-  return `<div class="settings-section-heading">${icon(iconName, 19)}<h3>${title}</h3></div>`;
+function sectionHeading(title) {
+  return `<div class="settings-section-heading is-text-only"><h3>${title}</h3></div>`;
 }
 
 function statusRow(label, value, tone = 'ok') {
@@ -60,13 +70,23 @@ function selectControl(id, field, label, value, options) {
   return `<label class="settings-control"><span><b>${label}</b></span><select id="${id}" data-appearance-field="${field}">${options.map(([option, text]) => `<option value="${option}" ${selected(value, option)}>${text}</option>`).join('')}</select></label>`;
 }
 
+function numericStepper(id, label, value, min, max) {
+  return `<label class="settings-control settings-number-stepper"><span><b>${label}</b></span><div class="settings-stepper"><button type="button" data-settings-step="${id}" data-settings-step-delta="-1" aria-label="Reducir ${label}" ${value <= min ? 'disabled' : ''}>−</button><input id="${id}" type="number" min="${min}" max="${max}" step="1" inputmode="numeric" value="${escapeHtml(value)}" aria-label="${label}"><button type="button" data-settings-step="${id}" data-settings-step-delta="1" aria-label="Aumentar ${label}" ${value >= max ? 'disabled' : ''}>+</button></div></label>`;
+}
+
 function experienceToggle(id, key, label, description, value) {
-  return `<label class="settings-control settings-switch-control settings-experience-toggle"><span><b>${label}</b><small>${description}</small></span><input id="${id}" type="checkbox" data-experience-field="${key}" ${value !== false ? 'checked' : ''}></label>`;
+  return `<label class="settings-control settings-switch-control settings-experience-toggle"><span><b>${label}</b>${description ? `<small>${description}</small>` : ''}</span><input id="${id}" type="checkbox" role="switch" data-experience-field="${key}" ${value !== false ? 'checked' : ''}></label>`;
+}
+
+function downloadBehaviorToggle(key, label, enabled) {
+  return `<label class="settings-control settings-switch-control settings-experience-toggle"><span><b>${tr(label)}</b></span><input type="checkbox" role="switch" data-download-behavior="${key}" ${enabled ? 'checked' : ''}></label>`;
 }
 
 function nav(activeCategory) {
-  const entries = [['general', 'General', 'app'], ['downloads', 'Descargas', 'download'], ['multimedia', 'Multimedia', 'video'], ['appearance', 'Apariencia', 'palette'], ['integrations', 'Integraciones', 'audio'], ['updates', 'Actualizaciones y diagnóstico', 'shield']];
-  return `<nav class="settings-workspace-nav" aria-label="Categorías de ajustes"><div class="settings-nav-items">${entries.map(([id, label, iconName]) => `<button type="button" class="settings-category-button ${activeCategory === id ? 'is-active' : ''}" data-settings-category="${id}" aria-current="${activeCategory === id ? 'page' : 'false'}" aria-label="${label}" title="${label}">${icon(iconName, 23)}</button>`).join('')}</div></nav>`;
+  const entries = [['general', 'General'], ['downloads', 'Descargas'], ['multimedia', 'Multimedia'], ['appearance', 'Apariencia'], ['integrations', 'Integraciones'], ['updates', 'Actualizaciones y diagnóstico'], ['components', 'Complementos']];
+  const brandIconVariant = iconVariantForColor(appState.appearance?.accent || '#24b8e8');
+  const back = tr('back') || 'Volver al gestor';
+  return `<nav class="settings-workspace-nav" aria-label="Categorías de ajustes"><div class="settings-nav-brand"><img class="settings-nav-logo" data-cdm-brand-logo data-brand-icon-base="./app-ui/assets/brand" src="./app-ui/assets/brand/clear-download-manager-${brandIconVariant}.webp" alt="Clear Download Manager"><strong>Clear Download<br>Manager</strong></div><div class="settings-nav-items">${entries.map(([id, sourceLabel]) => { const label = tr(sourceLabel); return `<button type="button" class="settings-category-button ${activeCategory === id ? 'is-active' : ''}" data-settings-category="${id}" aria-current="${activeCategory === id ? 'page' : 'false'}" aria-label="${label}" title="${label}"><span class="settings-nav-icon" data-settings-icon="${id}" aria-hidden="true"></span><span>${label}</span></button>`; }).join('')}</div><div class="settings-nav-footer"><button type="button" class="settings-back" title="${back}" aria-label="${back}">${icon('arrow', 18)}<span>${back}</span></button></div></nav>`;
 }
 
 function generalPage() {
@@ -74,7 +94,14 @@ function generalPage() {
   const startupDisabled = appState.startupStatus?.supported === false;
   const experience = appState.experienceSettings || {};
   const selectedLocale = ['system', 'es', 'en'].includes(String(experience.locale || locale())) ? String(experience.locale || locale()) : 'system';
-  return `<div class="settings-page settings-page-general">${pageIntro(tr('general'), tr('windowStartup'))}<section class="settings-section">${sectionHeading('app', tr('windowBehavior'))}${selectControl('close-action-select', 'closeAction', tr('closeAction'), closeAction, [['tray', tr('closeToTray')], ['exit', tr('exitCompletely')]])}<label class="settings-control settings-switch-control"><span><b>${tr('startWithWindows')}</b></span><input id="startup-toggle" type="checkbox" ${checked(Boolean(appState.startupStatus?.enabled), true)} ${startupDisabled ? 'disabled' : ''}></label></section><section class="settings-section">${sectionHeading('globe', tr('language'))}<label class="settings-control"><span><b>${tr('language')}</b><small>${tr('system')} ${tr('system') === 'System' ? 'uses your browser/system language.' : 'usa el idioma del sistema/navegador.'}</small></span><select data-experience-field="locale" aria-label="${tr('language')}"><option value="system" ${selected(selectedLocale, 'system')}>${tr('system')}</option><option value="es" ${selected(selectedLocale, 'es')}>${tr('spanish')}</option><option value="en" ${selected(selectedLocale, 'en')}>${tr('english')}</option></select></label></section><section class="settings-section settings-section-experience">${sectionHeading('bell', tr('automation'))}${experienceToggle('clipboard-suggest-toggle', 'clipboardAutoSuggest', tr('detectClipboard'), tr('clipboardDescription'), experience.clipboardAutoSuggest)}${experienceToggle('auto-updates-toggle', 'automaticUpdateChecks', tr('automaticUpdates'), tr('automaticUpdatesDescription'), experience.automaticUpdateChecks)}</section><section class="settings-section settings-section-compact">${sectionHeading('shield', tr('status'))}${statusRow(tr('minimize'), tr('taskbar'))} ${statusRow(tr('closeAction'), closeAction === 'exit' ? tr('exit') : tr('tray'))}</section></div>`;
+  return `<div class="settings-page settings-page-general">
+    ${pageIntro(tr('general'), tr('windowStartup'))}
+    <section class="settings-section">${sectionHeading(tr('windowBehavior'))}${selectControl('close-action-select', 'closeAction', tr('closeAction'), closeAction, [['tray', tr('closeToTray')], ['exit', tr('exitCompletely')]])}<label class="settings-control settings-switch-control"><span><b>${tr('startWithWindows')}</b></span><input id="startup-toggle" type="checkbox" role="switch" ${checked(Boolean(appState.startupStatus?.enabled), true)} ${startupDisabled ? 'disabled' : ''}></label></section>
+    <section class="settings-section">${sectionHeading(tr('language'))}<label class="settings-control"><span><b>${tr('interfaceLanguage')}</b></span><select data-experience-field="locale" aria-label="${tr('interfaceLanguage')}"><option value="system" ${selected(selectedLocale, 'system')}>${tr('system')}</option><option value="es" ${selected(selectedLocale, 'es')}>${tr('spanish')}</option><option value="en" ${selected(selectedLocale, 'en')}>${tr('english')}</option></select></label></section>
+    <section class="settings-section settings-section-experience">${sectionHeading(tr('automation'))}${experienceToggle('clipboard-suggest-toggle', 'clipboardAutoSuggest', tr('detectClipboard'), '', experience.clipboardAutoSuggest)}${experienceToggle('auto-updates-toggle', 'automaticUpdateChecks', tr('automaticUpdates'), '', experience.automaticUpdateChecks)}</section>
+    <section class="settings-section settings-section-compact">${sectionHeading(tr('status'))}${statusRow(tr('minimize'), tr('taskbar'))} ${statusRow(tr('closeAction'), closeAction === 'exit' ? tr('exit') : tr('tray'))}</section>
+    <section class="settings-section settings-reset-all-section">${sectionHeading(tr('Restablecer todos los ajustes'))}<p class="settings-section-note">${tr('Restablece las preferencias de la aplicación. Se conservan las descargas, el historial y los archivos.')}</p><button type="button" class="settings-reset-all" data-settings-reset-all>${tr('Restablecer todos los ajustes')}</button></section>
+  </div>`;
 }
 
 function downloadsPage() {
@@ -107,16 +134,18 @@ function downloadsPage() {
   const unit = appState.bandwidthEditorMode === 'custom'
     ? appState.bandwidthCustomUnit === 'KB' ? 'KB' : 'MB'
     : storedCustomUnit;
-  const bandwidth = `<section class="settings-section settings-bandwidth-section">${sectionHeading('trend', 'Velocidad')}<label class="settings-control"><span><b>Limitar velocidad de descarga</b><small>Máximo por descarga</small></span><select id="bandwidth-limit-select" aria-label="Límite máximo por descarga">${limitOptions.map(([value, label]) => `<option value="${value}" ${selected(selectedValue, value)}>${label}</option>`).join('')}</select></label>${customVisible ? `<div class="settings-bandwidth-custom"><label><span>Velocidad personalizada</span><input id="bandwidth-custom-value" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(custom)}"></label><label><span>Unidad</span><select id="bandwidth-custom-unit"><option value="KB" ${selected(unit, 'KB')}>KB/s</option><option value="MB" ${selected(unit, 'MB')}>MB/s</option></select></label><button type="button" class="save-bandwidth-custom">Guardar</button></div>` : ''}<p class="settings-section-note settings-bandwidth-note">Se aplicará a descargas nuevas y reanudadas. MB/s significa megabytes por segundo.</p></section>`;
-  const concurrency = `<section class="settings-section settings-concurrency-section">${sectionHeading('queue', 'Descargas simultáneas')}<label class="settings-control"><span><b>HTTP</b></span><input id="http-concurrency-input" type="number" min="1" max="8" step="1" inputmode="numeric" value="${escapeHtml(httpConcurrency)}" aria-label="Descargas HTTP simultáneas"></label><label class="settings-control"><span><b>Multimedia</b></span><input id="multimedia-concurrency-input" type="number" min="1" max="4" step="1" inputmode="numeric" value="${escapeHtml(multimediaConcurrency)}" aria-label="Descargas multimedia simultáneas"></label><p class="settings-section-note">Las tareas activas continúan; el límite se aplica al próximo espacio disponible.</p></section>`;
-  return `<div class="settings-page settings-page-downloads">${pageIntro('Descargas', 'Destino y organización')}<section class="settings-section">${sectionHeading('folder', 'Carpeta de descargas')}<div class="settings-directory"><span>${icon('folder', 22)}</span><div><small>UBICACIÓN ACTUAL</small><strong title="${escapeHtml(appState.downloadDirectory)}">${escapeHtml(downloadDirectoryLabel())}</strong></div></div><div class="settings-inline-actions"><button type="button" class="choose-download-directory">${icon('folder', 16)} Cambiar carpeta</button><button type="button" class="open-download-directory">${icon('arrow', 16)} Abrir carpeta</button></div></section>${concurrency}${bandwidth}<section class="settings-section settings-section-compact">${sectionHeading('settings', 'Comportamiento')}${statusRow('Reanudación', 'Disponible')} ${statusRow('Parciales', 'Conservados')} ${statusRow('Progreso', 'En tiempo real')}</section></div>`;
+  const bandwidth = `<section class="settings-section settings-bandwidth-section">${sectionHeading('Velocidad')}<label class="settings-control"><span><b>Limitar velocidad de descarga</b></span><select id="bandwidth-limit-select" aria-label="Límite máximo por descarga">${limitOptions.map(([value, label]) => `<option value="${value}" ${selected(selectedValue, value)}>${label}</option>`).join('')}</select></label>${customVisible ? `<div class="settings-bandwidth-custom"><label><span>Velocidad personalizada</span><input id="bandwidth-custom-value" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(custom)}"></label><label><span>Unidad</span><select id="bandwidth-custom-unit"><option value="KB" ${selected(unit, 'KB')}>KB/s</option><option value="MB" ${selected(unit, 'MB')}>MB/s</option></select></label><button type="button" class="save-bandwidth-custom">Guardar</button></div>` : ''}</section>`;
+  const concurrency = `<section class="settings-section settings-concurrency-section">${sectionHeading('Descargas simultáneas')}${numericStepper('http-concurrency-input', 'HTTP', httpConcurrency, 1, 8)}${numericStepper('multimedia-concurrency-input', 'Multimedia', multimediaConcurrency, 1, 4)}</section>`;
+  const behavior = appState.downloadBehaviorSettings || {};
+  const behaviorSettings = `<section class="settings-section settings-section-download-behavior">${sectionHeading(tr('Comportamiento de descargas'))}${downloadBehaviorToggle('createCategoryFolders', 'Crear subcarpetas por categoría', behavior.createCategoryFolders !== false)}${downloadBehaviorToggle('useOriginalFileNames', 'Usar nombres de archivo originales', behavior.useOriginalFileNames !== false)}${downloadBehaviorToggle('askForDownloadLocation', 'Preguntar dónde guardar', behavior.askForDownloadLocation === true)}${downloadBehaviorToggle('resumeInterruptedDownloads', 'Reanudar descargas interrumpidas', behavior.resumeInterruptedDownloads !== false)}</section>`;
+  return `<div class="settings-page settings-page-downloads">${pageIntro('Descargas', 'Destino y organización')}<section class="settings-section">${sectionHeading('Carpeta de descargas')}<div class="settings-directory"><span>${icon('folder', 22)}</span><div><small>UBICACIÓN ACTUAL</small><strong title="${escapeHtml(appState.downloadDirectory)}">${escapeHtml(downloadDirectoryLabel())}</strong></div></div><div class="settings-inline-actions"><button type="button" class="choose-download-directory">${icon('folder', 16)} Cambiar carpeta</button><button type="button" class="open-download-directory">${icon('arrow', 16)} Abrir carpeta</button></div></section>${concurrency}${behaviorSettings}${bandwidth}</div>`;
 }
 
 function multimediaPage() {
   const session = appState.mediaSessionSettings?.useBraveCookies ? 'Cookies de Brave activadas' : 'Sin cookies del navegador';
   const ytdlp = appState.mediaRuntimeStatus?.yt_dlp;
   const ffmpeg = appState.mediaRuntimeStatus?.ffmpeg;
-  return `<div class="settings-page settings-page-multimedia">${pageIntro('Multimedia', 'Motores y preferencias')}<section class="settings-section">${sectionHeading('video', 'Disponibilidad')}${statusRow('Sesión', session)} ${statusRow('yt-dlp', ytdlp ? 'Disponible' : 'No detectado', ytdlp ? 'ok' : 'warn')} ${statusRow('FFmpeg', ffmpeg ? 'Disponible' : 'No detectado', ffmpeg ? 'ok' : 'warn')} ${statusRow('Calidad preferida', escapeHtml(appState.selectedVideoQuality || 'Mejor disponible'))}</section><section class="settings-section settings-section-compact">${sectionHeading('shield', 'Compatibilidad')}<div class="settings-callout">${icon('shield', 17)} Las políticas multimedia y el reproductor se conservan sin cambios.</div></section></div>`;
+  return `<div class="settings-page settings-page-multimedia">${pageIntro('Multimedia', 'Motores y preferencias')}<section class="settings-section">${sectionHeading('Disponibilidad')}${statusRow('Sesión', session)} ${statusRow('yt-dlp', ytdlp ? 'Disponible' : 'No detectado', ytdlp ? 'ok' : 'warn')} ${statusRow('FFmpeg', ffmpeg ? 'Disponible' : 'No detectado', ffmpeg ? 'ok' : 'warn')} ${statusRow('Calidad preferida', escapeHtml(appState.selectedVideoQuality || 'Mejor disponible'))}</section><section class="settings-section settings-section-compact">${sectionHeading('Compatibilidad')}<div class="settings-callout">Las políticas multimedia y el reproductor se conservan sin cambios.</div></section></div>`;
 }
 
 function progressColorRow(id, label, value) {
@@ -134,44 +163,29 @@ function iconColorSettings(appearance) {
     return `<button type="button" class="settings-accent-swatch settings-icon-color-swatch${active ? ' is-active' : ''}" data-icon-color="${escapeHtml(color)}" style="--swatch-color:${escapeHtml(color)}" aria-label="${escapeHtml(preset.name)}" aria-pressed="${active}"><i></i>${active ? icon('check', 14) : ''}</button>`;
   }).join('');
   const iconColor = appearance.iconColor || DEFAULT_ICON_COLOR;
-  return `<section class="settings-section settings-icon-color-section">${sectionHeading('palette', 'Color de iconos')}<p class="settings-section-note">Controla la parte de color de los iconos; la base gris permanece limpia y legible.</p>${choice('iconColorMode', 'Modo', [['accent', 'Automático'], ['custom', 'Personalizado']], mode)}<div class="settings-icon-color-presets"><span class="settings-field-label">Colores preajustados</span><div class="settings-palette-options" role="radiogroup" aria-label="Colores preajustados para iconos">${presetMarkup}</div></div><label class="settings-custom-color settings-icon-color-picker${mode === 'custom' ? '' : ' is-disabled'}"><span>Color personalizado</span><input id="icon-color" data-appearance-field="iconColor" type="color" value="${escapeHtml(iconColor)}" aria-label="Color personalizado de iconos"${disabled}><code>${escapeHtml(String(iconColor).toUpperCase())}</code></label></section>`;
+  return `<section class="settings-section settings-icon-color-section">${sectionHeading('Color de iconos')}<p class="settings-section-note">Controla la parte de color de los iconos; la base gris permanece limpia y legible.</p>${choice('iconColorMode', 'Modo', [['accent', 'Automático'], ['custom', 'Personalizado']], mode)}<div class="settings-icon-color-presets"><span class="settings-field-label">Colores preajustados</span><div class="settings-palette-options" role="radiogroup" aria-label="Colores preajustados para iconos">${presetMarkup}</div></div><label class="settings-custom-color settings-icon-color-picker${mode === 'custom' ? '' : ' is-disabled'}"><span>Color personalizado</span><input id="icon-color" data-appearance-field="iconColor" type="color" value="${escapeHtml(iconColor)}" aria-label="Color personalizado de iconos"${disabled}><code>${escapeHtml(String(iconColor).toUpperCase())}</code></label></section>`;
 }
 
-function appearancePageLegacy() {
-  const appearance = appState.appearance || {};
-  const visual = window.__cacatoolsVisualDiagnostics || visualDiagnosticsSnapshot();
-  const loadedThumbs = Array.isArray(visual.thumbnails) ? visual.thumbnails.filter((item) => item.cacheState === 'loaded').length : 0;
-  const thumbCount = Array.isArray(visual.thumbnails) ? visual.thumbnails.length : 0;
-  const scale = displayedScalePercent(appearance.scale);
-  const effectiveScale = appearance.autoScale ? automaticScalePercent() : scale;
-  return `<div class="settings-page settings-page-appearance">${pageIntro('Apariencia', 'Personaliza la interfaz')}<div class="settings-appearance-grid"><section class="settings-section settings-section-theme">${sectionHeading('palette', 'Tema y color')}${choice('theme', 'Tema', [['system', 'Sistema'], ['dark', 'Oscuro'], ['light', 'Claro']], appearance.theme)}<div class="settings-palette"><span class="settings-field-label">Color de acento</span><div class="settings-palette-options" role="radiogroup" aria-label="Colores de acento">${appearancePresets.map((preset) => `<button type="button" class="settings-accent-swatch ${appearance.preset === preset.id ? 'is-active' : ''}" data-preset="${preset.id}" style="--swatch-color:${preset.accent}" aria-label="${escapeHtml(preset.name)}" aria-pressed="${appearance.preset === preset.id}"><i></i>${appearance.preset === preset.id ? icon('check', 14) : ''}</button>`).join('')}</div><label class="settings-custom-color"><span>Personalizado</span><input id="accent-color" type="color" data-appearance-field="accent" value="${escapeHtml(appearance.accent)}"><code>${escapeHtml(String(appearance.accent || '').toUpperCase())}</code></label></div><button type="button" class="settings-reset-colors">${icon('palette', 16)} Restablecer colores</button></section>${iconColorSettings(appearance)}<section class="settings-section">${sectionHeading('trend', 'Colores de progreso')}<div class="settings-section-note">Activo, completado, pausa y error conservan sus colores independientes.</div>${progressColorRow('progress-active-color', 'Activo', appearance.progressActive)}${progressColorRow('progress-completed-color', 'Completado', appearance.progressCompleted)}${progressColorRow('progress-paused-color', 'En pausa', appearance.progressPaused)}${progressColorRow('progress-error-color', 'Error', appearance.progressError)}</section><section class="settings-section">${sectionHeading('tools', 'Escala y densidad')}<label class="settings-control settings-auto-scale-row"><span><b>Escala automática</b></span><output data-setting-value="auto-scale">${effectiveScale}%</output><input id="auto-scale-toggle" type="checkbox" ${checked(Boolean(appearance.autoScale), true)}></label><div class="settings-control settings-scale-control ${appearance.autoScale ? 'is-disabled' : ''}"><span><b>Escala de interfaz</b></span><div class="settings-stepper"><button id="scale-decrease" type="button" aria-label="Reducir escala" ${appearance.autoScale ? 'disabled' : ''}>−</button><input id="scale-number" type="number" min="50" max="130" step="5" value="${scale}" aria-label="Porcentaje de escala" ${appearance.autoScale ? 'disabled' : ''}><button id="scale-increase" type="button" aria-label="Aumentar escala" ${appearance.autoScale ? 'disabled' : ''}>+</button></div><input id="scale-range" type="range" min="50" max="130" step="5" value="${scale}" ${appearance.autoScale ? 'disabled' : ''}></div>${selectControl('density-select', 'density', 'Densidad', appearance.density, [['compact', 'Compacta'], ['balanced', 'Equilibrada'], ['spacious', 'Amplia']])}</section><section class="settings-section settings-advanced ${advancedOpen ? 'is-open' : ''}"><button type="button" class="settings-advanced-toggle" aria-expanded="${advancedOpen}"><span>${icon('settings', 19)}<b>Avanzado</b><small>Tamaño de texto, miniaturas y preferencias visuales</small></span><i>${icon('chevron', 16)}</i></button>${advancedOpen ? `<div class="settings-advanced-body"><div class="settings-advanced-group"><h4>Color</h4>${range('tone', 'Tonalidad', appearance.tone, 4, 18)}${range('intensity', 'Intensidad del acento', appearance.intensity, 40, 100)}${range('contrast', 'Contraste', appearance.contrast, 86, 116)}</div><div class="settings-advanced-group"><h4>Tipografía y contenido</h4>${range('text-scale', 'Tamaño del texto', appearance.textScale, 80, 120)}${selectControl('thumbnail-size-select', 'thumbnailSize', 'Miniaturas', appearance.thumbnailSize, [['medium', 'Medianas'], ['large', 'Grandes'], ['xlarge', 'Muy grandes']])}</div><div class="settings-advanced-group"><h4>Efectos</h4>${choice('surfaceMode', 'Superficie', [['solid', 'Sólida'], ['mica', 'Mica']], appearance.surfaceMode)}${choice('motionMode', 'Movimiento', [['system', 'Sistema'], ['reduced', 'Reducido'], ['off', 'Desactivado']], appearance.motionMode)}${choice('radius', 'Esquinas', [['sharp', 'Rectas'], ['standard', 'Estándar'], ['soft', 'Suaves']], appearance.radius)}</div><div class="settings-diagnostics-mini">${statusRow('Ventana / DPR', `${visual.viewport?.width || 0} × ${visual.viewport?.height || 0} · ${visual.devicePixelRatio || 1}x`)} ${statusRow('Miniaturas', `${loadedThumbs}/${thumbCount} cargadas · caché v${visual.thumbnailCacheVersion || THUMBNAIL_CACHE_VERSION}`)}</div><button type="button" class="copy-visual-diagnostics">${icon('clipboard', 16)} Copiar diagnóstico</button><button type="button" class="settings-reset">Restablecer apariencia</button></div>` : ''}</section></div></div>`;
-}
-
-/* Phase 1 completion owner: selector-based Auto Scale and stable diagnostic
-   actions. Kept as a dedicated renderer so the session-only Advanced state is
-   preserved without introducing persistence fields. */
-function appearancePageV4() {
-  const appearance = appState.appearance || {};
-  const visual = window.__cacatoolsVisualDiagnostics || visualDiagnosticsSnapshot();
-  const loadedThumbs = Array.isArray(visual.thumbnails) ? visual.thumbnails.filter((item) => item.cacheState === 'loaded').length : 0;
-  const thumbCount = Array.isArray(visual.thumbnails) ? visual.thumbnails.length : 0;
-  const scale = displayedScalePercent(appearance.scale);
-  return `<div class="settings-page settings-page-appearance">${pageIntro('Apariencia', 'Personaliza la interfaz')}<div class="settings-appearance-grid"><section class="settings-section settings-section-theme">${sectionHeading('palette', 'Tema y color')}${choice('theme', 'Tema', [['system', 'Sistema'], ['dark', 'Oscuro'], ['light', 'Claro']], appearance.theme)}<div class="settings-palette"><span class="settings-field-label">Color de acento</span><div class="settings-palette-options" role="radiogroup" aria-label="Colores de acento">${appearancePresets.map((preset) => `<button type="button" class="settings-accent-swatch ${appearance.preset === preset.id ? 'is-active' : ''}" data-preset="${preset.id}" style="--swatch-color:${preset.accent}" aria-label="${escapeHtml(preset.name)}" aria-pressed="${appearance.preset === preset.id}"><i></i>${appearance.preset === preset.id ? icon('check', 14) : ''}</button>`).join('')}</div><label class="settings-custom-color"><span>Personalizado</span><input id="accent-color" type="color" data-appearance-field="accent" value="${escapeHtml(appearance.accent)}"><code>${escapeHtml(String(appearance.accent || '').toUpperCase())}</code></label></div><button type="button" class="settings-reset-colors">${icon('palette', 16)} Restablecer colores</button></section>${iconColorSettings(appearance)}<section class="settings-section">${sectionHeading('trend', 'Colores de progreso')}<div class="settings-section-note">Activo, completado, pausa y error conservan sus colores independientes.</div>${progressColorRow('progress-active-color', 'Activo', appearance.progressActive)}${progressColorRow('progress-completed-color', 'Completado', appearance.progressCompleted)}${progressColorRow('progress-paused-color', 'En pausa', appearance.progressPaused)}${progressColorRow('progress-error-color', 'Error', appearance.progressError)}</section><section class="settings-section">${sectionHeading('tools', 'Escala y densidad')}<label class="settings-control settings-auto-scale-row"><span><b>Escala automática</b></span><select id="auto-scale-select" data-appearance-field="autoScale" aria-label="Escala automática"><option value="true" ${selected(Boolean(appearance.autoScale), true)}>Activada</option><option value="false" ${selected(Boolean(appearance.autoScale), false)}>Desactivada</option></select></label><div class="settings-control settings-scale-control ${appearance.autoScale ? 'is-disabled' : ''}"><span><b>Escala de interfaz</b></span><div class="settings-stepper"><button id="scale-decrease" type="button" aria-label="Reducir escala" ${appearance.autoScale ? 'disabled' : ''}>−</button><input id="scale-number" type="number" min="50" max="130" step="5" value="${scale}" aria-label="Porcentaje de escala" ${appearance.autoScale ? 'disabled' : ''}><button id="scale-increase" type="button" aria-label="Aumentar escala" ${appearance.autoScale ? 'disabled' : ''}>+</button></div><input id="scale-range" type="range" min="50" max="130" step="5" value="${scale}" ${appearance.autoScale ? 'disabled' : ''}></div>${selectControl('density-select', 'density', 'Densidad', appearance.density, [['compact', 'Compacta'], ['balanced', 'Equilibrada'], ['spacious', 'Amplia']])}</section><section class="settings-section settings-advanced ${advancedOpen ? 'is-open' : ''}"><button type="button" class="settings-advanced-toggle" aria-expanded="${advancedOpen}"><span>${icon('settings', 19)}<b>Avanzado</b><small>Tamaño de texto, miniaturas y preferencias visuales</small></span><i>${icon('chevron', 16)}</i></button>${advancedOpen ? `<div class="settings-advanced-body"><div class="settings-advanced-group"><h4>Color</h4>${range('tone', 'Tonalidad', appearance.tone, 4, 18)}${range('intensity', 'Intensidad del acento', appearance.intensity, 40, 100)}${range('contrast', 'Contraste', appearance.contrast, 86, 116)}</div><div class="settings-advanced-group"><h4>Tipografía y contenido</h4>${range('text-scale', 'Tamaño del texto', appearance.textScale, 80, 120)}${selectControl('thumbnail-size-select', 'thumbnailSize', 'Miniaturas', appearance.thumbnailSize, [['medium', 'Medianas'], ['large', 'Grandes'], ['xlarge', 'Muy grandes']])}</div><div class="settings-advanced-group"><h4>Efectos</h4>${choice('surfaceMode', 'Superficie', [['solid', 'Sólida'], ['mica', 'Mica']], appearance.surfaceMode)}${choice('motionMode', 'Movimiento', [['system', 'Sistema'], ['reduced', 'Reducido'], ['off', 'Desactivado']], appearance.motionMode)}${choice('radius', 'Esquinas', [['sharp', 'Rectas'], ['standard', 'Estándar'], ['soft', 'Suaves']], appearance.radius)}</div><div class="settings-diagnostics-mini">${statusRow('Ventana / DPR', `${visual.viewport?.width || 0} × ${visual.viewport?.height || 0} · ${visual.devicePixelRatio || 1}x`)} ${statusRow('Miniaturas', `${loadedThumbs}/${thumbCount} cargadas · caché v${visual.thumbnailCacheVersion || THUMBNAIL_CACHE_VERSION}`)}</div><div class="settings-diagnostics-actions"><button type="button" class="copy-visual-diagnostics">${icon('clipboard', 16)} Copiar diagnóstico</button><button type="button" class="settings-reset">Restablecer apariencia</button></div></div>` : ''}</section></div></div>`;
-}
-
+/* Advanced controls keep their expanded state for the current session only. */
 function appearancePage() {
-  return appearancePageV4();
+  const appearance = appState.appearance || {};
+  const visual = window.__cacatoolsVisualDiagnostics || visualDiagnosticsSnapshot();
+  const loadedThumbs = Array.isArray(visual.thumbnails) ? visual.thumbnails.filter((item) => item.cacheState === 'loaded').length : 0;
+  const thumbCount = Array.isArray(visual.thumbnails) ? visual.thumbnails.length : 0;
+  const scale = displayedScalePercent(appearance.scale);
+  return `<div class="settings-page settings-page-appearance">${pageIntro('Apariencia', 'Personaliza la interfaz')}<div class="settings-appearance-grid"><section class="settings-section settings-section-theme">${sectionHeading('Tema y color')}${choice('theme', 'Tema', [['system', 'Sistema'], ['dark', 'Oscuro'], ['light', 'Claro']], appearance.theme)}<div class="settings-palette"><span class="settings-field-label">Color de acento</span><div class="settings-palette-options" role="radiogroup" aria-label="Colores de acento">${appearancePresets.map((preset) => `<button type="button" class="settings-accent-swatch ${appearance.preset === preset.id ? 'is-active' : ''}" data-preset="${preset.id}" style="--swatch-color:${preset.accent}" aria-label="${escapeHtml(preset.name)}" aria-pressed="${appearance.preset === preset.id}"><i></i>${appearance.preset === preset.id ? icon('check', 14) : ''}</button>`).join('')}</div><label class="settings-custom-color"><span>Personalizado</span><input id="accent-color" type="color" data-appearance-field="accent" value="${escapeHtml(appearance.accent)}"><code>${escapeHtml(String(appearance.accent || '').toUpperCase())}</code></label></div><button type="button" class="settings-reset-colors">Restablecer colores</button></section>${iconColorSettings(appearance)}<section class="settings-section">${sectionHeading('Colores de progreso')}<div class="settings-section-note">Activo, completado, pausa y error conservan sus colores independientes.</div>${progressColorRow('progress-active-color', 'Activo', appearance.progressActive)}${progressColorRow('progress-completed-color', 'Completado', appearance.progressCompleted)}${progressColorRow('progress-paused-color', 'En pausa', appearance.progressPaused)}${progressColorRow('progress-error-color', 'Error', appearance.progressError)}</section><section class="settings-section">${sectionHeading('Escala y densidad')}<label class="settings-control settings-switch-control settings-auto-scale-row"><span><b>Escala automática</b></span><input id="auto-scale-toggle" type="checkbox" role="switch" data-appearance-field="autoScale" aria-label="Escala automática" ${checked(Boolean(appearance.autoScale), true)}></label><div class="settings-control settings-scale-control ${appearance.autoScale ? 'is-disabled' : ''}"><span><b>Escala de interfaz</b></span><div class="settings-stepper"><button id="scale-decrease" type="button" aria-label="Reducir escala" ${appearance.autoScale ? 'disabled' : ''}>−</button><input id="scale-number" type="number" min="50" max="130" step="5" value="${scale}" aria-label="Porcentaje de escala" ${appearance.autoScale ? 'disabled' : ''}><button id="scale-increase" type="button" aria-label="Aumentar escala" ${appearance.autoScale ? 'disabled' : ''}>+</button></div><input id="scale-range" type="range" min="50" max="130" step="5" value="${scale}" ${appearance.autoScale ? 'disabled' : ''}></div>${selectControl('density-select', 'density', 'Densidad', appearance.density, [['compact', 'Compacta'], ['balanced', 'Equilibrada'], ['spacious', 'Amplia']])}</section><section class="settings-section settings-advanced ${advancedOpen ? 'is-open' : ''}"><button type="button" class="settings-advanced-toggle" aria-expanded="${advancedOpen}"><span><b>Avanzado</b><small>Tamaño de texto, miniaturas y preferencias visuales</small></span><i>${icon('chevron', 16)}</i></button>${advancedOpen ? `<div class="settings-advanced-body"><div class="settings-advanced-group"><h4>Color</h4>${range('tone', 'Tonalidad', appearance.tone, 4, 18)}${range('intensity', 'Intensidad del acento', appearance.intensity, 40, 100)}${range('contrast', 'Contraste', appearance.contrast, 86, 116)}</div><div class="settings-advanced-group"><h4>Tipografía y contenido</h4>${range('text-scale', 'Tamaño del texto', appearance.textScale, 80, 120)}${selectControl('thumbnail-size-select', 'thumbnailSize', 'Miniaturas', appearance.thumbnailSize, [['medium', 'Medianas'], ['large', 'Grandes'], ['xlarge', 'Muy grandes']])}</div><div class="settings-advanced-group"><h4>Efectos</h4>${choice('surfaceMode', 'Superficie', [['solid', 'Sólida'], ['mica', 'Mica']], appearance.surfaceMode)}${choice('motionMode', 'Movimiento', [['system', 'Sistema'], ['reduced', 'Reducido'], ['off', 'Desactivado']], appearance.motionMode)}${choice('radius', 'Esquinas', [['sharp', 'Rectas'], ['standard', 'Estándar'], ['soft', 'Suaves']], appearance.radius)}</div><div class="settings-diagnostics-mini">${statusRow('Ventana / DPR', `${visual.viewport?.width || 0} × ${visual.viewport?.height || 0} · ${visual.devicePixelRatio || 1}x`)} ${statusRow('Miniaturas', `${loadedThumbs}/${thumbCount} cargadas · caché v${visual.thumbnailCacheVersion || THUMBNAIL_CACHE_VERSION}`)}</div><div class="settings-diagnostics-actions"><button type="button" class="copy-visual-diagnostics">Copiar diagnóstico</button><button type="button" class="settings-reset">Restablecer apariencia</button></div></div>` : ''}</section></div></div>`;
 }
+
 
 function integrationsPage() {
   const extension = appState.extensionBridgeStatus;
-  return `<div class="settings-page settings-page-integrations">${pageIntro('Integraciones', 'Conexiones disponibles')}<section class="settings-section">${sectionHeading('link', 'Extensión del navegador')}${statusRow('Puente', extension?.prepared ? 'Preparado' : 'No detectado', extension?.prepared ? 'ok' : 'warn')} ${statusRow('Protocolo', extension?.protocolVersion ? `v${extension.protocolVersion}` : '—')}</section><section class="settings-section settings-section-compact">${sectionHeading('globe', tr('officialSite'))}<div class="settings-official-site"><p>${tr('officialSiteDescription')}</p><button type="button" class="settings-tool-repo" data-settings-official-site>${icon('link', 15)}<span>${tr('visitOfficialSite')}</span></button></div></section></div>`;
+  return `<div class="settings-page settings-page-integrations">${pageIntro('Integraciones', 'Conexiones disponibles')}<section class="settings-section">${sectionHeading('Extensión del navegador')}${statusRow('Puente', extension?.prepared ? 'Preparado' : 'No detectado', extension?.prepared ? 'ok' : 'warn')} ${statusRow('Protocolo', extension?.protocolVersion ? `v${extension.protocolVersion}` : '—')}</section><section class="settings-section settings-section-compact">${sectionHeading(tr('officialSite'))}<div class="settings-official-site"><p>${tr('officialSiteDescription')}</p><button type="button" class="settings-tool-repo" data-settings-official-site>${icon('link', 15)}<span>${tr('visitOfficialSite')}</span></button></div></section></div>`;
 }
 
 function componentManagerSection() {
   const components = Array.isArray(appState.components) ? appState.components : [];
   const labels = {
-    'media-tools': 'Media Tools',
+    'media-tools': 'MediaTools',
     'torrent-engine': 'Torrent Engine'
   };
   const stateLabels = {
@@ -184,24 +198,62 @@ function componentManagerSection() {
     installing: tr('Instalando'),
     error: tr('Falló la instalación')
   };
+  const phaseLabels = {
+    preparing: 'Preparando descarga',
+    download: 'Descargando',
+    verify: 'Verificando integridad',
+    install: 'Preparando instalación',
+    activate: 'Activando componente',
+    done: 'Instalado',
+    error: 'No se pudo completar',
+    cancelled: 'Descarga cancelada'
+  };
+  const formatBytes = (value) => {
+    if (!Number.isSafeInteger(value) || value < 0) return '';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let amount = value;
+    let unit = 0;
+    while (amount >= 1000 && unit < units.length - 1) { amount /= 1000; unit += 1; }
+    return `${amount.toFixed(unit ? 1 : 0)} ${units[unit]}`;
+  };
   const rows = ['media-tools', 'torrent-engine'].map((id) => {
     const component = components.find((item) => item.id === id) || { id, state: 'missing' };
+    const operation = appState.componentOperations?.[id];
+    const phase = String(operation?.phase || '');
     const state = String(component.state || 'missing').toLowerCase();
     const tone = state === 'installed' ? 'ok' : state === 'installing' ? 'info' : state === 'missing' ? 'warn' : 'error';
     const version = component.version ? ` · v${escapeHtml(component.version)}` : '';
-    const installAction = ['installed', 'downloading', 'verifying', 'installing'].includes(state) ? '' : `<button type="button" class="settings-component-action" data-component-action="install" data-component-id="${id}">${icon('download', 16)} ${state === 'corrupted' ? tr('Reparar') : state === 'update-available' ? tr('Actualizar') : tr('Descargar e instalar')}</button>`;
-    const verifyAction = ['installed', 'corrupted'].includes(state) ? `<button type="button" class="settings-component-action" data-component-action="verify" data-component-id="${id}">${icon('shield', 16)} ${tr('Verificar')}</button>` : '';
-    const removeAction = ['installed', 'corrupted'].includes(state) ? `<button type="button" class="settings-component-action" data-component-action="remove" data-component-id="${id}">${icon('close', 16)} ${tr('Quitar')}</button>` : '';
-    const progress = Number.isFinite(Number(component.progressPercent)) ? Math.max(0, Math.min(100, Number(component.progressPercent))) : null;
-    const progressMarkup = ['downloading', 'verifying', 'installing'].includes(state) && progress !== null
-      ? `<progress class="settings-component-progress" max="100" value="${progress}" aria-label="${labels[id]} ${progress}%"></progress>`
-      : '';
+    const activeOperation = ['preparing', 'download', 'verify', 'install', 'activate'].includes(phase);
+    const installAction = activeOperation || ['installed', 'downloading', 'verifying', 'installing'].includes(state) ? '' : `<button type="button" class="settings-component-action" data-component-action="install" data-component-id="${id}">${state === 'corrupted' ? tr('Reparar') : state === 'update-available' ? tr('Actualizar') : tr('Descargar e instalar')}</button>`;
+    const verifyAction = ['installed', 'corrupted'].includes(state) ? `<button type="button" class="settings-component-action" data-component-action="verify" data-component-id="${id}">${tr('Verificar')}</button>` : '';
+    const reclaimable = Number.isSafeInteger(component.reclaimableBytes) && component.reclaimableBytes >= 0
+      ? ` · Libera ${formatBytes(component.reclaimableBytes)}` : '';
+    const removeAction = ['installed', 'corrupted'].includes(state)
+      ? `<button type="button" class="settings-component-action" data-component-action="remove" data-component-id="${id}"${activeOperation ? ' disabled' : ''}>${tr('Quitar')}${reclaimable}</button>` : '';
+    const ratio = Number.isFinite(operation?.progressRatio) && operation.progressRatio >= 0 && operation.progressRatio <= 1
+      ? Math.round(operation.progressRatio * 100) : null;
+    const downloaded = formatBytes(operation?.bytesDownloaded);
+    const total = formatBytes(operation?.totalBytes);
+    const speed = Number.isFinite(operation?.bytesPerSecond) && operation.bytesPerSecond > 0
+      ? ` · ${formatBytes(Math.round(operation.bytesPerSecond))}/s` : '';
+    const phaseText = phaseLabels[phase] || stateLabels[state] || 'Status unavailable';
+    const metrics = phase === 'download' && downloaded
+      ? `<small class="settings-component-metrics">${downloaded}${total ? ` / ${total}` : ''}${ratio === null ? '' : ` · ${ratio}%`}${speed}</small>` : '';
+    const progressMarkup = activeOperation
+      ? `<progress class="settings-component-progress" max="100"${ratio === null ? '' : ` value="${ratio}"`} aria-label="${labels[id]} · ${phaseText}"></progress>${metrics}`
+      : phase === 'error' ? `<small class="settings-component-error">${escapeHtml(operation.error || 'Error de instalación')}</small>` : '';
+    const cancelAction = phase === 'download'
+      ? `<button type="button" class="settings-component-action" data-component-action="cancel" data-component-id="${id}">${tr('Cancelar')}</button>` : '';
     const available = component.availableVersion && component.availableVersion !== component.version
       ? ` · ${tr('Disponible')} v${escapeHtml(component.availableVersion)}`
       : '';
-    return `<article class="settings-component-row"><div><strong>${labels[id]}</strong><span data-status-tone="${tone}">${stateLabels[state] || 'Status unavailable'}${version}${available}</span>${progressMarkup}</div><div class="settings-inline-actions">${installAction}${verifyAction}${removeAction}</div></article>`;
+    return `<article class="settings-component-row" data-component-row="${id}" tabindex="-1"><div><strong>${labels[id]}</strong><span data-status-tone="${tone}">${phaseText}${version}${available}</span>${progressMarkup}</div><div class="settings-inline-actions">${cancelAction}${installAction}${verifyAction}${removeAction}</div></article>`;
   }).join('');
-  return `<section class="settings-section settings-section-components">${sectionHeading('tools', tr('Componentes'))}<p class="settings-section-note">${tr('El núcleo funciona sin herramientas multimedia o torrent. Cuando las necesites, Clear descargará el paquete opcional del catálogo firmado y comprobará su integridad antes de activarlo.')}</p><button type="button" class="settings-component-action" data-component-catalog-check>${icon('shield', 16)} ${tr('Buscar actualizaciones')}</button>${rows}</section>`;
+  return `<section class="settings-section settings-section-components"><button type="button" class="settings-component-action" data-component-catalog-check>${tr('Buscar actualizaciones')}</button>${rows}</section>`;
+}
+
+function componentsPage() {
+  return `<div class="settings-page settings-page-components">${pageIntro(tr('Complementos'), tr('Gestiona los componentes opcionales de Clear.'))}${componentManagerSection()}</div>`;
 }
 
 function updatesPage() {
@@ -213,19 +265,37 @@ function updatesPage() {
     const match = raw.match(/\b\d{4}\.\d{2}\.\d{2}\b|\b\d+\.\d+(?:\.\d+)?(?:[-+][a-z0-9.]+)?/i);
     return match?.[0] || '';
   };
-  const installed = (available, version) => available
-    ? `${compactVersion(version) ? `Instalada · ${escapeHtml(compactVersion(version))}` : 'Instalada'}`
-    : 'No detectado';
-  const repositoryButton = (toolId, label) => `<button type="button" class="settings-tool-repo" data-settings-tool-repo="${toolId}" title="Abrir repositorio">${icon('link', 15)}<span>${label}</span></button>`;
-  const repositories = `<div class="settings-tool-repos"><h4>Repositorios oficiales</h4><div>${repositoryButton('yt-dlp', 'yt-dlp')}${repositoryButton('ffmpeg', 'FFmpeg / FFprobe')}${repositoryButton('deno', 'Deno')}${repositoryButton('aria2', 'aria2c')}</div></div>`;
+  const installed = (available) => available
+    ? { label: tr('Instalado'), tone: 'ok' }
+    : { label: tr('No detectado'), tone: 'warn' };
+  const applicationStatus = () => {
+    if (appState.updaterCheckBusy) return { label: tr('Comprobando…'), tone: 'info' };
+    if (appState.availableUpdate?.version) return { label: `${tr('Actualización disponible')} · ${escapeHtml(appState.availableUpdate.version)}`, tone: 'info' };
+    if (appState.updaterStatus?.storeManaged) return { label: tr('Microsoft Store'), tone: 'neutral' };
+    if (/versión más reciente|usando la versión más reciente/i.test(String(appState.updaterMessage || ''))) return { label: tr('Actualizado'), tone: 'ok' };
+    if (!appState.updaterStatus?.configured || /no se pudo comprobar|todavía no está configurado/i.test(String(appState.updaterMessage || ''))) return { label: tr('No disponible'), tone: 'neutral' };
+    return { label: tr('Aún no comprobado'), tone: 'neutral' };
+  };
+  const appVersion = compactVersion(runtime.version || appState.updaterStatus?.currentVersion || APP_VERSION) || APP_VERSION;
+  const runtimeRows = [
+    { name: 'Clear Download Manager', version: appVersion, ...applicationStatus() },
+    { name: 'yt-dlp', version: compactVersion(media.yt_dlp_version) || '—', ...installed(media.yt_dlp) },
+    { name: 'FFmpeg', version: compactVersion(media.ffmpeg_version) || '—', ...installed(media.ffmpeg) },
+    { name: 'FFprobe', version: compactVersion(media.ffprobe_version) || '—', ...installed(media.ffprobe) },
+    { name: 'aria2c', version: compactVersion(runtime.aria2_version) || '—', ...installed(runtime.aria2_available) }
+  ];
+  const runtimeTable = `<div class="settings-runtime-table-wrap"><table class="settings-runtime-table"><thead><tr><th scope="col">${tr('Nombre')}</th><th scope="col">${tr('Versión')}</th><th scope="col">${tr('Estado')}</th></tr></thead><tbody>${runtimeRows.map((row) => `<tr><th scope="row">${row.name}</th><td>${escapeHtml(row.version)}</td><td><span class="settings-runtime-status" data-status-tone="${row.tone}">${row.label}</span></td></tr>`).join('')}</tbody></table></div>`;
+  const repositoryButton = (toolId, label) => `<button type="button" class="settings-tool-repo" data-settings-tool-repo="${toolId}" title="${tr('Abrir repositorio')}">${icon('link', 15)}<span>${label}</span></button>`;
+  const repositories = `<div class="settings-tool-repos"><h4>${tr('Repositorios oficiales')}</h4><div>${repositoryButton('yt-dlp', 'yt-dlp')}${repositoryButton('ffmpeg', 'FFmpeg / FFprobe')}${repositoryButton('deno', 'Deno')}${repositoryButton('aria2', 'aria2c')}</div></div>`;
   const licenseRows = `<ul class="settings-open-source-list"><li><strong>yt-dlp</strong><span>${tr('licenseYtdlp')}</span></li><li><strong>Deno</strong><span>${tr('licenseDeno')}</span></li><li><strong>FFmpeg / FFprobe</strong><span>${tr('licenseFfmpeg')}</span></li><li><strong>aria2c</strong><span>${tr('licenseAria2')}</span></li></ul>`;
-  const openSourceLicenses = `<details class="settings-open-source"><summary>${icon('shield', 16)}${tr('openSourceLicenses')}</summary><p>${tr('licensesSummary')}</p>${licenseRows}<small>${tr('licenseBundleInfo')}</small></details>`;
-  return `<div class="settings-page settings-page-updates">${pageIntro('Actualizaciones y diagnóstico', 'Estado local')}<section class="settings-section">${sectionHeading('shield', 'Versiones')}${statusRow('Aplicación', escapeHtml(runtime.version || APP_VERSION), 'neutral')} ${statusRow('yt-dlp', installed(media.yt_dlp, media.yt_dlp_version), media.yt_dlp ? 'ok' : 'warn')} ${statusRow('FFmpeg', installed(media.ffmpeg, media.ffmpeg_version), media.ffmpeg ? 'ok' : 'warn')} ${statusRow('FFprobe', installed(media.ffprobe, media.ffprobe_version), media.ffprobe ? 'ok' : 'warn')} ${statusRow('aria2c', installed(runtime.aria2_available, runtime.aria2_version), runtime.aria2_available ? 'ok' : 'warn')}</section>${componentManagerSection()}<section class="settings-section settings-section-tools">${sectionHeading('globe', 'Repositorios oficiales')}${repositories}${openSourceLicenses}</section><section class="settings-section settings-section-compact">${sectionHeading('tools', 'Diagnóstico visual')}${statusRow('Escala efectiva', `${visual.resolvedScale || 100}%`, 'neutral')} ${statusRow('Tipografía', `${escapeHtml(visual.font?.size || '16px')} · Segoe UI`, 'neutral')}<button type="button" class="copy-visual-diagnostics">${icon('clipboard', 16)} Copiar diagnóstico</button></section></div>`;
+  const openSourceLicenses = `<details class="settings-open-source"><summary>${tr('openSourceLicenses')}</summary><p>${tr('licensesSummary')}</p>${licenseRows}<small>${tr('licenseBundleInfo')}</small></details>`;
+  const diagnostics = `<button type="button" class="copy-visual-diagnostics">${tr('Copiar diagnóstico')}</button>`;
+  return `<div class="settings-page settings-page-updates">${pageIntro(tr('Actualizaciones y diagnóstico'), tr('Consulta versiones, estado de herramientas y diagnóstico visual.'))}<section class="settings-section settings-section-runtime">${sectionHeading(tr('Aplicación y herramientas'))}${runtimeTable}</section><section class="settings-section settings-section-tools">${repositories}${openSourceLicenses}</section><section class="settings-section settings-section-visual">${sectionHeading(tr('Diagnóstico visual'))}${diagnostics}</section></div>`;
 }
 
 export function settingsMarkup() {
-  const categories = ['general', 'downloads', 'multimedia', 'appearance', 'integrations', 'updates'];
+  const categories = ['general', 'downloads', 'multimedia', 'appearance', 'integrations', 'updates', 'components'];
   const activeCategory = categories.includes(appState.settingsCategory) ? appState.settingsCategory : 'general';
-  const page = activeCategory === 'downloads' ? downloadsPage() : activeCategory === 'multimedia' ? multimediaPage() : activeCategory === 'appearance' ? appearancePage() : activeCategory === 'integrations' ? integrationsPage() : activeCategory === 'updates' ? updatesPage() : generalPage();
-  return `<section class="settings-view settings-workspace"><div class="settings-workspace-frame"><header class="settings-workspace-toolbar"><button type="button" class="settings-back" title="${tr('back') || 'Volver al gestor'}" aria-label="${tr('back') || 'Volver al gestor'}">${icon('arrow', 18)}<span>${tr('back') || 'Volver al gestor'}</span></button></header><div class="settings-workspace-layout">${nav(activeCategory)}<main class="settings-workspace-content">${page}</main></div></div></section>`;
+  const page = activeCategory === 'downloads' ? downloadsPage() : activeCategory === 'multimedia' ? multimediaPage() : activeCategory === 'appearance' ? appearancePage() : activeCategory === 'integrations' ? integrationsPage() : activeCategory === 'updates' ? updatesPage() : activeCategory === 'components' ? componentsPage() : generalPage();
+  return `<section class="settings-view settings-workspace"><div class="settings-workspace-frame"><div class="settings-workspace-layout">${nav(activeCategory)}<main class="settings-workspace-content">${page}</main></div></div></section>`;
 }

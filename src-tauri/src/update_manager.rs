@@ -1,9 +1,42 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{fs, path::PathBuf, time::Duration};
+use std::{
+    fs,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_updater::UpdaterExt;
+
+fn update_download_rate(downloaded_bytes: u64, elapsed: Duration) -> Option<f64> {
+    let elapsed_seconds = elapsed.as_secs_f64();
+    if downloaded_bytes == 0 || elapsed_seconds <= 0.0 {
+        return None;
+    }
+    let rate = downloaded_bytes as f64 / elapsed_seconds;
+    rate.is_finite().then_some(rate)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::update_download_rate;
+    use std::time::Duration;
+
+    #[test]
+    fn update_download_rate_uses_real_bytes_and_elapsed_time() {
+        assert_eq!(
+            update_download_rate(5_000_000, Duration::from_secs(2)),
+            Some(2_500_000.0)
+        );
+    }
+
+    #[test]
+    fn update_download_rate_is_unknown_without_elapsed_time_or_bytes() {
+        assert_eq!(update_download_rate(5_000_000, Duration::ZERO), None);
+        assert_eq!(update_download_rate(0, Duration::from_secs(2)), None);
+    }
+}
 
 const BUNDLED_CONFIG: &str = include_str!("../resources/updater/updater-config.json");
 
@@ -206,6 +239,7 @@ pub async fn install_app_update(
 
     let progress_app = app.clone();
     let finish_app = app.clone();
+    let started_at = Instant::now();
     let mut downloaded_bytes = 0_u64;
     update
         .download_and_install(
@@ -214,12 +248,14 @@ pub async fn install_app_update(
                 let percent = content_length.filter(|total| *total > 0).map(|total| {
                     (downloaded_bytes as f64 * 100.0 / total as f64).clamp(0.0, 100.0)
                 });
+                let bytes_per_second = update_download_rate(downloaded_bytes, started_at.elapsed());
                 let _ = progress_app.emit(
                     "cacatools-app-update-progress",
                     json!({
                         "downloadedBytes": downloaded_bytes,
                         "contentLength": content_length,
                         "percent": percent,
+                        "bytesPerSecond": bytes_per_second,
                         "phase": "download"
                     }),
                 );

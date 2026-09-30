@@ -35,12 +35,15 @@ const CATALOG_STATE_NAME: &str = ".catalog-state.json";
 const STAGING_DIR: &str = ".staging";
 
 pub(crate) fn media_tools_required_error() -> String {
-    "Media Tools is required for this download. Install the component from Settings > Components."
-        .into()
+    missing_capability_error(Capability::MediaExtraction)
 }
 
 pub(crate) fn torrent_engine_required_error() -> String {
-    "Torrent Engine is required for this download. Install the component from Settings > Components.".into()
+    missing_capability_error(Capability::Bittorrent)
+}
+
+pub(crate) fn missing_capability_error(capability: Capability) -> String {
+    format!("CDM_MISSING_CAPABILITY:{}", capability.as_str())
 }
 
 static NEXT_STAGING_ID: AtomicU64 = AtomicU64::new(0);
@@ -113,7 +116,7 @@ pub(crate) enum Capability {
 }
 
 impl Capability {
-    fn component(self) -> ComponentId {
+    pub(crate) fn component(self) -> ComponentId {
         match self {
             Self::MediaExtraction
             | Self::MediaMerge
@@ -121,6 +124,17 @@ impl Capability {
             | Self::MediaTranscode
             | Self::JsRuntime => ComponentId::MediaTools,
             Self::Bittorrent => ComponentId::TorrentEngine,
+        }
+    }
+
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::MediaExtraction => "media-extraction",
+            Self::MediaMerge => "media-merge",
+            Self::MediaProbe => "media-probe",
+            Self::MediaTranscode => "media-transcode",
+            Self::JsRuntime => "js-runtime",
+            Self::Bittorrent => "bittorrent",
         }
     }
 
@@ -142,10 +156,80 @@ pub(crate) enum ComponentState {
     Installed,
     Corrupted,
     UpdateAvailable,
+    Preparing,
     Downloading,
     Verifying,
     Installing,
     Error,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum ComponentInstallPhase {
+    Preparing,
+    Download,
+    Verify,
+    Install,
+    Activate,
+    Done,
+    Error,
+    Cancelled,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ComponentInstallProgress {
+    pub(crate) component_id: ComponentId,
+    pub(crate) phase: ComponentInstallPhase,
+    pub(crate) bytes_downloaded: u64,
+    pub(crate) total_bytes: Option<u64>,
+    pub(crate) progress_ratio: Option<f64>,
+    pub(crate) bytes_per_second: Option<f64>,
+    pub(crate) error: Option<&'static str>,
+}
+
+struct ComponentOperationControl {
+    phase: Mutex<ComponentInstallPhase>,
+    cancelled: Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl ComponentOperationControl {
+    fn new() -> Self {
+        Self {
+            phase: Mutex::new(ComponentInstallPhase::Preparing),
+            cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        }
+    }
+
+    fn transition(&self, next: ComponentInstallPhase) -> Result<(), ComponentError> {
+        let mut phase = self.phase.lock().map_err(|_| {
+            ComponentError::InvalidPackage("component operation is unavailable".into())
+        })?;
+        if next == ComponentInstallPhase::Verify && self.cancelled.load(Ordering::Acquire) {
+            return Err(ComponentError::Cancelled);
+        }
+        *phase = next;
+        Ok(())
+    }
+
+    fn request_cancel(&self) -> Result<bool, ComponentError> {
+        let phase = self.phase.lock().map_err(|_| {
+            ComponentError::InvalidPackage("component operation is unavailable".into())
+        })?;
+        if *phase != ComponentInstallPhase::Download {
+            return Ok(false);
+        }
+        self.cancelled.store(true, Ordering::Release);
+        Ok(true)
+    }
+
+    fn is_cancelled(&self) -> bool {
+        self.cancelled.load(Ordering::Acquire)
+    }
+
+    fn cancellation_token(&self) -> Arc<std::sync::atomic::AtomicBool> {
+        self.cancelled.clone()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
@@ -372,6 +456,17 @@ pub(crate) struct ComponentStatus {
     pub(crate) progress_percent: Option<u8>,
     #[serde(rename = "availableVersion")]
     pub(crate) available_version: Option<String>,
+    pub(crate) reclaimable_bytes: Option<u64>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ComponentPromptInfo {
+    pub(crate) component_id: ComponentId,
+    pub(crate) capability: Capability,
+    pub(crate) purpose: &'static str,
+    pub(crate) installed: bool,
+    pub(crate) package_bytes: Option<u64>,
 }
 
 #[derive(Debug)]
@@ -391,6 +486,7 @@ pub(crate) enum ComponentError {
     CatalogReplay,
     Downgrade,
     ImmutableVersionChanged,
+    Cancelled,
 }
 
 impl fmt::Display for ComponentError {
@@ -430,6 +526,7 @@ impl fmt::Display for ComponentError {
             Self::ImmutableVersionChanged => {
                 formatter.write_str("catalog attempted to change an immutable component version")
             }
+            Self::Cancelled => formatter.write_str("component download was cancelled"),
         }
     }
 }
@@ -471,6 +568,7 @@ pub(crate) struct ComponentManager {
     operation: Mutex<()>,
     installing: Mutex<HashSet<ComponentId>>,
     activity: Mutex<HashMap<ComponentId, ComponentState>>,
+    operations: Mutex<HashMap<ComponentId, Arc<ComponentOperationControl>>>,
     progress: Mutex<HashMap<ComponentId, u8>>,
     errors: Mutex<HashMap<ComponentId, String>>,
     catalog_trust: TrustedKeys,
@@ -480,7 +578,7 @@ pub(crate) struct ComponentManager {
 
 impl ComponentManager {
     pub(crate) fn new(root: PathBuf, pins: RuntimePins) -> Result<Self, ComponentError> {
-        Self::new_with_trust(root, pins, distribution::production_trust())
+        Self::new_with_trust(root, pins, distribution::configured_trust())
     }
 
     fn new_with_trust(
@@ -523,11 +621,12 @@ impl ComponentManager {
             operation: Mutex::new(()),
             installing: Mutex::new(HashSet::new()),
             activity: Mutex::new(HashMap::new()),
+            operations: Mutex::new(HashMap::new()),
             progress: Mutex::new(HashMap::new()),
             errors: Mutex::new(errors),
             catalog_trust,
             catalog_cache: Mutex::new(None),
-            allow_loopback_http: cfg!(test),
+            allow_loopback_http: distribution::ALLOW_LOOPBACK_HTTP,
         })
     }
 
@@ -597,6 +696,7 @@ impl ComponentManager {
                         error: None,
                         progress_percent,
                         available_version,
+                        reclaimable_bytes: None,
                     },
                     Err(_) => ComponentStatus {
                         id,
@@ -608,6 +708,7 @@ impl ComponentManager {
                         error: Some("Component verification failed".into()),
                         progress_percent,
                         available_version,
+                        reclaimable_bytes: None,
                     },
                 }
             }
@@ -625,6 +726,7 @@ impl ComponentManager {
                 error: last_error,
                 progress_percent,
                 available_version,
+                reclaimable_bytes: None,
             },
             Err(_) => ComponentStatus {
                 id,
@@ -636,6 +738,7 @@ impl ComponentManager {
                 error: Some("Component metadata is invalid".into()),
                 progress_percent,
                 available_version,
+                reclaimable_bytes: None,
             },
         };
         if let Some(activity) = activity {
@@ -651,7 +754,27 @@ impl ComponentManager {
                 status.state = ComponentState::UpdateAvailable;
             }
         }
+        status.reclaimable_bytes = managed_tree_bytes(&self.component_root(id), id, &self.pins);
         status
+    }
+
+    pub(crate) fn component_prompt_info(&self, capability: Capability) -> ComponentPromptInfo {
+        let component_id = capability.component();
+        let package_bytes = self
+            .catalog_cache
+            .lock()
+            .ok()
+            .and_then(|catalog| Some(catalog.as_ref()?.component(component_id)?.package_bytes));
+        ComponentPromptInfo {
+            component_id,
+            capability,
+            purpose: match component_id {
+                ComponentId::MediaTools => "Descarga y procesamiento de medios",
+                ComponentId::TorrentEngine => "Descargas BitTorrent",
+            },
+            installed: self.resolve_capability(capability).is_ok(),
+            package_bytes,
+        }
     }
 
     pub(crate) fn verify_component(
@@ -666,7 +789,11 @@ impl ComponentManager {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs() as i64;
-        self.refresh_component_catalog_at(distribution::COMPONENT_CATALOG_ENDPOINT, now, false)
+        self.refresh_component_catalog_at(
+            distribution::COMPONENT_CATALOG_ENDPOINT,
+            now,
+            distribution::ALLOW_LOOPBACK_HTTP,
+        )
     }
 
     fn refresh_component_catalog_at(
@@ -700,7 +827,7 @@ impl ComponentManager {
         progress: F,
     ) -> Result<ComponentStatus, ComponentError>
     where
-        F: FnMut(ComponentState, u64, u64),
+        F: FnMut(ComponentInstallProgress),
     {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -710,7 +837,7 @@ impl ComponentManager {
             id,
             distribution::COMPONENT_CATALOG_ENDPOINT,
             now,
-            false,
+            distribution::ALLOW_LOOPBACK_HTTP,
             progress,
         )
     }
@@ -724,13 +851,38 @@ impl ComponentManager {
         mut progress: F,
     ) -> Result<ComponentStatus, ComponentError>
     where
-        F: FnMut(ComponentState, u64, u64),
+        F: FnMut(ComponentInstallProgress),
     {
         let _operation = self.operation.lock().map_err(|_| {
             ComponentError::InvalidPackage("component manager is unavailable".into())
         })?;
-        self.set_activity(id, ComponentState::Downloading, Some(0));
+        let control = Arc::new(ComponentOperationControl::new());
+        self.operations
+            .lock()
+            .map_err(|_| ComponentError::InvalidPackage("component manager is unavailable".into()))?
+            .insert(id, control.clone());
+        self.set_activity(id, ComponentState::Preparing, None);
         self.errors.lock().ok().map(|mut errors| errors.remove(&id));
+        let mut emit = |phase, downloaded, total, speed, error| {
+            progress(ComponentInstallProgress {
+                component_id: id,
+                phase,
+                bytes_downloaded: downloaded,
+                total_bytes: total,
+                progress_ratio: total.map(|total| {
+                    if total == 0 {
+                        0.0
+                    } else {
+                        (downloaded as f64 / total as f64).clamp(0.0, 1.0)
+                    }
+                }),
+                bytes_per_second: speed,
+                error,
+            });
+        };
+        emit(ComponentInstallPhase::Preparing, 0, None, None, None);
+        let mut last_downloaded = 0_u64;
+        let mut last_total = None;
         let result = (|| {
             let catalog_bytes = distribution::fetch_catalog_bytes(endpoint, allow_loopback_http)
                 .map_err(ComponentError::CatalogFetch)?;
@@ -769,14 +921,22 @@ impl ComponentManager {
             }
 
             let pins = RuntimePins::from_catalog_component(&component)?;
-            progress(ComponentState::Downloading, 0, component.package_bytes);
+            control.transition(ComponentInstallPhase::Download)?;
+            self.set_activity(id, ComponentState::Downloading, Some(0));
+            last_total = Some(component.package_bytes);
+            emit(
+                ComponentInstallPhase::Download,
+                0,
+                Some(component.package_bytes),
+                None,
+                None,
+            );
             let staging_root = self.root.join(STAGING_DIR);
             ensure_directory_without_reparse(&staging_root)?;
             let download_directory = staging_root.join(unique_leaf("component-download"));
             ensure_directory_without_reparse(&download_directory)?;
             let _download_cleanup = InstallCleanupGuard::new(download_directory.clone());
             let package_path = download_directory.join(&component.asset_name);
-            self.set_activity(id, ComponentState::Downloading, Some(0));
             let download_request = distribution::AssetDownloadRequest {
                 url: &component.package_url,
                 release_tag: &component.release_tag,
@@ -787,25 +947,44 @@ impl ComponentManager {
                 maximum_size: MAX_PACKAGE_BYTES,
                 allow_loopback_http,
             };
-            distribution::download_asset_to_path(&download_request, |received| {
-                let percent = received
-                    .saturating_mul(100)
-                    .checked_div(component.package_bytes)
-                    .unwrap_or(0)
-                    .min(100) as u8;
-                self.set_activity(id, ComponentState::Downloading, Some(percent));
-                progress(
-                    ComponentState::Downloading,
-                    received,
-                    component.package_bytes,
-                );
-            })
+            let started = std::time::Instant::now();
+            let mut previous_bytes = 0_u64;
+            let mut previous_at = started;
+            distribution::download_asset_to_path(
+                &download_request,
+                |received| {
+                    last_downloaded = received;
+                    let percent = received
+                        .saturating_mul(100)
+                        .checked_div(component.package_bytes)
+                        .unwrap_or(0)
+                        .min(100) as u8;
+                    self.set_activity(id, ComponentState::Downloading, Some(percent));
+                    let now = std::time::Instant::now();
+                    let elapsed = now.duration_since(previous_at).as_secs_f64();
+                    let speed = (elapsed > 0.0)
+                        .then_some(received.saturating_sub(previous_bytes) as f64 / elapsed);
+                    previous_bytes = received;
+                    previous_at = now;
+                    emit(
+                        ComponentInstallPhase::Download,
+                        received,
+                        Some(component.package_bytes),
+                        speed,
+                        None,
+                    );
+                },
+                control.cancellation_token(),
+            )
             .map_err(ComponentError::Download)?;
+            control.transition(ComponentInstallPhase::Verify)?;
             self.set_activity(id, ComponentState::Verifying, Some(100));
-            progress(
-                ComponentState::Verifying,
+            emit(
+                ComponentInstallPhase::Verify,
                 component.package_bytes,
-                component.package_bytes,
+                Some(component.package_bytes),
+                None,
+                None,
             );
             let package = self.validate_package_with_pins(&package_path, &pins)?;
             if package.package_sha256 != component.package_sha256
@@ -818,24 +997,71 @@ impl ComponentManager {
                     "downloaded package differs from the signed catalog".into(),
                 ));
             }
+            control.transition(ComponentInstallPhase::Install)?;
             self.set_activity(id, ComponentState::Installing, Some(100));
-            progress(
-                ComponentState::Installing,
+            emit(
+                ComponentInstallPhase::Install,
                 component.package_bytes,
-                component.package_bytes,
+                Some(component.package_bytes),
+                None,
+                None,
             );
+            let mut activate = || {
+                let _ = control.transition(ComponentInstallPhase::Activate);
+                emit(
+                    ComponentInstallPhase::Activate,
+                    component.package_bytes,
+                    Some(component.package_bytes),
+                    None,
+                    None,
+                );
+            };
             self.install_validated_package(
                 package,
                 &pins,
                 Some(&verified.original_bytes),
                 Some(verified.signed.payload.sequence),
+                Some(&mut activate),
             )?;
             Ok(())
         })();
         self.clear_activity(id);
+        self.operations
+            .lock()
+            .ok()
+            .map(|mut operations| operations.remove(&id));
         match result {
-            Ok(()) => Ok(self.component_status(id)),
+            Ok(()) => {
+                emit(
+                    ComponentInstallPhase::Done,
+                    last_downloaded,
+                    last_total,
+                    None,
+                    None,
+                );
+                Ok(self.component_status(id))
+            }
             Err(error) => {
+                let phase = if matches!(
+                    error,
+                    ComponentError::Cancelled
+                        | ComponentError::Download(distribution::AssetDownloadError::Cancelled)
+                ) {
+                    ComponentInstallPhase::Cancelled
+                } else {
+                    ComponentInstallPhase::Error
+                };
+                emit(
+                    phase,
+                    last_downloaded,
+                    last_total,
+                    None,
+                    Some(if phase == ComponentInstallPhase::Cancelled {
+                        "cancelled"
+                    } else {
+                        "operation_failed"
+                    }),
+                );
                 if self.read_active(id).ok().flatten().is_none() {
                     if let Ok(mut errors) = self.errors.lock() {
                         errors.insert(id, "Component installation failed".into());
@@ -843,6 +1069,19 @@ impl ComponentManager {
                 }
                 Err(error)
             }
+        }
+    }
+
+    pub(crate) fn cancel_component_install(&self, id: ComponentId) -> Result<bool, ComponentError> {
+        let operation = self
+            .operations
+            .lock()
+            .map_err(|_| ComponentError::InvalidPackage("component manager is unavailable".into()))?
+            .get(&id)
+            .cloned();
+        match operation {
+            Some(operation) => operation.request_cancel(),
+            None => Ok(false),
         }
     }
 
@@ -918,7 +1157,8 @@ impl ComponentManager {
                 return Err(ComponentError::Missing(id))
             }
             ComponentState::Corrupted => return Err(ComponentError::Corrupted(id)),
-            ComponentState::Downloading
+            ComponentState::Preparing
+            | ComponentState::Downloading
             | ComponentState::Verifying
             | ComponentState::Installing => return Err(ComponentError::Busy(id)),
             ComponentState::Installed | ComponentState::UpdateAvailable => {}
@@ -960,7 +1200,7 @@ impl ComponentManager {
             .lock()
             .map_err(|_| ComponentError::InvalidPackage("component manager is unavailable".into()))?
             .remove(&id);
-        let result = self.install_validated_package(package, &self.pins, None, None);
+        let result = self.install_validated_package(package, &self.pins, None, None, None);
         self.installing
             .lock()
             .ok()
@@ -1014,20 +1254,31 @@ impl ComponentManager {
     }
 
     pub(crate) fn remove_component(&self, id: ComponentId) -> Result<(), ComponentError> {
-        let _operation = self.operation.lock().map_err(|_| {
-            ComponentError::InvalidPackage("component manager is unavailable".into())
-        })?;
+        if self
+            .operations
+            .lock()
+            .map_err(|_| ComponentError::InvalidPackage("component manager is unavailable".into()))?
+            .contains_key(&id)
+        {
+            return Err(ComponentError::Busy(id));
+        }
+        let _operation = self
+            .operation
+            .try_lock()
+            .map_err(|_| ComponentError::Busy(id))?;
         let component_root = self.component_root(id);
         if !component_root.exists() {
             return Ok(());
         }
-        reject_reparse_path(&component_root)?;
-        let pointer = component_root.join(POINTER_NAME);
-        if pointer.exists() {
-            reject_reparse_path(&pointer)?;
-            fs::remove_file(&pointer)?;
+        let (files, version_directories) =
+            inspect_managed_component_tree(&component_root, id, &self.pins)?;
+        for file in files {
+            fs::remove_file(file)?;
         }
-        remove_tree_without_reparse(&component_root)?;
+        for directory in version_directories.into_iter().rev() {
+            fs::remove_dir(directory)?;
+        }
+        fs::remove_dir(component_root)?;
         if let Ok(mut errors) = self.errors.lock() {
             errors.remove(&id);
         }
@@ -1048,6 +1299,7 @@ impl ComponentManager {
         pins: &RuntimePins,
         catalog_proof: Option<&[u8]>,
         catalog_sequence: Option<u64>,
+        on_activate: Option<&mut dyn FnMut()>,
     ) -> Result<(), ComponentError> {
         let id = package.manifest.id;
         let staging_root = self.root.join(STAGING_DIR);
@@ -1122,6 +1374,9 @@ impl ComponentManager {
         )?;
         pointer_file.sync_all()?;
         drop(pointer_file);
+        if let Some(on_activate) = on_activate {
+            on_activate();
+        }
         atomic_replace(&pointer_tmp, &pointer_path)?;
         cleanup.commit();
         if let Err(error) = sync_directory(&component_root) {
@@ -1693,7 +1948,7 @@ fn sha256_bytes(bytes: &[u8]) -> String {
 fn hash_file(path: &Path) -> Result<String, ComponentError> {
     let mut file = File::open(path)?;
     let mut hasher = Sha256::new();
-    let mut buffer = [0u8; 1024 * 1024];
+    let mut buffer = vec![0u8; 64 * 1024];
     loop {
         let read = file.read(&mut buffer)?;
         if read == 0 {
@@ -1744,6 +1999,161 @@ fn is_regular_file_without_reparse(path: &Path) -> bool {
                 && !is_reparse_metadata(&metadata)
         })
         .unwrap_or(false)
+}
+
+fn managed_tree_bytes(path: &Path, id: ComponentId, pins: &RuntimePins) -> Option<u64> {
+    let (files, _) = inspect_managed_component_tree(path, id, pins).ok()?;
+    files.into_iter().try_fold(0_u64, |total, file| {
+        let metadata = fs::symlink_metadata(file).ok()?;
+        total.checked_add(metadata.len())
+    })
+}
+
+fn inspect_managed_component_tree(
+    component_root: &Path,
+    id: ComponentId,
+    pins: &RuntimePins,
+) -> Result<(Vec<PathBuf>, Vec<PathBuf>), ComponentError> {
+    reject_reparse_path(component_root)?;
+    let root_metadata = fs::symlink_metadata(component_root)?;
+    if !root_metadata.is_dir() {
+        return Err(ComponentError::InvalidPackage(
+            "component storage root is not a directory".into(),
+        ));
+    }
+    let versions_root = component_root.join("versions");
+    let mut files = Vec::new();
+    let mut directories = Vec::new();
+    let mut saw_versions = false;
+    let mut active_directory = None;
+
+    for entry in fs::read_dir(component_root)? {
+        let entry = entry?;
+        let path = entry.path();
+        reject_reparse_path(&path)?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name == POINTER_NAME {
+            if !entry.file_type()?.is_file() {
+                return Err(ComponentError::InvalidPackage(
+                    "component activation metadata is not a regular file".into(),
+                ));
+            }
+            let pointer_bytes = fs::read(&path)?;
+            if let Ok(pointer) = serde_json::from_slice::<ActivePointer>(&pointer_bytes) {
+                if pointer.schema_version == COMPONENT_SCHEMA_VERSION
+                    && valid_directory_leaf(&pointer.directory)
+                {
+                    active_directory = Some(pointer.directory);
+                }
+            }
+            files.push(path);
+        } else if name == "versions" {
+            if !entry.file_type()?.is_dir() {
+                return Err(ComponentError::InvalidPackage(
+                    "component versions root is not a directory".into(),
+                ));
+            }
+            saw_versions = true;
+        } else {
+            return Err(ComponentError::InvalidPackage(
+                "component folder contains an unmanaged file".into(),
+            ));
+        }
+    }
+
+    if !saw_versions {
+        return Err(ComponentError::InvalidPackage(
+            "component versions folder is missing".into(),
+        ));
+    }
+    reject_reparse_path(&versions_root)?;
+    directories.push(versions_root.clone());
+    let allowed_files = pins
+        .files_for(id)
+        .iter()
+        .map(|file| file.name.to_ascii_lowercase())
+        .chain([
+            MANIFEST_NAME.to_ascii_lowercase(),
+            CATALOG_PROOF_NAME.to_ascii_lowercase(),
+        ])
+        .collect::<HashSet<_>>();
+    let mut found_active = active_directory.is_none();
+
+    for version_entry in fs::read_dir(&versions_root)? {
+        let version_entry = version_entry?;
+        let version_directory = version_entry.path();
+        reject_reparse_path(&version_directory)?;
+        if !version_entry.file_type()?.is_dir()
+            || !managed_version_directory_name(&version_entry.file_name().to_string_lossy())
+        {
+            return Err(ComponentError::InvalidPackage(
+                "component versions folder contains an unmanaged entry".into(),
+            ));
+        }
+        if active_directory
+            .as_deref()
+            .is_some_and(|active| active == version_entry.file_name().to_string_lossy())
+        {
+            found_active = true;
+        }
+        let mut has_manifest = false;
+        for file_entry in fs::read_dir(&version_directory)? {
+            let file_entry = file_entry?;
+            let file_path = file_entry.path();
+            reject_reparse_path(&file_path)?;
+            let file_name = file_entry
+                .file_name()
+                .to_string_lossy()
+                .to_ascii_lowercase();
+            if !file_entry.file_type()?.is_file() || !allowed_files.contains(&file_name) {
+                return Err(ComponentError::InvalidPackage(
+                    "component version contains an unmanaged file".into(),
+                ));
+            }
+            if file_name == MANIFEST_NAME {
+                has_manifest = true;
+            }
+            files.push(file_path);
+        }
+        if !has_manifest {
+            return Err(ComponentError::InvalidPackage(
+                "component version manifest is missing".into(),
+            ));
+        }
+        directories.push(version_directory);
+    }
+    if !found_active {
+        return Err(ComponentError::InvalidPackage(
+            "active component pointer does not reference a managed version".into(),
+        ));
+    }
+    Ok((files, directories))
+}
+
+fn managed_version_directory_name(value: &str) -> bool {
+    if !value.is_ascii() {
+        return false;
+    }
+    for (separator, character) in value.char_indices() {
+        if character != '-' || Version::parse(&value[..separator]).is_err() {
+            continue;
+        }
+        let suffix = &value[separator + 1..];
+        if suffix.len() < 16 || !suffix[..16].bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            continue;
+        }
+        let collision_suffix = &suffix[16..];
+        if collision_suffix.is_empty()
+            || (collision_suffix.starts_with('-')
+                && collision_suffix[1..]
+                    .bytes()
+                    .all(|byte| byte.is_ascii_digit())
+                && collision_suffix.len() > 1)
+        {
+            return true;
+        }
+    }
+    false
 }
 
 fn ensure_directory_without_reparse(path: &Path) -> Result<(), ComponentError> {

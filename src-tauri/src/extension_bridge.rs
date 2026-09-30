@@ -25,11 +25,17 @@ const MAX_INPUT_BYTES: usize = 4 * 1024 * 1024;
 const MAX_OUTPUT_BYTES: usize = 1024 * 1024;
 const MAX_STATE_BYTES: usize = 768 * 1024;
 const CAPTURE_RESPONSE_TIMEOUT_MS: u64 = 3_000;
+#[cfg(not(feature = "qa-component-manager"))]
 const HOST_NAME: &str = "lat.cacaplay.cacatools.downloadmanager";
+#[cfg(feature = "qa-component-manager")]
+const HOST_NAME: &str = "lat.cacaplay.cacatools.downloadmanager.qa";
 const PUBLISHED_CHROMIUM_EXTENSION_ID: &str = "aonppfnabjnicjjeoofkfjofolfibggp";
 const STORE_APP_USER_MODEL_ID: &str = "CacaPlay.CacaToolsDownloadManager_b9fexpwkvxe1m!CacaTools";
 const WINDOWS_STARTUP_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
+#[cfg(not(feature = "qa-component-manager"))]
 const WINDOWS_STARTUP_VALUE: &str = "Clear Download Manager";
+#[cfg(feature = "qa-component-manager")]
+const WINDOWS_STARTUP_VALUE: &str = "Clear Download Manager QA";
 static APP_LOCK: OnceLock<File> = OnceLock::new();
 static REQUEST_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
@@ -471,6 +477,11 @@ fn bridge_root() -> PathBuf {
     let root = env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(env::temp_dir);
+    #[cfg(feature = "qa-component-manager")]
+    {
+        return root.join("CDM-QA").join("ExtensionBridge");
+    }
+    #[cfg(not(feature = "qa-component-manager"))]
     root.join("CacaTools")
         .join("DownloadManager")
         .join("ExtensionBridge")
@@ -503,8 +514,8 @@ fn read_extension_state() -> Value {
                     "motionMode": "system",
                     "iconColorMode": "accent",
                     "iconColor": "#596574",
-                    "progressActive": "#00ff2a",
-                    "progressCompleted": "#00ff2a",
+                    "progressActive": "#22a9d6",
+                    "progressCompleted": "#04d25a",
                     "progressPaused": "#e2a93f",
                     "progressError": "#ef6674"
                 },
@@ -564,6 +575,12 @@ fn unix_timestamp_secs() -> u64 {
         .unwrap_or(0)
 }
 
+#[cfg(feature = "qa-component-manager")]
+pub fn claim_primary_app_instance() -> Result<bool, String> {
+    Ok(true)
+}
+
+#[cfg(not(feature = "qa-component-manager"))]
 pub fn claim_primary_app_instance() -> Result<bool, String> {
     fs::create_dir_all(inbox_dir()).map_err(|error| error.to_string())?;
     let lock = OpenOptions::new()
@@ -585,6 +602,12 @@ pub fn claim_primary_app_instance() -> Result<bool, String> {
     }
 }
 
+#[cfg(feature = "qa-component-manager")]
+pub fn initialize_app_bridge() -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(not(feature = "qa-component-manager"))]
 pub fn initialize_app_bridge() -> Result<(), String> {
     fs::create_dir_all(inbox_dir()).map_err(|error| error.to_string())?;
     let _ = ensure_extension_host_registration();

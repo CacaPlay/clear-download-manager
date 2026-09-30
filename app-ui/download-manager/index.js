@@ -1,11 +1,12 @@
 import { jobsForSection, normalizeJobs, normalizePreferences, resolveTheme, sectionForLayout, selectedJob } from './core/model.js';
 import { APPEARANCE_REVISION, DEFAULT_PROGRESS_ACTIVE_COLOR, DEFAULT_PROGRESS_COMPLETED_COLOR } from './core/constants.js';
-import { renderZenSidebar } from './view/zen-sidebar.js?v=0.95.0-verify-20260911-r5';
+import { renderZenSidebar } from './view/zen-sidebar.js?v=0.95.5-ui-redesign-20260929-r1';
 import { bulkDeleteDialog, cancelDialog, clipboardPreviewDialog, deleteDialog, extensionDialog, feedbackDialog, newsDetailsDialog, newsImageDialog, recoveryDialog, renameDialog, scheduleDialog, torrentDialog, updateDialog, videoSearchDialog } from './view/dialogs.js';
 import { applyOptimisticJobStatuses, createVirtualizationDescriptor, runtimeState } from './state.js';
 import { patchDownloadManagerLiveCore, scheduleVirtualListUpdate } from './live.js';
-import { bindDownloadManagerEvents } from './events.js?v=0.95.0-verify-20260911-r5';
-import { iconVariantForColor } from '../modules/appearance/index.js?v=0.95.0-verify-20260911-r4';
+import { bindDownloadManagerEvents } from './events.js?v=0.95.5-ui-redesign-20260929-r1';
+import { iconVariantForColor } from '../modules/appearance/index.js?v=0.95.5-ui-redesign-20260929-r1';
+import { loadLocale, resolveLocale } from '../modules/i18n/index.js';
 import { setSectionLocale } from './view/sections.js';
 
 export { clearDownloadManagerSearchState, getDownloadManagerPreferences, setOptimisticJobPriority, setOptimisticJobStatus } from './state.js';
@@ -51,7 +52,9 @@ function applyDmAccentVariables(root, preferences, appearance = null) {
   root.style.setProperty('--dm-accent-source', source.accent);
   root.style.setProperty('--dm-accent-intensity', String(source.accentIntensity || 82));
   const iconAccent = source.iconColorMode === 'custom' && /^#[0-9a-f]{6}$/i.test(String(source.iconColor || '')) ? source.iconColor : effective;
+  root.style.setProperty('--dm-icon-neutral', 'var(--dm-muted)');
   root.style.setProperty('--dm-icon-accent', iconAccent);
+  root.style.setProperty('--dm-icon-accent-detail', dmReadableAccent(iconAccent, theme));
   root.style.setProperty('--dm-progress-active', source.progressActive || DEFAULT_PROGRESS_ACTIVE_COLOR);
   root.style.setProperty('--dm-progress-completed', source.progressCompleted || DEFAULT_PROGRESS_COMPLETED_COLOR);
   root.style.setProperty('--dm-progress-paused', source.progressPaused || source.warning || '#e2a93f');
@@ -88,7 +91,9 @@ function renderModal(jobs, context = {}) {
 }
 
 export function renderDownloadManager(context = {}) {
-  setSectionLocale(context.locale?.() || context.locale || context.experienceSettings?.locale || 'es');
+  const configuredLocale = typeof context.locale === 'function' ? context.locale() : context.locale;
+  runtimeState.locale = resolveLocale(configuredLocale || context.experienceSettings?.locale || loadLocale());
+  setSectionLocale(runtimeState.locale);
   const inheritedAppearance = context.appearance || {};
   runtimeState.preferences = normalizePreferences({
     ...runtimeState.preferences,
@@ -132,7 +137,7 @@ export function renderDownloadManager(context = {}) {
   // older local preference snapshot so a rerender cannot restore cyan while
   // the rest of the interface is green/red.
   const brandIconVariant = iconVariantForColor(inheritedAppearance.accent || runtimeState.preferences.accent);
-  const css = `--dm-accent:${effectiveAccent};--dm-accent-source:${runtimeState.preferences.accent};--dm-accent-intensity:${runtimeState.preferences.accentIntensity};--dm-icon-accent:${effectiveIconAccent};--dm-accent-ink:${accentVisual.ink};--dm-accent-detail:${accentVisual.detail};--dm-success:${effectiveSuccess};--dm-progress-active:${runtimeState.preferences.progressActive || DEFAULT_PROGRESS_ACTIVE_COLOR};--dm-progress-completed:${runtimeState.preferences.progressCompleted || DEFAULT_PROGRESS_COMPLETED_COLOR};--dm-progress-paused:${runtimeState.preferences.progressPaused || runtimeState.preferences.warning || '#e2a93f'};--dm-progress-error:${runtimeState.preferences.progressError || runtimeState.preferences.danger};--dm-warning:${runtimeState.preferences.warning};--dm-danger:${runtimeState.preferences.danger};--dm-info:#3f8fc7;--dm-ui-scale:${runtimeState.preferences.uiScale / 100};--dm-ui-inverse:${100 / runtimeState.preferences.uiScale};--dm-text-scale:${Math.max(.92, Math.min(1.16, 1.08 + (runtimeState.preferences.textScale - 100) * 0.004))};`;
+  const css = `--dm-accent:${effectiveAccent};--dm-accent-source:${runtimeState.preferences.accent};--dm-accent-intensity:${runtimeState.preferences.accentIntensity};--dm-icon-neutral:var(--dm-muted);--dm-icon-accent:${effectiveIconAccent};--dm-icon-accent-detail:${dmReadableAccent(effectiveIconAccent, theme)};--dm-accent-ink:${accentVisual.ink};--dm-accent-detail:${accentVisual.detail};--dm-success:${effectiveSuccess};--dm-progress-active:${runtimeState.preferences.progressActive || DEFAULT_PROGRESS_ACTIVE_COLOR};--dm-progress-completed:${runtimeState.preferences.progressCompleted || DEFAULT_PROGRESS_COMPLETED_COLOR};--dm-progress-paused:${runtimeState.preferences.progressPaused || runtimeState.preferences.warning || '#e2a93f'};--dm-progress-error:${runtimeState.preferences.progressError || runtimeState.preferences.danger};--dm-warning:${runtimeState.preferences.warning};--dm-danger:${runtimeState.preferences.danger};--dm-info:#3f8fc7;--dm-ui-scale:${runtimeState.preferences.uiScale / 100};--dm-ui-inverse:${100 / runtimeState.preferences.uiScale};--dm-text-scale:${Math.max(.92, Math.min(1.16, 1.08 + (runtimeState.preferences.textScale - 100) * 0.004))};`;
   const sharedContext = {
     ...context,
     jobs,
@@ -143,6 +148,7 @@ export function renderDownloadManager(context = {}) {
     mobileSidebarOpen: runtimeState.mobileSidebarOpen,
     mobileInspectorOpen: runtimeState.mobileInspectorOpen,
     settingsOpen: runtimeState.settingsOpen,
+    addMenuOpen: runtimeState.addMenuOpen,
     categoryMenuOpen: runtimeState.categoryMenuOpen,
     settingsSection: runtimeState.settingsSection,
     unifiedQuery: runtimeState.unifiedQuery,

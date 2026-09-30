@@ -58,16 +58,16 @@ const currentWindowsIcons = [
 ];
 const currentStoreIcons = ['StoreLogo.png', 'Square44x44Logo.png', 'Square150x150Logo.png'];
 const uiFallbackSources = [
-  ['app-ui/main.js', './app-ui/assets/brand/clear-download-manager-celeste.png'],
-  ['app-ui/subwindow.js', './assets/brand/clear-download-manager-celeste.png'],
-  ['app-ui/player/index.html', '../assets/brand/clear-download-manager-celeste.png'],
-  ['app-ui/player/player.js', '../assets/brand/clear-download-manager-celeste.png'],
+  ['app-ui/main.js', './app-ui/assets/brand/clear-download-manager-celeste.webp'],
+  ['app-ui/subwindow.js', './assets/brand/clear-download-manager-celeste.webp'],
+  ['app-ui/player/index.html', '../assets/brand/clear-download-manager-celeste.webp'],
+  ['app-ui/player/player.js', '../assets/brand/clear-download-manager-celeste.webp'],
 ];
-const fallbackLogo = 'app-ui/assets/brand/clear-download-manager-celeste.png';
+const fallbackLogo = 'app-ui/assets/brand/clear-download-manager-celeste.webp';
 const tauriConfig = JSON.parse(read('src-tauri/tauri.conf.json'));
 const checks = [
   ['La ventana de preparación usa el icono genérico local y muestra el host', !subwindow.includes('assets/platforms/') && /return \['http', host\.replace\(\/\^www\\\.\//.test(subwindow) && subwindow.includes("icon('link', 18)")],
-  ['La compilación excluye los logos de servicios y los tres iconos de tipo obsoletos', build.includes("assetPath === 'platforms'") && ['file-types/docs.png', 'file-types/powerpoint.png', 'file-types/pdf.png'].every((file) => build.includes(`'${file}'`))],
+  ['La compilación excluye los logos de servicios, los iconos obsoletos y las copias PNG con pareja WebP', build.includes("assetPath === 'platforms'") && ['file-types/docs.png', 'file-types/powerpoint.png', 'file-types/pdf.png'].every((file) => build.includes(`'${file}'`)) && build.includes("entry.name.toLowerCase().endsWith('.png')") && build.includes("from.replace(/\\.png$/i, '.webp')")],
   ['El build Windows ya no exige logos retirados del paquete web', !windowsBuild.includes('app-ui\\assets\\platforms\\') && !windowsBuild.includes('platformLogos')],
   ['El README conserva enlaces de texto sin botones gráficos de marcas externas', !/docs\/assets\/(?:download-buttons|download-cards|chrome-web-store|microsoft-store|windows-11-logo)/.test(readme) && readme.includes('Microsoft Store') && readme.includes('Chrome Web Store')],
   ['El aviso separa marcas de terceros de la licencia del código', notice.includes('app-ui/assets/brand/') && notice.includes('Third-party components')],
