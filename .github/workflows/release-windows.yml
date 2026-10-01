@@ -248,7 +248,6 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/prepare-update-release.ps1 -Clean -Tag $env:RELEASE_TAG -ReleaseNotes "Release $env:RELEASE_TAG"
-          if ($LASTEXITCODE -ne 0) { throw 'Preparing latest.json and updater files failed.' }
           $sourceArchives = @(Get-ChildItem source-input -File -Filter 'clear-download-manager-source.tar')
           if ($sourceArchives.Count -ne 1) { throw 'Expected exactly one source archive artifact from build-test.' }
           Copy-Item -LiteralPath $sourceArchives[0].FullName -Destination output/update-release/clear-download-manager-source.tar -Force

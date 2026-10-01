@@ -293,6 +293,33 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   assert.doesNotMatch(verify, /secrets\.RELEASE_TAURI_SIGNING_PRIVATE_KEY/);
 });
 
+test('release preparation trusts PowerShell errors, validates native exit codes, and keeps binary verification before publish', () => {
+  const workflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const prepareScript = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-update-release.ps1'), 'utf8');
+  const jobsText = workflow.slice(workflow.indexOf('\njobs:') + '\njobs:'.length);
+  const packageSignStart = jobsText.indexOf('\n  package-sign:');
+  const verifyStart = jobsText.indexOf('\n  verify-binary-release:');
+  const publishStart = jobsText.indexOf('\n  publish:');
+  assert.ok(packageSignStart >= 0 && verifyStart > packageSignStart && publishStart > verifyStart);
+  const packageSign = jobsText.slice(packageSignStart, verifyStart);
+  const verify = jobsText.slice(verifyStart, publishStart);
+  const publish = jobsText.slice(publishStart);
+  const prepareStepStart = packageSign.indexOf('- name: Prepare signed Core/update files and CDM source archive');
+  const prepareStepEnd = packageSign.indexOf('\n      - name:', prepareStepStart + 1);
+  assert.ok(prepareStepStart >= 0 && prepareStepEnd > prepareStepStart);
+  const prepareStep = packageSign.slice(prepareStepStart, prepareStepEnd);
+
+  assert.match(prepareStep, /\.\/scripts\/prepare-update-release\.ps1[^\n]*/);
+  assert.match(prepareStep, /\$sourceArchives/);
+  assert.doesNotMatch(prepareStep, /\$LASTEXITCODE/);
+  assert.match(prepareScript, /^\$ErrorActionPreference\s*=\s*'Stop'\s*$/m);
+  assert.match(prepareScript, /\bthrow\b/);
+  assert.match(packageSign, /npm run build:windows:final\s*\n\s*if \(\$LASTEXITCODE -ne 0\) \{ throw 'The signed Windows package build failed\.' \}/);
+  assert.match(verify, /npm run check:binary-release[\s\S]*?if \(\$LASTEXITCODE -ne 0\) \{ throw 'The final binary release gate did not pass; publication is blocked\.' \}/);
+  assert.match(publish, /needs:[\s\S]*- verify-binary-release/);
+  assert.match(publish, /needs\.verify-binary-release\.result\s*==\s*'success'/);
+});
+
 test('release artifact checksum verifier rejects changed and unlisted files', () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-release-artifact-test-'));
   const verifier = path.join(repositoryRoot, 'scripts/validation/verify-release-artifact.mjs');
