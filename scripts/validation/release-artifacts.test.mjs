@@ -720,12 +720,15 @@ test('Quality and release CI install pinned Playwright Chromium before their res
   const release = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
   const buildTestStart = release.indexOf('\n  build-test:');
   const packageSignStart = release.indexOf('\n  package-sign:');
-  assert.ok(buildTestStart >= 0 && packageSignStart > buildTestStart);
+  const verifyStart = release.indexOf('\n  verify-binary-release:');
+  assert.ok(buildTestStart >= 0 && packageSignStart > buildTestStart && verifyStart > packageSignStart);
   const buildTest = release.slice(buildTestStart, packageSignStart);
+  const packageSign = release.slice(packageSignStart, verifyStart);
 
   for (const [name, workflow, gateCommand] of [
     ['Quality', quality, 'npm run check:quality'],
     ['release build-test', buildTest, 'npm run check:release'],
+    ['release package-sign', packageSign, 'npm run build:windows:final'],
   ]) {
     const installIndex = workflow.indexOf('playwright==1.62.0');
     const browserIndex = workflow.indexOf('python -m playwright install chromium');
