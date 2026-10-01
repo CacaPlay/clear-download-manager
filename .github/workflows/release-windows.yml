@@ -200,7 +200,11 @@ jobs:
           components: rustfmt, clippy
       - name: Install visual build dependency
         shell: pwsh
-        run: python -m pip install --disable-pip-version-check --no-input pillow==12.3.0
+        run: |
+          python -m pip install --disable-pip-version-check --no-input pillow==12.3.0 playwright==1.62.0
+          if ($LASTEXITCODE -ne 0) { throw 'Installing visual build dependencies failed.' }
+          python -m playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Installing Playwright Chromium failed.' }
       - name: Install Node dependencies
         run: npm ci --no-audit --no-fund
       - name: Prepare pinned SAFE LEAN MSYS2 toolchain
