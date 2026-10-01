@@ -127,7 +127,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Assembling the yt-dlp corresponding-source archive failed.' }
           $archive = Get-Item -LiteralPath 'output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz' -ErrorAction Stop
           $sha256 = (Get-FileHash -LiteralPath $archive.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($archive.Length -ne 89850884 -or $sha256 -ne '03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb') {
+          if ($archive.Length -ne 89855212 -or $sha256 -ne '78f552ec5c4bd5c05012cc1c9c1c8eb526d301bdd3f2cbbe1bab79d507c27184') {
             throw "yt-dlp corresponding-source archive did not match its technical pin (bytes=$($archive.Length), sha256=$sha256)."
           }
       - name: Upload yt-dlp corresponding-source input for package verification
@@ -254,7 +254,7 @@ jobs:
           $ytDlpSources = @(Get-ChildItem yt-dlp-source-input -File -Filter 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz')
           if ($ytDlpSources.Count -ne 1) { throw 'Expected exactly one yt-dlp corresponding-source artifact from build-test.' }
           $ytDlpSourceSha256 = (Get-FileHash -LiteralPath $ytDlpSources[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($ytDlpSources[0].Length -ne 89850884 -or $ytDlpSourceSha256 -ne '03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb') {
+          if ($ytDlpSources[0].Length -ne 89855212 -or $ytDlpSourceSha256 -ne '78f552ec5c4bd5c05012cc1c9c1c8eb526d301bdd3f2cbbe1bab79d507c27184') {
             throw "The yt-dlp corresponding-source artifact failed its exact size/hash check (bytes=$($ytDlpSources[0].Length), sha256=$ytDlpSourceSha256)."
           }
       - name: Assemble exact optional component packages and release evidence

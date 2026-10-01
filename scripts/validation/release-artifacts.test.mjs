@@ -253,7 +253,7 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   assert.match(buildTest, /name: Checkout pinned release tooling[\s\S]*?ref:\s*\$\{\{\s*github\.workflow_sha\s*\}\}[\s\S]*?path:\s*output\/release-tools/);
   assert.match(buildTest, /python output\/release-tools\/scripts\/assemble-yt-dlp-corresponding-source\.py/);
   assert.doesNotMatch(buildTest, /python scripts\/assemble-yt-dlp-corresponding-source\.py/);
-  assert.match(buildTest, /03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb/);
+  assert.match(buildTest, /78f552ec5c4bd5c05012cc1c9c1c8eb526d301bdd3f2cbbe1bab79d507c27184/);
   assert.match(buildTest, /yt_dlp_source_artifact_id:\s*\$\{\{\s*steps\.yt_dlp_source_artifact\.outputs\.artifact-id\s*\}\}/);
   assert.match(buildTest, /id:\s*yt_dlp_source_artifact[\s\S]*?yt-dlp-2026\.08\.19-win64-corresponding-source\.tar\.xz/);
   assert.doesNotMatch(buildTest, /check:binary-release/);
@@ -592,8 +592,8 @@ test('yt-dlp source candidate is hash-pinned and approved against its explicit r
   assert.deepEqual(entry.technicalBlockers, []);
   assert.equal(entry.sourceArchivePath, 'output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
   assert.equal(entry.sourceArchiveGenerated, true);
-  assert.equal(entry.sourceArchiveBytes, 89850884);
-  assert.equal(entry.sourceArchiveSha256, '03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb');
+  assert.equal(entry.sourceArchiveBytes, 89855212);
+  assert.equal(entry.sourceArchiveSha256, '78f552ec5c4bd5c05012cc1c9c1c8eb526d301bdd3f2cbbe1bab79d507c27184');
   assert.equal(entry.releaseAssetSha256, entry.sourceArchiveSha256);
   assert.match(entry.buildInputsSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(entry.runtimeFiles, [{
@@ -621,8 +621,8 @@ test('yt-dlp source candidate is hash-pinned and approved against its explicit r
     verifiedDownloadCount: 40,
     inventoryCount: 1,
     archiveName: 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz',
-    bytes: 89850884,
-    sha256: '03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb',
+    bytes: 89855212,
+    sha256: '78f552ec5c4bd5c05012cc1c9c1c8eb526d301bdd3f2cbbe1bab79d507c27184',
   });
   const pyinstallerRelease = buildInputs.upstreamBuildRecipe.pyinstallerDistribution;
   assert.deepEqual(pyinstallerRelease, {
@@ -662,6 +662,49 @@ test('yt-dlp source candidate is hash-pinned and approved against its explicit r
   const issues = validateCorrespondingSourceRegistry(manifest, runtime, repositoryRoot);
   assert.deepEqual(issues.failures, []);
   assert.deepEqual(issues.pending, []);
+});
+
+test('yt-dlp generated metadata remains guarded by one exact corresponding-source archive pin', () => {
+  const expected = {
+    bytes: 89855212,
+    sha256: '78f552ec5c4bd5c05012cc1c9c1c8eb526d301bdd3f2cbbe1bab79d507c27184',
+    internalManifestSha256: '7cb5d0d0a0e1e818b0e7f800a3ecefb85a3231be8e1186180cc587eec0bb186d',
+  };
+  const assembler = fs.readFileSync(path.join(repositoryRoot, 'scripts/assemble-yt-dlp-corresponding-source.py'), 'utf8');
+  const workflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const sourceContract = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/corresponding-source-contract.mjs'), 'utf8');
+  const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'third-party-source/corresponding-source.json'), 'utf8'));
+  const entry = manifest.runtimes.find((runtime) => runtime.id === 'yt-dlp');
+  const buildInputs = JSON.parse(fs.readFileSync(path.join(repositoryRoot, entry.buildInputsPath), 'utf8'));
+
+  assert.equal(Number(assembler.match(/^EXPECTED_ARCHIVE_BYTES = (\d+)$/m)?.[1]), expected.bytes);
+  assert.equal(assembler.match(/^EXPECTED_ARCHIVE_SHA256 = "([a-f0-9]{64})"$/m)?.[1], expected.sha256);
+  assert.match(assembler, /"distributionApproval": \{"required": True, "status": "PENDING"\}/);
+  assert.doesNotMatch(assembler, /"humanReview"/);
+  assert.match(assembler, /if actual_bytes != EXPECTED_ARCHIVE_BYTES or actual_hash != EXPECTED_ARCHIVE_SHA256:/);
+  assert.equal(entry.sourceArchiveBytes, expected.bytes);
+  assert.equal(entry.sourceArchiveSha256, expected.sha256);
+  assert.equal(entry.releaseAssetSha256, expected.sha256);
+  assert.equal(buildInputs.correspondingSourceArchive.bytes, expected.bytes);
+  assert.equal(buildInputs.correspondingSourceArchive.sha256, expected.sha256);
+  assert.equal(buildInputs.correspondingSourceArchive.internalManifestSha256, expected.internalManifestSha256);
+  assert.equal(buildInputs.correspondingSourceArchive.sourcePackageManifestSha256, expected.internalManifestSha256);
+  assert.deepEqual(buildInputs.cleanFetchAssembly, {
+    stagingWasEmpty: true,
+    verifiedDownloadCount: 40,
+    inventoryCount: 1,
+    archiveName: 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz',
+    bytes: expected.bytes,
+    sha256: expected.sha256,
+  });
+  assert.equal((workflow.match(new RegExp(expected.sha256, 'g')) || []).length, 2);
+  assert.equal((workflow.match(new RegExp(String(expected.bytes), 'g')) || []).length, 2);
+  assert.match(sourceContract, new RegExp(`entry\\.sourceArchiveBytes !== ${expected.bytes}`));
+  assert.ok(sourceContract.includes(expected.sha256));
+  const reviewRecord = fs.readFileSync(path.join(repositoryRoot, 'third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md'), 'utf8');
+  assert.match(reviewRecord, /Generated metadata archive revision \(2026-10-01\)/);
+  assert.match(reviewRecord, /historical evidence/i);
+  assert.ok(reviewRecord.includes(expected.sha256));
 });
 
 test('binary release requires exact corresponding-source assets outside the expanded installer tree', () => {
