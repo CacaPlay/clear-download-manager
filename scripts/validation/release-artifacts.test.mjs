@@ -429,6 +429,10 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
       assert.match(entry.sourceArchiveSha256, /^[a-f0-9]{64}$/);
       assert.match(entry.buildInputsSha256, /^[a-f0-9]{64}$/);
     }
+    if (id === 'aria2' || id === 'yt-dlp') {
+      const buildInputsBytes = fs.readFileSync(path.join(repositoryRoot, entry.buildInputsPath));
+      assert.equal(buildInputsBytes.includes(0x0d), false, `${id} build-input record must use the exact LF bytes tracked by Git`);
+    }
     for (const runtimeFile of entry.runtimeFiles) {
       assert.match(runtimeFile.sha256, /^[a-f0-9]{64}$/);
       assert.equal(runtimeFile.correspondingSourceAsset, entry.releaseAssetName);
