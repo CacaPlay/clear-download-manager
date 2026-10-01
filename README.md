@@ -13,7 +13,7 @@
   <img src="docs/assets/feature-pills/direct-links-light.svg#gh-light-mode-only" height="36" alt="Direct links"><img src="docs/assets/feature-pills/direct-links-dark.svg#gh-dark-mode-only" height="36" alt="Direct links">&nbsp;
   <img src="docs/assets/feature-pills/chromium-light.svg#gh-light-mode-only" height="36" alt="Chromium integration"><img src="docs/assets/feature-pills/chromium-dark.svg#gh-dark-mode-only" height="36" alt="Chromium integration">
 </p>
-<p align="center"><strong>README SCREENSHOT: PENDING USER ASSET</strong></p>
+<p align="center"><strong>---</strong></p>
 <p align="center"><img src="docs/assets/section-divider.svg?v=visual-harmony-20260915" width="100%" height="2" alt=""></p>
 
 ## Download
