@@ -1,58 +1,41 @@
-# Configuración pendiente de protección de releases
+# GitHub release controls
 
-The current release workflow reads these repository secrets in
-`CacaPlay/clear-download-manager`:
+The `Release Windows` workflow publishes signed Windows packages and updater
+metadata. Keep release signing and publication behind the repository's
+environment and tag protections.
 
-- `TAURI_SIGNING_PRIVATE_KEY`: the production Tauri updater private key.
-- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: its password, when configured.
+## Repository controls
 
-**No habilitar un release todavía.** La lectura de GitHub del 2026-09-24 no
-mostró environment ni ruleset de tags, y el workflow actual no declara un
-environment. El remoto no se modificó. Configuración exacta pendiente:
+- The `release` environment requires a reviewer and limits deployments through
+  its configured branch and tag policy. Self-review prevention is currently
+  disabled; use a separate reviewer if independent approval is required.
+- The active `v*` tag rulesets authorize tag creation and prevent updating or
+  deleting release tags. The creation ruleset has a maintainer bypass; the
+  immutability ruleset has no bypass.
+- The protected `main` branch requires the `quality` status check and blocks
+  non-fast-forward updates and deletion.
+- The release job receives the environment secrets
+  `RELEASE_TAURI_SIGNING_PRIVATE_KEY` and
+  `RELEASE_TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Never print their values or
+  store them in the repository.
+- Keep `GITHUB_TOKEN` permissions limited to the workflow steps that need to
+  upload release assets. Build and validation jobs should remain read-only.
 
-1. En `Settings → Environments`, crear `release`. Agregar un required reviewer
-   (preferiblemente otro maintainer) y activar **Prevent self-review**. En
-   Deployment branches and tags seleccionar solo tags de release protegidos
-   que coincidan con `v*`; no dejar `All branches and tags`.
-2. Mover `TAURI_SIGNING_PRIVATE_KEY` y
-   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` a los **environment secrets** de
-   `release`. Quitar las copias a nivel repositorio una vez verificada la nueva
-   ubicación, sin imprimir valores durante la comprobación.
-3. En `.github/workflows/release-windows.yml`, asignar `environment: release`
-   al job que usa esos secretos. La aprobación debe ocurrir antes de iniciar el
-   job. Mantener `contents: read` para jobs que solo compilan y `contents:
-   write` únicamente en el job que crea/sube assets; no conceder `id-token`,
-   `packages: write` u otros permisos sin necesidad. Mantener el token de
-   publicación solo donde se sube el release.
-4. En `Settings → Rules → Rulesets`, crear un ruleset activo para **Tags** con
-   patrón `v*`. Restringir creación, actualización y eliminación a maintainers
-   autorizados; usar bypass solo para el operador de release imprescindible y
-   no para workflows generales. No permitir reemplazar tags publicados.
-5. Proteger la rama fuente (normalmente `main`): PR requerido, checks actuales
-   requeridos, bloquear force-push y borrado, y limitar quién puede modificar
-   workflows/scripts de publicación. No crear tags de release desde una rama
-   sin protección.
-6. Antes de ingresar secretos, comprobar en la UI que el environment tiene
-   reviewer y filtro `v*`, que el ruleset aplica a tags y que el workflow
-   declara el environment. Hacer una ejecución de ensayo sin secretos de firma
-   desde un tag de QA protegido; comprobar que una rama no autorizada no puede
-   arrancar el job. Después, cargar los secretos con acceso restringido y
-   revisar logs por ausencia de valores.
+Check the current settings in GitHub before a release if the environment,
+reviewer, deployment policy, rulesets, or workflow permissions have changed.
+Do not weaken tag immutability, bypass restrictions, signature verification,
+or source-readiness gates to make a run pass.
 
-La configuración de environment y rulesets requiere una persona con permisos
-de administración del repositorio. No está resuelta hasta verificar su efecto
-remoto; este checkout no puede resolverla ni reemplazar esa comprobación.
-Mantener el release bloqueado hasta completar estos pasos y cerrar también el
-gate de fuente GPL.
+## Release contents and legacy updater route
 
-Keep the signing key out of commits, logs, artifacts, and pull requests. The
-workflow uses the repository-scoped `GITHUB_TOKEN`, reads the publication target
-from `src-tauri/resources/updater/updater-config.json`, publishes `latest.json`,
-and verifies the downloaded catalog and Windows asset before finishing.
+The workflow verifies the signed updater metadata and Windows package before
+publishing. Include the exact corresponding-source archives or written offers
+required by the runtime registry, and verify the release checksums and
+signatures after upload.
 
-Older installers still reference the legacy releases endpoint. Keep
-`CacaPlay/cacatools-download-manager-releases` public and publish a same-version
-bridge release containing the main repository's `latest.json`; verify that it
-points to the signed main-repository asset. The private historical archive is
-`CacaPlay/cacatools-download-manager-releases-private-archive` and must remain
-private.
+Older installers use a legacy updater endpoint in
+`CacaPlay/cacatools-download-manager-releases`. When compatibility requires a
+bridge release, copy the verified `latest.json` from the main release and
+confirm that it points to the signed main-repository asset. This is a separate
+repository and publication step. Keep
+`CacaPlay/cacatools-download-manager-releases-private-archive` private.

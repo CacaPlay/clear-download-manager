@@ -12,7 +12,7 @@ const sha256 = value => /^[a-f0-9]{64}$/i.test(String(value || ''));
 if (manifest.schemaVersion !== 1) failures.push('release-rights.json: unsupported schemaVersion.');
 if (manifest.targetLicense !== 'GPL-3.0-or-later') failures.push('targetLicense must remain GPL-3.0-or-later.');
 const formalAction = manifest.formalActionRequired;
-if (!formalAction || formalAction.id !== 'pr5-devin-output' || formalAction.doNotAutoApprove !== true) {
+if (!formalAction || formalAction.id !== 'pr5-platform-output' || formalAction.doNotAutoApprove !== true) {
   failures.push('release-rights.json: PR #5 must retain an explicit, non-automatic owner-approval action.');
 } else {
   const draftPath = typeof formalAction.draftPath === 'string' ? path.resolve(root, formalAction.draftPath) : '';

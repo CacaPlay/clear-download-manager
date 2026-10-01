@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Real packaged WebView2 regression gate for the human-review UI fixes.
+ * Real packaged WebView2 regression gate for settings and download UI fixes.
  * The gate drives the same Tauri DOM/runtime path used by the release build;
  * it never uses the preview renderer or synthetic fixture markup.
  */
@@ -13,7 +13,7 @@ const root = process.cwd();
 const args = new Set(process.argv.slice(2));
 const caseName = process.argv.find((arg) => arg.startsWith('--case='))?.split('=')[1] || 'all';
 const buildRoot = join(root, '..', '..', '.build');
-const artifact = process.env.CACATOOLS_UI_ARTIFACT || join(buildRoot, 'human-review-stabilization-05-final', 'cacatools-desktop.exe');
+const artifact = process.env.CACATOOLS_UI_ARTIFACT || join(buildRoot, 'download-priority-settings-05-final', 'cacatools-desktop.exe');
 const port = Number(process.env.CACATOOLS_CDP_PORT || 9235);
 const dataDir = join(tmpdir(), `cacatools-ui-runtime-${process.pid}`, 'data');
 const downloadsDir = join(tmpdir(), `cacatools-ui-runtime-${process.pid}`, 'downloads');
@@ -136,7 +136,7 @@ async function main() {
   const useExisting = Boolean(process.env.CACATOOLS_CDP_PORT) || args.has('--existing');
   if (!useExisting) {
     mkdirSync(dataDir, { recursive: true }); mkdirSync(downloadsDir, { recursive: true });
-    child = spawn(artifact, [], { cwd: join(buildRoot, 'human-review-stabilization-05-final'), windowsHide: true, env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`, CACATOOLS_DATA_DIR: dataDir, CACATOOLS_DOWNLOADS_DIR: downloadsDir }, stdio: 'ignore' });
+    child = spawn(artifact, [], { cwd: join(buildRoot, 'download-priority-settings-05-final'), windowsHide: true, env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`, CACATOOLS_DATA_DIR: dataDir, CACATOOLS_DOWNLOADS_DIR: downloadsDir }, stdio: 'ignore' });
   }
   const socket = await connect();
   try {

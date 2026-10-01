@@ -11,15 +11,16 @@ Clear Download Manager, CDM, CacaPlay y CacaTools, sus logotipos, iconos de
 aplicación, identidad visual y materiales de tienda se reservan a sus
 respectivos titulares y quedan fuera de GPL salvo permiso separado. Este
 documento no determina por sí solo quién es el titular jurídico ni otorga una
-licencia de marca. La procedencia y titularidad de cambios históricos aún
-pendientes se detallan en docs/OPEN-SOURCE-RIGHTS-REVIEW.md.
+licencia de marca. La procedencia y base de derechos de contribuciones
+históricas se detallan en
+[docs/OPEN-SOURCE-RIGHTS-REVIEW.md](docs/OPEN-SOURCE-RIGHTS-REVIEW.md).
 
-Las variantes y derivados de marca del registro rights/asset-provenance.json
-se excluyen expresamente del alcance de la licencia del código. El gate de
-assets comprueba que exista permiso para distribuirlas; no exige relicenciar
-el logo o las marcas bajo GPL. Su procedencia y autorización siguen pendientes
-hasta que el titular las confirme. Consulta NOTICE.md y el inventario de
-docs/ASSET-MARKS-AUDIT.md.
+Las variantes y derivados de marca del registro
+[`rights/asset-provenance.json`](rights/asset-provenance.json) se excluyen del
+alcance de la licencia del código. El gate de assets verifica la autorización
+de distribución; no exige relicenciar el logo o las marcas bajo GPL. Consulta
+[`NOTICE.md`](NOTICE.md) y el inventario de
+[`docs/ASSET-MARKS-AUDIT.md`](docs/ASSET-MARKS-AUDIT.md).
 
 ## Marcas de terceros
 
@@ -45,7 +46,7 @@ respaldo oficial. Debe excluir o obtener permiso para usar marcas y assets que
 no tenga derecho a redistribuir. Los runtimes y demás componentes de terceros
 mantienen sus licencias independientes.
 
-**Estado de preparación:** la investigación de PR #5 está cerrada para nuevas
-búsquedas, pero falta la aprobación formal del titular. La distribución de
-assets retenidos también requiere confirmación. Esta nota no habilita la
-publicación del checkout; consulta docs/OPEN-SOURCE-CLEANUP-STATUS.md.
+Para conocer la base de derechos y procedencia de los cambios y assets actuales,
+consulta los registros enlazados y la revisión de derechos. Esta nota describe
+los límites de marca; no concede autorización adicional ni habilita por sí sola
+una publicación.

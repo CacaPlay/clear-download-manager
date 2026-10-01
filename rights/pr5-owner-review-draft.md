@@ -3,11 +3,11 @@
 **Estado: APROBADA — declaración directa del titular; no constituye prueba independiente externa.**  
 **Titular/revisor:** Julio Angel / CacaPlay  
 **Fecha de aprobación:** 2026-09-25  
-**Investigación adicional:** cerrada; no se reabren búsquedas de Devin o Gmail sin una contradicción concreta.
+**Investigación adicional:** cerrada; no se reabre salvo que aparezca una contradicción concreta.
 
 ## Cuenta y términos aplicables
 
-El titular declara que la cuenta de Devin vinculada a la sesión
+El titular declara que la cuenta asociada a la sesión
 `0505a2fb68854e28a6468f1370f0da06` era una cuenta personal self-service creada y
 controlada por él. Declara que no era Enterprise y que no existían un Master
 Services Agreement negociado por él, un Order Form, un contrato personalizado
@@ -44,7 +44,7 @@ incorpora al repositorio. La página pública se verificó de nuevo el 2026-09-2
 - SHA-256 y tamaño del patch público: constan en
   `rights/pr5-evidence-register.json`.
 
-El titular declara que solicitó/autorizó el trabajo de Devin y revisó ese diff
+El titular declara que solicitó/autorizó el trabajo asociado al PR #5 y revisó ese diff
 exacto. La revisión local del diff confirma que los cambios ajustan la
 identificación de nombres de artefactos Windows y las rutas/importaciones de
 prueba; no añade un archivo vendorizado ni identifica un bloque de código de

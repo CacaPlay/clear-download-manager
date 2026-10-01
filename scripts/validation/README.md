@@ -10,7 +10,7 @@ de que todos los gates hayan pasado en cada máquina o ejecución.
   concreta del producto o del build.
 * **ENVIRONMENT-DEPENDENT**: depende de Windows, binarios, Python,
   Playwright, Chromium, WebView2, red u otra instalación externa.
-* **MANUAL**: requiere una acción o decisión humana y no es un gate automático
+* **MANUAL**: requiere una acción o decisión explícita del operador y no es un gate automático
   del build normal.
 * **LEGACY**: se conserva por compatibilidad o valor histórico, pero no es el
   flujo canónico actual.
@@ -84,7 +84,7 @@ esta documentación.
 * `check:ui-v5:parity` y `check:ui-v5:performance` permanecen environment-dependent: pueden requerir navegador, referencias externas, fixtures y outputs generados por sus harnesses.
 
 Los smoke visuales y los harnesses de navegador no sustituyen una prueba
-runtime de Tauri ni una comprobación visual humana cuando esta sea necesaria.
+runtime de Tauri ni una comprobación visual manual cuando esta sea necesaria.
 
 ## 5. Media / YouTube
 

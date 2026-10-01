@@ -31,7 +31,7 @@ seguras para el layout. No hay cambios de runtime, dependencias ni build en V2.
 - **Por qué encaja:** mantiene la transición que el usuario ya aprobó y evita reemplazarla por una versión inferior.
 - **Reduced motion:** commit inmediato, preservando estado y foco.
 - **Mecanismo:** `existing protected code`; no Motion JS nuevo.
-- **Riesgo:** alto si se toca el coordinador; cualquier cambio requiere un defecto reproducible y una nueva revisión humana.
+- **Riesgo:** alto si se toca el coordinador; cualquier cambio requiere un defecto reproducible y una nueva revisión del responsable.
 
 ## 2. Navegación interna de Ajustes
 
@@ -198,4 +198,4 @@ descarga y deben coincidir en mediciones asentadas e intermedias.
 
 Esta V2 revisa únicamente `docs/CDM-MOTION-CATALOG.md`. No instala Motion, no añade
 dependencias, no modifica runtime UI y no genera build. La implementación queda bloqueada
-hasta la aprobación humana final.
+hasta la aprobación final del responsable.

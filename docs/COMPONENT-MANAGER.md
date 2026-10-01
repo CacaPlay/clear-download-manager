@@ -36,8 +36,8 @@ functionality and not introduce policy-violating behavior. CDM's Media Tools
 and Torrent Engine are intended to enhance its stated download features. The
 EXE/MSI installer rule (10.2.9) requires a standalone installer, so Core does
 not download components during setup. The review found no explicit policy
-blocker to versioned, user-consented post-install packages; Store certification
-still needs human confirmation and honest feature disclosure in the listing.
+blocker to versioned, user-consented post-install packages; Microsoft Store
+certification and accurate feature disclosure in the listing remain required.
 See [Microsoft Store Policies 7.20](https://learn.microsoft.com/en-us/windows/apps/publish/store-policies),
 [policy change history](https://learn.microsoft.com/en-us/windows/apps/publish/store-policies-change-history),
 and [MSI/EXE package requirements](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msi/app-package-requirements).

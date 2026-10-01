@@ -27,7 +27,7 @@
     "check:concurrency-runtime": "cargo test --locked --manifest-path src-tauri/Cargo.toml concurrency --lib -- --nocapture",
     "check:concurrency-ui": "python scripts/validation/download-concurrency-ui.py",
     "check:pre-review-ui": "python scripts/validation/pre-review-ui-polish.py",
-    "check:human-review-stabilization": "python scripts/validation/human-review-stabilization.py",
+    "check:download-priority-settings": "python scripts/validation/download-priority-settings.py",
     "check:transient-controls": "python scripts/validation/transient-controls.py",
     "check:floating-menu-placement": "python scripts/validation/floating-menu-placement.py",
     "check:transient-controls-runtime": "node scripts/validation/real-runtime-ui.mjs --case=transient",

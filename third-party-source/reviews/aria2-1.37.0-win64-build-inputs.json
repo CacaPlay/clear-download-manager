@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "runtime": {
     "id": "aria2",
     "version": "1.37.0",
@@ -92,7 +92,7 @@
   "rebuildAssessment": {
     "sourceAndDependencyVersionsIdentified": true,
     "byteIdenticalRebuildEstablished": false,
-    "humanDistributorReview": "PENDING",
+    "distributionApproval": "PENDING",
     "blockers": [
       "Ubuntu base image digest and apt package versions are not pinned by upstream recipe.",
       "Upstream Dockerfile does not verify dependency archive hashes.",

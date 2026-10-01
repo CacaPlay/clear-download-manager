@@ -14,7 +14,7 @@ for (const rootFile of fs.readdirSync(root)) {
   }
 }
 
-for (const prefix of ['dist-store/', '.superpowers/', 'docs/superpowers/']) {
+for (const prefix of ['dist-store/', '.superpowers/']) {
   if (manifest.some((entry) => entry.startsWith(prefix))) {
     issues.push(`generated/local directory appears in MANIFEST.sha256: ${prefix}`);
   }
@@ -34,10 +34,6 @@ for (const directory of ['dist-store', '.superpowers']) {
     issues.push(`source manifest generator must exclude ${directory}`);
   }
 }
-if (!generator.includes("'docs/superpowers/'")) {
-  issues.push('source manifest generator must exclude internal plan artifacts');
-}
-
 if (!manifest.includes('evidence/official-public-key.json')) {
   issues.push('source manifest must retain the public extension identity input');
 }

@@ -19,8 +19,18 @@ verificación de firma; nunca se debe desactivar para probar una compilación.
 - No se aceptan binarios, carpetas de compilación, logs ni datos personales en
   el código fuente.
 
-Consulta [`docs/SECURITY-REVIEW.md`](docs/SECURITY-REVIEW.md) para el alcance y
-los hallazgos revisados, y [`docs/GITHUB-RELEASE-SETUP.md`](docs/GITHUB-RELEASE-SETUP.md)
-para los controles que deben configurarse antes de una publicación. El informe
-no implica que se haya hecho una prueba de penetración ni que el release esté
+## Frontera de red de procesos externos
+
+CDM aplica controles de red dentro de su propio proceso y en sus clientes HTTP
+cuando corresponde. Algunos mecanismos delegados pueden resolver nombres DNS y
+establecer conexiones fuera del proceso principal, incluidos el proxy o la
+configuración de red del sistema, yt-dlp, aria2, los pares torrent y otros
+procesos externos gestionados por CDM. Por ello, los controles de resolución y
+red internos de CDM no garantizan todas las conexiones efectuadas por esos
+procesos ni por la pila o el proxy del sistema. Esta es una frontera residual
+conocida; no implica que fallen los controles aplicados dentro de CDM.
+
+Consulta [`docs/GITHUB-RELEASE-SETUP.md`](docs/GITHUB-RELEASE-SETUP.md) para
+los controles de repositorio necesarios antes de una publicación. Esta guía no
+afirma que se haya realizado una prueba de penetración ni que un release esté
 habilitado.

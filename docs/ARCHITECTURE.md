@@ -39,17 +39,16 @@ build web. El host de extensión es otro binario Rust bajo
 | Runtime y procesos | `src-tauri/src/app/{process,runtime,network}.rs`, `src-tauri/src/tools/` | Descubrimiento de herramientas, argumentos de proceso, políticas de red, integridad y confianza del catálogo. Las claves de prueba no representan confianza de producción. |
 | Extensión | `extension/` y `extension/native-host/` | La extensión detecta y envía acciones permitidas; el host valida mensajes y los transporta a la app. La identidad pública versionada no es una clave privada. |
 | Actualización | `src-tauri/src/update_manager.rs`, `src-tauri/src/store_update_manager.rs` y `src-tauri/resources/updater/` | La función `github-updater` y la variante `microsoft-store` son excluyentes. La publicación de GitHub sigue bloqueada por las protecciones remotas documentadas. |
-| Empaquetado | `src-tauri/tauri*.conf.json`, `scripts/`, `.github/workflows/` | El build GitHub, MSIX y ZIP de extensión tienen contenidos y salidas distintas; véase `BUILD-RELEASE-AUDIT.md`. |
+| Empaquetado | `src-tauri/tauri*.conf.json`, `scripts/`, `.github/workflows/` | El build GitHub, MSIX y ZIP de extensión tienen contenidos y salidas distintas; véase `BUILD-AND-PACKAGING.md`. |
 
 ## Límites de confianza importantes
 
 - La interfaz solicita operaciones mediante comandos Tauri registrados; las
   rutas y entradas externas se deben validar en Rust antes de tocar disco o
   iniciar un proceso.
-- Las descargas HTTP tienen validación de destino y redirects, pero la revisión
-  de seguridad mantiene pendiente el endurecimiento frente a cambios DNS entre
-  comprobación y conexión. Los motores externos y el tráfico P2P tienen límites
-  de red distintos; véase `SECURITY-REVIEW.md`.
+- Las descargas HTTP validan destinos y redirecciones antes de transferir datos.
+  Los motores externos y el tráfico P2P tienen límites de red distintos; véase
+  la [frontera residual de red en `SECURITY.md`](../SECURITY.md#frontera-de-red-de-procesos-externos).
 - SQLite contiene historial y configuración local. Las pruebas de migración se
   ejecutan con bases en memoria; no se inspeccionan automáticamente perfiles ni
   bases de instalaciones reales.
@@ -88,7 +87,7 @@ toolchain para Windows se mantienen en la guía oficial de
 repositorio no incluye toolchains privados. Para un entorno limpio, los pasos
 de npm, pruebas y ejecución de desarrollo están en `../README.md`. Los scripts
 de empaquetado pueden limpiar sus directorios de salida predeterminados; lee
-`BUILD-RELEASE-AUDIT.md` y usa un clon limpio para producir artefactos.
+`BUILD-AND-PACKAGING.md` y usa un clon limpio para producir artefactos.
 
 El estado de licencia del código y de los assets se explica en
 `../LICENSE.md`, `../NOTICE.md`, `../TRADEMARKS.md` y

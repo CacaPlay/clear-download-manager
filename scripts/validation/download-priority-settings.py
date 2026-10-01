@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic gates for the post-Feature-06 human-review fixes."""
+"""Regression checks for settings editing and download-priority layout."""
 from __future__ import annotations
 
 import argparse

@@ -66,10 +66,10 @@ Simulation used copies of the registry, runtime manifest, contract, and release-
 - With the current production exact-name/runtime contract, the SAFE LEAN candidate correctly fails the existing FFmpeg asset-name and runtime-file identity rules.
 - At capture time, the candidate was tested in a copied contract because the production registry still described Gyan. The integration now activates SAFE LEAN in the production runtime manifest and uses the exact `safe-lean` corresponding-source asset name. aria2 and yt-dlp remain pending.
 - A deliberately wrong source archive hash is rejected.
-- A false `humanReview: APPROVED` without a review record is rejected.
+- A false `distributionApproval: APPROVED` without a review record is rejected.
 
 The source archive remains the exact corresponding source for the approved SAFE LEAN pair. Binary release remains fail-closed while aria2 and yt-dlp requirements and exact release asset inspection remain pending.
 
-## Human decision before production use
+## Distributor decision before production use
 
 The distributor approved the exact SAFE LEAN pair and corresponding-source package for integration. The original prototype hashes cannot be claimed as reconstructed by this package. The approval is recorded in the distributor review; it does not clear aria2 or yt-dlp, nor does it itself confirm legal sufficiency for every distribution channel.

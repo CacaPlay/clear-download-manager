@@ -14,7 +14,7 @@
     {
       "id": "bot-contributions",
       "classification": "CLEAR",
-      "finding": "Three Dependabot commits are mechanical dependency/workflow updates; no substantive bot-authored application feature remains. Devin PR #4 surviving changes are cleanup/build text and manifest metadata; PR #5 is tracked separately.",
+      "finding": "Three Dependabot commits are mechanical dependency/workflow updates; no substantive automated application feature remains. PR #4 surviving changes are cleanup/build text and manifest metadata; PR #5 is tracked separately in the provenance register.",
       "limitation": "A bot sign-off is not a human contributor attestation."
     },
     {
@@ -85,7 +85,7 @@
       "finding": "The code-license metadata, full COPYING text, NOTICE, TRADEMARKS, and contribution metadata are consistent about GPL applying to project-authored source code and Clear marks being outside that grant. Asset clearance verifies distribution permission separately."
     },
     {
-      "id": "pr5-devin-output",
+      "id": "pr5-platform-output",
       "classification": "CLEAR_FOR_REVIEWED_DIFF",
       "investigationStatus": "SUFFICIENTLY_SUPPORTED_CLOSED_FOR_FURTHER_INVESTIGATION",
       "finding": "The public PR/session chain and exact diff are recorded. The rights holder directly declared the account to be personal self-service, denied any owner-known Enterprise MSA/Order Form/custom modification, declared continued use after the 30-day transition, and approved GPL distribution of code the owner has rights to license. Cognition Platform Terms 2026-06-30 §§1.2, 1.5, 3.1 and 12.4 support the ownership/applicability basis.",

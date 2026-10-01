@@ -5,7 +5,7 @@
   "readinessScope": "Formal GPL source relicensing clearance for project-authored code contributions. Brand, marks, and artwork are not required to be GPL-licensed; their separate distribution permission is tracked by the asset provenance gate.",
   "items": [
     {
-      "id": "pr5-devin-output",
+      "id": "pr5-platform-output",
       "status": "APPROVED",
       "investigationStatus": "SUFFICIENTLY_SUPPORTED_CLOSED_FOR_FURTHER_INVESTIGATION",
       "formalClearanceStatus": "APPROVED",
@@ -17,14 +17,14 @@
         "src-tauri/src/tools/manifest.rs"
       ],
       "evidencePath": "rights/pr5-owner-review-draft.md",
-      "evidenceSha256": "4731b18b79f9eea9012ff43220feab30a0b23ca3672b414a7cfcc6eb86ee813f",
+      "evidenceSha256": "d87a408262f2b00354c86c97c23aeb2eaa46fa98b565e0cd41722e7897fc72c3",
       "reviewedBy": "Julio Angel / CacaPlay",
       "reviewedAt": "2026-09-25",
       "rightsBasis": "Direct owner declaration of personal self-service account, no owner-known negotiated MSA/Order Form/custom modification, continued use after the 30-day terms transition, and authorization of code the owner has rights to license; public Platform Terms §§1.2, 1.5, 3.1, 12.4. No click-through timestamp is claimed."
     }
   ],
   "formalActionRequired": {
-    "id": "pr5-devin-output",
+    "id": "pr5-platform-output",
     "ownerApprovalStatus": "APPROVED",
     "draftPath": "rights/pr5-owner-review-draft.md",
     "requiredEvidence": [
@@ -33,7 +33,7 @@
     ],
     "doNotAutoApprove": true,
     "ownerApprovalEvidencePath": "rights/pr5-owner-review-draft.md",
-    "ownerApprovalEvidenceSha256": "4731b18b79f9eea9012ff43220feab30a0b23ca3672b414a7cfcc6eb86ee813f"
+    "ownerApprovalEvidenceSha256": "d87a408262f2b00354c86c97c23aeb2eaa46fa98b565e0cd41722e7897fc72c3"
   },
   "assetDistributionReview": {
     "status": "APPROVED",

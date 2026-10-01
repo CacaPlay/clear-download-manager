@@ -1,39 +1,13 @@
-# Preparar una publicación de Clear Download Manager
+# Prepare a Clear Download Manager release
 
-## Bloqueo actual
+Use a clean, dedicated checkout for a release build. Build scripts clear their
+configured output directories; see [`BUILD-AND-PACKAGING.md`](BUILD-AND-PACKAGING.md)
+before running them in a directory that contains files to keep.
 
-**No crear tags de release, ejecutar `workflow_dispatch`, distribuir bundles ni
-publicar una versión desde este checkout.** A 2026-09-24 permanecen abiertos
-estos requisitos:
+## Preflight
 
-1. Resolver con evidencia la titularidad o autorización de los cambios de PR
-   #5 indicados en `OPEN-SOURCE-RIGHTS-REVIEW.md`. El texto de licencia y los
-   metadatos locales no resuelven esa cadena de derechos.
-2. Preparar y verificar el código fuente correspondiente o una oferta escrita
-   que acompañe cualquier redistribución de los runtimes GPL de aria2 y
-   FFmpeg/FFprobe. El inventario y las versiones exactas están en
-   `THIRD-PARTY-RUNTIMES.md`.
-3. Configurar y verificar en GitHub un environment de release con aprobación,
-   guardar allí los secretos de firma y proteger la creación/reemplazo de tags
-   `v*`. La consulta remota de solo lectura no encontró environments ni
-   rulesets aplicables; véase `GITHUB-RELEASE-SETUP.md`.
-4. Repetir las comprobaciones de fuente, avisos, manifiesto y bundle desde una
-   copia limpia, verificando que los archivos de código, marcas y terceros que
-   entran al paquete están autorizados y documentados.
-
-Los puntos 1 y 2 requieren cerrar derechos/materiales de distribución; el
-punto 3 requiere una acción del administrador del repositorio. No se debe
-interpretar la preparación local como permiso para liberar.
-
-## Preparación de un checkout dedicado
-
-Antes de considerar una versión futura, un mantenedor debe usar un clon de
-compilación dedicado con los outputs de destino vacíos. Los scripts de Windows
-limpian directorios predeterminados en `output/`, `dist/` y `src-tauri/target/`;
-consulta `BUILD-RELEASE-AUDIT.md`. No los ejecutes donde existan artefactos que
-se deban conservar.
-
-Comprobaciones previas que no publican:
+Install the locked dependencies and run the source, rights, licensing, and
+runtime checks before packaging:
 
 ```powershell
 npm.cmd ci --no-audit --no-fund
@@ -49,42 +23,30 @@ cargo check --locked --manifest-path src-tauri/Cargo.toml
 cargo test --locked --manifest-path src-tauri/Cargo.toml --lib
 ```
 
-También se deben regenerar y revisar `THIRD_PARTY_NOTICES.txt`, el SBOM y el
-inventario Cargo después de cualquier cambio a lockfiles, runtimes o contenido
-del paquete. El build por sí solo no demuestra el cumplimiento de licencias;
-verifica el paquete final y sus fuentes/ofertas junto con cada runtime GPL.
+Review `MANIFEST.sha256`, generated third-party notices, the SBOM, Cargo
+inventory, package contents, and the corresponding-source archives or written
+offers. A passing source registry does not prove that the exact materials were
+uploaded with a particular release; verify the published asset names, sizes,
+hashes, and signatures.
 
-## Flujo de publicación futuro
+## Publish and verify
 
-Solo después de cerrar todos los bloqueos anteriores y obtener autorización
-explícita para esa publicación:
+Only an authorized maintainer should start a release. The `Release Windows`
+workflow accepts version tags and a manual dispatch for the existing release
+tag. Tag creation and immutability are protected by the active `v*` rulesets;
+the signing job waits on the `release` environment's reviewer gate. Current
+environment settings allow self-review, so request a separate reviewer when
+independent approval is required. See [`GITHUB-RELEASE-SETUP.md`](GITHUB-RELEASE-SETUP.md)
+for the controls and signing-secret names.
 
-1. Alinear la versión convencional de `package.json` con Tauri, Cargo y la
-   extensión; `npm run version:check` debe confirmar la consistencia.
-2. Revisar el diff, `MANIFEST.sha256`, avisos de terceros, SBOM, fuente
-   correspondiente/ofertas GPL, derechos de assets y reporte del bundle.
-3. Obtener la aprobación humana final del mantenedor antes de ejecutar el
-   mecanismo de release. El workflow de GitHub acepta tags `v*` y despacho
-   manual; ambos deben quedar protegidos por las reglas remotas verificadas.
-4. Tras una ejecución aprobada, verificar en el repositorio principal la
-   Release, instaladores, firma Tauri, `latest.json`, hashes y materiales de
-   código fuente/ofertas que apliquen.
-5. La compatibilidad antigua puede requerir un release puente en
-   `CacaPlay/cacatools-download-manager-releases` con el mismo catálogo
-   `latest.json` apuntando al artefacto firmado principal. Es un repositorio
-   remoto independiente y requiere su propia aprobación y verificación.
+After a successful workflow, verify the GitHub Release, versioned NSIS
+installer, stable installer alias, Tauri signature, `latest.json`, checksums,
+and exact corresponding-source materials. The fixed installer URL is:
 
-El archivo privado histórico
-`CacaPlay/cacatools-download-manager-releases-private-archive` debe permanecer
-privado. Esta guía no autoriza cambios de GitHub, tags, publicación ni copia de
-artefactos.
+`https://github.com/CacaPlay/clear-download-manager/releases/latest/download/ClearDownloadManagerSetup.exe`
 
-
-## v1.0.0 fixed-name installer
-
-The signed release package includes the versioned NSIS setup and a byte-identical
-`ClearDownloadManagerSetup.exe` alias. After the user accepts the isolated QA
-build and v1.0.0 is published, the fixed direct link is
-`https://github.com/CacaPlay/clear-download-manager/releases/latest/download/ClearDownloadManagerSetup.exe`.
-The release artifact checksum inventory covers both names; the updater continues
-to use its versioned signed archive and `latest.json`.
+Older installations may use the legacy updater repository. If the release
+requires a compatibility bridge, publish a verified copy of `latest.json` in
+`CacaPlay/cacatools-download-manager-releases` and confirm its URL resolves to
+the signed asset in the main repository. Keep the historical private archive
+`CacaPlay/cacatools-download-manager-releases-private-archive` private.

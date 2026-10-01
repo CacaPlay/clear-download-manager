@@ -538,7 +538,7 @@ fn catalog_source(
         bytes: 100,
         sha256: "a".repeat(64),
         license: license.into(),
-        human_review: "APPROVED".into(),
+        distribution_approval: "APPROVED".into(),
     }
 }
 
@@ -686,7 +686,7 @@ fn start_remote_component_fixture_with_corrupt_media_file(
         &pins,
     );
     let payload = distribution::ComponentCatalogPayload {
-        schema_version: 1,
+        schema_version: 2,
         catalog_version: "1".into(),
         sequence,
         key_id: "component-test-2026".into(),

@@ -22,7 +22,7 @@ The release gate requires each runtime's exact version, source commit, runtime h
   whose byte count or SHA-256 differs from the approved pair.
 - The active Tauri preparation script uses these rebuilt executables. It does
   not download Gyan binaries or include Gyan files in the installer notices.
-- Human approval is recorded in
+- Distributor approval is recorded in
   `reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md`. The gate verifies its
   digest; it does not make an independent legal determination.
 

@@ -192,7 +192,7 @@ test('PR5 owner review records explicit approval while preserving evidence limit
   assert.equal(releaseRights.status, 'READY');
   assert.equal(releaseRights.assetDistributionReview.status, 'APPROVED');
   assert.equal(releaseRights.formalActionRequired.ownerApprovalStatus, 'APPROVED');
-  const pr5 = releaseRights.items.find((item) => item.id === 'pr5-devin-output');
+  const pr5 = releaseRights.items.find((item) => item.id === 'pr5-platform-output');
   assert.equal(pr5.status, 'APPROVED');
   assert.equal(pr5.formalClearanceStatus, 'APPROVED');
   assert.equal(pr5.reviewedBy, 'Julio Angel / CacaPlay');
@@ -375,7 +375,7 @@ test('PR Quality uses a source-only gate while binary release keeps GPL source r
 test('corresponding-source inventory pins full upstream revisions and exact runtime-to-release assets', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'third-party-source/corresponding-source.json'), 'utf8'));
   const byId = new Map(manifest.runtimes.map((entry) => [entry.id, entry]));
-  assert.equal(manifest.schemaVersion, 2);
+  assert.equal(manifest.schemaVersion, 3);
   assert.equal(manifest.status, 'READY');
 
   for (const id of ['aria2', 'ffmpeg', 'yt-dlp']) {
@@ -384,13 +384,14 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
     assert.ok(entry.sourceVersion);
     assert.match(entry.binarySha256, /^[a-f0-9]{64}$/);
     assert.match(entry.releaseAssetName, /^[a-z0-9.-]+\.tar\.xz$/);
-    assert.equal(entry.humanReview.required, true);
+    assert.equal(entry.distributionApproval.required, true);
+    assert.equal(Object.hasOwn(entry, 'humanReview'), false, 'the public source registry must not retain the legacy approval field');
     if (id === 'ffmpeg') {
       assert.equal(entry.runtimeManifestKey, 'ffmpegSafeLeanCandidate');
       assert.equal(entry.releaseAssetName, 'ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz');
       assert.equal(entry.binarySha256, 'e88ac9e6896275df773cde74e48a88312c3c76814956682440a0f8e52c35b74f');
       assert.equal(entry.ffprobeSha256, '787482513fe1031d2b8ec400aae34204f6f18d1ea9cc27d8b0643e5d3772c6c3');
-      assert.equal(entry.humanReview.status, 'APPROVED');
+      assert.equal(entry.distributionApproval.status, 'APPROVED');
       assert.equal(entry.distributionMethod, 'corresponding-source-archive');
       assert.equal(entry.releaseAssetSha256, 'b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58');
       assert.equal(entry.sourceArchiveSha256, entry.releaseAssetSha256);
@@ -401,27 +402,27 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
         assert.match(entry.sourceArchivePath, /^third-party-source\//);
       }
       assert.match(entry.buildInputsPath, /^third-party-source\//);
-      assert.match(entry.humanReview.reviewRecordPath, /^third-party-source\//);
-      assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
+      assert.match(entry.distributionApproval.approvalRecordPath, /^third-party-source\//);
+      assert.match(entry.distributionApproval.approvalRecordSha256, /^[a-f0-9]{64}$/);
       assert.equal(entry.binarySourceUrl, null, 'a locally built candidate must not claim the old upstream binary URL');
       assert.equal(entry.binaryArchiveSha256, null, 'a locally built candidate has no upstream binary archive digest');
     } else if (id === 'aria2') {
-      assert.equal(entry.humanReview.status, 'APPROVED');
-      assert.equal(entry.humanReview.reviewRecordPath, 'third-party-source/reviews/aria2-1.37.0-win64-distributor-review.md');
-      assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
+      assert.equal(entry.distributionApproval.status, 'APPROVED');
+      assert.equal(entry.distributionApproval.approvalRecordPath, 'third-party-source/reviews/aria2-1.37.0-win64-distributor-review.md');
+      assert.match(entry.distributionApproval.approvalRecordSha256, /^[a-f0-9]{64}$/);
       assert.equal(entry.distributionMethod, 'corresponding-source-archive');
-      assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
+      assert.equal(entry.technicalStatus, 'READY_FOR_DISTRIBUTOR_APPROVAL');
       assert.deepEqual(entry.technicalBlockers, []);
       assert.equal(entry.releaseAssetName, 'aria2-1.37.0-win64-corresponding-source.tar.xz');
       assert.match(entry.sourceArchiveSha256, /^[a-f0-9]{64}$/);
       assert.match(entry.buildInputsSha256, /^[a-f0-9]{64}$/);
       assert.match(entry.binaryArchiveSha256, /^[a-f0-9]{64}$/);
     } else {
-      assert.equal(entry.humanReview.status, 'APPROVED');
-      assert.equal(entry.humanReview.reviewRecordPath, 'third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md');
-      assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
+      assert.equal(entry.distributionApproval.status, 'APPROVED');
+      assert.equal(entry.distributionApproval.approvalRecordPath, 'third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md');
+      assert.match(entry.distributionApproval.approvalRecordSha256, /^[a-f0-9]{64}$/);
       assert.equal(entry.distributionMethod, 'corresponding-source-archive');
-      assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
+      assert.equal(entry.technicalStatus, 'READY_FOR_DISTRIBUTOR_APPROVAL');
       assert.deepEqual(entry.technicalBlockers, []);
       assert.equal(entry.releaseAssetName, 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
       assert.equal(entry.binaryAssetSha256, '66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a');
@@ -443,7 +444,7 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   assert.equal(runtime.ffmpeg.ffmpegSha256, byId.get('ffmpeg').binarySha256);
   assert.equal(runtime.ffmpeg.ffprobeSha256, byId.get('ffmpeg').ffprobeSha256);
   assert.equal(runtime.ffmpeg.sourceArchiveSha256, byId.get('ffmpeg').sourceArchiveSha256);
-  assert.equal(runtime.ffmpeg.humanReviewSha256, byId.get('ffmpeg').humanReview.reviewRecordSha256);
+  assert.equal(runtime.ffmpeg.distributionApprovalSha256, byId.get('ffmpeg').distributionApproval.approvalRecordSha256);
   assert.doesNotMatch(runtime.ffmpeg.source, /GyanD|gyan\.dev/i);
   const settingsScript = fs.readFileSync(path.join(repositoryRoot, 'app-ui/main.js'), 'utf8');
   assert.match(settingsScript, /ffmpeg:\s*'https:\/\/github\.com\/FFmpeg\/FFmpeg'/);
@@ -451,18 +452,18 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   assert.equal(runtime.ffmpegSafeLeanCandidate.ffmpegSha256, byId.get('ffmpeg').binarySha256);
   assert.equal(runtime.ffmpegSafeLeanCandidate.ffprobeSha256, byId.get('ffmpeg').ffprobeSha256);
   assert.equal(runtime.ffmpegSafeLeanCandidate.sourceArchiveSha256, byId.get('ffmpeg').sourceArchiveSha256);
-  assert.equal(runtime.ffmpegSafeLeanCandidate.humanReviewSha256, byId.get('ffmpeg').humanReview.reviewRecordSha256);
+  assert.equal(runtime.ffmpegSafeLeanCandidate.distributionApprovalSha256, byId.get('ffmpeg').distributionApproval.approvalRecordSha256);
   const issues = validateCorrespondingSourceRegistry(manifest, runtime, repositoryRoot);
   assert.deepEqual(issues.failures, []);
   assert.deepEqual(issues.pending, []);
   assert.equal(issues.pending.some((issue) => issue.includes('SAFE LEAN candidate is approved but not the active FFmpeg runtime')), false);
   for (const id of ['aria2', 'yt-dlp']) {
-    const review = byId.get(id).humanReview;
-    const record = fs.readFileSync(path.join(repositoryRoot, review.reviewRecordPath), 'utf8');
+    const approval = byId.get(id).distributionApproval;
+    const record = fs.readFileSync(path.join(repositoryRoot, approval.approvalRecordPath), 'utf8');
     assert.match(record, /Status: \*\*APPROVED\*\*/);
     assert.match(record, /limitations are explicitly accepted/i);
   }
-  const reviewRecord = fs.readFileSync(path.join(repositoryRoot, byId.get('ffmpeg').humanReview.reviewRecordPath), 'utf8');
+  const reviewRecord = fs.readFileSync(path.join(repositoryRoot, byId.get('ffmpeg').distributionApproval.approvalRecordPath), 'utf8');
   assert.match(reviewRecord, /“Apruebo el par canónico SAFE LEAN y su corresponding-source package para integrarlos en CDM\. Autoriza registrar la revisión humana y continuar con PR #16, sin tag ni release\.”/);
   assert.match(reviewRecord, /aria2.*PENDING/s);
   assert.match(reviewRecord, /yt-dlp.*PENDING/s);
@@ -515,14 +516,27 @@ test('corresponding-source inventory pins full upstream revisions and exact runt
   assert.match(badCandidateHash.failures.join('\n'), /canonical executable hashes do not match the approved runtime pair/);
 
   const badReviewLinkRuntime = structuredClone(runtime);
-  badReviewLinkRuntime.ffmpegSafeLeanCandidate.humanReviewPath = 'third-party-source/README.md';
+  badReviewLinkRuntime.ffmpegSafeLeanCandidate.distributionApprovalRecordPath = 'third-party-source/README.md';
   const badReviewLink = validateCorrespondingSourceRegistry(manifest, badReviewLinkRuntime, repositoryRoot);
-  assert.match(badReviewLink.failures.join('\n'), /review record path and SHA-256 must exactly match runtime-manifest\.json/);
+  assert.match(badReviewLink.failures.join('\n'), /approval record path and SHA-256 must exactly match runtime-manifest\.json/);
 
   const reviewDisabledManifest = structuredClone(manifest);
-  reviewDisabledManifest.runtimes.find((entry) => entry.id === 'aria2').humanReview.required = false;
+  reviewDisabledManifest.runtimes.find((entry) => entry.id === 'aria2').distributionApproval.required = false;
   const reviewDisabled = validateCorrespondingSourceRegistry(reviewDisabledManifest, runtime, repositoryRoot);
   assert.match(reviewDisabled.failures.join('\n'), /explicit required=true/);
+
+  const legacyApprovalManifest = structuredClone(manifest);
+  const legacyEntry = legacyApprovalManifest.runtimes.find((entry) => entry.id === 'aria2');
+  legacyEntry.humanReview = legacyEntry.distributionApproval;
+  delete legacyEntry.distributionApproval;
+  const legacyApproval = validateCorrespondingSourceRegistry(legacyApprovalManifest, runtime, repositoryRoot);
+  assert.match(legacyApproval.failures.join('\n'), /unsupported fields: humanReview/);
+  assert.match(legacyApproval.failures.join('\n'), /\.distributionApproval: explicit required=true/);
+
+  const oldRegistrySchema = structuredClone(manifest);
+  oldRegistrySchema.schemaVersion = 2;
+  const oldRegistry = validateCorrespondingSourceRegistry(oldRegistrySchema, runtime, repositoryRoot);
+  assert.match(oldRegistry.failures.join('\n'), /schemaVersion must be 3/);
 });
 
 test('yt-dlp source candidate is hash-pinned and approved against its explicit review record', () => {
@@ -538,12 +552,12 @@ test('yt-dlp source candidate is hash-pinned and approved against its explicit r
   assert.equal(entry.binarySha256, '66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a');
   assert.equal(entry.binaryAssetSha256, entry.binarySha256);
   assert.equal(entry.releaseAssetName, 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
-  assert.equal(entry.humanReview.required, true);
-  assert.equal(entry.humanReview.status, 'APPROVED');
-  assert.equal(entry.humanReview.reviewRecordPath, 'third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md');
-  assert.match(entry.humanReview.reviewRecordSha256, /^[a-f0-9]{64}$/);
+  assert.equal(entry.distributionApproval.required, true);
+  assert.equal(entry.distributionApproval.status, 'APPROVED');
+  assert.equal(entry.distributionApproval.approvalRecordPath, 'third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md');
+  assert.match(entry.distributionApproval.approvalRecordSha256, /^[a-f0-9]{64}$/);
   assert.equal(entry.distributionMethod, 'corresponding-source-archive');
-  assert.equal(entry.technicalStatus, 'READY_FOR_HUMAN_REVIEW');
+  assert.equal(entry.technicalStatus, 'READY_FOR_DISTRIBUTOR_APPROVAL');
   assert.deepEqual(entry.technicalBlockers, []);
   assert.equal(entry.sourceArchivePath, 'output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz');
   assert.equal(entry.sourceArchiveGenerated, true);
@@ -565,6 +579,7 @@ test('yt-dlp source candidate is hash-pinned and approved against its explicit r
   const licenses = fs.readFileSync(path.join(repositoryRoot, 'src-tauri/resources/licenses/YT-DLP-THIRD-PARTY-LICENSES.txt'), 'utf8');
   assert.match(licenses, /mutagen \| GPL-2\.0-or-later/);
   const buildInputs = JSON.parse(fs.readFileSync(path.join(repositoryRoot, entry.buildInputsPath), 'utf8'));
+  assert.equal(buildInputs.schemaVersion, 2);
   assert.equal(buildInputs.runtime.binarySha256, entry.binarySha256);
   assert.deepEqual(buildInputs.pinnedDownloadInputs, {
     path: 'third-party-source/reviews/yt-dlp-2026.08.19-win64-download-inputs.json',
@@ -607,8 +622,8 @@ test('yt-dlp source candidate is hash-pinned and approved against its explicit r
   assert.equal(buildInputs.correspondingSourceArchive.sha256, entry.sourceArchiveSha256);
   assert.equal(buildInputs.correspondingSourceArchive.generatedFromPinnedInputs, true);
   assert.equal(buildInputs.rebuildAssessment.cleanWindowsRebuildPerformed, false);
-  assert.equal(buildInputs.rebuildAssessment.humanDistributorReview, 'PENDING');
-  const reviewRecord = fs.readFileSync(path.join(repositoryRoot, entry.humanReview.reviewRecordPath), 'utf8');
+  assert.equal(buildInputs.rebuildAssessment.distributionApproval, 'PENDING');
+  const reviewRecord = fs.readFileSync(path.join(repositoryRoot, entry.distributionApproval.approvalRecordPath), 'utf8');
   assert.match(reviewRecord, /runtime: yt-dlp 2026\.08\.19/i);
   assert.match(reviewRecord, /clean empty staging fetch:\s*\*\*PASS\*\*/i);
   assert.match(reviewRecord, /40 pinned inputs were verified by size and SHA-256/i);
