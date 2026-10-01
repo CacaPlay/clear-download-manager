@@ -316,7 +316,7 @@ The build input set contains multiple licenses, including copyleft components. T
                 "The runtime binary does not expose a complete cryptographic inventory of every compiled module and native library.",
             ],
         },
-        "humanReview": {"required": True, "status": "PENDING"},
+        "distributionApproval": {"required": True, "status": "PENDING"},
     }
     write_text(package_root / "BUILD-INPUTS.json", json.dumps(input_record, sort_keys=True, separators=(",", ":")))
 

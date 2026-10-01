@@ -13,6 +13,7 @@
   <img src="docs/assets/feature-pills/direct-links-light.svg#gh-light-mode-only" height="36" alt="Direct links"><img src="docs/assets/feature-pills/direct-links-dark.svg#gh-dark-mode-only" height="36" alt="Direct links">&nbsp;
   <img src="docs/assets/feature-pills/chromium-light.svg#gh-light-mode-only" height="36" alt="Chromium integration"><img src="docs/assets/feature-pills/chromium-dark.svg#gh-dark-mode-only" height="36" alt="Chromium integration">
 </p>
+<p align="center"><strong>README SCREENSHOT: PENDING USER ASSET</strong></p>
 <p align="center"><img src="docs/assets/section-divider.svg?v=visual-harmony-20260915" width="100%" height="2" alt=""></p>
 
 ## Download
@@ -34,7 +35,7 @@ The [latest Windows release](https://github.com/CacaPlay/clear-download-manager/
 - **Already have CDM:** install only the extension if you want to send content from your browser.
 
 ## What it does
-- Core HTTP/HTTPS downloads work without optional runtimes. Media and torrent features use separately managed local components.
+- Core HTTP/HTTPS downloads work without optional runtimes. Media and torrent features use optional local components that CDM can install and manage separately.
 - HTTP/HTTPS downloads with resume, persistent queue and real progress.
 - Video, audio and playlist downloads through yt-dlp.
 - Torrents and magnet links through aria2c.
@@ -49,7 +50,7 @@ The [latest Windows release](https://github.com/CacaPlay/clear-download-manager/
 2. Select **Analyze** or the appropriate action.
 3. Review quality, folder and priority before starting.
 
-The app keeps the queue, history and insertion order locally on this device.
+The app keeps the queue and history locally on this device.
 
 ## Verify the installer
 Download the installer and `SHA256SUMS.txt` from the [latest release](https://github.com/CacaPlay/clear-download-manager/releases/latest), then compare the checksum for the installer before running it. The release also includes the installer signature and updater metadata.
@@ -68,8 +69,7 @@ see the [official Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisite
 for current setup instructions. No private account, signing key or production
 credential is needed for the local checks below.
 
-Start from a clean clone so generated output directories do not contain files
-you need to preserve:
+Start from a clean clone:
 
 ```powershell
 git clone https://github.com/CacaPlay/clear-download-manager.git
@@ -102,10 +102,9 @@ standalone app build; `cargo build --release` alone only compiles the Rust
 crate and can leave the app pointing at the development server on
 `127.0.0.1:4173`. The local executable is not an installer or a release package.
 
-Build scripts clear their default output directories before writing. Do not run
-them over outputs you need to keep; review
-[`docs/BUILD-RELEASE-AUDIT.md`](docs/BUILD-RELEASE-AUDIT.md) before making
-installer, Store or extension packages. Release steps remain gated in
+Build scripts clear their output directories before writing. See the
+[build and packaging guide](docs/BUILD-AND-PACKAGING.md) before creating local
+packages. Publishing a release follows the separately gated
 [`docs/RELEASE-GUIDE.md`](docs/RELEASE-GUIDE.md).
 ```text
 app-ui/       interface, local player and download manager
@@ -118,6 +117,6 @@ docs/         technical contracts and development documentation
 Read the [architecture overview](docs/ARCHITECTURE.md) before changing module boundaries.
 
 ## Contributing and licensing
-The intended license for project-authored source code is [GNU GPL-3.0-or-later](LICENSE.md); the complete version 3 text is in [`COPYING`](COPYING). The PR #5 owner review and retained-asset distribution approval are recorded in the rights registers. Binary distribution has a separate gate: aria2 and yt-dlp corresponding-source requirements remain pending, while FFmpeg/FFprobe use the approved SAFE LEAN source-built pair. Permission to distribute Clear names, logos and marks remains separate from GPL. See [NOTICE.md](NOTICE.md), [TRADEMARKS.md](TRADEMARKS.md), the [asset provenance register](rights/asset-provenance.json), and the third-party runtime inventory. The included Windows tools keep their own licenses and notices under `src-tauri/resources/licenses/`.
+Project-authored source code is licensed under [GNU GPL-3.0-or-later](LICENSE.md); the full license text is in [`COPYING`](COPYING). Third-party components retain their own licenses and notices. The GPL does not grant rights to project names, logos or other marks. See [NOTICE.md](NOTICE.md), [TRADEMARKS.md](TRADEMARKS.md), and the [third-party runtime inventory](docs/THIRD-PARTY-RUNTIMES.md).
 
 Read [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) and [`SECURITY.md`](SECURITY.md) before sending changes. Contributions must be yours to submit or submitted with permission, and third-party assets must include their source and license information.

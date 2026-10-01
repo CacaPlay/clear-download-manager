@@ -98,11 +98,11 @@ $sourceMappings = @{
 $sourceMetadata = @{}
 foreach ($runtimeId in @('aria2','ffmpeg','yt-dlp')) {
   $record = @($sourceManifest.runtimes | Where-Object id -eq $runtimeId)
-  if ($record.Count -ne 1 -or $record[0].humanReview.status -ne 'APPROVED') { throw "Corresponding-source review is not approved: $runtimeId" }
+  if ($record.Count -ne 1 -or $record[0].distributionApproval.status -ne 'APPROVED') { throw "Corresponding-source distribution approval is not approved: $runtimeId" }
   $source = $record[0]
-  $reviewPath = Join-Path $root $source.humanReview.reviewRecordPath
-  if (-not (Test-Path -LiteralPath $reviewPath -PathType Leaf) -or (Get-Sha256 $reviewPath) -ne $source.humanReview.reviewRecordSha256) {
-    throw "Distributor review record is missing or stale: $runtimeId"
+  $approvalRecordPath = Join-Path $root $source.distributionApproval.approvalRecordPath
+  if (-not (Test-Path -LiteralPath $approvalRecordPath -PathType Leaf) -or (Get-Sha256 $approvalRecordPath) -ne $source.distributionApproval.approvalRecordSha256) {
+    throw "Distributor approval record is missing or stale: $runtimeId"
   }
   if ($runtimeId -eq 'yt-dlp') {
     $sourcePath = [System.IO.Path]::GetFullPath($YtDlpSourceArchive)
@@ -126,7 +126,7 @@ foreach ($runtimeId in @('aria2','ffmpeg','yt-dlp')) {
     bytes = $asset.Bytes
     sha256 = $asset.Sha256
     license = $source.license
-    humanReview = 'APPROVED'
+    distributionApproval = 'APPROVED'
   }
   $sourceMetadata[$runtimeId] = $source
 }
@@ -163,7 +163,7 @@ foreach ($record in @($packageRecords.Values)) {
   }
 }
 $payload = [ordered]@{
-  schemaVersion = 1
+  schemaVersion = 2
   catalogVersion = '1'
   sequence = $Sequence
   keyId = $KeyId

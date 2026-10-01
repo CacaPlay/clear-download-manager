@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "status": "READY",
-  "releaseAssetPolicy": "Each GPL runtime file must link to the exact releaseAssetName recorded for its runtime family. The release asset SHA-256 must match the recorded digest, and a human distributor review must approve the selected corresponding-source archive or written offer.",
+  "releaseAssetPolicy": "Each GPL runtime file must link to the exact releaseAssetName recorded for its runtime family. The release asset SHA-256 must match the recorded digest, and distributionApproval must be APPROVED for the selected corresponding-source archive or written offer.",
   "runtimes": [
     {
       "id": "aria2",
@@ -24,18 +24,18 @@
       "sourceArchivePath": "third-party-source/aria2/aria2-1.37.0-win64-corresponding-source.tar.xz",
       "sourceArchiveSha256": "ef538f14aa306fd66c7bf8b0d09ae82ba7f881e013d8c0f8eee9eed0ed1e0234",
       "buildInputsPath": "third-party-source/reviews/aria2-1.37.0-win64-build-inputs.json",
-      "buildInputsSha256": "52c48d636f6ae1fa259997342bf3b6c0679d0c588ab4fa1fb58cce69332ffa80",
+      "buildInputsSha256": "10a69aa1c6f639c5b00aaf40ee3e84ccf6ea3f4cbf462428e3b38e40b24322d0",
       "releaseAssetName": "aria2-1.37.0-win64-corresponding-source.tar.xz",
       "releaseAssetSha256": "ef538f14aa306fd66c7bf8b0d09ae82ba7f881e013d8c0f8eee9eed0ed1e0234",
       "writtenOfferPath": null,
       "writtenOfferSha256": null,
-      "humanReview": {
+      "distributionApproval": {
         "required": true,
         "status": "APPROVED",
-        "reviewRecordPath": "third-party-source/reviews/aria2-1.37.0-win64-distributor-review.md",
-        "reviewRecordSha256": "6753aa52e73f90033648394d4733236cacac446684577a6f13e43d32c3ded66d"
+        "approvalRecordPath": "third-party-source/reviews/aria2-1.37.0-win64-distributor-review.md",
+        "approvalRecordSha256": "6753aa52e73f90033648394d4733236cacac446684577a6f13e43d32c3ded66d"
       },
-      "technicalStatus": "READY_FOR_HUMAN_REVIEW",
+      "technicalStatus": "READY_FOR_DISTRIBUTOR_APPROVAL",
       "technicalBlockers": [],
       "sourceArchiveBytes": 11482952
     },
@@ -72,11 +72,11 @@
       "releaseAssetSha256": "b2891ffafd30bf26e7db0a6d68c1f98844fa02977919a895da561d297208cf58",
       "writtenOfferPath": null,
       "writtenOfferSha256": null,
-      "humanReview": {
+      "distributionApproval": {
         "required": true,
         "status": "APPROVED",
-        "reviewRecordPath": "third-party-source/reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md",
-        "reviewRecordSha256": "c09b218561033019939b2b076fca72cee253f743ec583467044b0d796fe1e0c9"
+        "approvalRecordPath": "third-party-source/reviews/ffmpeg-9.0.2-safe-lean-distributor-review.md",
+        "approvalRecordSha256": "c09b218561033019939b2b076fca72cee253f743ec583467044b0d796fe1e0c9"
       },
       "runtimeManifestKey": "ffmpegSafeLeanCandidate"
     },
@@ -102,19 +102,19 @@
       "sourceArchiveGenerated": true,
       "sourceArchiveSha256": "03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb",
       "buildInputsPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-build-inputs.json",
-      "buildInputsSha256": "ed9eccf0231bb37367a53913b30a3b0d92b3c687b02fb976ba0cf7955960b6e4",
+      "buildInputsSha256": "d3e299cf7067c9dd39a2e200f69dedc141d9ec9ee96b8c0e54642e70986e4c41",
       "releaseAssetName": "yt-dlp-2026.08.19-win64-corresponding-source.tar.xz",
       "releaseAssetSha256": "03063667338e2e2f6b0f5c4ddb348f7690699f8f43e1f6017590c915427265bb",
       "writtenOfferPath": null,
       "writtenOfferSha256": null,
-      "humanReview": {
+      "distributionApproval": {
         "required": true,
         "status": "APPROVED",
-        "reviewRecordPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md",
-        "reviewRecordSha256": "fa3d0d7b24995ffd9786fd0beb1fed4e3d982dd1bd4db5eca5d7412e20619b26"
+        "approvalRecordPath": "third-party-source/reviews/yt-dlp-2026.08.19-win64-distributor-review.md",
+        "approvalRecordSha256": "fa3d0d7b24995ffd9786fd0beb1fed4e3d982dd1bd4db5eca5d7412e20619b26"
       },
       "sourceArchiveBytes": 89850884,
-      "technicalStatus": "READY_FOR_HUMAN_REVIEW",
+      "technicalStatus": "READY_FOR_DISTRIBUTOR_APPROVAL",
       "technicalBlockers": []
     }
   ]

@@ -43,7 +43,7 @@ const ALLOWED_ENTRY_KEYS = new Set([
   'sourceArchivePath', 'sourceArchiveSha256', 'buildInputsPath', 'buildInputsSha256',
   'releaseAssetName', 'releaseAssetSha256', 'writtenOfferPath', 'writtenOfferSha256',
   'technicalStatus', 'technicalBlockers', 'sourceArchiveBytes', 'sourceArchiveGenerated',
-  'humanReview',
+  'distributionApproval',
 ]);
 
 const sha256Pattern = /^[a-f0-9]{64}$/;
@@ -106,7 +106,7 @@ function validateTechnicalBuildInputs(entry, runtimeRecord, root, issues, expect
     const record = JSON.parse(fs.readFileSync(path.resolve(root, entry.buildInputsPath), 'utf8'));
     const identity = record.runtime || {};
     const binaryHash = identity.binarySha256 || identity.sha256;
-    if (record.schemaVersion !== 1
+    if (record.schemaVersion !== 2
       || identity.id !== entry.id
       || identity.version !== entry.version
       || identity.sourceCommit !== entry.sourceCommit
@@ -126,10 +126,10 @@ function validateTechnicalBuildInputs(entry, runtimeRecord, root, issues, expect
       || (archiveHash && archiveHash !== entry.sourceArchiveSha256)) {
       issues.failures.push(`${entry.id} build-input record: exact source archive name, path, byte count, and SHA-256 do not match the registry.`);
     }
-    // Build-input review values are historical snapshots. Current distributor approval is
-    // enforced through the hash-matched humanReview record in the active registry above.
+    // Build-input approval values are historical snapshots. Current distributor approval is
+    // enforced through the hash-matched distributionApproval record in the active registry above.
     if (!record.rebuildAssessment || !Array.isArray(record.rebuildAssessment.blockers)
-      || record.rebuildAssessment.humanDistributorReview !== 'PENDING') {
+      || record.rebuildAssessment.distributionApproval !== 'PENDING') {
       issues.failures.push(`${entry.id} build-input record: historical rebuild assessment and its pending-review snapshot must be explicit.`);
     }
   } catch (error) {
@@ -139,7 +139,7 @@ function validateTechnicalBuildInputs(entry, runtimeRecord, root, issues, expect
 
 export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
   const issues = { failures: [], pending: [] };
-  if (manifest?.schemaVersion !== 2) issues.failures.push('corresponding-source.json: schemaVersion must be 2.');
+  if (manifest?.schemaVersion !== 3) issues.failures.push('corresponding-source.json: schemaVersion must be 3.');
   if (!['PENDING', 'READY'].includes(manifest?.status)) {
     issues.failures.push('corresponding-source.json: status must be PENDING or READY.');
   }
@@ -256,30 +256,30 @@ export function validateCorrespondingSourceRegistry(manifest, runtime, root) {
     }
 
     if (['aria2', 'yt-dlp'].includes(id)) {
-      if (!['PENDING', 'READY_FOR_HUMAN_REVIEW'].includes(entry.technicalStatus)
+      if (!['PENDING', 'READY_FOR_DISTRIBUTOR_APPROVAL'].includes(entry.technicalStatus)
         || !Array.isArray(entry.technicalBlockers)) {
         issues.failures.push(`${id}: technicalStatus and technicalBlockers must be explicit.`);
-      } else if (entry.technicalStatus === 'READY_FOR_HUMAN_REVIEW' && entry.technicalBlockers.length) {
-        issues.failures.push(`${id}: READY_FOR_HUMAN_REVIEW cannot have unresolved technicalBlockers.`);
+      } else if (entry.technicalStatus === 'READY_FOR_DISTRIBUTOR_APPROVAL' && entry.technicalBlockers.length) {
+        issues.failures.push(`${id}: READY_FOR_DISTRIBUTOR_APPROVAL cannot have unresolved technicalBlockers.`);
       } else if (entry.technicalStatus === 'PENDING' && !entry.technicalBlockers.length) {
         issues.failures.push(`${id}: PENDING technical status must name its blocker.`);
       }
     }
 
-    const review = entry.humanReview;
-    if (!review || review.required !== true || !['PENDING', 'APPROVED'].includes(review.status)) {
-      issues.failures.push(`${id}.humanReview: explicit required=true and a PENDING or APPROVED status are mandatory.`);
-    } else if (review.status !== 'APPROVED') {
-      issues.pending.push(`${id}: distributor human review is still required.`);
+    const approval = entry.distributionApproval;
+    if (!approval || approval.required !== true || !['PENDING', 'APPROVED'].includes(approval.status)) {
+      issues.failures.push(`${id}.distributionApproval: explicit required=true and a PENDING or APPROVED status are mandatory.`);
+    } else if (approval.status !== 'APPROVED') {
+      issues.pending.push(`${id}: distributor approval is still required.`);
     } else {
-      if (safeLeanCandidate && (runtimeRecord.humanReviewPath !== review.reviewRecordPath
-        || runtimeRecord.humanReviewSha256 !== review.reviewRecordSha256)) {
-        issues.failures.push('ffmpeg SAFE LEAN candidate: review record path and SHA-256 must exactly match runtime-manifest.json.');
+      if (safeLeanCandidate && (runtimeRecord.distributionApprovalRecordPath !== approval.approvalRecordPath
+        || runtimeRecord.distributionApprovalSha256 !== approval.approvalRecordSha256)) {
+        issues.failures.push('ffmpeg SAFE LEAN candidate: approval record path and SHA-256 must exactly match runtime-manifest.json.');
       }
-      if (typeof review.reviewRecordPath !== 'string' || !review.reviewRecordPath) {
-        issues.failures.push(`${id}: an approved human review must reference its review record.`);
+      if (typeof approval.approvalRecordPath !== 'string' || !approval.approvalRecordPath) {
+        issues.failures.push(`${id}: an approved distribution must reference its approval record.`);
       } else {
-        addFileState(issues, root, review.reviewRecordPath, review.reviewRecordSha256, `${id}.humanReview`);
+        addFileState(issues, root, approval.approvalRecordPath, approval.approvalRecordSha256, `${id}.distributionApproval`);
       }
     }
 

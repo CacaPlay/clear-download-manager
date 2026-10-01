@@ -24,7 +24,7 @@ rights/release-rights.json, and rights/asset-provenance.json.
 | Clear product art | CLEAR for distribution, 95 files | The owner explicitly approved retained file-type, news/support, player-control, and documentation art; two old placeholders were removed. |
 | Owner attestation cross-cut | CLEAR, 165 images, not additive | The approval covers A+B+C and its SHA-256 is checked against the recorded attestation. This is not an additional 165 assets. |
 | Removed assets | CLEAR for current-tree presence | The 73 graphics with REMOVE dispositions and two Android XML support files are absent. This does not clear copies outside the current tree. |
-| PR #5 / Devin | PASS for the reviewed diff | The owner directly declared personal self-service use, no owner-known MSA/Order Form/custom modification, continued use after the transition, and authorized GPL distribution of code the owner may license. The exact owner review and its SHA-256 are recorded in `rights/release-rights.json`; account-specific click-through logs were not independently verified. |
+| PR #5 external-platform output | PASS for the reviewed diff | The owner directly declared personal self-service use, no owner-known MSA/Order Form/custom modification, continued use after the transition, and authorized GPL distribution of code the owner may license. The exact owner review and its SHA-256 are recorded in `rights/release-rights.json`; account-specific click-through logs were not independently verified. |
 | License and mark boundary | CLEAR as document treatment | LICENSE, NOTICE, TRADEMARKS, README, and source archive treat GPL as the code license and Clear marks/artwork as separate assets. The asset gate asks for distribution rights; it does not require the Clear logo to be GPL. |
 
 ## Rights decision
@@ -39,9 +39,8 @@ register. The source-release gate passed for the inspected source-only archive
 on 2026-09-25. Binary release and GPL runtime-source obligations remain
 separate gates.
 
-The PR #5 evidence investigation remains closed. Do not search Devin or Gmail
-again unless contradictory evidence appears. This is a rights-readiness record,
-not an absolute legal opinion.
+The PR #5 evidence investigation remains closed absent contradictory evidence.
+This is a rights-readiness record, not an absolute legal opinion.
 
 ## Gate separation
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-09-25",
-  "scope": "Public evidence register for the PR #5 Devin output rights review plus a direct owner declaration. It contains no private account, billing, credential, or contract documents.",
+  "scope": "Public evidence register for the PR #5 external-platform output rights review plus a direct owner declaration. It contains no private account, billing, credential, or contract documents.",
   "decision": {
     "PR5_PUBLIC_CHAIN": "PASS",
     "PR5_EVIDENCE_ASSESSMENT": "SUFFICIENTLY_SUPPORTED_CLOSED_FOR_FURTHER_INVESTIGATION",
@@ -53,12 +53,12 @@
       "note": "The same session URL appears in both PR bodies; this does not by itself allocate the session's output between PRs."
     },
     "ownerDeclaration": {
-      "record": "Direct owner declaration in the Codex conversation on 2026-09-25, recorded in rights/pr5-owner-review-draft.md.",
+      "record": "Direct owner declaration dated 2026-09-25, recorded in rights/pr5-owner-review-draft.md.",
       "evidencePath": "rights/pr5-owner-review-draft.md",
       "approvedBy": "Julio Angel / CacaPlay",
       "approvedAt": "2026-09-25",
       "signedExternalArtifact": false,
-      "sha256": "4731b18b79f9eea9012ff43220feab30a0b23ca3672b414a7cfcc6eb86ee813f",
+      "sha256": "d87a408262f2b00354c86c97c23aeb2eaa46fa98b565e0cd41722e7897fc72c3",
       "independentlyVerified": false,
       "scope": "Personal self-service account; no owner-known MSA, Order Form, custom contract or separate modification; continued use after terms transition; owner requested and reviewed exact PR #5 diff and authorizes GPL distribution of code the owner has rights to license."
     },
@@ -102,14 +102,14 @@
     "status": "USER_PROVIDED_CONTEXT_REVIEWED_LIMITED_PRIVATE_RECORDS_NOT_RETAINED",
     "items": [
       {
-        "id": "devin-account-and-service-tier",
+        "id": "external-platform-account-and-service-tier",
         "description": "Redacted account/customer identifier and evidence whether this was self-service or enterprise; no password or token.",
         "status": "OWNER_DECLARED_PERSONAL_SELF_SERVICE_NOT_ENTERPRISE; HISTORICAL_TIER_NOT_INDEPENDENTLY_VERIFIED",
         "sha256": null
       },
       {
         "id": "session-to-account-activity",
-        "description": "Devin activity/export record tying session 0505a2fb68854e28a6468f1370f0da06 to that account and PR #5 output.",
+        "description": "Platform activity/export record tying session 0505a2fb68854e28a6468f1370f0da06 to that account and PR #5 output.",
         "status": "PUBLIC_PR_SESSION_LINK_AND_OWNER_CONFIRMED_AUTHORIZATION; NO_PRIVATE_ACTIVITY_EXPORT_RETAINED",
         "sha256": null
       },
@@ -123,7 +123,7 @@
         "id": "owner-provenance-and-relicensing-review",
         "description": "Dated owner review of the exact patch and relevant inputs for third-party/copy provenance and authority to license the exact output under GPL-3.0-or-later.",
         "status": "APPROVED_BY_DIRECT_OWNER_DECLARATION; NOT_INDEPENDENTLY_VERIFIED",
-        "sha256": "4731b18b79f9eea9012ff43220feab30a0b23ca3672b414a7cfcc6eb86ee813f"
+        "sha256": "d87a408262f2b00354c86c97c23aeb2eaa46fa98b565e0cd41722e7897fc72c3"
       },
       {
         "id": "billing-or-subscription-corroboration",
@@ -135,7 +135,7 @@
   },
   "attestationLimits": [
     "Public PR metadata establishes attribution clues and a session link, not transfer of copyright.",
-    "The owner directly declares that the Devin account was personal self-service, not Enterprise, had no owner-known MSA/Order Form/custom modification, and continued using the service after the 30-day transition. The public terms page and the previously recorded external archive hash support the stated terms/version; the archive file is not present in this checkout, and no click-through or account-specific acceptance log is independently verified.",
+    "The owner directly declares that the service account was personal self-service, not Enterprise, had no owner-known MSA/Order Form/custom modification, and continued using the service after the 30-day transition. The public terms page and the previously recorded external archive hash support the stated terms/version; the archive file is not present in this checkout, and no click-through or account-specific acceptance log is independently verified.",
     "Sensitive email bodies, account identifiers, screenshot data, and credentials were not copied or hashed into the repository.",
     "The PR #5 investigation is closed and its exact reviewed diff is formally approved for GPL-3.0-or-later in the project rights register based on the direct owner declaration and public terms. This register is not an independent legal opinion or proof of an account click-through."
   ]

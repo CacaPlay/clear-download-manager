@@ -45,7 +45,7 @@ const payload = catalog.payload;
 if (!payload || typeof catalog.signature !== 'string' || !catalog.signature || Object.keys(catalog).length !== 2) {
   fail('catalog must use the inline {payload, signature} envelope.');
 }
-if (payload.schemaVersion !== 1 || payload.catalogVersion !== '1' ||
+if (payload.schemaVersion !== 2 || payload.catalogVersion !== '1' ||
     payload.keyId !== 'component-catalog-2026-01' || !Number.isSafeInteger(payload.sequence) || payload.sequence < 1) {
   fail('catalog schema, stable production key ID, or sequence is invalid.');
 }
@@ -79,7 +79,7 @@ for (const [id, name] of [['media-tools', 'media-tools-1.0.0.cdmcomponent'], ['t
   const seenSources = new Set();
   for (const source of component.correspondingSources || []) {
     const expected = expectedSources[source.runtimeId];
-    if (!expected || source.sourceCommit !== expected[0] || source.assetName !== expected[1] || source.license !== expected[2] || source.humanReview !== 'APPROVED' || source.assetUrl !== assetUrl(source.assetName) || seenSources.has(source.runtimeId)) {
+    if (!expected || source.sourceCommit !== expected[0] || source.assetName !== expected[1] || source.license !== expected[2] || source.distributionApproval !== 'APPROVED' || source.assetUrl !== assetUrl(source.assetName) || seenSources.has(source.runtimeId)) {
       fail(`${id} has an invalid or duplicate source contract for ${source.runtimeId}.`);
     }
     seenSources.add(source.runtimeId);

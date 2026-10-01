@@ -316,7 +316,7 @@
   justify-content:flex-end;
 }
 
-/* Human review stabilization: keep priority choices on one compact row and
+/* Keep priority choices on one compact row and
    expose the current value as quiet metadata instead of a pill. */
 .dm-priority-menu{
   grid-template-columns:repeat(3,minmax(0,1fr));

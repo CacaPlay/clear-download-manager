@@ -30,7 +30,7 @@ pub(crate) const COMPONENT_CATALOG_ENDPOINT: &str =
     "http://127.0.0.1:49301/component-catalog-v1.json";
 pub(crate) const ALLOW_LOOPBACK_HTTP: bool = cfg!(any(test, feature = "qa-component-manager"));
 
-const COMPONENT_CATALOG_SCHEMA: u32 = 1;
+const COMPONENT_CATALOG_SCHEMA: u32 = 2;
 const MAX_CATALOG_BYTES: usize = 256 * 1024;
 const MAX_CATALOG_LIFETIME_SECONDS: i64 = 90 * 24 * 60 * 60;
 const MAX_CLOCK_SKEW_SECONDS: i64 = 5 * 60;
@@ -89,7 +89,7 @@ pub(crate) struct CorrespondingSourceAsset {
     pub(crate) bytes: u64,
     pub(crate) sha256: String,
     pub(crate) license: String,
-    pub(crate) human_review: String,
+    pub(crate) distribution_approval: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -116,7 +116,7 @@ pub(crate) enum CatalogValidationError {
     Expired,
     InvalidComponent,
     InvalidPackageUrl,
-    SourceReviewPending,
+    DistributionApprovalPending,
     Downgrade,
 }
 
@@ -500,7 +500,9 @@ impl std::fmt::Display for CatalogValidationError {
                 "component catalog metadata does not match the release contract"
             }
             Self::InvalidPackageUrl => "component asset URL is outside the approved release route",
-            Self::SourceReviewPending => "component corresponding-source review is not approved",
+            Self::DistributionApprovalPending => {
+                "component corresponding-source distribution approval is not approved"
+            }
             Self::Downgrade => "component catalog would downgrade an installed version",
         })
     }
@@ -746,8 +748,8 @@ fn validate_sources(
         {
             return Err(CatalogValidationError::InvalidComponent);
         }
-        if source.human_review != "APPROVED" {
-            return Err(CatalogValidationError::SourceReviewPending);
+        if source.distribution_approval != "APPROVED" {
+            return Err(CatalogValidationError::DistributionApprovalPending);
         }
     }
     Ok(())
@@ -929,7 +931,7 @@ mod tests {
             bytes: 20,
             sha256: "a".repeat(64),
             license: license.into(),
-            human_review: "APPROVED".into(),
+            distribution_approval: "APPROVED".into(),
         }
     }
 
@@ -1360,12 +1362,13 @@ mod tests {
     }
 
     #[test]
-    fn pending_source_review_and_unapproved_asset_urls_fail_closed() {
+    fn pending_distribution_approval_and_unapproved_asset_urls_fail_closed() {
         let mut pending = signed_catalog();
-        pending.payload.components[0].corresponding_sources[1].human_review = "PENDING".into();
+        pending.payload.components[0].corresponding_sources[1].distribution_approval =
+            "PENDING".into();
         assert_eq!(
             verify_component_catalog(&bytes(pending), &trust(), NOW, false).unwrap_err(),
-            CatalogValidationError::SourceReviewPending
+            CatalogValidationError::DistributionApprovalPending
         );
         let mut external = signed_catalog();
         external.payload.components[0].package_url =
@@ -1373,6 +1376,27 @@ mod tests {
         assert_eq!(
             verify_component_catalog(&bytes(external), &trust(), NOW, false).unwrap_err(),
             CatalogValidationError::InvalidPackageUrl
+        );
+    }
+
+    #[test]
+    fn legacy_human_review_catalog_field_is_rejected() {
+        let mut value = serde_json::to_value(signed_catalog()).unwrap();
+        let source = value["payload"]["components"][0]["correspondingSources"][0]
+            .as_object_mut()
+            .unwrap();
+        let approval = source.remove("distributionApproval").unwrap();
+        source.insert("humanReview".into(), approval);
+        assert!(serde_json::from_value::<SignedComponentCatalog>(value).is_err());
+    }
+
+    #[test]
+    fn previous_component_catalog_schema_is_rejected() {
+        let mut previous = signed_catalog();
+        previous.payload.schema_version = 1;
+        assert_eq!(
+            verify_component_catalog(&bytes(previous), &trust(), NOW, false).unwrap_err(),
+            CatalogValidationError::InvalidSchema
         );
     }
 
