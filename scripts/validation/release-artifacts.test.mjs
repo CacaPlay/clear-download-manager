@@ -308,13 +308,46 @@ test('release preparation trusts PowerShell errors, validates native exit codes,
   const prepareStepEnd = packageSign.indexOf('\n      - name:', prepareStepStart + 1);
   assert.ok(prepareStepStart >= 0 && prepareStepEnd > prepareStepStart);
   const prepareStep = packageSign.slice(prepareStepStart, prepareStepEnd);
+  const assemblyStepStart = packageSign.indexOf('- name: Assemble exact optional component packages and release evidence');
+  const assemblyStepEnd = packageSign.indexOf('\n      - name:', assemblyStepStart + 1);
+  assert.ok(assemblyStepStart >= 0 && assemblyStepEnd > assemblyStepStart);
+  const assemblyStep = packageSign.slice(assemblyStepStart, assemblyStepEnd);
+  const signStepStart = packageSign.indexOf('- name: Sign inline Component Manager catalog');
+  const signStepEnd = packageSign.indexOf('\n      - name:', signStepStart + 1);
+  const catalogVerifyStepStart = packageSign.indexOf('- name: Verify catalog with the production public key embedded in Core');
+  const catalogVerifyStepEnd = packageSign.indexOf('\n      - name:', catalogVerifyStepStart + 1);
+  assert.ok(signStepStart >= 0 && signStepEnd > signStepStart);
+  assert.ok(catalogVerifyStepStart >= 0 && catalogVerifyStepEnd > catalogVerifyStepStart);
+  const signStep = packageSign.slice(signStepStart, signStepEnd);
+  const catalogVerifyStep = packageSign.slice(catalogVerifyStepStart, catalogVerifyStepEnd);
 
   assert.match(prepareStep, /\.\/scripts\/prepare-update-release\.ps1[^\n]*/);
   assert.match(prepareStep, /\$sourceArchives/);
   assert.doesNotMatch(prepareStep, /\$LASTEXITCODE/);
+  for (const step of workflow.split(/(?=^\s{6}- (?:name|uses):)/m)) {
+    if (/^\s*run:\s*\|/m.test(step) && /\.\/scripts\/[^\r\n]+\.ps1/m.test(step)) {
+      assert.doesNotMatch(step, /\$LASTEXITCODE/, 'direct .ps1 workflow steps must use PowerShell terminating errors');
+    }
+  }
+  assert.match(assemblyStep, /\.\/scripts\/assemble-component-release-assets\.ps1[^\n]*/);
+  assert.match(assemblyStep, /\.\/scripts\/validation\/inspect-component-packages\.ps1[^\n]*/);
+  assert.doesNotMatch(assemblyStep, /\$LASTEXITCODE/, 'direct PowerShell scripts must report failures through terminating errors');
+  for (const runtimeFile of [
+    'runtime-manifest.json',
+    'yt-dlp.exe',
+    'ffmpeg.exe',
+    'ffprobe.exe',
+    'deno.exe',
+    'aria2c.exe',
+  ]) {
+    assert.ok(assemblyStep.includes(runtimeFile), `component packaging must preflight ${runtimeFile}`);
+  }
   assert.match(prepareScript, /^\$ErrorActionPreference\s*=\s*'Stop'\s*$/m);
   assert.match(prepareScript, /\bthrow\b/);
   assert.match(packageSign, /npm run build:windows:final\s*\n\s*if \(\$LASTEXITCODE -ne 0\) \{ throw 'The signed Windows package build failed\.' \}/);
+  assert.match(signStep, /cargo run[^\n]* -- sign[^\n]*\n\s*if \(\$LASTEXITCODE -ne 0\)/);
+  assert.match(catalogVerifyStep, /cargo run[^\n]*verify-production[^\n]*\n\s*if \(\$LASTEXITCODE -ne 0\)/);
+  assert.match(catalogVerifyStep, /node scripts\/validation\/component-release-assets\.mjs[^\n]*\n\s*if \(\$LASTEXITCODE -ne 0\)/);
   assert.match(verify, /npm run check:binary-release[\s\S]*?if \(\$LASTEXITCODE -ne 0\) \{ throw 'The final binary release gate did not pass; publication is blocked\.' \}/);
   assert.match(publish, /needs:[\s\S]*- verify-binary-release/);
   assert.match(publish, /needs\.verify-binary-release\.result\s*==\s*'success'/);
