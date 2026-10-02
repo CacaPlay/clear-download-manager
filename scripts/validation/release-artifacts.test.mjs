@@ -353,6 +353,16 @@ test('release preparation trusts PowerShell errors, validates native exit codes,
   assert.match(publish, /needs\.verify-binary-release\.result\s*==\s*'success'/);
 });
 
+test('Windows updater artifacts match the signed NSIS ZIP release contract', () => {
+  const tauriConfig = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'src-tauri/tauri.conf.json'), 'utf8'));
+  const prepareScript = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-update-release.ps1'), 'utf8');
+  const releaseWorkflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+
+  assert.equal(tauriConfig.bundle.createUpdaterArtifacts, 'v1Compatible');
+  assert.match(prepareScript, /Where-Object\s*\{[^}]*\$_.Name -like '\*\.nsis\.zip\.sig'[^}]*\$_.Name -like '\*\.msi\.zip\.sig'/s);
+  assert.match(releaseWorkflow, /-Filter '\*\.nsis\.zip'/);
+});
+
 test('release artifact checksum verifier rejects changed and unlisted files', () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-release-artifact-test-'));
   const verifier = path.join(repositoryRoot, 'scripts/validation/verify-release-artifact.mjs');
