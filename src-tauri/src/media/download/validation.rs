@@ -231,7 +231,7 @@ pub(crate) fn ensure_windows_compatible_mp4(
             .file_stem()
             .and_then(|value| value.to_str())
             .unwrap_or("video");
-        let normalized = path.with_file_name(format!("{stem}.cacatools-normalized.mp4"));
+        let normalized = path.with_file_name(format!("{stem}.cdm-normalized.mp4"));
         let _ = fs::remove_file(&normalized);
         set_media_processing_stage(
             connection,
@@ -291,7 +291,7 @@ pub(crate) fn ensure_windows_compatible_mp4(
         .file_stem()
         .and_then(|value| value.to_str())
         .unwrap_or("video");
-    let converted = path.with_file_name(format!("{stem}.cacatools-converting.mp4"));
+    let converted = path.with_file_name(format!("{stem}.cdm-converting.mp4"));
     let ffmpeg = runtime.ffmpeg_dir.join(if cfg!(windows) {
         "ffmpeg.exe"
     } else {

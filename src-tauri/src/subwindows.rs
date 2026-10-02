@@ -37,7 +37,7 @@ pub(crate) fn active_preparation_labels() -> Vec<String> {
 fn sync_main_dimming(app: &AppHandle) {
     if let Some(main) = app.get_webview_window("main") {
         let _ = main.emit(
-            "cacatools-preparation-modal-state",
+            "cdm-preparation-modal-state",
             serde_json::json!({ "activeLabels": active_preparation_labels() }),
         );
     }
@@ -564,9 +564,9 @@ pub(crate) fn open_preparation_window_now(
 
     let mut builder = WebviewWindowBuilder::new(&app, label, WebviewUrl::App(route.into()));
     if let Some(main) = app.get_webview_window("main") {
-        builder = builder
-            .parent(&main)
-            .map_err(|error| format!("No se pudo asociar la subventana a CacaTools: {error}"))?;
+        builder = builder.parent(&main).map_err(|error| {
+            format!("No se pudo asociar la subventana a Clear Download Manager: {error}")
+        })?;
     }
     let mut builder = builder
         .title(title)

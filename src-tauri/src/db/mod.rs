@@ -1,6 +1,63 @@
 use super::*;
 
 pub(crate) const SQLITE_BUSY_TIMEOUT_MS: u64 = 750;
+pub(crate) fn migrate_legacy_database(
+    data_dir: &std::path::Path,
+) -> std::io::Result<std::path::PathBuf> {
+    let legacy_path = data_dir.join("cacatools.sqlite3");
+    let current_path = data_dir.join("clear-download-manager.sqlite3");
+    let legacy_exists = legacy_path.is_file();
+    let current_exists = current_path.is_file();
+
+    if legacy_exists && current_exists {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "both legacy and canonical databases exist; refusing to choose or overwrite either",
+        ));
+    }
+    if current_exists || !legacy_exists {
+        return Ok(current_path);
+    }
+
+    // The application instance lock is acquired before this migration. Open
+    // without CREATE so an invalid or inaccessible legacy path cannot become
+    // an empty database and then be mistaken for migrated user data.
+    let connection =
+        Connection::open_with_flags(&legacy_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE)
+            .map_err(std::io::Error::other)?;
+    let (busy, log_pages, checkpointed_pages): (i64, i64, i64) = connection
+        .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .map_err(std::io::Error::other)?;
+    if busy != 0 || (log_pages >= 0 && checkpointed_pages < log_pages) {
+        return Err(std::io::Error::other(
+            "could not checkpoint the legacy database safely",
+        ));
+    }
+    let journal_mode: String = connection
+        .query_row("PRAGMA journal_mode=DELETE", [], |row| row.get(0))
+        .map_err(std::io::Error::other)?;
+    if !journal_mode.eq_ignore_ascii_case("delete") {
+        return Err(std::io::Error::other(
+            "could not close the legacy database journal safely",
+        ));
+    }
+    drop(connection);
+
+    for suffix in ["-wal", "-shm", "-journal"] {
+        let mut sidecar_name = legacy_path.as_os_str().to_os_string();
+        sidecar_name.push(suffix);
+        if std::path::PathBuf::from(sidecar_name).exists() {
+            return Err(std::io::Error::other(
+                "legacy database sidecar remains after checkpoint; refusing migration",
+            ));
+        }
+    }
+
+    std::fs::rename(&legacy_path, &current_path)?;
+    Ok(current_path)
+}
 
 pub(crate) fn configure_connection(connection: &Connection) -> rusqlite::Result<()> {
     connection.busy_timeout(Duration::from_millis(SQLITE_BUSY_TIMEOUT_MS))?;
@@ -397,6 +454,77 @@ mod tests {
         }
     }
 
+    #[test]
+    fn migrates_legacy_database_without_losing_rows() {
+        let directory = tempfile::tempdir().expect("temporary data directory");
+        let legacy_path = directory.path().join("cacatools.sqlite3");
+        {
+            let connection = Connection::open(&legacy_path).expect("legacy database");
+            connection
+                .execute_batch(
+                    "PRAGMA journal_mode=WAL;
+                     CREATE TABLE preserved(id INTEGER PRIMARY KEY, value TEXT NOT NULL);
+                     INSERT INTO preserved(id, value) VALUES(7, 'existing download history');",
+                )
+                .expect("populate v1.0.0 database");
+        }
+
+        let migrated_path =
+            migrate_legacy_database(directory.path()).expect("migrate the v1.0.0 database");
+        assert_eq!(
+            migrated_path.file_name().and_then(|name| name.to_str()),
+            Some("clear-download-manager.sqlite3")
+        );
+        assert!(
+            !legacy_path.exists(),
+            "old database name is removed after atomic rename"
+        );
+        let connection = Connection::open(&migrated_path).expect("open migrated database");
+        let value: String = connection
+            .query_row("SELECT value FROM preserved WHERE id=7", [], |row| {
+                row.get(0)
+            })
+            .expect("existing row remains readable");
+        assert_eq!(value, "existing download history");
+        drop(connection);
+        assert_eq!(
+            migrate_legacy_database(directory.path()).expect("second startup uses canonical file"),
+            migrated_path
+        );
+    }
+
+    #[test]
+    fn migration_refuses_conflicting_database_files() {
+        let directory = tempfile::tempdir().expect("temporary data directory");
+        let legacy_path = directory.path().join("cacatools.sqlite3");
+        let current_path = directory.path().join("clear-download-manager.sqlite3");
+        for (path, value) in [(&legacy_path, "legacy"), (&current_path, "canonical")] {
+            let connection = Connection::open(path).expect("database file");
+            connection
+                .execute_batch("CREATE TABLE preserved(value TEXT NOT NULL);")
+                .expect("table schema");
+            connection
+                .execute("INSERT INTO preserved(value) VALUES(?1)", [value])
+                .expect("database contents");
+        }
+
+        assert!(
+            migrate_legacy_database(directory.path()).is_err(),
+            "ambiguous profiles must not choose a database silently"
+        );
+        assert!(legacy_path.exists());
+        assert!(current_path.exists());
+        let legacy = Connection::open(&legacy_path).expect("legacy database remains openable");
+        let old_value: String = legacy
+            .query_row("SELECT value FROM preserved", [], |row| row.get(0))
+            .expect("legacy row remains readable");
+        assert_eq!(old_value, "legacy");
+        let current = Connection::open(&current_path).expect("current database remains openable");
+        let current_value: String = current
+            .query_row("SELECT value FROM preserved", [], |row| row.get(0))
+            .expect("current row remains readable");
+        assert_eq!(current_value, "canonical");
+    }
     #[test]
     fn additive_migrations_ignore_only_duplicate_columns() {
         let connection = Connection::open_in_memory().expect("in-memory SQLite connection");

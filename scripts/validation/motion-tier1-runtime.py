@@ -80,7 +80,7 @@ def main() -> int:
                 f"http://127.0.0.1:{server.server_address[1]}/?preview=1&view=downloads",
                 wait_until="domcontentloaded",
             )
-            page.wait_for_function("typeof window.__cacatoolsRequestDownloadManagerRender === 'function'")
+            page.wait_for_function("typeof window.__cdmRequestDownloadManagerRender === 'function'")
             page.wait_for_selector(".dm-download-item")
             page.evaluate(
                 """() => {
@@ -173,7 +173,7 @@ def main() -> int:
             # Deterministic, offline state harness. This calls the same keyed
             # live patch path used by native refreshes and reads the resulting
             # DOM, so CSS declarations alone cannot satisfy this gate.
-            page.wait_for_function("typeof window.__cacatoolsMotionStateHarness?.setJobState === 'function'")
+            page.wait_for_function("typeof window.__cdmMotionStateHarness?.setJobState === 'function'")
             page.evaluate("""() => {
               const app = document.querySelector('#app');
               app.dataset.motionNavigation = 'false';
@@ -184,10 +184,10 @@ def main() -> int:
             }""")
 
             def harness_row(job_id: int) -> dict[str, object] | None:
-                return page.evaluate("""(id) => window.__cacatoolsMotionStateHarness.rowState(id)""", job_id)
+                return page.evaluate("""(id) => window.__cdmMotionStateHarness.rowState(id)""", job_id)
 
             def harness_set(patch: dict[str, object]) -> dict[str, object] | None:
-                ok = page.evaluate("""(value) => window.__cacatoolsMotionStateHarness.setJobState(1, value)""", patch)
+                ok = page.evaluate("""(value) => window.__cdmMotionStateHarness.setJobState(1, value)""", patch)
                 if not ok:
                     failures.append(f"state harness no pudo aplicar patch: {patch}")
                 row = harness_row(1)
@@ -307,7 +307,7 @@ def main() -> int:
             if toast["animationName"] == "none" or milliseconds(toast["animationDuration"]) <= 0:
                 failures.append(f"toast computed entry no está activo: {toast}")
 
-            page.evaluate("""() => window.__cacatoolsMotionStateHarness.setJobState(1, {
+            page.evaluate("""() => window.__cdmMotionStateHarness.setJobState(1, {
               status: 'completed', stage: 'Completada', progress: 100,
               final_size: 986710016, speed_bps: 0
             })""")

@@ -1,8 +1,11 @@
 [package]
-name = "cacatools-native-host"
+name = "clear-download-manager-native-host"
 version = "0.45.4"
 license = "GPL-3.0-or-later"
 edition = "2021"
+
+[features]
+legacy-host-name = []
 
 [dependencies]
 fs2 = "0.4"

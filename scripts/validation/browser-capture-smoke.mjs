@@ -30,7 +30,7 @@ globalThis.chrome = {
       // generic response failed at that handshake and never exercised pause,
       // metadata refresh, accepted/cancel or temporary-failure fallback.
       const response = message.action === 'ping'
-        ? { ok: true, host: 'lat.cacaplay.cacatools.downloadmanager', protocolVersion: 1, hostVersion: '0.45.4', desktopAppVersion: '0.95.0' }
+        ? { ok: true, host: 'lat.cacaplay.cleardownloadmanager', protocolVersion: 1, hostVersion: '0.45.4', desktopAppVersion: '0.95.0' }
         : message.action === 'capabilities'
           ? { ok: true, protocolVersion: 1, actions: ['ping', 'capabilities', 'browser_download_capture', 'get_status'], sourceTypes: ['direct_file', 'generic_url'] }
           : { ok: ['accepted', 'review_opened'].includes(nativeStatus), status: nativeStatus };

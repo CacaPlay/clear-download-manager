@@ -1,13 +1,13 @@
 [package]
-name = "cacatools-desktop"
+name = "clear-download-manager"
 version = "1.0.0"
 description = "Local-first Windows download manager powered by aria2c, yt-dlp, FFmpeg and SQLite"
 license = "GPL-3.0-or-later"
-authors = ["CacaTools"]
+authors = ["CacaPlay"]
 edition = "2021"
 
 [lib]
-name = "cacatools_desktop_lib"
+name = "clear_download_manager_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]

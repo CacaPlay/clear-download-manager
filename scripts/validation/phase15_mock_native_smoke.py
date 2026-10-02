@@ -17,7 +17,7 @@ window.__TAURI__={core:{invoke:async(command,args={})=>{
  window.__mockCalls.push({command,args});
  switch(command){
   case 'desktop_snapshot': return structuredClone(snapshot);
-  case 'desktop_settings': return {downloads_dir:'C:\\Users\\Demo\\Downloads\\CacaTools'};
+  case 'desktop_settings': return {downloads_dir:'C:\\Users\\Demo\\Downloads\\Clear Download Manager'};
   case 'get_appearance_settings': return null;
   case 'runtime_status': return {mode:'local',server_dependency:false,loopback_only:true,download_engine:'http-range-v1',version:'0.15.0'};
   case 'media_runtime_status': return {available:true,yt_dlp:'yt-dlp.exe',ffmpeg:'ffmpeg.exe',ffprobe:'ffprobe.exe'};

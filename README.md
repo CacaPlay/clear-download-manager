@@ -97,7 +97,7 @@ npm.cmd run build:local
 
 This uses the Tauri CLI, which runs `npm run build:web` and embeds the generated
 `dist/` frontend in the executable. The result is
-`src-tauri/target/release/cacatools-desktop.exe`. Use this command for a
+`src-tauri/target/release/clear-download-manager.exe`. Use this command for a
 standalone app build; `cargo build --release` alone only compiles the Rust
 crate and can leave the app pointing at the development server on
 `127.0.0.1:4173`. The local executable is not an installer or a release package.

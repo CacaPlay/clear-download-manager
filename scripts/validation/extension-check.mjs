@@ -64,6 +64,7 @@ if (!worker.includes('appWindowIds.add(windowId)') || !worker.includes('enabled:
   errors.push('Las ventanas app deben evitar el panel nativo y conservar la vista alternativa');
 }
 if (!worker.includes('item.byExtensionId !== chrome.runtime.id')) errors.push('La extensión no respeta descargas iniciadas por otros gestores');
+if (!worker.includes("item.byExtensionName || '').toLowerCase().includes('clear download manager')")) errors.push('La extensión no ignora las descargas iniciadas por otra extensión de Clear Download Manager');
 const captureBackend = fs.readFileSync('src-tauri/src/downloads/commands.rs', 'utf8');
 if (!captureBackend.includes('"status": "review_opened"') || !captureBackend.includes('open_preparation_window')) errors.push('El modo de primer plano no abre la preparación HTTP');
 const settings = fs.readFileSync('app-ui/modules/settings/index.js', 'utf8');
@@ -72,7 +73,7 @@ const nativeHost = fs.readFileSync('extension/native-host/src/main.rs', 'utf8');
 for (const token of ['CAPTURE_RESPONSE_TIMEOUT_MS', '"temporary_failure"']) {
   if (!nativeHost.includes(token)) errors.push(`Falta estado de captura en el host nativo: ${token}`);
 }
-const nativeClient = fs.readFileSync('extension/sdk/cacatools-native-client.js', 'utf8');
+const nativeClient = fs.readFileSync('extension/sdk/cdm-native-client.js', 'utf8');
 if (!nativeClient.includes('captureDownload')) errors.push('Falta acción browser_download_capture en el cliente nativo');
 const detector = fs.readFileSync('extension/content/detector.js', 'utf8');
 for (const token of ['MutationObserver', 'ytInitialPlayerResponse', 'blob:', 'application/ld+json', 'popstate']) {

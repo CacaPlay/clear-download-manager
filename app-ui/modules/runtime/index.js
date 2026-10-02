@@ -775,7 +775,7 @@ function updatePlaylistQueueDom() {
       const scrollTop = list.scrollTop;
       list.innerHTML = upcoming.length
         ? upcoming.map((item, index) => `<article class="playlist-upcoming-row" data-playlist-upcoming-index="${index}" data-playlist-upcoming-id="${escapeHtml(item.id || '')}">${playlistPlayableThumb(item, 'normal', completed + active + index + 1)}<div><strong data-playlist-upcoming-title>${escapeHtml(item.title)}</strong><small data-playlist-upcoming-meta>${escapeHtml(playlistMetadata(item) || 'Metadatos pendientes')}</small></div><span>En espera</span></article>`).join('')
-        : `<div class="playlist-upcoming-empty">${icon('clock', 26)}<strong>${batchFinished ? 'La playlist terminó' : pending > 0 ? 'Sincronizando la cola' : 'Esperando la cola local'}</strong><span>${batchFinished ? 'No quedan elementos pendientes.' : pending > 0 ? 'CacaTools está preparando el siguiente elemento.' : 'Los próximos elementos aparecerán aquí automáticamente.'}</span></div>`;
+        : `<div class="playlist-upcoming-empty">${icon('clock', 26)}<strong>${batchFinished ? 'La playlist terminó' : pending > 0 ? 'Sincronizando la cola' : 'Esperando la cola local'}</strong><span>${batchFinished ? 'No quedan elementos pendientes.' : pending > 0 ? 'Clear Download Manager está preparando el siguiente elemento.' : 'Los próximos elementos aparecerán aquí automáticamente.'}</span></div>`;
       list.dataset.queueSignature = signature;
       list.scrollTop = Math.min(scrollTop, list.scrollHeight);
       bindThumbnailFallbacks();
@@ -888,8 +888,8 @@ function startSnapshotRefreshLoop() {
   scheduleSnapshotRefresh(0);
   void startProgressV2Listener();
   void startDownloadLifecycleListeners();
-  if (window.__cacatoolsSnapshotVisibilityBound) return;
-  window.__cacatoolsSnapshotVisibilityBound = true;
+  if (window.__cdmSnapshotVisibilityBound) return;
+  window.__cdmSnapshotVisibilityBound = true;
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) scheduleSnapshotRefresh(0);
   }, { passive: true });
@@ -939,7 +939,7 @@ async function runProgressAcceptanceAutopilot() {
   const fixtureUrl = String(config.fixtureUrl || '').trim();
   let primaryId = 0;
   try {
-    if (!fixtureUrl) throw new Error('CACATOOLS_PROGRESS_ACCEPTANCE_URL no configurada');
+    if (!fixtureUrl) throw new Error('CDM_PROGRESS_ACCEPTANCE_URL no configurada');
     const receipt = await invoke('queue_http_download', { url: fixtureUrl, filename: 'progress-acceptance.bin' });
     primaryId = Number(receipt?.job_id || 0);
     if (!primaryId) throw new Error('La cola no devolvió job_id');
@@ -1001,7 +1001,7 @@ async function runProgressAcceptanceAutopilot() {
   report.failures = failures;
   report.status = failures.length ? 'FAIL' : 'PASS';
   report.finishedAt = new Date().toISOString();
-  globalThis.__CACATOOLS_PROGRESS_ACCEPTANCE__ = report;
+  globalThis.__CDM_PROGRESS_ACCEPTANCE__ = report;
   await invoke('progress_acceptance_report', { report }).catch(() => {});
   console.info('[progress-acceptance]', report);
   return report;

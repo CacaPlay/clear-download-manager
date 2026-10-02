@@ -53,6 +53,7 @@
     "check:source-release": "node scripts/validation/source-release-readiness.mjs",
     "check:binary-release": "node scripts/validation/binary-release-readiness.mjs",
     "check:quality": "node scripts/validation/quality-gate.mjs",
+    "test:identity-migrations": "node --test scripts/validation/identity-migration.test.mjs scripts/validation/storage-migration.test.mjs scripts/validation/images-storage-migration.test.mjs",
     "source:archive": "node scripts/create-source-archive.mjs",
     "source:yt-dlp:fetch": "python scripts/fetch-yt-dlp-corresponding-source-inputs.py",
     "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs",
@@ -162,6 +163,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.5",
-    "esbuild": "0.28.1"
+    "esbuild": "0.28.1",
+    "fake-indexeddb": "^6.2.5"
   }
 }

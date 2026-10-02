@@ -1159,7 +1159,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let work_dir = std::env::temp_dir().join(format!("cacatools-reuse-test-{unique}"));
+        let work_dir = std::env::temp_dir().join(format!("cdm-reuse-test-{unique}"));
         let raw_json = serde_json::json!({"title":"exact","formats":[]});
         let path = materialize_download_artifact(&raw_json, &work_dir, 77).unwrap();
         let written: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
@@ -1188,7 +1188,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let work_dir = std::env::temp_dir().join(format!("cacatools-reuse-select-{unique}"));
+        let work_dir = std::env::temp_dir().join(format!("cdm-reuse-select-{unique}"));
         let selected = prepare_download_reuse(
             &parsed,
             &MediaSessionOptions::default(),

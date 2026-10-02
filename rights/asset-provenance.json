@@ -111,7 +111,7 @@
           "evidence": "Includes the approved product/documentation art plus lossless WebP runtime derivatives of existing news/player assets."
         }
       ],
-      "evidence": "The owner explicitly approved distribution rights for retained product and documentation art on 2026-09-25 in rights/owner-asset-rights-attestation.md; its SHA-256 is recorded in ownerStatement. The two obsolete CacaTools placeholders were removed and runtime fallbacks use an existing Clear brand asset. Inventory totals include generated lossless WebP runtime derivatives of the approved PNG sources.",
+      "evidence": "The owner explicitly approved distribution rights for retained product and documentation art on 2026-09-25 in rights/owner-asset-rights-attestation.md; its SHA-256 is recorded in ownerStatement. The two obsolete placeholder images were removed and runtime fallbacks use an existing Clear brand asset. Inventory totals include generated lossless WebP runtime derivatives of the approved PNG sources.",
       "missing": [],
       "relatedGenerationScripts": [
         "scripts/prepare-file-type-assets.ps1"

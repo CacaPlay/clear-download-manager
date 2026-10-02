@@ -9,12 +9,12 @@ src-tauri/target-store-*/
 src-tauri/gen/
 src-tauri/resources/bin/*.exe
 src-tauri/resources/bin/runtime-manifest.json
+src-tauri/resources/extension/clear-download-manager-native-host.exe
 src-tauri/resources/extension/cacatools-native-host.exe
 output/
 extension-dist/
 docs/tests/
 docs/screenshots/
-CacaTools-Chrome-Extension-*.zip
 Clear-Download-Manager-Chrome-Extension-*.zip
 .env
 .env.*

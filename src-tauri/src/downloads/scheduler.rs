@@ -280,7 +280,7 @@ fn execute_scheduled_action(
             } else if let Some(destination) = media_destination {
                 partial_paths.push((
                     PathBuf::from(destination)
-                        .join(".cacatools-work")
+                        .join(".cdm-work")
                         .join(format!("job-{job_id}")),
                     true,
                 ));

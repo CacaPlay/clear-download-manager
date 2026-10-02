@@ -44,7 +44,7 @@ function Get-NativeVersion {
   return (($Lines -join [Environment]::NewLine).Trim())
 }
 
-Write-Host "== CacaTools Download Manager $Version - Windows CI build =="
+Write-Host "== Clear Download Manager $Version - Windows CI build =="
 Write-Host (Get-NativeVersion "node")
 Write-Host (Get-NativeVersion "npm")
 Write-Host (Get-NativeVersion "rustc")

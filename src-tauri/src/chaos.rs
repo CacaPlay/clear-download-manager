@@ -6,22 +6,24 @@ use std::{
 };
 
 /// Hot Chaos is deliberately opt-in. It pauses only the child process owned
-/// by a CacaTools worker, never the network adapter or the user's other apps.
+/// by a CDM worker, never the network adapter or the user's other apps.
 /// On Windows this exercises the same partial-file/retry path without
 /// requiring administrator privileges or changing global firewall state.
 pub(crate) fn hot_chaos_enabled() -> bool {
-    std::env::var("CACATOOLS_HOT_CHAOS")
-        .map(|value| {
-            matches!(
-                value.trim().to_ascii_lowercase().as_str(),
-                "1" | "true" | "on"
-            )
-        })
-        .unwrap_or(false)
+    let primary = std::env::var("CDM_HOT_CHAOS").ok();
+    let legacy = std::env::var("CACATOOLS_HOT_CHAOS").ok();
+    opt_in_flag(primary, legacy)
 }
 
 pub(crate) fn telemetry_enabled() -> bool {
-    std::env::var("CACATOOLS_DEBUG_TELEMETRY")
+    let primary = std::env::var("CDM_DEBUG_TELEMETRY").ok();
+    let legacy = std::env::var("CACATOOLS_DEBUG_TELEMETRY").ok();
+    opt_in_flag(primary, legacy)
+}
+
+fn opt_in_flag(primary: Option<String>, legacy: Option<String>) -> bool {
+    let value = primary.or(legacy);
+    value
         .map(|value| {
             matches!(
                 value.trim().to_ascii_lowercase().as_str(),
@@ -67,6 +69,17 @@ pub(crate) struct HotChaosController {
     enabled: bool,
     next_cut: std::time::Instant,
     seed: u64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::opt_in_flag;
+
+    #[test]
+    fn cdm_flag_value_takes_precedence_over_legacy_alias() {
+        assert!(!opt_in_flag(Some("0".into()), Some("1".into())));
+        assert!(opt_in_flag(None, Some("1".into())));
+    }
 }
 
 impl HotChaosController {

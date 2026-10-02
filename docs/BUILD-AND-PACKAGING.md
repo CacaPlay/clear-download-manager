@@ -7,7 +7,7 @@ configuration and output directory.
 | Purpose | Command or workflow | Output |
 | --- | --- | --- |
 | Run from source | `npm.cmd run tauri -- dev` | Local desktop app connected to the development server |
-| Build a local executable | `npm.cmd run build:local` | `src-tauri/target/release/cacatools-desktop.exe` |
+| Build a local executable | `npm.cmd run build:local` | `src-tauri/target/release/clear-download-manager.exe` |
 | Build the Store package | `scripts/build-store-msix.ps1` | MSIX package and Store-specific frontend |
 | Build the browser extension | `scripts/build-extension.ps1` | Extension directory and ZIP under `extension-dist/` |
 | Publish the signed Windows release | GitHub Actions `Release Windows` workflow | Versioned installer, stable download alias, updater metadata, checksums and source materials |

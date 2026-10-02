@@ -663,7 +663,7 @@ fn sanitize_media_error_message(raw: &str) -> String {
 pub(crate) fn sanitize_media_error_for_display(raw: &str) -> String {
     let sanitized = sanitize_media_error_message(raw);
     if sanitized != raw {
-        eprintln!("CacaTools raw yt-dlp error: {}", raw.trim());
+        eprintln!("CDM raw yt-dlp error: {}", raw.trim());
     }
     sanitized
 }
@@ -958,17 +958,17 @@ fn build_media_download_command(
         .arg("--output")
         .arg(output_template)
         .arg("--progress-template")
-        .arg("download:CACATOOLS_PROGRESS:%(progress)j")
+        .arg("download:CDM_PROGRESS:%(progress)j")
         .arg("--print")
-        .arg("before_dl:CACATOOLS_MEDIA_ID:%(id)s")
+        .arg("before_dl:CDM_MEDIA_ID:%(id)s")
         .arg("--print")
-        .arg("before_dl:CACATOOLS_EXPECTED_DURATION:%(duration)s")
+        .arg("before_dl:CDM_EXPECTED_DURATION:%(duration)s")
         .arg("--print")
-        .arg("after_move:CACATOOLS_FILE:%(filepath)s")
+        .arg("after_move:CDM_FILE:%(filepath)s")
         .arg("--print")
-        .arg("after_video:CACATOOLS_FILE:%(filepath)s")
+        .arg("after_video:CDM_FILE:%(filepath)s")
         .arg("--print")
-        .arg("before_dl:CACATOOLS_PLAN:%(requested_formats.0.format_id)s|%(requested_formats.0.vcodec)s|%(requested_formats.0.acodec)s|%(requested_formats.0.filesize)s|%(requested_formats.0.filesize_approx)s|%(requested_formats.1.format_id)s|%(requested_formats.1.vcodec)s|%(requested_formats.1.acodec)s|%(requested_formats.1.filesize)s|%(requested_formats.1.filesize_approx)s|%(requested_formats.2.format_id)s|%(requested_formats.2.vcodec)s|%(requested_formats.2.acodec)s|%(requested_formats.2.filesize)s|%(requested_formats.2.filesize_approx)s|%(requested_formats.3.format_id)s|%(requested_formats.3.vcodec)s|%(requested_formats.3.acodec)s|%(requested_formats.3.filesize)s|%(requested_formats.3.filesize_approx)s")
+        .arg("before_dl:CDM_PLAN:%(requested_formats.0.format_id)s|%(requested_formats.0.vcodec)s|%(requested_formats.0.acodec)s|%(requested_formats.0.filesize)s|%(requested_formats.0.filesize_approx)s|%(requested_formats.1.format_id)s|%(requested_formats.1.vcodec)s|%(requested_formats.1.acodec)s|%(requested_formats.1.filesize)s|%(requested_formats.1.filesize_approx)s|%(requested_formats.2.format_id)s|%(requested_formats.2.vcodec)s|%(requested_formats.2.acodec)s|%(requested_formats.2.filesize)s|%(requested_formats.2.filesize_approx)s|%(requested_formats.3.format_id)s|%(requested_formats.3.vcodec)s|%(requested_formats.3.acodec)s|%(requested_formats.3.filesize)s|%(requested_formats.3.filesize_approx)s")
         .arg("--format")
         .arg(format_selector);
     bandwidth_policy.apply_to_yt_dlp(&mut command);
@@ -1091,7 +1091,10 @@ fn resolve_pinterest_short_link(start: &Url) -> Result<Url, String> {
     let client = Client::builder()
         .dns_resolver(crate::public_dns_resolver())
         .redirect(reqwest::redirect::Policy::none())
-        .user_agent(format!("CacaTools-Desktop/{}", env!("CARGO_PKG_VERSION")))
+        .user_agent(format!(
+            "Clear-Download-Manager/{}",
+            env!("CARGO_PKG_VERSION")
+        ))
         .timeout(Duration::from_secs(10))
         .build()
         .map_err(|error| format!("No se pudo preparar el resolvedor de Pinterest: {error}"))?;
@@ -1155,10 +1158,8 @@ mod online_embed_tests {
 
     #[test]
     fn bgutil_plugin_root_requires_a_named_package_directory() {
-        let root = std::env::temp_dir().join(format!(
-            "cacatools-bgutil-layout-test-{}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("cdm-bgutil-layout-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("yt_dlp_plugins")).unwrap();
         assert!(!youtube_pot_plugin_root_is_valid(&root));

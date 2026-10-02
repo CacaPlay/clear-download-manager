@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "cacatools-native-host"
+name = "clear-download-manager-native-host"
 version = "0.45.4"
 dependencies = [
  "fs2",

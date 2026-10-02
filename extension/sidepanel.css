@@ -79,7 +79,7 @@ body[data-theme="light"] .item.selected{border-color:var(--accent-detail);backgr
 body[data-theme="light"] .primary{border-color:var(--accent-detail)}
 .extension-update button,.send-buttons .primary,.collection-actions .primary{color:var(--accent-ink);background:var(--accent)}
 
-/* 0.24.1 · Fase 6: paneles azul oscuro coherentes con CacaTools. */
+/* 0.24.1 · Fase 6: paneles azul oscuro coherentes con CDM. */
 :root{
   --section-surface:#101a25;
   --section-hover:#142130;
@@ -280,7 +280,7 @@ main{padding-top:18px}
   .manual-link-thumb{width:60px;height:38px}
 }
 
-/* QA 0.45.8: thumbnail proportion closer to the CacaTools app. */
+/* QA 0.45.8: thumbnail proportion closer to the CDM app. */
 .item{grid-template-columns:118px minmax(0,1fr) 40px;grid-template-areas:"thumb copy add";min-height:92px;gap:10px;padding:9px}
 .item>.input,.item>input{display:none}
 .detected-thumb-column .thumb-frame{width:118px;height:72px}

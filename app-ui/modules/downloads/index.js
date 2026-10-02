@@ -20,7 +20,7 @@ export function configureDownloads(context = {}) {
 
 function downloadManagerVisualPreferences() {
   try {
-    const value = JSON.parse(localStorage.getItem('cacatools.download-manager.v2') || '{}');
+    const value = JSON.parse(localStorage.getItem('cdm.download-manager.v2') || '{}');
     const theme = value.theme === 'light'
       ? 'light'
       : value.theme === 'system' && window.matchMedia?.('(prefers-color-scheme: light)').matches

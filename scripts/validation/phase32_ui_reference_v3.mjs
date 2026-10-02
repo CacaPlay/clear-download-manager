@@ -4,7 +4,7 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '../..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 const exists = (relative) => fs.existsSync(path.join(root, relative));
-const referenceRoot = 'docs/ui-reference/CacaTools-UI-Reference-v3';
+const referenceRoot = 'docs/ui-reference/Clear Download Manager-UI-Reference-v3';
 const referenceFiles = ['README.md', 'index.html', 'app.js', 'styles.css'];
 const referenceReadme = read(`${referenceRoot}/README.md`);
 const referenceHtml = read(`${referenceRoot}/index.html`);

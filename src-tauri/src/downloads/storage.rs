@@ -230,7 +230,7 @@ pub(crate) fn load_job_storage_record(
 pub(crate) fn media_work_dir(record: &JobStorageRecord) -> Option<PathBuf> {
     record.media_destination_dir.as_ref().map(|destination| {
         destination
-            .join(".cacatools-work")
+            .join(".cdm-work")
             .join(format!("job-{}", record.job_id))
     })
 }

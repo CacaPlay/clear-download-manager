@@ -1,3 +1,5 @@
+import { migrateLegacyImagesDatabase } from './storage-migration.js';
+
 (() => {
   "use strict";
 
@@ -122,7 +124,7 @@
     if (theme !== "light" && theme !== "dark") return;
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
-    if (persist) safeStorage.set("cacatools-theme", theme);
+    if (persist) safeStorage.set("cdm-theme", theme);
   };
 
   const detectIntegration = () => {
@@ -139,7 +141,7 @@
       }
     } catch (_) { /* origen distinto */ }
     if (!integrated) {
-      const stored = safeStorage.get("cacatools-theme");
+      const stored = safeStorage.get("cdm-theme");
       const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
       setTheme(stored || preferred);
     }
@@ -147,7 +149,7 @@
 
   const notifyParent = () => {
     if (window.parent !== window) {
-      window.parent.postMessage({ type: "cacatools:images:state", loaded: state.loaded, width: state.width, height: state.height, dirty: state.historyIndex > 0, layers: state.layers.length }, "*");
+      window.parent.postMessage({ type: "cdm:images:state", loaded: state.loaded, width: state.width, height: state.height, dirty: state.historyIndex > 0, layers: state.layers.length }, "*");
     }
   };
 
@@ -1407,7 +1409,7 @@
 
   const downloadPrivacyReport = () => {
     const report = {
-      schema: "cacatools.images.authorship.v1",
+      schema: "cdm.images.authorship.v1",
       createdAt: new Date().toISOString(),
       file: { name: state.fileName, mime: state.mime, originalBytes: state.fileSize, width: state.width, height: state.height },
       detectedMetadata: state.originalMetadata,
@@ -1767,22 +1769,7 @@
     async init() {
       if (!("indexedDB" in window)) return;
       try {
-        this.db = await new Promise((resolve) => {
-          const request = indexedDB.open("cacatools-images-v3", 2);
-          request.onupgradeneeded = () => {
-            const db = request.result;
-            if (!db.objectStoreNames.contains("images")) {
-              const images = db.createObjectStore("images", { keyPath: "id", autoIncrement: true });
-              images.createIndex("createdAt", "createdAt");
-            }
-            if (!db.objectStoreNames.contains("projects")) {
-              const projects = db.createObjectStore("projects", { keyPath: "id" });
-              projects.createIndex("updatedAt", "updatedAt");
-            }
-          };
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => resolve(null);
-        });
+        this.db = await migrateLegacyImagesDatabase(indexedDB);
       } catch (_) { this.db = null; }
     }
     async addRecent(blob, name) {
@@ -2269,7 +2256,7 @@
     refs.themeToggle.addEventListener("click", () => {
       const theme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
       setTheme(theme, true);
-      if (window.parent !== window) window.parent.postMessage({ type: "cacatools:theme-request", theme }, "*");
+      if (window.parent !== window) window.parent.postMessage({ type: "cdm:theme-request", theme }, "*");
     });
 
     [refs.watermarkText, refs.watermarkFont, refs.watermarkSize, refs.watermarkColor, refs.watermarkStroke, refs.watermarkOpacity, refs.watermarkRotation, refs.watermarkTile, refs.watermarkFingerprint].forEach((input) => input.addEventListener("input", () => {
@@ -2338,8 +2325,8 @@
     window.addEventListener("keyup", (event) => { if (event.code === "Space") state.spacePressed = false; });
     window.addEventListener("resize", () => { if (state.loaded && state.zoom < 1) updateStageSize(); });
     window.addEventListener("message", (event) => {
-      if (event.data?.type === "cacatools:theme") setTheme(event.data.theme);
-      if (event.data?.type === "cacatools:appearance") {
+      if (event.data?.type === "cdm:theme") setTheme(event.data.theme);
+      if (event.data?.type === "cdm:appearance") {
         setTheme(event.data.theme || "dark");
         const uiScale = Math.max(.5, Math.min(1.3, Number(event.data.scale || 100) / 100));
         const textScale = Math.max(.8, Math.min(1.2, Number(event.data.textScale || 100) / 100));
@@ -2353,7 +2340,7 @@
           document.documentElement.style.setProperty("--accent-border", `${event.data.accent}73`);
         }
       }
-      if (event.data?.type === "cacatools:open-image" && event.data.blob instanceof Blob) loadBlob(event.data.blob, event.data.name || "imagen");
+      if (event.data?.type === "cdm:open-image" && event.data.blob instanceof Blob) loadBlob(event.data.blob, event.data.name || "imagen");
     });
     window.addEventListener("beforeunload", clearObjectUrls);
   };
@@ -2373,7 +2360,7 @@
     if (session?.layers?.length) await restoreProject(session, true);
     const requestedTool = new URLSearchParams(location.search).get("tool");
     if (requestedTool && (state.loaded || requestedTool === "collage")) selectTool(requestedTool);
-    window.CacaToolsImagesV3 = {
+    window.CDMImagesV1 = {
       version: "3.6.0-phase6",
       getState: () => ({ loaded: state.loaded, width: state.width, height: state.height, historyIndex: state.historyIndex, historyLength: state.history.length, tool: state.tool, filter: state.filter.name, drawMode: state.draw.mode, layers: state.layers.length, activeLayer: activeLayer()?.name || null, projectId: state.activeProjectId }),
       loadBlob,

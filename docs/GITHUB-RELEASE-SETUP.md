@@ -33,9 +33,7 @@ publishing. Include the exact corresponding-source archives or written offers
 required by the runtime registry, and verify the release checksums and
 signatures after upload.
 
-Older installers use a legacy updater endpoint in
-`CacaPlay/cacatools-download-manager-releases`. When compatibility requires a
-bridge release, copy the verified `latest.json` from the main release and
-confirm that it points to the signed main-repository asset. This is a separate
-repository and publication step. Keep
-`CacaPlay/cacatools-download-manager-releases-private-archive` private.
+The current updater endpoint is the `latest.json` asset in the main
+`clear-download-manager` repository. Some earlier installers use a legacy
+endpoint; see [UPDATER-MIGRATION.md](UPDATER-MIGRATION.md) for the exact
+compatibility boundary and bridge-release procedure.

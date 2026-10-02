@@ -464,7 +464,10 @@ fn verify_direct_availability(
     ensure_public_network_resolution(&source_url)?;
     let client = Client::builder()
         .dns_resolver(crate::public_dns_resolver())
-        .user_agent(format!("CacaTools-Desktop/{}", env!("CARGO_PKG_VERSION")))
+        .user_agent(format!(
+            "Clear-Download-Manager/{}",
+            env!("CARGO_PKG_VERSION")
+        ))
         .connect_timeout(Duration::from_secs(10))
         .timeout(Duration::from_secs(18))
         .redirect(reqwest::redirect::Policy::custom(|attempt| {

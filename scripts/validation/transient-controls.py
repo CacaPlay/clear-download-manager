@@ -35,7 +35,7 @@ def main() -> int:
                 f"http://127.0.0.1:{server.server_address[1]}/?preview=1&view=downloads",
                 wait_until="domcontentloaded",
             )
-            page.wait_for_function("typeof window.__cacatoolsRequestDownloadManagerRender === 'function'")
+            page.wait_for_function("typeof window.__cdmRequestDownloadManagerRender === 'function'")
 
             # Settings editor: focus/value/DOM identity survive repeated forced refreshes.
             page.locator("[data-dm-open-settings]").first.click()
@@ -48,7 +48,7 @@ def main() -> int:
                   const input = document.getElementById('bandwidth-custom-value');
                   input.focus(); input.value = '7';
                   input.dispatchEvent(new Event('input', { bubbles: true }));
-                  for (let i = 0; i < 8; i += 1) window.__cacatoolsRequestDownloadManagerRender({ force: true });
+                  for (let i = 0; i < 8; i += 1) window.__cdmRequestDownloadManagerRender({ force: true });
                   const after = document.getElementById('bandwidth-custom-value');
                   return { sameNode: input === after, focused: document.activeElement === after,
                     value: after?.value || '', visible: Boolean(after && after.offsetParent) };
@@ -65,7 +65,7 @@ def main() -> int:
                 """() => {
                   const menu = document.querySelector('[data-dm-category-menu]');
                   const before = menu;
-                  for (let i = 0; i < 8; i += 1) window.__cacatoolsRequestDownloadManagerRender({ force: true });
+                  for (let i = 0; i < 8; i += 1) window.__cdmRequestDownloadManagerRender({ force: true });
                   const after = document.querySelector('[data-dm-category-menu]');
                   return { sameNode: before === after, open: Boolean(after && !after.hidden), selected: after?.querySelector('[aria-selected="true"]')?.dataset.dmCategoryOption || '' };
                 }"""
@@ -81,7 +81,7 @@ def main() -> int:
             menu = page.locator(".dm-row-menu-floating")
             before = menu.element_handle()
             for _ in range(8):
-                page.evaluate("window.__cacatoolsRequestDownloadManagerRender({ force: true })")
+                page.evaluate("window.__cdmRequestDownloadManagerRender({ force: true })")
             after = page.locator(".dm-row-menu-floating")
             if after.count() != 1 or not after.is_visible():
                 failures.append("Menú contextual perdió apertura durante refresh")

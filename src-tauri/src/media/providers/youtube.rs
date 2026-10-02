@@ -17,9 +17,9 @@ pub(crate) const YOUTUBE_DOWNLOAD_PROFILES: &[&str] = &[
 
 pub(crate) const YOUTUBE_WEB_SAFARI_HLS_PROFILE: &str = "youtube:player_client=web_safari";
 pub(crate) const YOUTUBE_WEB_SAFARI_HLS_SELECTOR: &str = "best[protocol*=m3u8]";
-pub(crate) const YOUTUBE_POT_PROVIDER_ENV: &str = "CACATOOLS_YOUTUBE_POT_PROVIDER";
-pub(crate) const YOUTUBE_POT_PLUGIN_DIR_ENV: &str = "CACATOOLS_YOUTUBE_POT_PLUGIN_DIR";
-pub(crate) const YOUTUBE_POT_BASE_URL_ENV: &str = "CACATOOLS_YOUTUBE_POT_BASE_URL";
+pub(crate) const YOUTUBE_POT_PROVIDER_ENV: &str = "CDM_YOUTUBE_POT_PROVIDER";
+pub(crate) const YOUTUBE_POT_PLUGIN_DIR_ENV: &str = "CDM_YOUTUBE_POT_PLUGIN_DIR";
+pub(crate) const YOUTUBE_POT_BASE_URL_ENV: &str = "CDM_YOUTUBE_POT_BASE_URL";
 pub(crate) const YOUTUBE_POT_PROVIDER_NAME: &str = "bgutil-http";
 pub(crate) const YOUTUBE_POT_PROFILE: &str = "youtube:player_client=mweb";
 

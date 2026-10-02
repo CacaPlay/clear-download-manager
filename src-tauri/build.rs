@@ -8,7 +8,7 @@ fn main() {
         for (name, expected) in [
             (
                 "CDM_QA_EXPECTED_IDENTIFIER",
-                "lat.cacaplay.cacatools.downloadmanager.qa",
+                "lat.cacaplay.cleardownloadmanager.qa",
             ),
             (
                 "CDM_QA_EXPECTED_COMPONENT_ENDPOINT",

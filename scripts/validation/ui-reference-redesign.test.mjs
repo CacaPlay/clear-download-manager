@@ -9,7 +9,7 @@ import { newsPanel } from '../../app-ui/download-manager/view/sections.js';
 import { jobsForSection, normalizePreferences } from '../../app-ui/download-manager/core/model.js';
 import { translate } from '../../app-ui/modules/i18n/index.js';
 
-globalThis.window ||= { __cacatoolsVisualDiagnostics: null };
+globalThis.window ||= { __cdmVisualDiagnostics: null };
 
 const settingsCss = await readFile(new URL('../../app-ui/modules/settings/styles.css', import.meta.url), 'utf8');
 const appearanceCss = await readFile(new URL('../../app-ui/modules/appearance/styles.css', import.meta.url), 'utf8');

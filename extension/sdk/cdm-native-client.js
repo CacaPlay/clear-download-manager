@@ -1,5 +1,5 @@
 import { HOST_NAME, verifyHandshake } from './compatibility.js';
-export const CACATOOLS_NATIVE_HOST = HOST_NAME;
+export const CDM_NATIVE_HOST = HOST_NAME;
 
 function runtimeApi() {
   return globalThis.browser?.runtime || globalThis.chrome?.runtime;
@@ -30,9 +30,9 @@ function rawMessage(action, payload = {}) {
     const finish = (error, response) => { clearTimeout(timer); error ? reject(error) : resolve(response); };
     try {
       if (globalThis.browser?.runtime) {
-        runtime.sendNativeMessage(CACATOOLS_NATIVE_HOST, { action, payload }).then(r => finish(null,r),e => finish(e));
+        runtime.sendNativeMessage(CDM_NATIVE_HOST, { action, payload }).then(r => finish(null,r),e => finish(e));
       } else {
-        runtime.sendNativeMessage(CACATOOLS_NATIVE_HOST, { action, payload }, response => {
+        runtime.sendNativeMessage(CDM_NATIVE_HOST, { action, payload }, response => {
           const error = globalThis.chrome?.runtime?.lastError;
           finish(error ? new Error(error.message) : null, response);
         });
@@ -57,7 +57,7 @@ export async function nativeHandshake({ force = false } = {}) {
     .finally(() => { handshakePending = undefined; });
   return handshakePending;
 }
-export async function sendCacaToolsNativeMessage(action, payload = {}) {
+export async function sendCDMNativeMessage(action, payload = {}) {
   if (action === 'ping' || action === 'capabilities') return rawMessage(action,payload);
   const bridge = await nativeHandshake();
   if (!bridge.actions.includes(action) || action === 'set_job_options') {
@@ -70,27 +70,27 @@ export async function sendCacaToolsNativeMessage(action, payload = {}) {
   catch (error) { resetHandshake(); throw error; }
 }
 
-export const cacaToolsNative = Object.freeze({
-  ping: () => sendCacaToolsNativeMessage('ping'),
-  capabilities: () => sendCacaToolsNativeMessage('capabilities'),
-  status: () => sendCacaToolsNativeMessage('get_status'),
-  open: () => sendCacaToolsNativeMessage('open_app'),
-  openJob: (jobId, mode = 'open') => sendCacaToolsNativeMessage('open_job', {
+export const cdmNative = Object.freeze({
+  ping: () => sendCDMNativeMessage('ping'),
+  capabilities: () => sendCDMNativeMessage('capabilities'),
+  status: () => sendCDMNativeMessage('get_status'),
+  open: () => sendCDMNativeMessage('open_app'),
+  openJob: (jobId, mode = 'open') => sendCDMNativeMessage('open_job', {
     jobId: Number(jobId),
     mode: mode === 'play' ? 'play' : 'open',
     windowMode: 'foreground',
     commandId: commandId('open-job'),
     idempotencyKey: commandId('open-job-key')
   }),
-  openPlayer: (jobId) => sendCacaToolsNativeMessage('open_player', {
+  openPlayer: (jobId) => sendCDMNativeMessage('open_player', {
     jobId: Number(jobId),
     mode: 'play',
     windowMode: 'foreground',
     commandId: commandId('open-player'),
     idempotencyKey: commandId('open-player-key')
   }),
-  listJobs: () => sendCacaToolsNativeMessage('list_jobs'),
-  jobAction: (jobId, action, options = {}) => sendCacaToolsNativeMessage('job_action', {
+  listJobs: () => sendCDMNativeMessage('list_jobs'),
+  jobAction: (jobId, action, options = {}) => sendCDMNativeMessage('job_action', {
     jobId: Number(jobId),
     action: String(action || '').toLowerCase(),
     confirmed: options.confirmed === true,
@@ -98,14 +98,14 @@ export const cacaToolsNative = Object.freeze({
     commandId: commandId('job-action'),
     idempotencyKey: commandId('job-action-key')
   }),
-  setJobOptions: (jobId, options = {}) => sendCacaToolsNativeMessage('set_job_options', {
+  setJobOptions: (jobId, options = {}) => sendCDMNativeMessage('set_job_options', {
     jobId: Number(jobId),
     options,
     windowMode: 'background',
     commandId: commandId('job-options'),
     idempotencyKey: commandId('job-options-key')
   }),
-  analyze: (url, metadata = {}) => sendCacaToolsNativeMessage('analyze', { url, ...metadata }),
-  enqueue: (url, metadata = {}) => sendCacaToolsNativeMessage('enqueue', enqueuePayload(url, metadata)),
-  captureDownload: (capture) => sendCacaToolsNativeMessage('browser_download_capture', capture)
+  analyze: (url, metadata = {}) => sendCDMNativeMessage('analyze', { url, ...metadata }),
+  enqueue: (url, metadata = {}) => sendCDMNativeMessage('enqueue', enqueuePayload(url, metadata)),
+  captureDownload: (capture) => sendCDMNativeMessage('browser_download_capture', capture)
 });

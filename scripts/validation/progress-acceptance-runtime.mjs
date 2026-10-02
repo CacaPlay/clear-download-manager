@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 
 const root = process.cwd();
-const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cacatools-progress-acceptance-'));
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-progress-acceptance-'));
 const reportPath = path.join(tempRoot, 'progress-acceptance.json');
 const dataDir = path.join(tempRoot, 'data');
 const downloadsDir = path.join(tempRoot, 'downloads');
@@ -50,11 +50,11 @@ const address = server.address();
 const fixtureUrl = `http://127.0.0.1:${address.port}/progress-acceptance.bin`;
 const childEnv = {
   ...process.env,
-  CACATOOLS_PROGRESS_ACCEPTANCE: '1',
-  CACATOOLS_PROGRESS_ACCEPTANCE_URL: fixtureUrl,
-  CACATOOLS_PROGRESS_ACCEPTANCE_REPORT: reportPath,
-  CACATOOLS_DATA_DIR: dataDir,
-  CACATOOLS_DOWNLOADS_DIR: downloadsDir,
+  CDM_PROGRESS_ACCEPTANCE: '1',
+  CDM_PROGRESS_ACCEPTANCE_URL: fixtureUrl,
+  CDM_PROGRESS_ACCEPTANCE_REPORT: reportPath,
+  CDM_DATA_DIR: dataDir,
+  CDM_DOWNLOADS_DIR: downloadsDir,
   RUST_BACKTRACE: '1'
 };
 

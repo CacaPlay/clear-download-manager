@@ -15,7 +15,7 @@ documented persistence/cleanup boundaries.
 ## Manual checklist for an isolated QA account
 
 Run only on a disposable Windows account/VM with a newly installed QA build.
-Set `CACATOOLS_DATA_DIR` to a new empty temporary directory before launch. Let
+Set `CDM_DATA_DIR` to a new empty temporary directory before launch. Let
 Tauri/WebView2 use its default per-application profile inside that disposable
 Windows account; never redirect it into a normal user profile. Record the
 chosen paths and build version, not profile contents.

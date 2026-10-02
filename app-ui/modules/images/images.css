@@ -645,7 +645,7 @@
   }
 }
 
-/* Integración de escritorio: mayor legibilidad dentro de CacaTools Desktop. */
+/* Integración de escritorio: mayor legibilidad dentro de CDM Desktop. */
 body.embedded { font-size: 15px; }
 body.embedded .image-studio { min-height: 100vh; }
 body.embedded .studio-topbar { min-height: 72px; padding-inline: 18px; }

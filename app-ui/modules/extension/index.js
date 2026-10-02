@@ -159,7 +159,7 @@ function extensionJob(jobId) {
   if (!Number.isInteger(id) || id <= 0) throw new Error('La descarga seleccionada no es válida.');
   const jobs = Array.isArray(appState.snapshot?.jobs) ? appState.snapshot.jobs : [];
   const job = jobs.find((entry) => Number(entry?.id) === id);
-  if (!job) throw new Error('La descarga ya no está disponible en CacaTools. Actualiza el panel.');
+  if (!job) throw new Error('La descarga ya no está disponible en Clear Download Manager. Actualiza el panel.');
   return { id, job };
 }
 
@@ -172,7 +172,7 @@ async function applyExtensionJobAction(payload = {}) {
   if (action === 'cancel') return invoke('emergency_stop_job', { id, deletePartial: false });
   if (action === 'reveal_file' || action === 'open_file') {
     const path = String(job.destination || job.outputPath || job.output_path || '').trim();
-    if (!path) throw new Error('CacaTools todavía no tiene un archivo local disponible para esta descarga.');
+    if (!path) throw new Error('Clear Download Manager todavía no tiene un archivo local disponible para esta descarga.');
     return invoke(action === 'reveal_file' ? 'reveal_local_file' : 'open_local_file', { path });
   }
   if (action === 'delete_history') {

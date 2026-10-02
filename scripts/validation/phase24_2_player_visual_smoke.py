@@ -68,7 +68,7 @@ cases = [
             'playable': False,
             'local_path': '',
             'state_title': 'Descarga todavía en curso',
-            'message': 'CacaTools no reproduce archivos .part ni flujos separados.',
+            'message': 'Clear Download Manager no reproduce archivos .part ni flujos separados.',
             'converted': None,
             'technical': None,
         },

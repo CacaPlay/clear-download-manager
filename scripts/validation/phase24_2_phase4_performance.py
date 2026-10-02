@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measured UI performance gate for CacaTools 0.24.2 Phase 4."""
+"""Measured UI performance gate for Clear Download Manager 0.24.2 Phase 4."""
 from __future__ import annotations
 
 import json
@@ -88,7 +88,7 @@ def main() -> int:
         )
         page = browser.new_page(viewport={"width": 1920, "height": 1080})
         page.add_init_script(
-            "(() => { const values = new Map([['cacatools.download-manager.v2', "
+            "(() => { const values = new Map([['cdm.download-manager.v2', "
             "JSON.stringify({section:'history',filter:'all',category:'all',query:''})]]); "
             "Object.defineProperty(window, 'localStorage', {configurable:true, value: "
             "{getItem:(key)=>values.get(key)||null,setItem:(key,value)=>values.set(key,String(value)), "
@@ -111,9 +111,9 @@ def main() -> int:
         page.route("https://i.ytimg.com/**", fulfill_thumbnail)
         page.set_content(html, wait_until="load")
         page.evaluate(
-            "window.__CACATOOLS_THUMBNAIL_TEST__={cacheHits:0,cacheMisses:0,loads:0,failures:0,fallbacks:0};"
-            "window.__CACATOOLS_THUMBNAIL_LOADS=0;"
-            "document.addEventListener('load',(event)=>{if(event.target instanceof HTMLImageElement && event.target.matches('[data-dm-thumbnail]')) window.__CACATOOLS_THUMBNAIL_LOADS += 1;},true);"
+            "window.__CDM_THUMBNAIL_TEST__={cacheHits:0,cacheMisses:0,loads:0,failures:0,fallbacks:0};"
+            "window.__CDM_THUMBNAIL_LOADS=0;"
+            "document.addEventListener('load',(event)=>{if(event.target instanceof HTMLImageElement && event.target.matches('[data-dm-thumbnail]')) window.__CDM_THUMBNAIL_LOADS += 1;},true);"
         )
         page.add_script_tag(content=browser_bundle())
         render_samples: dict[str, float] = {}
@@ -175,14 +175,14 @@ def main() -> int:
         # are attributed to the next fixture.
         wait_for_thumbnails()
         before_requests = len(thumbnail_requests)
-        before_loads = int(page.evaluate("window.__CACATOOLS_THUMBNAIL_LOADS || 0"))
+        before_loads = int(page.evaluate("window.__CDM_THUMBNAIL_LOADS || 0"))
         render_thumbnail_fixture(thumbnail_fixture("https://i.ytimg.com/vi/duplicate-115/mqdefault.jpg"))
         wait_for_thumbnails()
         duplicate = {
             "requests": len(thumbnail_requests) - before_requests,
-            "loads": int(page.evaluate("window.__CACATOOLS_THUMBNAIL_LOADS || 0")) - before_loads,
+            "loads": int(page.evaluate("window.__CDM_THUMBNAIL_LOADS || 0")) - before_loads,
             "urls": thumbnail_requests[before_requests:],
-            "stats": page.evaluate("window.__CACATOOLS_THUMBNAIL_TEST__.stats"),
+            "stats": page.evaluate("window.__CDM_THUMBNAIL_TEST__.stats"),
         }
         check("Deduplica tres filas con la misma URL", duplicate["requests"] == 1, duplicate)
 
@@ -191,7 +191,7 @@ def main() -> int:
         wait_for_thumbnails()
         cache_hit = {
             "requests": len(thumbnail_requests) - before_requests,
-            "stats": page.evaluate("window.__CACATOOLS_THUMBNAIL_TEST__.stats"),
+            "stats": page.evaluate("window.__CDM_THUMBNAIL_TEST__.stats"),
         }
         check("Reinsertar una fila usa el resultado cacheado", cache_hit["requests"] == 0, cache_hit)
 
@@ -201,7 +201,7 @@ def main() -> int:
         fallback = {
             "requests": thumbnail_requests[before_requests:],
             "image": page.evaluate("document.querySelector('[data-dm-thumbnail]')?.currentSrc || document.querySelector('[data-dm-thumbnail]')?.src || ''"),
-            "stats": page.evaluate("window.__CACATOOLS_THUMBNAIL_TEST__.stats"),
+            "stats": page.evaluate("window.__CDM_THUMBNAIL_TEST__.stats"),
         }
         check("Fallback de miniatura no entra en bucle", len(fallback["requests"]) == 2 and "hqdefault.jpg" in fallback["image"], fallback)
 
@@ -214,7 +214,7 @@ def main() -> int:
 
         race = page.evaluate(
             """()=>{const image=document.createElement('img');image.dataset.dmThumbnail='';image.dataset.dmThumbnailSrc='https://i.ytimg.com/vi/race-a-115/mqdefault.jpg';
-              document.querySelector('#fixture').append(image);window.__CACATOOLS_THUMBNAIL_TEST__.requestThumbnail(image,image.dataset.dmThumbnailSrc);
+              document.querySelector('#fixture').append(image);window.__CDM_THUMBNAIL_TEST__.requestThumbnail(image,image.dataset.dmThumbnailSrc);
               image.dataset.dmThumbnailSrc='https://i.ytimg.com/vi/race-b-115/mqdefault.jpg';image.dataset.dmThumbnailKey=image.dataset.dmThumbnailSrc;return image;}"""
         )
         wait_for_thumbnails()
@@ -222,10 +222,10 @@ def main() -> int:
         check("Carrera de fila reciclada no aplica A sobre B", "race-a-115" not in race_result, {"created": race, "current": race_result})
 
         eviction = page.evaluate(
-            """()=>{for(let i=0;i<160;i++){const image=document.createElement('img');image.dataset.dmThumbnail='';image.dataset.dmThumbnailSrc=`https://i.ytimg.com/vi/evict-${i}-115/mqdefault.jpg`;document.querySelector('#fixture').append(image);window.__CACATOOLS_THUMBNAIL_TEST__.requestThumbnail(image,image.dataset.dmThumbnailSrc);}return true;}"""
+            """()=>{for(let i=0;i<160;i++){const image=document.createElement('img');image.dataset.dmThumbnail='';image.dataset.dmThumbnailSrc=`https://i.ytimg.com/vi/evict-${i}-115/mqdefault.jpg`;document.querySelector('#fixture').append(image);window.__CDM_THUMBNAIL_TEST__.requestThumbnail(image,image.dataset.dmThumbnailSrc);}return true;}"""
         )
         wait_for_thumbnails()
-        eviction_stats = page.evaluate("window.__CACATOOLS_THUMBNAIL_TEST__.stats")
+        eviction_stats = page.evaluate("window.__CDM_THUMBNAIL_TEST__.stats")
         check("La caché LRU permanece limitada", int(eviction_stats.get("cacheEntries", 999)) <= 128, eviction_stats)
         thumbnail_metrics = {
             "duplicate": duplicate,
@@ -235,7 +235,7 @@ def main() -> int:
             "race": race_result,
             "eviction": eviction_stats,
             "requests_total": len(thumbnail_requests),
-            "loads_total": int(page.evaluate("window.__CACATOOLS_THUMBNAIL_LOADS || 0")),
+            "loads_total": int(page.evaluate("window.__CDM_THUMBNAIL_LOADS || 0")),
             "memory_api": page.evaluate("performance.memory ? {used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize} : null"),
         }
 

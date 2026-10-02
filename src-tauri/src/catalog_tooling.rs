@@ -121,7 +121,7 @@ mod tests {
     }
 
     #[test]
-    fn golden_vector_freezes_exact_canonical_bytes_hash_and_signature() {
+    fn legacy_v1_golden_vector_freezes_exact_bytes_hash_and_signature() {
         let envelope = vector("envelope.json");
         let canonical = canonical_catalog_payload_bytes(&envelope).expect("canonical payload");
         assert_eq!(canonical, vector("payload.canonical.json"));
@@ -147,7 +147,7 @@ mod tests {
     }
 
     #[test]
-    fn golden_vector_rejects_payload_sequence_signature_and_unknown_key_tampering() {
+    fn legacy_v1_golden_vector_rejects_payload_sequence_signature_and_unknown_key_tampering() {
         let envelope = vector("envelope.json");
         let key = public_key();
 

@@ -227,8 +227,69 @@ fn absolute_path_override(value: Option<std::ffi::OsString>) -> Option<PathBuf> 
     path.is_absolute().then_some(path)
 }
 
-fn environment_path_override(name: &str) -> Option<PathBuf> {
-    absolute_path_override(std::env::var_os(name))
+fn cdm_path_override(
+    primary: Option<std::ffi::OsString>,
+    legacy: Option<std::ffi::OsString>,
+) -> Option<PathBuf> {
+    absolute_path_override(primary).or_else(|| absolute_path_override(legacy))
+}
+
+pub(crate) fn cdm_environment_path_override(
+    primary_name: &str,
+    legacy_name: &str,
+) -> Option<PathBuf> {
+    cdm_path_override(
+        std::env::var_os(primary_name),
+        std::env::var_os(legacy_name),
+    )
+}
+
+pub(crate) fn migrate_legacy_downloads_directory(
+    root: &std::path::Path,
+) -> std::io::Result<PathBuf> {
+    let legacy = root.join("CacaTools");
+    let canonical = root.join("Clear Download Manager");
+    let legacy_metadata = match fs::symlink_metadata(&legacy) {
+        Ok(metadata) => Some(metadata),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error),
+    };
+    let canonical_metadata = match fs::symlink_metadata(&canonical) {
+        Ok(metadata) => Some(metadata),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error),
+    };
+
+    if let Some(metadata) = legacy_metadata {
+        if metadata.file_type().is_symlink() {
+            return Ok(legacy);
+        }
+        if !metadata.is_dir() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "legacy downloads path exists but is not a directory",
+            ));
+        }
+        if canonical_metadata.is_some() {
+            if canonical.is_dir() {
+                return Ok(legacy);
+            }
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "canonical downloads path exists and is not a directory",
+            ));
+        }
+        fs::rename(&legacy, &canonical)?;
+        return Ok(canonical);
+    }
+
+    if canonical_metadata.is_some() && !canonical.is_dir() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "canonical downloads path exists and is not a directory",
+        ));
+    }
+    Ok(canonical)
 }
 
 pub(crate) fn supervised_command_output(
@@ -789,22 +850,22 @@ pub fn run() {
 
 fn start_media_e2e_acceptance(app: AppHandle) {
     if !(cfg!(debug_assertions)
-        && std::env::var("CACATOOLS_MEDIA_E2E_ACCEPTANCE")
+        && std::env::var("CDM_MEDIA_E2E_ACCEPTANCE")
             .map(|value| value.trim() == "1")
             .unwrap_or(false))
     {
         return;
     }
-    let urls = std::env::var("CACATOOLS_MEDIA_E2E_URLS")
+    let urls = std::env::var("CDM_MEDIA_E2E_URLS")
         .unwrap_or_default()
         .split('|')
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned)
         .collect::<Vec<_>>();
-    let report_path = std::env::var("CACATOOLS_MEDIA_E2E_REPORT")
+    let report_path = std::env::var("CDM_MEDIA_E2E_REPORT")
         .map(PathBuf::from)
-        .unwrap_or_else(|_| std::env::temp_dir().join("cacatools-media-e2e.json"));
+        .unwrap_or_else(|_| std::env::temp_dir().join("cdm-media-e2e.json"));
     if urls.len() < 2 {
         let _ = fs::write(
             report_path,
@@ -812,7 +873,7 @@ fn start_media_e2e_acceptance(app: AppHandle) {
         );
         return;
     }
-    let durations = std::env::var("CACATOOLS_MEDIA_E2E_DURATIONS")
+    let durations = std::env::var("CDM_MEDIA_E2E_DURATIONS")
         .unwrap_or_default()
         .split('|')
         .map(|value| value.trim().parse::<f64>().ok())
@@ -828,7 +889,7 @@ fn start_media_e2e_acceptance(app: AppHandle) {
             resolution_state: "ready".into(),
             provider_id: "fixture".into(),
             title: format!("Media E2E {}", index + 1),
-            creator: "CacaTools fixture".into(),
+            creator: "CDM fixture".into(),
             thumbnail: String::new(),
             duration_label: durations
                 .get(index)
@@ -1015,7 +1076,7 @@ fn run_app() {
         Ok(true) => {}
         Ok(false) => return,
         Err(error) => {
-            eprintln!("No se pudo iniciar CacaTools: {error}");
+            eprintln!("No se pudo iniciar Clear Download Manager: {error}");
             return;
         }
     }
@@ -1053,7 +1114,7 @@ fn run_app() {
             let data_dir = if cfg!(feature = "qa-component-manager") {
                 app.path().app_data_dir()?
             } else {
-                match environment_path_override("CACATOOLS_DATA_DIR") {
+                match cdm_environment_path_override("CDM_DATA_DIR", "CACATOOLS_DATA_DIR") {
                     Some(path) => path,
                     None => app.path().app_data_dir()?,
                 }
@@ -1080,19 +1141,7 @@ fn run_app() {
                     let _ = extension_bridge::set_startup_enabled(true);
                 }
             }
-            let default_downloads_dir = if cfg!(feature = "qa-component-manager") {
-                data_dir.join("Downloads")
-            } else {
-                match environment_path_override("CACATOOLS_DOWNLOADS_DIR") {
-                    Some(path) => path,
-                    None => app
-                        .path()
-                        .download_dir()
-                        .unwrap_or_else(|_| data_dir.join("Downloads"))
-                        .join("CacaTools"),
-                }
-            };
-            let db_path = data_dir.join("cacatools.sqlite3");
+            let db_path = db::migrate_legacy_database(&data_dir)?;
             let connection = Connection::open(&db_path)?;
             migrate(&connection)?;
             let initial_surface_mode = settings::read_appearance_settings(&connection)
@@ -1111,7 +1160,23 @@ fn run_app() {
             let downloads_dir = saved_downloads_dir
                 .map(PathBuf::from)
                 .filter(|path| path.is_absolute())
-                .unwrap_or(default_downloads_dir);
+                .map(Ok)
+                .unwrap_or_else(|| {
+                    if cfg!(feature = "qa-component-manager") {
+                        Ok(data_dir.join("Downloads"))
+                    } else if let Some(path) = cdm_environment_path_override(
+                        "CDM_DOWNLOADS_DIR",
+                        "CACATOOLS_DOWNLOADS_DIR",
+                    ) {
+                        Ok(path)
+                    } else {
+                        let downloads_root = app
+                            .path()
+                            .download_dir()
+                            .unwrap_or_else(|_| data_dir.join("Downloads"));
+                        migrate_legacy_downloads_directory(&downloads_root)
+                    }
+                })?;
             fs::create_dir_all(&downloads_dir)?;
             let window_behavior = read_window_behavior_settings(&connection);
             let queued_ids: Vec<i64> = {
@@ -1217,7 +1282,7 @@ fn run_app() {
                 window.on_window_event(move |event| {
                     if let WindowEvent::Focused(focused) = event {
                         let _ = app_handle.emit(
-                            "cacatools-main-focus-changed",
+                            "cdm-main-focus-changed",
                             serde_json::json!({ "focused": *focused }),
                         );
                     }
@@ -1246,15 +1311,15 @@ fn run_app() {
                 }
             }
             if cfg!(debug_assertions)
-                && std::env::var("CACATOOLS_SUBWINDOW_ACCEPTANCE")
+                && std::env::var("CDM_SUBWINDOW_ACCEPTANCE")
                     .map(|value| value.trim() == "1")
                     .unwrap_or(false)
             {
-                let acceptance_kind = std::env::var("CACATOOLS_SUBWINDOW_ACCEPTANCE_KIND")
+                let acceptance_kind = std::env::var("CDM_SUBWINDOW_ACCEPTANCE_KIND")
                     .unwrap_or_else(|_| "both".into())
                     .trim()
                     .to_ascii_lowercase();
-                let media_source = std::env::var("CACATOOLS_SUBWINDOW_ACCEPTANCE_URL")
+                let media_source = std::env::var("CDM_SUBWINDOW_ACCEPTANCE_URL")
                     .unwrap_or_default();
                 if acceptance_kind != "playlist" {
                     let result = subwindows::open_preparation_window_now(
@@ -1264,7 +1329,7 @@ fn run_app() {
                         app.handle().clone(),
                     );
                     eprintln!(
-                        "CACATOOLS_SUBWINDOW_ACCEPTANCE_RESULT kind=media status={}",
+                        "CDM_SUBWINDOW_ACCEPTANCE_RESULT kind=media status={}",
                         if result.is_ok() { "PASS" } else { "FAIL" }
                     );
                 }
@@ -1276,13 +1341,13 @@ fn run_app() {
                         app.handle().clone(),
                     );
                     eprintln!(
-                        "CACATOOLS_SUBWINDOW_ACCEPTANCE_RESULT kind=playlist status={}",
+                        "CDM_SUBWINDOW_ACCEPTANCE_RESULT kind=playlist status={}",
                         if result.is_ok() { "PASS" } else { "FAIL" }
                     );
                 }
             }
             if cfg!(debug_assertions)
-                && std::env::var("CACATOOLS_MEDIA_E2E_ACCEPTANCE")
+                && std::env::var("CDM_MEDIA_E2E_ACCEPTANCE")
                     .map(|value| value.trim() == "1")
                     .unwrap_or(false)
             {
@@ -1411,7 +1476,7 @@ fn run_app() {
         ]);
     let application = builder
         .build(tauri::generate_context!())
-        .expect("error while building CacaTools Download Manager");
+        .expect("error while building Clear Download Manager");
     application.run(|app_handle, event| {
         if let RunEvent::ExitRequested { .. } = event {
             // This also covers Windows shutdown and native close events, not
@@ -1916,7 +1981,7 @@ mod tests {
 
     #[test]
     fn accepts_only_absolute_runtime_path_overrides() {
-        let absolute = std::env::temp_dir().join("cacatools-path-override");
+        let absolute = std::env::temp_dir().join("cdm-path-override");
         assert_eq!(
             absolute_path_override(Some(absolute.clone().into_os_string())),
             Some(absolute)
@@ -1926,6 +1991,65 @@ mod tests {
             None
         );
         assert_eq!(absolute_path_override(None), None);
+    }
+
+    #[test]
+    fn cdm_environment_override_prefers_primary() {
+        let primary = std::env::temp_dir().join("cdm-path-override");
+        let legacy = std::env::temp_dir().join("cdm-path-override");
+        assert_eq!(
+            cdm_path_override(
+                Some(primary.clone().into_os_string()),
+                Some(legacy.into_os_string()),
+            ),
+            Some(primary)
+        );
+    }
+
+    #[test]
+    fn cdm_environment_override_accepts_legacy_when_primary_is_missing() {
+        let legacy = std::env::temp_dir().join("legacy-cdm-path-override");
+        assert_eq!(
+            cdm_path_override(None, Some(legacy.clone().into_os_string())),
+            Some(legacy)
+        );
+    }
+
+    #[test]
+    fn migrates_legacy_downloads_directory_without_losing_files() {
+        let directory = tempfile::tempdir().expect("temporary downloads root");
+        let legacy = directory.path().join("CacaTools");
+        let canonical = directory.path().join("Clear Download Manager");
+        std::fs::create_dir_all(&legacy).expect("legacy downloads directory");
+        std::fs::write(legacy.join("existing.bin"), b"keep me").expect("legacy download");
+
+        assert_eq!(
+            migrate_legacy_downloads_directory(directory.path()).expect("directory migration"),
+            canonical
+        );
+        assert_eq!(
+            std::fs::read(canonical.join("existing.bin")).unwrap(),
+            b"keep me"
+        );
+        assert!(!legacy.exists());
+    }
+
+    #[test]
+    fn leaves_both_downloads_directories_untouched_on_conflict() {
+        let directory = tempfile::tempdir().expect("temporary downloads root");
+        let legacy = directory.path().join("CacaTools");
+        let canonical = directory.path().join("Clear Download Manager");
+        std::fs::create_dir_all(&legacy).expect("legacy downloads directory");
+        std::fs::create_dir_all(&canonical).expect("canonical downloads directory");
+        std::fs::write(legacy.join("old.bin"), b"old").expect("legacy download");
+        std::fs::write(canonical.join("new.bin"), b"new").expect("canonical download");
+
+        assert_eq!(
+            migrate_legacy_downloads_directory(directory.path()).expect("safe conflict handling"),
+            legacy
+        );
+        assert_eq!(std::fs::read(legacy.join("old.bin")).unwrap(), b"old");
+        assert_eq!(std::fs::read(canonical.join("new.bin")).unwrap(), b"new");
     }
 
     #[test]
@@ -1941,11 +2065,11 @@ mod tests {
     #[test]
     fn restores_extension_for_opaque_browser_download_names() {
         let parsed =
-            Url::parse("https://github.com/CacaPlay/CacaTools/releases/download/v1/CacaTools.exe")
+            Url::parse("https://example.com/releases/download/v1/clear-download-manager.exe")
                 .expect("valid URL");
         assert_eq!(
             filename_from_url(&parsed, Some("3a79f6a9-3989-4a78-a014-f98607515773".into())),
-            "CacaTools.exe"
+            "clear-download-manager.exe"
         );
         assert_eq!(
             filename_with_extension_hint("3a79f6a9-3989-4a78-a014-f98607515773", Some("exe")),
@@ -2021,7 +2145,8 @@ mod tests {
     fn download_filename_uses_final_url_and_mime_for_missing_extensions() {
         let original = Url::parse("https://example.com/download?token=abc").expect("original URL");
         let final_url =
-            Url::parse("https://cdn.example.com/releases/CacaTools%20Portable").expect("final URL");
+            Url::parse("https://cdn.example.com/releases/Clear%20Download%20Manager%20Portable")
+                .expect("final URL");
         assert_eq!(
             resolve_download_filename(
                 &original,
@@ -2030,7 +2155,7 @@ mod tests {
                 None,
                 Some("application/zip; charset=binary"),
             ),
-            "CacaTools Portable.zip"
+            "Clear Download Manager Portable.zip"
         );
     }
 
@@ -2162,7 +2287,7 @@ mod tests {
         );
 
         let signed_release = Url::parse(
-            "https://release-assets.githubusercontent.com/opaque?response-content-disposition=attachment%3B+filename%3DCacaTools.Download.Manager_0.23.4_x64-setup.exe&rsct=application%2Foctet-stream",
+            "https://release-assets.githubusercontent.com/opaque?response-content-disposition=attachment%3B+filename%3DClear.Download.Manager_0.23.4_x64-setup.exe&rsct=application%2Foctet-stream",
         )
         .expect("signed release URL");
         assert_eq!(
@@ -2173,7 +2298,7 @@ mod tests {
                 None,
                 Some("application/octet-stream"),
             ),
-            "CacaTools.Download.Manager_0.23.4_x64-setup.exe"
+            "Clear.Download.Manager_0.23.4_x64-setup.exe"
         );
     }
 
@@ -2378,7 +2503,7 @@ mod tests {
 
     #[test]
     fn groups_playlist_items_inside_a_named_subfolder() {
-        let downloads = Path::new(r"C:\Users\Demo\Downloads\CacaTools");
+        let downloads = Path::new(r"C:\Users\Demo\Downloads\Clear Download Manager");
         assert_eq!(
             playlist_destination_dir(downloads, "  Good Music: 2026  "),
             downloads.join("Good Music_ 2026")
@@ -2475,7 +2600,7 @@ mod tests {
         }
 
         let path = std::env::temp_dir().join(format!(
-            "cacatools-torrent-test-{}-{}.torrent",
+            "cdm-torrent-test-{}-{}.torrent",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -2487,7 +2612,7 @@ mod tests {
         let _ = fs::remove_file(&path);
         let (_, source_kind, file_label) = result.expect("valid torrent file");
         assert_eq!(source_kind, "file");
-        assert!(file_label.starts_with("cacatools-torrent-test"));
+        assert!(file_label.starts_with("cdm-torrent-test"));
     }
 
     #[test]
@@ -2662,7 +2787,7 @@ mod tests {
     #[test]
     fn locates_playlist_output_even_when_source_mtime_is_old() {
         let directory = std::env::temp_dir().join(format!(
-            "cacatools-final-path-{}",
+            "cdm-final-path-{}",
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .expect("clock")
@@ -2721,7 +2846,7 @@ mod tests {
         update_media_progress(
             &connection,
             1,
-            r#"CACATOOLS_PROGRESS:{"downloaded_bytes":5242880,"total_bytes":10485760,"speed":2097152,"eta":3,"_percent_str":"50.0%","_speed_str":"2.00MiB/s","_eta_str":"00:03"}"#,
+            r#"CDM_PROGRESS:{"downloaded_bytes":5242880,"total_bytes":10485760,"speed":2097152,"eta":3,"_percent_str":"50.0%","_speed_str":"2.00MiB/s","_eta_str":"00:03"}"#,
             &mut tracker,
             true,
         );
@@ -2768,7 +2893,7 @@ mod tests {
         update_media_progress(
             &connection,
             1,
-            r#"CACATOOLS_PROGRESS:{"downloaded_bytes":5242880,"total_bytes_estimate":10485760,"speed":2097152,"eta":3,"_percent_str":"50.0%","_speed_str":"2.00MiB/s","_eta_str":"00:03"}"#,
+            r#"CDM_PROGRESS:{"downloaded_bytes":5242880,"total_bytes_estimate":10485760,"speed":2097152,"eta":3,"_percent_str":"50.0%","_speed_str":"2.00MiB/s","_eta_str":"00:03"}"#,
             &mut tracker,
             true,
         );
@@ -2815,7 +2940,7 @@ mod tests {
         assert!(update_media_progress(
             &connection,
             1,
-            r#"CACATOOLS_PROGRESS:{"downloaded_bytes":1048576,"total_bytes":10485760,"speed":1048576,"eta":9}"#,
+            r#"CDM_PROGRESS:{"downloaded_bytes":1048576,"total_bytes":10485760,"speed":1048576,"eta":9}"#,
             &mut tracker,
             false,
         ));
@@ -2832,7 +2957,7 @@ mod tests {
         assert!(update_media_progress(
             &connection,
             1,
-            r#"CACATOOLS_PROGRESS:{"downloaded_bytes":2097152,"total_bytes":10485760,"speed":1048576,"eta":8}"#,
+            r#"CDM_PROGRESS:{"downloaded_bytes":2097152,"total_bytes":10485760,"speed":1048576,"eta":8}"#,
             &mut tracker,
             true,
         ));
@@ -2868,7 +2993,7 @@ mod tests {
         update_media_progress(
             &connection,
             1,
-            r#"CACATOOLS_PROGRESS:{"tmpfilename":"video.f137.mp4.part","downloaded_bytes":9437184,"total_bytes":9437184,"speed":2097152}"#,
+            r#"CDM_PROGRESS:{"tmpfilename":"video.f137.mp4.part","downloaded_bytes":9437184,"total_bytes":9437184,"speed":2097152}"#,
             &mut tracker,
             true,
         );
@@ -2884,7 +3009,7 @@ mod tests {
         update_media_progress(
             &connection,
             1,
-            r#"CACATOOLS_PROGRESS:{"tmpfilename":"audio.f140.m4a.part","downloaded_bytes":524288,"total_bytes":1048576,"speed":524288}"#,
+            r#"CDM_PROGRESS:{"tmpfilename":"audio.f140.m4a.part","downloaded_bytes":524288,"total_bytes":1048576,"speed":524288}"#,
             &mut tracker,
             true,
         );
@@ -3201,7 +3326,7 @@ mod tests {
     #[test]
     fn detects_html_disguised_as_download() {
         let path = std::env::temp_dir().join(format!(
-            "cacatools-html-download-{}.bin",
+            "cdm-html-download-{}.bin",
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .expect("clock")
@@ -3278,7 +3403,7 @@ mod tests {
 
     fn process_safety_fixture_root(label: &str) -> PathBuf {
         std::env::temp_dir().join(format!(
-            "cacatools-process-safety-{label}-{}-{}",
+            "cdm-process-safety-{label}-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -3305,7 +3430,7 @@ mod tests {
         let outside = root
             .parent()
             .expect("temporary parent")
-            .join("cacatools-outside.bin");
+            .join("cdm-outside.bin");
         assert!(validate_managed_candidate(&root, &outside).is_err());
         fs::remove_dir_all(&root).expect("cleanup");
     }

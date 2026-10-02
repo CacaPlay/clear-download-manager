@@ -159,7 +159,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "cacatools-concurrency-settings-{}-{nonce}.sqlite",
+            "cdm-concurrency-settings-{}-{nonce}.sqlite",
             std::process::id()
         ));
         let expected = DownloadConcurrencySettings {

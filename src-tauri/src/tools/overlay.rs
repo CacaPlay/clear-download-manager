@@ -693,7 +693,7 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
     fn fixture_root(label: &str) -> PathBuf {
-        let root = std::env::temp_dir().join(format!("cacatools-overlay-{label}-{}", now_secs()));
+        let root = std::env::temp_dir().join(format!("cdm-overlay-{label}-{}", now_secs()));
         fs::create_dir_all(&root).unwrap();
         root
     }

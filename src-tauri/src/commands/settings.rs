@@ -1,6 +1,6 @@
 use crate::*;
 use rusqlite::Connection;
-use std::{env, path::PathBuf};
+use std::path::PathBuf;
 use tauri::{Emitter, Manager};
 
 const APPLICATION_PREFERENCE_SETTING_KEYS: &[&str] = &[
@@ -36,9 +36,8 @@ fn default_download_directory(app: &AppHandle) -> Result<PathBuf, String> {
     if cfg!(feature = "qa-component-manager") {
         return Ok(app_data_dir.join("Downloads"));
     }
-    if let Some(path) = env::var_os("CACATOOLS_DOWNLOADS_DIR")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute())
+    if let Some(path) =
+        crate::cdm_environment_path_override("CDM_DOWNLOADS_DIR", "CACATOOLS_DOWNLOADS_DIR")
     {
         return Ok(path);
     }
@@ -46,7 +45,7 @@ fn default_download_directory(app: &AppHandle) -> Result<PathBuf, String> {
         .path()
         .download_dir()
         .unwrap_or_else(|_| app_data_dir.join("Downloads"));
-    Ok(base.join("CacaTools"))
+    crate::migrate_legacy_downloads_directory(&base).map_err(|error| error.to_string())
 }
 
 #[tauri::command]

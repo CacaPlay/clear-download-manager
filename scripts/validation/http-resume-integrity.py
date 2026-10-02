@@ -27,7 +27,7 @@ PAYLOAD = bytes((index * 17 + 3) % 256 for index in range(32 * 1024))
 
 
 class RangeHandler(http.server.BaseHTTPRequestHandler):
-    server_version = "CacaToolsLoopback/1"
+    server_version = "Clear Download ManagerLoopback/1"
 
     def log_message(self, *_args: object) -> None:
         pass

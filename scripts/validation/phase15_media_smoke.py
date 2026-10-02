@@ -97,7 +97,7 @@ def main() -> int:
         if shutil.which(binary) is None:
             raise SystemExit(f"Missing required binary: {binary}")
 
-    temp_context = tempfile.TemporaryDirectory(prefix="cacatools-phase15-")
+    temp_context = tempfile.TemporaryDirectory(prefix="cdm-phase15-")
     work = Path(temp_context.name)
     valid = work / "valid-12s.mp4"
     short = work / "short-2s.mp4"
@@ -136,7 +136,7 @@ def main() -> int:
         })
 
     report = {
-        "suite": "CacaTools Phase 15 media integrity",
+        "suite": "Clear Download Manager Phase 15 media integrity",
         "passed": passed,
         "ffmpeg": run(["ffmpeg", "-version"]).stdout.splitlines()[0],
         "ffprobe": run(["ffprobe", "-version"]).stdout.splitlines()[0],

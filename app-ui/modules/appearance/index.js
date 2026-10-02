@@ -14,9 +14,9 @@ import {
 
 const THUMBNAIL_CACHE_VERSION = 3;
 const APP_BASE_RATIO = 1.10;
-const APPEARANCE_STORAGE_KEY = 'cacatools.desktop.appearance.v2';
-const LEGACY_APPEARANCE_STORAGE_KEY = 'cacatools.desktop.appearance.v1';
-const APPEARANCE_METRICS_STORAGE_KEY = 'cacatools.desktop.appearance.metrics.v1';
+const APPEARANCE_STORAGE_KEY = 'cdm.desktop.appearance.v2';
+const LEGACY_APPEARANCE_STORAGE_KEY = 'cdm.desktop.appearance.v1';
+const APPEARANCE_METRICS_STORAGE_KEY = 'cdm.desktop.appearance.metrics.v1';
 export { APPEARANCE_REVISION, DEFAULT_ICON_COLOR, DEFAULT_ICON_COLOR_MODE, ICON_COLOR_MODE_ACCENT } from './tokens.js';
 const UI_SCALE_MIN = 50;
 const UI_SCALE_MAX = 130;
@@ -77,7 +77,7 @@ export function visualDiagnosticsSnapshot() {
     thumbnailCacheVersion: THUMBNAIL_CACHE_VERSION,
     thumbnails: images
   };
-  window.__cacatoolsVisualDiagnostics = snapshot;
+  window.__cdmVisualDiagnostics = snapshot;
   visualDiagnostics.lastUpdatedAt = Date.now();
   return snapshot;
 }
@@ -245,7 +245,7 @@ export function loadStoredAppearance() {
   if (sourceRevision < APPEARANCE_REVISION) {
     let inheritedTheme = raw.theme;
     if (!['dark', 'light', 'system'].includes(inheritedTheme)) {
-      try { inheritedTheme = JSON.parse(localStorage.getItem('cacatools.download-manager.v2') || '{}').theme; } catch {}
+      try { inheritedTheme = JSON.parse(localStorage.getItem('cdm.download-manager.v2') || '{}').theme; } catch {}
     }
     const restoreHistoricalProgressDefault = (value, fallback, customized) => {
       const color = String(value || '').toLowerCase();
@@ -296,7 +296,7 @@ export function effectiveInterfaceRatio(displayedScale, baseRatio = 1) {
 }
 export function synchronizeDownloadManagerAppearance(appearance) {
   try {
-    const key = 'cacatools.download-manager.v2';
+    const key = 'cdm.download-manager.v2';
     const stored = JSON.parse(localStorage.getItem(key) || '{}');
     const next = { ...stored, theme: appearance.theme, accent: appearance.accent, accentIntensity: appearance.intensity, uiScale: displayedScalePercent(appearance.scale), textScale: appearance.textScale, progressActive: appearance.progressActive, progressCompleted: appearance.progressCompleted, progressPaused: appearance.progressPaused, progressError: appearance.progressError, progressActiveCustomized: appearance.progressActiveCustomized === true, progressCompletedCustomized: appearance.progressCompletedCustomized === true, iconColorMode: appearance.iconColorMode, iconColor: appearance.iconColor, appearanceRevision: APPEARANCE_REVISION };
     localStorage.setItem(key, JSON.stringify(next));
@@ -333,7 +333,7 @@ export function applyAccentVariables(root, appearance) {
   root.style.setProperty('--progress-paused', appearance.progressPaused || defaultAppearance.progressPaused);
   root.style.setProperty('--progress-error', appearance.progressError || defaultAppearance.progressError);
 }
-const appearancePerformance = globalThis.__cacatoolsAppearancePerformance || {
+const appearancePerformance = globalThis.__cdmAppearancePerformance || {
   previewEvents: 0,
   previewCommits: 0,
   persistenceWrites: 0,
@@ -341,7 +341,7 @@ const appearancePerformance = globalThis.__cacatoolsAppearancePerformance || {
   totalPreviewLatencyMs: 0,
   maxPreviewLatencyMs: 0
 };
-globalThis.__cacatoolsAppearancePerformance = appearancePerformance;
+globalThis.__cdmAppearancePerformance = appearancePerformance;
 export function appearancePerformanceSnapshot() {
   const averagePreviewLatencyMs = appearancePerformance.previewCommits
     ? appearancePerformance.totalPreviewLatencyMs / appearancePerformance.previewCommits
@@ -510,7 +510,7 @@ export function applyAppearance(value = appearanceContext.getAppState()?.appeara
   };
   Object.entries(tokens).forEach(([name, tokenValue]) => root.style.setProperty(name, tokenValue));
   root.dataset.motion = reducedMotion ? 'off' : 'on'; root.dataset.theme = theme; root.style.colorScheme = theme;
-  window.requestAnimationFrame(() => document.querySelectorAll('.module-iframe').forEach((frame) => frame.contentWindow?.postMessage({ type: 'cacatools:appearance', accent: appearance.accent, theme, scale: appearance.scale, textScale: appearance.textScale }, '*')));
+  window.requestAnimationFrame(() => document.querySelectorAll('.module-iframe').forEach((frame) => frame.contentWindow?.postMessage({ type: 'cdm:appearance', accent: appearance.accent, theme, scale: appearance.scale, textScale: appearance.textScale }, '*')));
    if (synchronize) synchronizeDownloadManagerAppearance(appearance);
    appearanceContext.onDownloadManagerAppearance?.(resolvedAppearance);
   window.requestAnimationFrame(visualDiagnosticsSnapshot); return appearance;

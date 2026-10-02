@@ -17,7 +17,7 @@ Set-Location $Root
 try {
   Start-Transcript -Path $Log -Force | Out-Null
   $TranscriptStarted = $true
-  Write-Host "== CacaTools Download Manager $Version - clean native Windows build =="
+  Write-Host "== Clear Download Manager $Version - clean native Windows build =="
   & (Join-Path $PSScriptRoot "build-windows-beta.ps1") -Bundle $Bundle
   if ($LASTEXITCODE -ne 0 -or -not $?) { throw "The Windows build pipeline returned an error." }
   $WindowsBetaOutput = Join-Path $Root "output\windows-beta"

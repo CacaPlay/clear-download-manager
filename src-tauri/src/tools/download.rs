@@ -450,7 +450,7 @@ fn download_to_partial(
         }
         let response = match client
             .get(endpoint.url.clone())
-            .header(USER_AGENT, "CacaTools-ToolsUpdater")
+            .header(USER_AGENT, "Clear-Download-Manager-ToolsUpdater")
             .send()
         {
             Ok(response) => response,
@@ -960,7 +960,7 @@ mod tests {
 
     fn unique_temp_root(label: &str) -> PathBuf {
         std::env::temp_dir().join(format!(
-            "cacatools-2c-{label}-{}-{}",
+            "cdm-2c-{label}-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)

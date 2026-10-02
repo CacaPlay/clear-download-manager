@@ -31,28 +31,28 @@ pub(crate) fn progress_v2_debug_report(job_id: i64) -> serde_json::Value {
 #[tauri::command]
 pub(crate) fn progress_acceptance_config() -> serde_json::Value {
     let enabled = cfg!(debug_assertions)
-        && std::env::var("CACATOOLS_PROGRESS_ACCEPTANCE")
+        && std::env::var("CDM_PROGRESS_ACCEPTANCE")
             .map(|value| value.trim() == "1")
             .unwrap_or(false);
     serde_json::json!({
         "enabled": enabled,
-        "fixtureUrl": if enabled { std::env::var("CACATOOLS_PROGRESS_ACCEPTANCE_URL").ok() } else { None },
-        "reportPath": if enabled { std::env::var("CACATOOLS_PROGRESS_ACCEPTANCE_REPORT").ok() } else { None }
+        "fixtureUrl": if enabled { std::env::var("CDM_PROGRESS_ACCEPTANCE_URL").ok() } else { None },
+        "reportPath": if enabled { std::env::var("CDM_PROGRESS_ACCEPTANCE_REPORT").ok() } else { None }
     })
 }
 
 #[tauri::command]
 pub(crate) fn progress_acceptance_report(report: serde_json::Value) -> Result<(), String> {
     if !(cfg!(debug_assertions)
-        && std::env::var("CACATOOLS_PROGRESS_ACCEPTANCE")
+        && std::env::var("CDM_PROGRESS_ACCEPTANCE")
             .map(|value| value.trim() == "1")
             .unwrap_or(false))
     {
         return Ok(());
     }
-    let path = std::env::var("CACATOOLS_PROGRESS_ACCEPTANCE_REPORT")
+    let path = std::env::var("CDM_PROGRESS_ACCEPTANCE_REPORT")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|_| std::env::temp_dir().join("cacatools-progress-acceptance.json"));
+        .unwrap_or_else(|_| std::env::temp_dir().join("cdm-progress-acceptance.json"));
     let payload = serde_json::to_vec_pretty(&report).map_err(|error| error.to_string())?;
     std::fs::write(path, payload).map_err(|error| error.to_string())
 }

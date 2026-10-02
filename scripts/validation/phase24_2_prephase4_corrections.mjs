@@ -37,7 +37,7 @@ const checks = [
   ['El panel técnico del reproductor es opcional y accesible', playerHtml.includes('data-player-action="info"') && playerHtml.includes('data-player-info-close') && playerJs.includes('function setInfoOpen') && playerCss.includes('.player-shell.is-info-open .player-info')],
   ['La lista de playlist ya no depende del workspace integrado legacy', !main.includes('renderDownloadDialog') && !main.includes('dm-floating-workspace')],
   ['Rust sigue en Edition 2021 y no introduce let chains', cargo.includes('edition = "2021"') && !/&&\s*let\s+/.test(rust)],
-  ['No reaparecen los patrones Rust ya corregidos', !rust.includes('if path.starts_with(destination) =>') && !rust.includes('.eval(&format!("window.cacatoolsPlayerLoadJob?.')],
+  ['No reaparecen los patrones Rust ya corregidos', !rust.includes('if path.starts_with(destination) =>') && !rust.includes('.eval(&format!("window.cdmPlayerLoadJob?.')],
   ['La extensión oficial mantiene su identificador', extensionBridge.includes('aonppfnabjnicjjeoofkfjofolfibggp')],
 ];
 const failures = checks.filter(([, ok]) => !ok).map(([label]) => label);

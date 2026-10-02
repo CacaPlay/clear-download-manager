@@ -1,9 +1,9 @@
-/* CacaTools V5 structural port.
+/* CDM V5 structural port.
    Component/layout sheet only: all color values consume existing --sp-* semantic tokens.
    No global transform scale is used. */
 #subwindow-root {
   --ui-scale: var(--sp-scale, 1);
-  /* V5 geometry tokens. Colors remain sourced from CacaTools appearance tokens below. */
+  /* V5 geometry tokens. Colors remain sourced from CDM appearance tokens below. */
   --base-w: 1320;
   --base-h: 900;
   --space: calc(16px * var(--ui-scale));

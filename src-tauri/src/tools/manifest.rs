@@ -286,7 +286,7 @@ pub(crate) fn validate_manifest(
         });
     }
     let (origin_authority, origin_repository) = super::policy::manifest_origin_policy();
-    if manifest.origin.authority != SourceAuthority::CacatoolsControlled
+    if manifest.origin.authority != SourceAuthority::CdmControlled
         || origin_authority != "cacatools-controlled"
         || manifest.origin.repository != origin_repository
     {

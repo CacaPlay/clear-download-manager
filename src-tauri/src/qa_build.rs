@@ -1,6 +1,6 @@
 use crate::components::{catalog_key, distribution};
 
-pub(crate) const APPLICATION_IDENTIFIER: &str = "lat.cacaplay.cacatools.downloadmanager.qa";
+pub(crate) const APPLICATION_IDENTIFIER: &str = "lat.cacaplay.cleardownloadmanager.qa";
 const CATALOG_KEY_FINGERPRINT: &str =
     "7910b5251d799b5160471f860db7de4bd478dea5280e5ebd7a63a1ec2a655313";
 

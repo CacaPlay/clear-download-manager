@@ -123,7 +123,7 @@ Get-ChildItem $BinDir -Filter 'spotdl*.exe' -ErrorAction SilentlyContinue | Remo
 $ReleaseBase = "https://github.com/yt-dlp/yt-dlp/releases/download/$YtDlpVersion"
 $YtDlpReleaseApi = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/tags/$YtDlpVersion"
 $YtDlpHeaders = @{
-  "User-Agent" = "CacaTools-Desktop-Build"
+  "User-Agent" = "CDM-Desktop-Build"
   "Accept" = "application/vnd.github+json"
   "X-GitHub-Api-Version" = "2026-03-10"
 }
@@ -168,7 +168,7 @@ $YtDlpActual = (Get-FileHash $YtDlpPath -Algorithm SHA256).Hash.ToLowerInvariant
 
 $Aria2AssetName = "aria2-$Aria2Version-win-64bit-build1.zip"
 $Aria2ReleaseApi = "https://api.github.com/repos/aria2/aria2/releases/tags/release-$Aria2Version"
-$Aria2Headers = @{ "User-Agent" = "CacaTools-Desktop-Build"; "Accept" = "application/vnd.github+json" }
+$Aria2Headers = @{ "User-Agent" = "CDM-Desktop-Build"; "Accept" = "application/vnd.github+json" }
 $Aria2Expected = $Aria2Sha256.Trim().ToLowerInvariant()
 if (-not $Aria2Expected) {
   throw "A trusted SHA-256 is required for aria2."
@@ -228,7 +228,7 @@ if ($FfmpegBuildInputsActual -ne $FfmpegBuildInputsSha256 -or $FfmpegReviewActua
 
 $DenoAssetName = "deno-x86_64-pc-windows-msvc.zip"
 $DenoReleaseApi = "https://api.github.com/repos/denoland/deno/releases/tags/v$DenoVersion"
-$DenoHeaders = @{ "User-Agent" = "CacaTools-Desktop-Build"; "Accept" = "application/vnd.github+json" }
+$DenoHeaders = @{ "User-Agent" = "CDM-Desktop-Build"; "Accept" = "application/vnd.github+json" }
 $DenoExpected = $DenoSha256.Trim().ToLowerInvariant()
 if ($DenoExpected -notmatch '^[a-f0-9]{64}$') {
   throw "A trusted SHA-256 is required for Deno."

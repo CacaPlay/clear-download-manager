@@ -28,7 +28,7 @@ const checks = [
   ['No hay APIs de ejecución remota', !/eval\s*\(|new Function\s*\(|importScripts\s*\(\s*["']https?:/i.test(`${worker}\n${panel}`)],
   ['Todos los archivos de distribución existen', expectedFiles.every((file) => fs.existsSync(path.join('extension', file)))],
 ];
-const syntaxFiles=['extension/service-worker.js','extension/sidepanel.js','extension/thumbnail-service.js','extension/content/detector.js','extension/sdk/cacatools-native-client.js'];
+const syntaxFiles=['extension/service-worker.js','extension/sidepanel.js','extension/thumbnail-service.js','extension/content/detector.js','extension/sdk/cdm-native-client.js'];
 for (const file of syntaxFiles) {
   const result=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
   checks.push([`Sintaxis válida: ${file}`,result.status===0]);

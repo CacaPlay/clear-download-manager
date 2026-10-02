@@ -169,8 +169,8 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
       const destination = button.dataset.playlistDestination || '';
       if (!batchId) return;
       const prompt = deleteStorage
-        ? `¿Eliminar esta playlist de CacaTools y borrar sus archivos${destination ? ` en ${destination}` : ''}? Esta acción no se puede deshacer.`
-        : '¿Eliminar esta playlist del historial de CacaTools y conservar todos los archivos descargados?';
+        ? `¿Eliminar esta playlist de Clear Download Manager y borrar sus archivos${destination ? ` en ${destination}` : ''}? Esta acción no se puede deshacer.`
+        : '¿Eliminar esta playlist del historial de Clear Download Manager y conservar todos los archivos descargados?';
       if (!window.confirm(prompt)) return;
       button.disabled = true;
       try {
@@ -210,7 +210,7 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
           }
           return { id, ok: true, pending: Boolean(receipt?.cleanupPending) };
         } catch (error) {
-          console.error('CacaTools bulk delete failed', id, error);
+          console.error('Clear Download Manager bulk delete failed', id, error);
           return { id, ok: false, error };
         }
       }));
@@ -226,7 +226,7 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
       if (!runtimeState.selectedJobIds.size) runtimeState.selectionMode = false;
       await context.onRefresh?.();
       const pendingLabel = pending ? ` La limpieza física continúa en segundo plano (${pending}).` : '';
-      context.onToast?.(failed ? `${removed} eliminada(s); ${failed} no se pudieron eliminar.${pendingLabel}` : `${removed} descarga(s) eliminada(s)${deleteStorage ? ' junto con su almacenamiento administrado' : ' de CacaTools'}.${pendingLabel}`, failed ? 'error' : 'success');
+      context.onToast?.(failed ? `${removed} eliminada(s); ${failed} no se pudieron eliminar.${pendingLabel}` : `${removed} descarga(s) eliminada(s)${deleteStorage ? ' junto con su almacenamiento administrado' : ' de Clear Download Manager'}.${pendingLabel}`, failed ? 'error' : 'success');
       rerenderNow();
     }));
     root.querySelectorAll('[data-dm-confirm-delete]').forEach((button) => button.addEventListener('click', async () => {
@@ -243,7 +243,7 @@ export function bindDownloadManagerActions(root, context, jobs, rerenderNow, cop
         runtimeState.deletePreview = null;
         await context.onRefresh?.();
         const pendingLabel = receipt?.cleanupPending ? ' La limpieza física continúa en segundo plano.' : '';
-        context.onToast?.(deleteStorage ? `Tarea y almacenamiento eliminados (${receipt?.removedPaths?.length || 0} ruta(s)).${pendingLabel}` : `Tarea eliminada de CacaTools; el almacenamiento se conservó.${pendingLabel}`, 'success');
+        context.onToast?.(deleteStorage ? `Tarea y almacenamiento eliminados (${receipt?.removedPaths?.length || 0} ruta(s)).${pendingLabel}` : `Tarea eliminada de Clear Download Manager; el almacenamiento se conservó.${pendingLabel}`, 'success');
       } catch (error) { context.onToast?.(String(error), 'error'); }
       finally { runtimeState.deleteBusy = false; rerenderNow(); }
     }));

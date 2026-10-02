@@ -5,8 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { verifyHandshake } from '../../extension/sdk/compatibility.js';
 
-const executable = path.resolve(process.argv[2] || '');
-assert.ok(fs.existsSync(executable), `No existe el host nativo: ${executable}`);
+const executables = process.argv.slice(2).map((value) => path.resolve(value));
+assert.ok(executables.length > 0, 'Indica al menos un ejecutable native host.');
 
 const messages = [{ action: 'ping' }, { action: 'capabilities' }];
 const frames = messages.map((message) => {
@@ -15,8 +15,13 @@ const frames = messages.map((message) => {
   header.writeUInt32LE(body.length);
   return Buffer.concat([header, body]);
 });
-const temporaryLocalAppData = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-native-host-smoke-'));
-try {
+for (const executable of executables) {
+  assert.ok(fs.existsSync(executable), `No existe el host nativo: ${executable}`);
+  const expectedHost = path.basename(executable).toLowerCase() === 'cacatools-native-host.exe'
+    ? 'lat.cacaplay.cacatools.downloadmanager'
+    : 'lat.cacaplay.cleardownloadmanager';
+  const temporaryLocalAppData = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-native-host-smoke-'));
+  try {
   const result = spawnSync(executable, [], {
     input: Buffer.concat(frames),
     env: { ...process.env, LOCALAPPDATA: temporaryLocalAppData },
@@ -39,17 +44,20 @@ try {
   assert.equal(offset, output.length, 'El host devolvió bytes no enmarcados.');
   assert.equal(responses.length, 2, 'El host debe responder ping y capabilities.');
   assert.equal(responses[0].ok, true);
-  assert.equal(responses[0].host, 'lat.cacaplay.cacatools.downloadmanager');
+  assert.equal(responses[0].host, expectedHost);
   assert.equal(responses[0].protocolVersion, 1);
   assert.equal(responses[1].ok, true);
   assert.equal(responses[1].protocolVersion, 1);
   assert.ok(responses[1].actions.includes('get_status'));
   assert.ok(responses[1].actions.includes('browser_download_capture'));
-  const bridge = verifyHandshake(responses[0], responses[1]);
-  assert.equal(bridge.protocolVersion, 1);
-  assert.equal(bridge.hostReportedVersion, '0.45.4');
-} finally {
-  fs.rmSync(temporaryLocalAppData, { recursive: true, force: true });
+  if (expectedHost === 'lat.cacaplay.cleardownloadmanager') {
+    const bridge = verifyHandshake(responses[0], responses[1]);
+    assert.equal(bridge.protocolVersion, 1);
+    assert.equal(bridge.hostReportedVersion, '0.45.4');
+  }
+  } finally {
+    fs.rmSync(temporaryLocalAppData, { recursive: true, force: true });
+  }
 }
 
-console.log('OK: el ejecutable del host nativo responde al protocolo 1 y expone las acciones requeridas por la extensión.');
+console.log('OK: ambos hosts responden con su nombre registrado y el protocolo Native Messaging 1.');

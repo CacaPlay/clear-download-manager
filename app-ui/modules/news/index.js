@@ -7,7 +7,7 @@ const MAX_HISTORY = 32;
 const MAX_SUMMARY_CHARS = 360;
 const NEWS_FEED_URL = 'https://raw.githubusercontent.com/CacaPlay/clear-download-manager/main/news.json';
 // This marker prevents an installation that previously cached the legacy
-// CacaTools feed from treating that content as current after the repository
+// Clear Download Manager feed from treating that content as current after the repository
 // migration. It is deliberately independent from the app version so a future
 // feed can invalidate the cache without changing the desktop version.
 export const NEWS_FEED_CACHE_KEY = 'clear-download-manager/news-v2';

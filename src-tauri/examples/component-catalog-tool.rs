@@ -1,5 +1,5 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use cacatools_desktop_lib::component_catalog_tooling::{
+use clear_download_manager_lib::component_catalog_tooling::{
     assemble_payload, inspect_catalog, sign_payload, verify_catalog, verify_production_catalog,
 };
 use ed25519_dalek::{Signer, SigningKey};

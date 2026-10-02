@@ -9,9 +9,8 @@ Tampoco se hizo captura de tráfico en una ejecución real.
 ## Datos que Clear conserva localmente
 
 - **Base SQLite de la aplicación.** De forma predeterminada se crea en el
-  directorio de datos de Tauri con identificador
-  `lat.cacaplay.cacatools.downloadmanager` como `cacatools.sqlite3`; la variable
-  `CACATOOLS_DATA_DIR` puede cambiar la ubicación. El esquema incluye títulos,
+  directorio de datos de Tauri como `clear-download-manager.sqlite3`; la
+  variable `CDM_DATA_DIR` puede cambiar la ubicación. El esquema incluye títulos,
   estados y detalles de trabajos; URL de origen, destino, archivo temporal,
   progreso y errores de descargas; origen y carpeta de torrents; URL, título,
   creador, miniatura y estado de elementos de playlists; rutas de archivos
@@ -43,7 +42,7 @@ Tampoco se hizo captura de tráfico en una ejecución real.
   almacenamiento.
 - **IndexedDB del editor de imágenes.** El editor local puede guardar imágenes
   recientes como blobs (hasta 12 elementos, cada uno con tope de 25 MiB) y
-  proyectos de edición en el almacén `cacatools-images-v3`. El código los
+  proyectos de edición en el almacén `cdm-images-v1`. El código los
   mantiene en IndexedDB, no en un servicio de Clear. Se pueden borrar desde la
   biblioteca del editor o al eliminar los datos del perfil WebView; no se
   inspeccionaron imágenes ni proyectos existentes.
@@ -60,7 +59,7 @@ Tampoco se hizo captura de tráfico en una ejecución real.
   el usuario elige. Los parciales y sidecars se conservan para reanudar; no se
   borran como parte de esta revisión.
 - **Diagnóstico optativo.** Solo si se define
-  `CACATOOLS_DEBUG_TELEMETRY=1/true/on`, se añade localmente una línea con hora
+  `CDM_DEBUG_TELEMETRY=1/true/on`, se añade localmente una línea con hora
   y latencia del bucle de eventos a `debug_telemetry.log` junto a la base. El
   código revisado no envía ese registro por red.
 - **Puente de extensión.** La app escribe un `extension-state.json` local que

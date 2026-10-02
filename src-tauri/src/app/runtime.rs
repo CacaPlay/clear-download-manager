@@ -30,6 +30,16 @@ impl ToolId {
 
     pub(crate) fn env_name(self) -> &'static str {
         match self {
+            Self::YtDlp => "CDM_YTDLP",
+            Self::Ffmpeg => "CDM_FFMPEG",
+            Self::Ffprobe => "CDM_FFPROBE",
+            Self::Deno => "CDM_DENO",
+            Self::Aria2c => "CDM_ARIA2C",
+        }
+    }
+
+    fn legacy_env_name(self) -> &'static str {
+        match self {
             Self::YtDlp => "CACATOOLS_YTDLP",
             Self::Ffmpeg => "CACATOOLS_FFMPEG",
             Self::Ffprobe => "CACATOOLS_FFPROBE",
@@ -228,13 +238,24 @@ fn resolve_candidates_with_probe(
     ToolResolution::unavailable(id)
 }
 
-fn absolute_environment_override(name: &str) -> Option<PathBuf> {
-    let path = PathBuf::from(std::env::var_os(name)?);
+fn preferred_environment_value(
+    primary: Option<std::ffi::OsString>,
+    legacy: Option<std::ffi::OsString>,
+) -> Option<std::ffi::OsString> {
+    primary.or(legacy)
+}
+
+fn absolute_environment_override(id: ToolId) -> Option<PathBuf> {
+    let value = preferred_environment_value(
+        std::env::var_os(id.env_name()),
+        std::env::var_os(id.legacy_env_name()),
+    )?;
+    let path = PathBuf::from(value);
     path.is_absolute().then_some(path)
 }
 
 fn valid_development_override(id: ToolId) -> Option<PathBuf> {
-    let path = absolute_environment_override(id.env_name())?;
+    let path = absolute_environment_override(id)?;
     validate_development_override_path(id, &path)
 }
 
@@ -506,20 +527,20 @@ pub(crate) fn find_runtime_binary(
     env_name: &str,
 ) -> Option<PathBuf> {
     let known = match (base_name, env_name) {
-        ("yt-dlp", "CACATOOLS_YTDLP") => Some(ToolId::YtDlp),
-        ("ffmpeg", "CACATOOLS_FFMPEG") => Some(ToolId::Ffmpeg),
-        ("ffprobe", "CACATOOLS_FFPROBE") => Some(ToolId::Ffprobe),
-        ("deno", "CACATOOLS_DENO") => Some(ToolId::Deno),
-        ("aria2c", "CACATOOLS_ARIA2C") => Some(ToolId::Aria2c),
+        ("yt-dlp", "CDM_YTDLP") => Some(ToolId::YtDlp),
+        ("ffmpeg", "CDM_FFMPEG") => Some(ToolId::Ffmpeg),
+        ("ffprobe", "CDM_FFPROBE") => Some(ToolId::Ffprobe),
+        ("deno", "CDM_DENO") => Some(ToolId::Deno),
+        ("aria2c", "CDM_ARIA2C") => Some(ToolId::Aria2c),
         _ => None,
     };
     known.and_then(|id| resolve_tool(Some(app), id).path)
 }
 
 pub(crate) fn discover_media_runtime(app: &AppHandle) -> Option<MediaRuntimePaths> {
-    let yt_dlp = find_runtime_binary(app, "yt-dlp", "CACATOOLS_YTDLP")?;
-    let ffmpeg = find_runtime_binary(app, "ffmpeg", "CACATOOLS_FFMPEG")?;
-    let ffprobe = find_runtime_binary(app, "ffprobe", "CACATOOLS_FFPROBE")?;
+    let yt_dlp = find_runtime_binary(app, "yt-dlp", "CDM_YTDLP")?;
+    let ffmpeg = find_runtime_binary(app, "ffmpeg", "CDM_FFMPEG")?;
+    let ffprobe = find_runtime_binary(app, "ffprobe", "CDM_FFPROBE")?;
     let ffmpeg_dir = ffmpeg.parent()?.to_path_buf();
     if ffprobe.parent()? != ffmpeg_dir {
         return None;
@@ -558,7 +579,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("system clock before unix epoch")
             .as_nanos();
-        let path = std::env::temp_dir().join(format!("cacatools-runtime-{label}-{suffix}"));
+        let path = std::env::temp_dir().join(format!("cdm-runtime-{label}-{suffix}"));
         fs::create_dir_all(&path).expect("create resolver fixture directory");
         path
     }
@@ -572,7 +593,8 @@ mod tests {
     #[test]
     fn tool_ids_expose_stable_descriptors_and_ffmpeg_set_relationship() {
         assert_eq!(ToolId::YtDlp.base_name(), "yt-dlp");
-        assert_eq!(ToolId::Deno.env_name(), "CACATOOLS_DENO");
+        assert_eq!(ToolId::Deno.env_name(), "CDM_DENO");
+        assert_eq!(ToolId::Deno.legacy_env_name(), "CACATOOLS_DENO");
         assert_eq!(
             ToolId::Aria2c.executable_name(),
             if cfg!(windows) {
@@ -586,6 +608,21 @@ mod tests {
         assert_eq!(ToolId::Ffprobe.component_group(), Some("FFMPEG_SET"));
         assert_eq!(ToolId::YtDlp.component_group(), None);
         assert_eq!(ToolSource::VerifiedOverlay.label(), "VERIFIED_OVERLAY");
+    }
+
+    #[test]
+    fn cdm_tool_override_precedes_legacy_environment_alias() {
+        assert_eq!(
+            preferred_environment_value(
+                Some(std::ffi::OsString::from("current.exe")),
+                Some(std::ffi::OsString::from("legacy.exe")),
+            ),
+            Some(std::ffi::OsString::from("current.exe"))
+        );
+        assert_eq!(
+            preferred_environment_value(None, Some(std::ffi::OsString::from("legacy.exe"))),
+            Some(std::ffi::OsString::from("legacy.exe"))
+        );
     }
 
     #[test]

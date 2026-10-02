@@ -79,7 +79,7 @@ const bundleInputs = [
   ...walk(join(root, "extension-dist")),
   ...walk(join(root, "native-host")),
   ...readdirSync(root)
-    .filter((name) => /^(?:CacaTools|Clear-Download-Manager)-Chrome-Extension-.*\.zip$/.test(name))
+    .filter((name) => /^(?:Clear Download Manager|Clear-Download-Manager)-Chrome-Extension-.*\.zip$/.test(name))
     .map((name) => join(root, name)),
 ];
 for (const path of bundleInputs) {
@@ -109,7 +109,7 @@ const releaseDir = join(metadata.target_directory, "release");
 for (const filename of ["catalog-signer.exe", "catalog-verifier.exe", "component-catalog-tool.exe", "catalog-signer", "catalog-verifier", "component-catalog-tool"]) {
   if (existsSync(join(releaseDir, filename))) failures.push(`maintainer executable exists in release output: ${filename}`);
 }
-const appExecutable = join(releaseDir, "cacatools-desktop.exe");
+const appExecutable = join(releaseDir, "clear-download-manager.exe");
 if (existsSync(appExecutable)) {
   const appBytes = readFileSync(appExecutable);
   for (const marker of ["catalog-signer", "test-private-key", "test-only-catalog-v1"]) {

@@ -418,7 +418,7 @@ function extensionSettings(context = {}) {
   return `<article class="dm-settings-feature ${configured ? 'is-ready' : 'is-pending'}">
     <div class="dm-settings-feature-head"><span>${dmIcon('link', 20)}</span><div><strong>Extensión del navegador</strong><small>Puente Native Messaging v${escapeHtml(String(bridge.protocolVersion || 1))}.</small></div><i>${registered ? 'Registrado' : configured ? 'Preparado' : 'No disponible'}</i></div>
     <p class="dm-settings-message">${configured ? 'La integración conserva el ID oficial y recibe enlaces, estado y progreso desde la extensión.' : 'El puente nativo no informó una configuración válida.'}</p>
-    <code class="dm-bridge-host">${escapeHtml(bridge.hostName || 'lat.cacaplay.cacatools.downloadmanager')}</code>
+    <code class="dm-bridge-host">${escapeHtml(bridge.hostName || 'lat.cacaplay.cleardownloadmanager')}</code>
     <div class="dm-settings-feature-actions"><button type="button" data-dm-repair-integration>${dmIcon('shield', 16)} Reparar integración de Windows</button></div>
   </article>`;
 }
@@ -504,7 +504,7 @@ export function settingsPopover(preferences, open = false, context = {}) {
   };
   const current = SETTINGS_SECTIONS.find(([id]) => id === active) || SETTINGS_SECTIONS[0];
   return `<div class="dm-settings-popover floating-position-root" ${open ? '' : 'hidden'}><div class="motion-inner">
-    <header><div><small>CONTROL LOCAL</small><strong>Ajustes de CacaTools</strong><span>Secciones independientes, sin una página vertical interminable.</span></div><button data-dm-settings-close aria-label="Cerrar ajustes">${dmIcon('x')}</button></header>
+    <header><div><small>CONTROL LOCAL</small><strong>Ajustes de Clear Download Manager</strong><span>Secciones independientes, sin una página vertical interminable.</span></div><button data-dm-settings-close aria-label="Cerrar ajustes">${dmIcon('x')}</button></header>
     <div class="dm-settings-shell">
       <nav class="dm-settings-nav" aria-label="Secciones de ajustes">${SETTINGS_SECTIONS.map(([id, label, iconName]) => `<button type="button" class="${id === active ? 'is-active' : ''}" data-dm-settings-section="${id}">${dmIcon(iconName, 18)}<span>${escapeHtml(label)}</span></button>`).join('')}</nav>
       <section class="dm-settings-panel" data-dm-settings-panel="${active}"><div class="dm-settings-panel-title"><span>${dmIcon(current[2], 22)}</span><div><strong>${escapeHtml(current[1])}</strong><small>${active === 'general' ? 'Ventana e inicio.' : active === 'downloads' ? 'Destino y comportamiento real de la cola.' : active === 'multimedia' ? 'Preferencias persistentes de salida y calidad.' : active === 'appearance' ? 'Tema, escala, densidad y colores.' : active === 'integrations' ? 'Extensión y puente nativo.' : 'Actualizador y componentes locales.'}</small></div></div>${panels[active]}</section>

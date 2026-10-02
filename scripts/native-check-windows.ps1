@@ -64,4 +64,4 @@ if ($PrepareMediaRuntime) {
   Invoke-Native "npm" @("run", "verify:binaries")
 }
 
-Write-Host "OK: CacaTools Download Manager native validation completed." -ForegroundColor Green
+Write-Host "OK: Clear Download Manager native validation completed." -ForegroundColor Green

@@ -7,13 +7,13 @@ function Assert-BuildLocation {
     throw "PowerShell 5.1 or newer is required."
   }
   if ($Root.StartsWith("\\")) {
-    throw "Compile from a local NTFS drive, not a UNC or network path. Move the project to C:\CacaTools."
+    throw "Compile from a local NTFS drive, not a UNC or network path. Move the project to C:\CDM."
   }
   if ($Root.Length -gt 140) {
-    throw "The project path is too long ($($Root.Length) characters). Move the source to C:\CacaTools before compiling."
+    throw "The project path is too long ($($Root.Length) characters). Move the source to C:\CDM before compiling."
   }
   if ($Root -match "\\(OneDrive|Dropbox|Google Drive)(\\|$)") {
-    Write-Host "WARNING: the project is inside a synchronized folder. Move it to C:\CacaTools to avoid locked build files." -ForegroundColor Yellow
+    Write-Host "WARNING: the project is inside a synchronized folder. Move it to C:\CDM to avoid locked build files." -ForegroundColor Yellow
   }
 
   $DriveRoot = [System.IO.Path]::GetPathRoot($Root)
@@ -44,7 +44,7 @@ function Assert-BuildLocation {
     -Name "LongPathsEnabled" `
     -ErrorAction SilentlyContinue
   if ($LongPaths -ne 1) {
-    Write-Host "INFO: Windows long paths are disabled. The short C:\CacaTools path remains supported." -ForegroundColor Yellow
+    Write-Host "INFO: Windows long paths are disabled. The short C:\CDM path remains supported." -ForegroundColor Yellow
   }
 
   Write-Host "OK: build source path $Root"
@@ -88,7 +88,7 @@ if ($env:OS -ne "Windows_NT") {
 }
 Assert-BuildLocation
 if (-not [Environment]::Is64BitOperatingSystem) {
-  throw "CacaTools requires 64-bit Windows."
+  throw "Clear Download Manager requires 64-bit Windows."
 }
 
 Assert-Command "node" "Install Node.js LTS."

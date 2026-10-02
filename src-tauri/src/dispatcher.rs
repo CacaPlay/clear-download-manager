@@ -667,7 +667,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "cacatools-concurrency-priority-{}-{nonce}.sqlite",
+            "cdm-concurrency-priority-{}-{nonce}.sqlite",
             std::process::id()
         ));
         let (low, high_1, normal, high_2) = {
@@ -732,7 +732,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "cacatools-concurrency-lifecycle-{}-{nonce}.sqlite",
+            "cdm-concurrency-lifecycle-{}-{nonce}.sqlite",
             std::process::id()
         ));
         let (paused, retry, normal) = {
@@ -920,7 +920,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "cacatools-dispatch-priority-{}-{nonce}.sqlite",
+            "cdm-dispatch-priority-{}-{nonce}.sqlite",
             std::process::id()
         ));
         let (active_normal, high, waiting_normal) = {
@@ -975,7 +975,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "cacatools-priority-runtime-{}-{nonce}.sqlite",
+            "cdm-priority-runtime-{}-{nonce}.sqlite",
             std::process::id()
         ));
         let _ = std::fs::remove_file(&path);
@@ -1132,7 +1132,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "cacatools-priority-media-{}-{nonce}.sqlite",
+            "cdm-priority-media-{}-{nonce}.sqlite",
             std::process::id()
         ));
         let _ = std::fs::remove_file(&path);

@@ -28,4 +28,5 @@ Future publication is intentionally only a documented boundary: an
 operator-controlled release process outside this repository will serialize
 the typed payload, sign those exact bytes with a private key kept outside the
 client and repository, and publish the envelope through the allowlisted
-CacaTools authority. Phase 2B contains no production signer or key workflow.
+schema v1 authority identifier retained for signature compatibility. Phase 2B
+contains no production signer or key workflow.

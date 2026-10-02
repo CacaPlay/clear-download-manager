@@ -25,7 +25,7 @@ const extensionBridge = read('src-tauri/src/extension_bridge.rs');
 const csp = String(config.app?.security?.csp?.['media-src'] || '');
 
 const checks = [
-  ['Preview online usa el mismo reproductor reutilizable', rust.includes('fn player_online_preview_snapshot') && rust.includes('async fn open_online_media_player') && rust.includes('window.cacatoolsPlayerLoadPreview?.') && playerJs.includes('window.cacatoolsPlayerLoadPreview')],
+  ['Preview online usa el mismo reproductor reutilizable', rust.includes('fn player_online_preview_snapshot') && rust.includes('async fn open_online_media_player') && rust.includes('window.cdmPlayerLoadPreview?.') && playerJs.includes('window.cdmPlayerLoadPreview')],
   ['yt-dlp selecciona un único formato combinado reproducible', rust.includes('best[ext=mp4][protocol^=http][vcodec!=none][acodec!=none]') && rust.includes('best[ext=webm][protocol^=http][vcodec!=none][acodec!=none]') && !rust.includes('player_online_preview_snapshot') === false],
   ['La URL temporal se valida como HTTP público antes de reproducir', rust.includes('parse_public_http_url(&stream_url, "El flujo temporal no es válido")') && rust.includes('ensure_public_network_resolution(&stream)')],
   ['La CSP habilita medios remotos únicamente para el reproductor web sin quitar asset local', csp.includes('asset:') && csp.includes('https:') && csp.includes('http:')],
@@ -39,7 +39,7 @@ const checks = [
   ['La ventana se adapta a la proporción del medio y sigue siendo redimensionable', rust.includes('fn player_resize_for_media') && rust.includes('LogicalSize::new(target_width, target_height)') && playerJs.includes("invoke('player_resize_for_media'")],
   ['El tamaño automático respeta el espacio disponible de la pantalla', playerJs.includes('window.screen?.availWidth') && playerJs.includes('window.screen?.availHeight') && playerJs.includes('const scale = Math.min(1, availableWidth / width, availableHeight / height)')],
   ['La franja superior conserva región de arrastre y tres controles de ventana', playerHtml.includes('data-tauri-drag-region') && ['minimize','maximize','close'].every((action) => playerHtml.includes(`data-window-action="${action}"`))],
-  ['El aviso de preview de baja calidad es excepcional y persistente', rust.includes('fn player_preview_quality_limited') && playerJs.includes('cacatools.player.low-preview-notice.v1') && playerJs.includes('localStorage.setItem(LOW_PREVIEW_NOTICE_KEY') && playerHtml.includes('data-preview-notice')],
+  ['El aviso de preview de baja calidad es excepcional y persistente', rust.includes('fn player_preview_quality_limited') && playerJs.includes('cdm.player.low-preview-notice.v1') && playerJs.includes('localStorage.setItem(LOW_PREVIEW_NOTICE_KEY') && playerHtml.includes('data-preview-notice')],
   ['720p frente a 2160p no se considera caso extremo', rust.includes('assert!(!player_preview_quality_limited(Some(720), Some(2160)))')],
   ['Rust sigue en Edition 2021 y sin errores históricos conocidos', cargo.includes('edition = "2021"') && !/(?:&&|\|\|)\s*let\s+/.test(rust) && !/\.eval\s*\(\s*&\s*format!/.test(rust) && !/\(\s*Some\(path\)\s*,\s*Some\(destination\)\s*\)\s*if\s*path\.starts_with\(destination\)/.test(rust)],
   ['Native Messaging conserva el ID y no expone rutas del proveedor retirado', !rust.includes('resolve_spotify_source') && extensionBridge.includes('aonppfnabjnicjjeoofkfjofolfibggp')]

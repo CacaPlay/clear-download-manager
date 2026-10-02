@@ -121,7 +121,7 @@ export function dmIcon(name, size = 20) {
   const safeName = known ? resolvedName : 'file';
   if (!known && !unknownIconNames.has(requestedName)) {
     unknownIconNames.add(requestedName);
-    console.warn(`[CacaTools Download Manager] Icono no registrado: ${requestedName}`);
+    console.warn(`[Clear Download Manager] Icono no registrado: ${requestedName}`);
   }
   const safeSize = Math.max(12, Math.min(96, Math.round(Number(size) || 20)));
   const cacheKey = `${safeName}:${safeSize}:${known ? 'known' : requestedName}`;

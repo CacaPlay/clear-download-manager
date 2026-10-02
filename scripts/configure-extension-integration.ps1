@@ -51,7 +51,7 @@ if ($Disable) {
   Write-Host "Chromium IDs: $($Chromium -join ', ')"
   Write-Host "Firefox IDs:  $($Firefox -join ', ')"
   Write-Host "Navegadores:  $($Browsers -join ', ')"
-  Write-Host 'Al iniciar una compilacion instalada, CacaTools registrara el host en HKCU sin pedir ajustes dentro de la app.'
+  Write-Host 'Al iniciar una compilacion instalada, Clear Download Manager registrara el host en HKCU sin pedir ajustes dentro de la app.'
 }
 
 Write-Host ''

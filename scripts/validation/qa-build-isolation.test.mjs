@@ -16,7 +16,7 @@ const noUpdater = read('../../src-tauri/src/no_update_manager.rs');
 const qaBuildScript = read('../../scripts/build-local-qa-exe.ps1');
 
 test('QA configuration has a separate app identity and no updater route', () => {
-  assert.equal(tauriConfig.identifier, 'lat.cacaplay.cacatools.downloadmanager.qa');
+  assert.equal(tauriConfig.identifier, 'lat.cacaplay.cleardownloadmanager.qa');
   assert.equal(tauriConfig.productName, 'Clear Download Manager QA');
   assert.equal(tauriConfig.bundle.active, false);
   assert.equal(tauriConfig.bundle.createUpdaterArtifacts, false);
@@ -30,7 +30,7 @@ test('QA configuration has a separate app identity and no updater route', () => 
 });
 
 test('QA component trust and network policy are compile-time isolated', () => {
-  assert.match(qaRuntime, /lat\.cacaplay\.cacatools\.downloadmanager\.qa/);
+  assert.match(qaRuntime, /lat\.cacaplay\.cleardownloadmanager\.qa/);
   assert.match(qaRuntime, /validate_runtime_configuration/);
   assert.match(qaRuntime, /config\.plugins\.0\.get\("updater"\)/);
   assert.match(distribution, /http:\/\/127\.0\.0\.1:49301\/component-catalog-v1\.json/);

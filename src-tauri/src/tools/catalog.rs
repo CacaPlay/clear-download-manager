@@ -1032,8 +1032,7 @@ mod tests {
     }
 
     fn root(name: &str) -> PathBuf {
-        let root =
-            std::env::temp_dir().join(format!("cacatools-catalog-{name}-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("cdm-catalog-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         root
     }

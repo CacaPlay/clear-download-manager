@@ -63,7 +63,7 @@ if (Test-Path -LiteralPath $OutputRoot) {
 # lockfiles and included runtime tools, just like the GitHub Windows build.
 Invoke-Native 'npm.cmd' @('run', 'prepare:third-party-notices')
 
-$TauriExe = Join-Path $TauriRelease 'cacatools-desktop.exe'
+$TauriExe = Join-Path $TauriRelease 'clear-download-manager.exe'
 $TauriResources = Join-Path $TauriRelease 'resources'
 $NativeHostProject = Join-Path $Root 'extension\native-host'
 $NativeHostTargetRoot = Join-Path ([IO.Path]::GetDirectoryName($TauriTargetRoot)) (([IO.Path]::GetFileName($TauriTargetRoot)) + '-native-host')
@@ -89,25 +89,27 @@ if (-not (Test-Path -LiteralPath $TauriExe) -or -not (Test-Path -LiteralPath $Ta
 $PreviousCargoTargetDirectory = $env:CARGO_TARGET_DIR
 try {
   $env:CARGO_TARGET_DIR = $NativeHostTargetRoot
-  Invoke-Native 'cargo.exe' @('build', '--release', '--locked', '--manifest-path', (Join-Path $NativeHostProject 'Cargo.toml'))
+  $NativeHostManifest = Join-Path $NativeHostProject 'Cargo.toml'
+  Invoke-Native 'cargo.exe' @('build', '--release', '--locked', '--manifest-path', $NativeHostManifest)
+  $BuiltNativeHost = Join-Path $NativeHostTargetRoot 'release\clear-download-manager-native-host.exe'
+  if (-not (Test-Path -LiteralPath $BuiltNativeHost)) { throw "The canonical native host build completed without creating $BuiltNativeHost" }
+  $TargetExtensionResources = Join-Path $TauriResources 'extension'
+  New-Item -ItemType Directory -Path $TargetExtensionResources -Force | Out-Null
+  $CanonicalNativeHost = Join-Path $TargetExtensionResources 'clear-download-manager-native-host.exe'
+  $LegacyNativeHost = Join-Path $TargetExtensionResources 'cacatools-native-host.exe'
+  Copy-Item -LiteralPath $BuiltNativeHost -Destination $CanonicalNativeHost -Force
+  Invoke-Native 'cargo.exe' @('build', '--release', '--locked', '--features', 'legacy-host-name', '--manifest-path', $NativeHostManifest)
+  Copy-Item -LiteralPath $BuiltNativeHost -Destination $LegacyNativeHost -Force
 }
 finally {
   $env:CARGO_TARGET_DIR = $PreviousCargoTargetDirectory
 }
-$BuiltNativeHost = Join-Path $NativeHostTargetRoot 'release\cacatools-native-host.exe'
-if (-not (Test-Path -LiteralPath $BuiltNativeHost)) {
-  throw "The native host build completed without creating $BuiltNativeHost"
-}
-Invoke-Native 'node.exe' @('scripts/validation/native-host-handshake.mjs', $BuiltNativeHost)
-$TargetExtensionResources = Join-Path $TauriResources 'extension'
-New-Item -ItemType Directory -Path $TargetExtensionResources -Force | Out-Null
-# Tauri can retain an incremental resource directory when only a generated
-# native host changes. Copy the generated build artifact explicitly so the
-# Store package cannot silently omit the extension bridge.
-Copy-Item -LiteralPath $BuiltNativeHost -Destination (Join-Path $TargetExtensionResources 'cacatools-native-host.exe') -Force
-$RuntimeHost = Join-Path $TauriResources 'extension\cacatools-native-host.exe'
+$RuntimeHost = Join-Path $TauriResources 'extension\clear-download-manager-native-host.exe'
+$LegacyRuntimeHost = Join-Path $TauriResources 'extension\cacatools-native-host.exe'
+$CanonicalNativeHost = Join-Path $TauriResources 'extension\clear-download-manager-native-host.exe'
+Invoke-Native 'node.exe' @('scripts/validation/native-host-handshake.mjs', $CanonicalNativeHost, $LegacyRuntimeHost)
 $RuntimeConfig = Join-Path $TauriResources 'extension\extension-config.json'
-if (-not (Test-Path -LiteralPath $RuntimeHost) -or -not (Test-Path -LiteralPath $RuntimeConfig)) {
+if (-not (Test-Path -LiteralPath $RuntimeHost) -or -not (Test-Path -LiteralPath $LegacyRuntimeHost) -or -not (Test-Path -LiteralPath $RuntimeConfig)) {
   throw 'The MSIX runtime is missing the bundled native host or extension configuration.'
 }
 $ExtensionConfig = Get-Content -LiteralPath $RuntimeConfig -Raw | ConvertFrom-Json
@@ -122,7 +124,7 @@ if ([string]$ExtensionConfig.storeAppUserModelId -ne $ExpectedStoreAppUserModelI
 
 New-Item -ItemType Directory -Path $Stage -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $Stage 'Assets') -Force | Out-Null
-Copy-Item -LiteralPath $TauriExe -Destination (Join-Path $Stage 'cacatools-desktop.exe') -Force
+Copy-Item -LiteralPath $TauriExe -Destination (Join-Path $Stage 'clear-download-manager.exe') -Force
 Copy-Item -LiteralPath $TauriResources -Destination $Stage -Recurse -Force
 foreach ($Asset in @('StoreLogo.png', 'Square44x44Logo.png', 'Square150x150Logo.png')) {
   $AssetPath = Join-Path $Root "src-tauri\icons\$Asset"
@@ -151,7 +153,7 @@ $ManifestXml = @"
     <rescap:Capability Name="runFullTrust" />
   </Capabilities>
   <Applications>
-    <Application Id="CacaTools" Executable="cacatools-desktop.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="CacaTools" Executable="clear-download-manager.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements AppListEntry="default" DisplayName="Clear Download Manager" Description="Clear Download Manager" BackgroundColor="#0B1522" Square44x44Logo="Assets\Square44x44Logo.png" Square150x150Logo="Assets\Square150x150Logo.png" />
     </Application>
   </Applications>
@@ -173,7 +175,7 @@ $UnpackedResources = Join-Path $OutputRoot 'validate\resources'
 if (Test-Path -LiteralPath (Join-Path $UnpackedResources 'updater')) {
   throw 'Store package validation failed: GitHub updater resources are present in the MSIX.'
 }
-foreach ($RequiredStoreResource in @('extension\extension-config.json', 'extension\cacatools-native-host.exe')) {
+foreach ($RequiredStoreResource in @('extension\extension-config.json', 'extension\clear-download-manager-native-host.exe', 'extension\cacatools-native-host.exe')) {
   if (-not (Test-Path -LiteralPath (Join-Path $UnpackedResources $RequiredStoreResource))) {
     throw "Store package validation failed: missing resources\$RequiredStoreResource."
   }

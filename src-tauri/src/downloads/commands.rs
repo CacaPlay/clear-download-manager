@@ -416,7 +416,7 @@ pub(crate) async fn choose_download_directory(
     let selected = app
         .dialog()
         .file()
-        .set_title("Elegir carpeta de descargas de CacaTools")
+        .set_title("Elegir carpeta de descargas de Clear Download Manager")
         .blocking_pick_folder();
 
     let Some(selected) = selected else {

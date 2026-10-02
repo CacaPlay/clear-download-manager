@@ -35,7 +35,7 @@ const files = {
   registerExtension: read('scripts/register-extension-host-windows.ps1'),
   configureExtension: read('scripts/configure-extension-integration.ps1'),
   extensionConfig: read('src-tauri/resources/extension/extension-config.json'),
-  extensionSdk: read('extension/sdk/cacatools-native-client.js'),
+  extensionSdk: read('extension/sdk/cdm-native-client.js'),
   sizeReport: read('scripts/report-windows-size.ps1'),
   smoke: read('scripts/smoke-test-installed-beta.ps1')
 };
@@ -64,7 +64,7 @@ const assertions = [
   ['updater plugin conditionally enabled in Rust', files.cargo.includes('tauri-plugin-updater') && files.rust.includes('if update_manager::updater_plugin_is_configured()') && files.updater.includes('pub fn updater_plugin_is_configured()')],
   ['updater signed workflow prepared', files.configureUpdater.includes('TAURI_SIGNING_PRIVATE_KEY') && files.configureUpdater.includes('createUpdaterArtifacts') && files.releaseUpdater.includes('latest.json')],
   ['updater UI integrated', files.shared.includes('data-dm-check-update') && files.main.includes('checkForAppUpdate')],
-  ['extension native host prepared', files.bridge.includes('lat.cacaplay.cacatools.downloadmanager') && files.bridge.includes('run_native_messaging_host')],
+  ['extension native host prepared', files.bridge.includes('lat.cacaplay.cleardownloadmanager') && files.bridge.includes('run_native_messaging_host')],
   ['extension exact origin registration', files.registerExtension.includes('allowed_origins') && files.registerExtension.includes("ValidatePattern('^[a-p]{32}$')")],
   ['extension production auto-registration', files.bridge.includes('ensure_extension_host_registration') && files.bridge.includes('host-registration.json') && files.configureExtension.includes('chromiumExtensionIds') && files.extensionConfig.includes('\"enabled\": false')],
   ['extension SDK prepared', files.extensionSdk.includes('sendNativeMessage') && files.extensionSdk.includes('analyze') && files.extensionSdk.includes('enqueue')],

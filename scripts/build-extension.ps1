@@ -56,7 +56,7 @@ $RuntimeFiles = @(
   'i18n.js',
   'thumbnail-service.js',
   'content\detector.js',
-  'sdk\cacatools-native-client.js',
+  'sdk\cdm-native-client.js',
   'sdk\compatibility.js',
   'sdk\operation-journal.js',
   'sdk\selection.js',

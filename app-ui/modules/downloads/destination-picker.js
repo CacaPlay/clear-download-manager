@@ -30,7 +30,7 @@ function setPickerLocked(locked) {
 function broadcastPickerState(open) {
   const emit = globalThis.window?.__TAURI__?.event?.emit;
   if (typeof emit === 'function') {
-    void emit('cacatools-destination-picker-changed', { open: Boolean(open) });
+    void emit('cdm-destination-picker-changed', { open: Boolean(open) });
   }
 }
 
@@ -38,7 +38,7 @@ export async function bindDestinationPickerState() {
   const listen = globalThis.window?.__TAURI__?.event?.listen;
   if (typeof listen !== 'function') return;
   try {
-    await listen('cacatools-destination-picker-changed', (event) => {
+    await listen('cdm-destination-picker-changed', (event) => {
       setPickerLocked(Boolean(event?.payload?.open));
     });
   } catch {}

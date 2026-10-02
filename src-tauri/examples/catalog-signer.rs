@@ -1,5 +1,5 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use cacatools_desktop_lib::catalog_tooling::{
+use clear_download_manager_lib::catalog_tooling::{
     canonical_catalog_payload_bytes, envelope_with_signature, inspect_catalog_envelope,
     verify_catalog_envelope,
 };

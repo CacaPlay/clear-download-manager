@@ -1,3 +1,4 @@
+import { migrateLegacyStorageNamespace } from './modules/runtime/storage-migration.js';
 import { lucideIcon, playlistPrepLogo } from './assets/icons/lucide.js';
 import { applyAppearance, iconVariantForColor, loadStoredAppearance, storeAppearanceLocally } from './modules/appearance/index.js?v=0.95.0-verify-20260911-r4';
 import { bindAppearanceSync } from './modules/appearance/sync.js?v=0.95.0-verify-20260911-r4';
@@ -5,6 +6,8 @@ import { bindDestinationPickerState, chooseDestinationDirectory } from './module
 import { loadLocale, resolveLocale } from './modules/i18n/index.js';
 import { localizeDom } from './modules/i18n/runtime.js';
 import { invokeWithOptionalComponent, optionalComponentProgressLabel, renderOptionalComponentProgress } from './modules/components/optional-install.js';
+
+migrateLegacyStorageNamespace();
 
 document.addEventListener('contextmenu', (event) => event.preventDefault(), true);
 
@@ -93,7 +96,7 @@ function applySubwindowLayoutTokens() {
   rootStyle.setProperty('--multimedia-grid-height', mediaUsesNaturalHeight ? 'auto' : '100%');
   rootStyle.setProperty('--multimedia-grid-rows', mediaUsesNaturalHeight ? 'auto auto' : 'minmax(0,1.16fr) minmax(0,.94fr)');
 }
-const MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cacatools.media-download-preferences.v1';
+const MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cdm.media-download-preferences.v1';
 const MEDIA_OUTPUT_MODES = new Set(['video_mp4', 'video_webm', 'audio_best', 'audio_mp3', 'audio_m4a']);
 const VIDEO_QUALITY_VALUES = new Set(['best', '2160', '1440', '1080', '720', '480', '360', '240', '144']);
 const PLAYLIST_FORMAT_OPTIONS = [
@@ -188,7 +191,7 @@ const state = {
   sessionConsent: false,
   cookiesPath: '',
   playlistFormat: storedMediaDownloadPreferences.playlistFormat,
-  destination: 'Descargas\\CacaTools',
+  destination: 'Descargas\\Clear Download Manager',
   filename: handoffFilename,
   filenameTouched: false,
   useOriginalFileNames: true,
