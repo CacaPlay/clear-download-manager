@@ -23,7 +23,7 @@ const compareSemver = (left, right) => {
 if (!/^\d+\.\d+\.\d+$/.test(version)) errors.push(`package.json no usa SemVer: ${version}`);
 if (tauri.version !== version) errors.push(`tauri.conf.json usa ${tauri.version}, esperaba ${version}`);
 if (!cargo.includes(`version = "${version}"`)) errors.push('Cargo.toml no coincide');
-if (!lock.includes(`name = "cacatools-desktop"\nversion = "${version}"`)) errors.push('Cargo.lock no coincide');
+if (!lock.includes(`name = "clear-download-manager"\nversion = "${version}"`)) errors.push('Cargo.lock no coincide');
 if (!main.includes(`const APP_VERSION = '${version}'`)) errors.push('APP_VERSION no coincide');
 if (!main.includes(`CDM-${version}-`)) errors.push('BUILD_ID no coincide');
 if (!/^\d+\.\d+\.\d+$/.test(manifest.version)) errors.push(`manifest de extensión no usa SemVer: ${manifest.version}`);

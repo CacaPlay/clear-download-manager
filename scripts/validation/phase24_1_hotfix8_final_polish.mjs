@@ -14,7 +14,7 @@ const css = readFrontendSource('.css');
 const dmCss = read('app-ui/download-manager/styles.css');
 
 const checks = [
-  ['Memoria multimedia persistente', main.includes("MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cacatools.media-download-preferences.v1'") && main.includes('persistMediaDownloadPreferences()') && main.includes('selectedPlaylistFormat')],
+  ['Memoria multimedia persistente', main.includes("MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cdm.media-download-preferences.v1'") && main.includes('persistMediaDownloadPreferences()') && main.includes('selectedPlaylistFormat')],
   ['Abrir otro enlace conserva salida y calidad', main.includes('state.outputMode') && main.includes('state.selectedFormat') && main.includes('open_preparation_window') && !main.includes('workspaceMarkup')],
   ['Subventana legacy no reaparece en el gestor principal', !main.includes('data-dialog-minimize') && !main.includes('data-dialog-maximize') && !main.includes('class="dialog-close"') && !main.includes('renderDownloadDialog')],
   ['Controles de ventana usan colores fijos', css.includes('background:#172331!important') && css.includes('border-color:#a94b55!important')],

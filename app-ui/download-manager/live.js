@@ -94,7 +94,7 @@ function progressVisualDuration(jobKey, currentFill, nextFill) {
   let ema = previous?.ema || 0;
   if (delta >= 40 && delta <= 5000) {
     ema = ema > 0 ? (ema * (1 - PROGRESS_CADENCE_EMA_ALPHA)) + (delta * PROGRESS_CADENCE_EMA_ALPHA) : delta;
-    if (globalThis.__CACATOOLS_MOTION_DIAGNOSTICS__) {
+    if (globalThis.__CDM_MOTION_DIAGNOSTICS__) {
       const samples = globalThis.__cdmProgressCadenceSamples || (globalThis.__cdmProgressCadenceSamples = []);
       samples.push(Number(delta.toFixed(1)));
       if (samples.length > 64) samples.splice(0, samples.length - 64);

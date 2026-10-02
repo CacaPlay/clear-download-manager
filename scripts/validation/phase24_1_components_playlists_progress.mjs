@@ -52,7 +52,7 @@ const checks = [
   ['El gestor de playlists tiene lista y opciones responsive', files.appCss.includes('.playlist-v2-layout') && files.appCss.includes('@media(max-width:900px)')],
   ['Las barras de playlist comparten la transición de progreso', files.appCss.includes('transition:width .25s linear!important')],
   ['Los menús quedan dentro del viewport', files.dmCss.includes('max-height:min(25rem,calc(100vh - 1rem))')],
-   ['El pie muestra CacaTools 0.45.0', files.dmView.includes('CacaTools 0.45.0') && files.dmCss.includes('.dm-footer-beta')],
+   ['El pie muestra Clear Download Manager 0.45.0', files.dmView.includes('Clear Download Manager 0.45.0') && files.dmCss.includes('.dm-footer-beta')],
   ['Las pruebas Rust cubren picos y caída de velocidad', files.rust.includes('transfer_speed_smoothing_limits_unrealistic_spikes') && files.rust.includes('transfer_speed_smoothing_decays_when_no_bytes_arrive')],
   ['Manifest V3 y permisos permanecen sin cambios', files.extensionManifest.manifest_version === 3 && JSON.stringify(files.extensionManifest.permissions) === JSON.stringify(['activeTab','scripting','downloads','storage','sidePanel','nativeMessaging'])],
   ['El ID publicado permanece fijo', files.bridge.includes(`PUBLISHED_CHROMIUM_EXTENSION_ID: &str = "${publishedId}"`)]

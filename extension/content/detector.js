@@ -1,6 +1,6 @@
-(function installCacaToolsDetector() {
-  if (globalThis.__cacatoolsDetectorInstalled) return;
-  globalThis.__cacatoolsDetectorInstalled = true;
+(function installCDMDetector() {
+  if (globalThis.__cdmDetectorInstalled) return;
+  globalThis.__cdmDetectorInstalled = true;
 
   const MAX_DETECTIONS = 20;
   const MIN_CONFIDENCE = 60;
@@ -254,9 +254,9 @@
     }, 180);
   };
 
-  globalThis.__cacatoolsCollectDetections = () => collect();
+  globalThis.__cdmCollectDetections = () => collect();
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type === 'CACATOOLS_COLLECT') sendResponse(globalThis.__cacatoolsCollectDetections());
+    if (message?.type === 'CDM_COLLECT') sendResponse(globalThis.__cdmCollectDetections());
     return false;
   });
 

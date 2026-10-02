@@ -1,8 +1,11 @@
+import { migrateLegacyStorageNamespace } from '../modules/runtime/storage-migration.js';
 import { loadStoredAppearance, storeAppearanceLocally } from '../modules/appearance/index.js?v=0.95.0-verify-20260911-r4';
 import { bindAppearanceSync } from '../modules/appearance/sync.js?v=0.95.0-verify-appearance';
 import { applyBrandIconVariant, iconVariantForColor } from '../modules/appearance/index.js?v=0.95.0-verify-20260911-r4';
 import { loadLocale, resolveLocale } from '../modules/i18n/index.js';
 import { localizeDom } from '../modules/i18n/runtime.js';
+
+migrateLegacyStorageNamespace();
 
 document.addEventListener('contextmenu', (event) => event.preventDefault(), true);
 
@@ -93,9 +96,9 @@ if (document.fonts?.ready) {
   markPlayerLifecycle('css-ready');
 }
 const params = new URLSearchParams(location.search);
-const LOW_PREVIEW_NOTICE_KEY = 'cacatools.player.low-preview-notice.v1';
-const MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cacatools.media-download-preferences.v1';
-const PREVIEW_NETWORK_METRICS_KEY = 'cacatools.player.network-metrics.v1';
+const LOW_PREVIEW_NOTICE_KEY = 'cdm.player.low-preview-notice.v1';
+const MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cdm.media-download-preferences.v1';
+const PREVIEW_NETWORK_METRICS_KEY = 'cdm.player.network-metrics.v1';
 
 let activeMedia = video;
 let activeJobId = Number(params.get('job') || 0);
@@ -1479,7 +1482,7 @@ function showYoutubeManualFallback(sourceUrl, generation, errorCode = 'desconoci
   shell.dataset.playerNativeError = String(previousError?.message || previousError || errorCode);
   setState(
     'Vista previa no disponible',
-    'El proveedor no permitió el flujo nativo. Pulsa «Abrir enlace oficial» para continuar fuera de CacaTools.',
+    'El proveedor no permitió el flujo nativo. Pulsa «Abrir enlace oficial» para continuar fuera de Clear Download Manager.',
     'error',
     Boolean(youtubeVideoId(sourceUrl))
   );
@@ -1600,7 +1603,7 @@ async function loadPreview(url) {
       if (generation !== loadGeneration) return;
       const directMessage = String(error?.message || error || 'La fuente no permite vista previa directa.');
       const embedMessage = String(embedError?.message || embedError || 'El reproductor oficial tampoco está disponible.');
-      setState('Vista previa no disponible', `${directMessage} ${embedMessage} Puedes descargar el contenido normalmente; CacaTools no simulará una reproducción que la fuente no permita.`, 'error');
+      setState('Vista previa no disponible', `${directMessage} ${embedMessage} Puedes descargar el contenido normalmente; Clear Download Manager no simulará una reproducción que la fuente no permita.`, 'error');
     }
   }
 }
@@ -1685,10 +1688,10 @@ async function loadPlaylist(batchId) {
   }
 }
 
-window.cacatoolsPlayerLoadJob = (jobId) => { void loadJob(jobId); };
-window.cacatoolsPlayerLoadPreview = (url) => { void loadPreview(url); };
-window.cacatoolsPlayerLoadPlaylist = (batchId) => { void loadPlaylist(batchId); };
-window.cacatoolsPlayerLoadPlaylistItem = (batchId, index) => {
+window.cdmPlayerLoadJob = (jobId) => { void loadJob(jobId); };
+window.cdmPlayerLoadPreview = (url) => { void loadPreview(url); };
+window.cdmPlayerLoadPlaylist = (batchId) => { void loadPlaylist(batchId); };
+window.cdmPlayerLoadPlaylistItem = (batchId, index) => {
   const nextBatchId = Number(batchId || 0);
   const nextIndex = Number(index);
   if (nextBatchId !== activePlaylistBatchId || !activePlaylistQueue.length) {
@@ -1779,7 +1782,7 @@ function updateTimeline() {
       online
         ? 'El enlace temporal existe, pero esta fuente exige condiciones que WebView2 no puede aplicar directamente. La descarga normal sigue disponible.'
         : playlist
-          ? 'Este archivo local existe, pero WebView2 no admite su codec o contenedor. CacaTools continuará con el siguiente elemento reproducible.'
+          ? 'Este archivo local existe, pero WebView2 no admite su codec o contenedor. Clear Download Manager continuará con el siguiente elemento reproducible.'
           : 'El archivo existe, pero WebView2 no admite este codec o contenedor.',
       'error',
       !online && !playlist && Boolean(currentSnapshot?.local_path)
@@ -2048,7 +2051,7 @@ document.addEventListener('keydown', (event) => {
 
 function keepBackgroundPlaybackActive() {
   if (!navigator.locks?.request) return;
-  void navigator.locks.request('cacatools-player-background-playback', async () => new Promise(() => {}));
+  void navigator.locks.request('cdm-player-background-playback', async () => new Promise(() => {}));
 }
 
 function bindMediaSession() {
@@ -2118,7 +2121,7 @@ void installNativeFullscreenListener();
 void installAppearanceSync();
 setRepeatEnabled(false);
 window.addEventListener('storage', (event) => {
-  if (!event.key || event.key === 'cacatools.desktop.appearance.v2' || event.key === 'cacatools.desktop.appearance.v1') {
+  if (!event.key || event.key === 'cdm.desktop.appearance.v2' || event.key === 'cdm.desktop.appearance.v1') {
     currentAppearance = loadStoredAppearance();
     applyAppearance(currentAppearance);
   }

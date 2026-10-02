@@ -100,7 +100,7 @@ with sync_playwright() as pw:
           const fixturePayload = {payload};
           const fixtureStorage = new Map();
           Object.defineProperty(window, 'localStorage', {{ value: {{
-            getItem: (key) => key === 'cacatools.desktop.appearance.v1' ? JSON.stringify({{theme:fixturePayload.theme, accent:'#35f56f'}}) : (fixtureStorage.get(key) || null),
+            getItem: (key) => key === 'cdm.desktop.appearance.v1' ? JSON.stringify({{theme:fixturePayload.theme, accent:'#35f56f'}}) : (fixtureStorage.get(key) || null),
             setItem: (key, value) => fixtureStorage.set(key, String(value)),
             removeItem: (key) => fixtureStorage.delete(key)
           }} }});

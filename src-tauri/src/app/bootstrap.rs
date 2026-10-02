@@ -82,7 +82,7 @@ pub(crate) fn acquire_instance_lock(data_dir: &Path) -> Result<(), String> {
         .open(&lock_path)
         .map_err(|error| format!("No se pudo preparar el bloqueo de instancia: {error}"))?;
     file.try_lock_exclusive()
-        .map_err(|_| "CacaTools ya está ejecutándose en segundo plano.".to_string())?;
+        .map_err(|_| "Clear Download Manager ya está ejecutándose en segundo plano.".to_string())?;
     let _ = APP_INSTANCE_LOCK.set(file);
     Ok(())
 }
@@ -211,9 +211,9 @@ pub(crate) fn exit_application(app: AppHandle) {
 }
 
 pub(crate) fn focus_main_window(app: AppHandle) -> Result<(), String> {
-    let window = app
-        .get_webview_window("main")
-        .ok_or_else(|| "No se encontró la ventana principal de CacaTools".to_string())?;
+    let window = app.get_webview_window("main").ok_or_else(|| {
+        "No se encontró la ventana principal de Clear Download Manager".to_string()
+    })?;
     let preparation_was_open = window.is_enabled().map(|enabled| !enabled).unwrap_or(false);
     // show() alone does not restore a minimized/hidden WebView on Windows.
     // Restore first, then focus so a browser page cannot keep the app behind it.
@@ -221,10 +221,10 @@ pub(crate) fn focus_main_window(app: AppHandle) -> Result<(), String> {
     let _ = window.unminimize();
     window
         .show()
-        .map_err(|error| format!("No se pudo mostrar CacaTools: {error}"))?;
+        .map_err(|error| format!("No se pudo mostrar Clear Download Manager: {error}"))?;
     let focus_result = window
         .set_focus()
-        .map_err(|error| format!("No se pudo enfocar CacaTools: {error}"));
+        .map_err(|error| format!("No se pudo enfocar Clear Download Manager: {error}"));
     let _ = window.set_always_on_top(false);
     focus_result?;
     crate::subwindows::restore_preparation_if_modal(&app, preparation_was_open);

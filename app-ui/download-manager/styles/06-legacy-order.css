@@ -14,7 +14,7 @@
 
 /* R6 visual correction · category filtering belongs to the same control family
    as the four input actions; the native Windows select is intentionally not
-   used because its opened surface ignores the CacaTools theme. */
+   used because its opened surface ignores the CDM theme. */
 .dm-category-control{position:relative;min-width:13rem;flex:0 1 18rem}
 .dm-category-toggle{
   width:100%;min-height:2.45rem;display:flex!important;align-items:center;gap:.42rem;

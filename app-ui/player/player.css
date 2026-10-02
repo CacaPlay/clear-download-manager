@@ -67,7 +67,7 @@ button,input{font:inherit}button{color:inherit}
 .player-shell[data-media-kind="audio"][data-player-state="ready"]{background:var(--player-surface)}
 .player-shell[data-media-kind="audio"][data-player-state="ready"] .player-stage{background:var(--player-surface)}
 
-/* Online media stays inside the CacaTools player window. The official iframe
+/* Online media stays inside the CDM player window. The official iframe
    owns platform playback while the wrapper keeps state and actions visible. */
 .player-shell[data-player-source="preview"] .player-titlebar{border-bottom:0;background:rgba(2,5,9,.58)}
 .player-shell[data-player-source="preview"] .player-info,
@@ -713,7 +713,7 @@ html:fullscreen .player-media-wrap::after { background:radial-gradient(ellipse a
 
 /* Online fallback embeds own their controls inside the official platform
    player. Keep the host chrome available for closing the window, but never
-   stack the CacaTools transport over TikTok, Instagram, or Pinterest UI. */
+   stack the CDM transport over TikTok, Instagram, or Pinterest UI. */
 .player-shell[data-player-mode="embed"] .player-youtube{
   display:block!important;
   pointer-events:auto!important;

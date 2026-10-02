@@ -7,7 +7,7 @@ autores.
 
 ## Elementos del proyecto
 
-Clear Download Manager, CDM, CacaPlay y CacaTools, sus logotipos, iconos de
+Clear Download Manager, CDM y CacaPlay, sus logotipos, iconos de
 aplicación, identidad visual y materiales de tienda se reservan a sus
 respectivos titulares y quedan fuera de GPL salvo permiso separado. Este
 documento no determina por sí solo quién es el titular jurídico ni otorga una

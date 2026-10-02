@@ -237,7 +237,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "cacatools-priority-{}-{nonce}.sqlite",
+            "cdm-priority-{}-{nonce}.sqlite",
             std::process::id()
         ));
         let _ = std::fs::remove_file(&path);

@@ -8,8 +8,8 @@ fn main() {
             || argument.starts_with("moz-extension://")
     });
     if native_messaging {
-        cacatools_desktop_lib::run_native_messaging_host();
+        clear_download_manager_lib::run_native_messaging_host();
         return;
     }
-    cacatools_desktop_lib::run();
+    clear_download_manager_lib::run();
 }

@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "clear-download-manager@1.0.0",
-  "documentNamespace": "http://spdx.org/spdxdocs/clear-download-manager-1.0.0-4d14012c-d80e-40c4-af32-c8c64e4fc30c",
+  "documentNamespace": "http://spdx.org/spdxdocs/clear-download-manager-1.0.0-cc2e4113-00dd-45a5-ac94-61146e7cddaf",
   "creationInfo": {
-    "created": "2026-09-30T16:04:57.647Z",
+    "created": "2026-10-02T16:20:05.957Z",
     "creators": [
       "Tool: npm/cli-11.16.0"
     ]
@@ -928,6 +928,29 @@
           "checksumValue": "1eb26bbd9bf96b2c41ccf7f0a613a837393338822589fce4d0a26b18ad9cf11e3e2caa4cb6960b41e51d8e7c235affcb665907da569993ee30efca62f7d0f857"
         }
       ]
+    },
+    {
+      "name": "fake-indexeddb",
+      "SPDXID": "SPDXRef-Package-fake-indexeddb-6.2.5",
+      "versionInfo": "6.2.5",
+      "packageFileName": "node_modules/fake-indexeddb",
+      "downloadLocation": "https://registry.npmjs.org/fake-indexeddb/-/fake-indexeddb-6.2.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/fake-indexeddb@6.2.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0869f2aef6e13e5598327824b2aad24944f504054fe3d759a1cac7b8ad12bed4740f94ccb39c0fd28de3ee37b10c95b4d4a49a763069d4cffbd68fca4779c3d7"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -943,6 +966,11 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-esbuild-0.28.1",
+      "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-1.0.0",
+      "relationshipType": "DEV_DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-fake-indexeddb-6.2.5",
       "relatedSpdxElement": "SPDXRef-Package-clear-download-manager-1.0.0",
       "relationshipType": "DEV_DEPENDENCY_OF"
     },

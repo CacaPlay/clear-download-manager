@@ -283,8 +283,8 @@ async function start() {
         'is_background_launch',
       ).catch(() => false));
     }
-    if (!window.__cacatoolsAdaptiveScaleBound) {
-      window.__cacatoolsAdaptiveScaleBound = true;
+    if (!window.__cdmAdaptiveScaleBound) {
+      window.__cdmAdaptiveScaleBound = true;
       window.addEventListener('resize', () => {
         if (!appState.appearance.autoScale) return;
         applyAppearance(appState.appearance);
@@ -312,8 +312,8 @@ async function start() {
       }, 350);
     }
     if (!previewMode) {
-      if (!window.__cacatoolsDeferredRefreshBound) {
-        window.__cacatoolsDeferredRefreshBound = true;
+      if (!window.__cdmDeferredRefreshBound) {
+        window.__cdmDeferredRefreshBound = true;
         document.addEventListener('focusout', flushDeferredDownloadManagerRefresh, true);
         document.addEventListener('pointerup', flushDeferredDownloadManagerRefresh, true);
         document.addEventListener('keyup', (event) => {

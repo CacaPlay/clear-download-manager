@@ -45,7 +45,7 @@ test('Complementos is a dedicated settings category containing manual component 
 
 test('component manager is no longer duplicated inside updates and diagnostics', () => {
   const previousWindow = globalThis.window;
-  globalThis.window = { __cacatoolsVisualDiagnostics: {} };
+  globalThis.window = { __cdmVisualDiagnostics: {} };
   configureSettingsFor('updates');
   try {
     const markup = settingsMarkup();

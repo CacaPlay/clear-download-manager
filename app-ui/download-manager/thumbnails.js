@@ -1,7 +1,7 @@
 import { thumbnailUrl } from './core/model.js';
 import { thumbnailState, MAX_CONCURRENT_THUMBNAILS, MAX_THUMBNAIL_CACHE_ENTRIES, THUMBNAIL_FAILURE_TTL_MS } from './state.js';
 function thumbnailDebugUpdate(patch = {}) {
-  const debug = globalThis.__CACATOOLS_THUMBNAIL_TEST__;
+  const debug = globalThis.__CDM_THUMBNAIL_TEST__;
   if (!debug || typeof debug !== 'object') return;
   if (!debug.requestThumbnail) debug.requestThumbnail = (image, source, fallback = '') => subscribeThumbnailImage(image, source, fallback, true);
   debug.stats = {
@@ -123,10 +123,10 @@ function subscribeThumbnailImage(image, preferred, fallback = '', allowFallback 
       subscribers: new Set(),
     };
     thumbnailState.cache.set(key, entry);
-    const debug = globalThis.__CACATOOLS_THUMBNAIL_TEST__;
+    const debug = globalThis.__CDM_THUMBNAIL_TEST__;
     if (debug && typeof debug === 'object') debug.cacheMisses = Number(debug.cacheMisses || 0) + 1;
   } else {
-    const debug = globalThis.__CACATOOLS_THUMBNAIL_TEST__;
+    const debug = globalThis.__CDM_THUMBNAIL_TEST__;
     if (debug && typeof debug === 'object') debug.cacheHits = Number(debug.cacheHits || 0) + 1;
     if (!entry.fallbackUrl && allowFallback && fallbackSource && fallbackSource !== key) entry.fallbackUrl = fallbackSource;
   }
@@ -139,7 +139,7 @@ function subscribeThumbnailImage(image, preferred, fallback = '', allowFallback 
   if (entry.state === 'failed') {
     if (allowFallback && entry.fallbackUrl && !entry.fallbackAttempted) {
       entry.fallbackAttempted = true;
-      const debug = globalThis.__CACATOOLS_THUMBNAIL_TEST__;
+      const debug = globalThis.__CDM_THUMBNAIL_TEST__;
       if (debug && typeof debug === 'object') debug.fallbacks = Number(debug.fallbacks || 0) + 1;
       subscribeThumbnailImage(image, entry.fallbackUrl, '', false);
     } else if (allowFallback && entry.fallbackUrl && entry.fallbackAttempted) {
@@ -172,14 +172,14 @@ function settleThumbnailEntry(entry, state) {
   else subscribers.forEach((image) => {
     if (entry.fallbackUrl && !entry.fallbackAttempted) {
       entry.fallbackAttempted = true;
-      const debug = globalThis.__CACATOOLS_THUMBNAIL_TEST__;
+      const debug = globalThis.__CDM_THUMBNAIL_TEST__;
       if (debug && typeof debug === 'object') debug.fallbacks = Number(debug.fallbacks || 0) + 1;
       subscribeThumbnailImage(image, entry.fallbackUrl, '', false);
     } else if (entry.fallbackUrl && entry.fallbackAttempted) {
       subscribeThumbnailImage(image, entry.fallbackUrl, '', false);
     } else markThumbnailFailed(image);
   });
-  const debug = globalThis.__CACATOOLS_THUMBNAIL_TEST__;
+  const debug = globalThis.__CDM_THUMBNAIL_TEST__;
   if (debug && typeof debug === 'object') {
     debug.loads = Number(debug.loads || 0) + (state === 'loaded' ? 1 : 0);
     debug.failures = Number(debug.failures || 0) + (state === 'failed' ? 1 : 0);

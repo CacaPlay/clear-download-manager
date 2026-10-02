@@ -56,7 +56,7 @@ const main = readFrontendSource('.js');
 const unified = read('app-ui/download-manager/view/unified.js');
 const dmStyles = read('app-ui/download-manager/styles.css');
 
-const appLockBlock = cargoPackageBlock(cargoLock, 'cacatools-desktop');
+const appLockBlock = cargoPackageBlock(cargoLock, 'clear-download-manager');
 const expectedAppVersion = packageJson.version;
 const expectedExtensionVersion = '0.95.4';
 const tauriLockBlock = cargoPackageBlock(cargoLock, 'tauri');
@@ -116,7 +116,7 @@ check('Reproductor mantiene autoplay e iconos reales', (main.includes('data-yout
   && read('app-ui/player/player.js').includes('const ICONS =')
   && !read('app-ui/player/player.js').includes("'Ⅱ'"));
 check('Aviso de preview degradado es persistente y sólo para brechas extremas', rust.includes('fn player_preview_quality_limited')
-  && read('app-ui/player/player.js').includes('cacatools.player.low-preview-notice.v1')
+  && read('app-ui/player/player.js').includes('cdm.player.low-preview-notice.v1')
   && rust.includes('assert!(!player_preview_quality_limited(Some(720), Some(2160)))'));
 check('CSP permite preview remoto manteniendo asset local', String(tauriConfig.app?.security?.csp?.['media-src'] || '').includes('asset:')
   && String(tauriConfig.app?.security?.csp?.['media-src'] || '').includes('https:'));

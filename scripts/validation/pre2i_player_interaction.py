@@ -65,7 +65,7 @@ def main() -> None:
                   theme: 'dark', accent: '#249ee4', scale: 100, textScale: 100,
                   density: 'balanced', intensity: 100, revision: 7
                 };
-                localStorage.setItem('cacatools.desktop.appearance.v2', JSON.stringify(appearance));
+                localStorage.setItem('cdm.desktop.appearance.v2', JSON.stringify(appearance));
                 window.__playerCalls = [];
                 window.__playerListeners = {};
                 window.__TAURI__ = {
@@ -154,7 +154,7 @@ def main() -> None:
                     return original(command, args);
                   };
                 }""",
-                r"\\?\D:\QA\CacaTools",
+                r"\\?\D:\QA\Clear Download Manager",
             )
             preparation.locator('[data-role="url"]').fill("https://youtu.be/pre2i-fixture")
             preparation.locator('[data-role="source-form"]').press("Enter")
@@ -167,8 +167,8 @@ def main() -> None:
             preparation.locator('[data-action="change-folder"]').click()
             destination = preparation.locator('[data-role="destination-path"]').first
             destination_text = destination.inner_text()
-            assert destination_text == "D:\\QA\\CacaTools", destination_text
-            assert destination.get_attribute("title") == "D:\\QA\\CacaTools"
+            assert destination_text == "D:\\QA\\Clear Download Manager", destination_text
+            assert destination.get_attribute("title") == "D:\\QA\\Clear Download Manager"
             print("OK: format metadata and display-only Windows path normalization")
 
             extension_label = preparation.evaluate(

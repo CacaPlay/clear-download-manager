@@ -1,81 +1,63 @@
-# Migración del actualizador
+# Updater and upgrade compatibility
 
-## Repositorios y compatibilidad
+## Current update channel
 
-Desde la versión 0.95.3, Clear Download Manager consulta el canal de releases
-del repositorio principal `CacaPlay/clear-download-manager`. La versión 0.95.4
-es el primer release publicado allí.
+Current releases are published in `CacaPlay/clear-download-manager`. The
+production updater endpoint is
+`https://github.com/CacaPlay/clear-download-manager/releases/latest/download/latest.json`.
+The release metadata and installer remain protected by the configured signing
+key and release verification gates.
 
-Para conservar compatibilidad con los clientes antiguos, el repositorio
-público de releases se renombró a `CacaPlay/cacatools-download-manager-releases`.
-GitHub redirige el nombre público anterior a este repositorio. Así se conserva
-el endpoint que tienen incorporado los instaladores 0.95.1-build4 y anteriores
-que apuntan a ese slug.
+## LEGACY COMPATIBILITY — earlier updater clients
 
-El repositorio privado que tenía el mismo slug necesario para ese endpoint se
-renombró a `CacaPlay/cacatools-download-manager-releases-private-archive` y
-permanece privado, con su historial de releases intacto. No eliminarlo ni
-cambiar su visibilidad.
+The available `v0.95.1` builds through `v0.95.1-build4` contain the endpoint
+`https://github.com/CacaPlay/cacatools-download-manager-releases/releases/latest/download/latest.json`.
+The `v0.95.4` and `v1.0.0` tags instead point to the current
+`clear-download-manager` repository. Keep the public legacy endpoint available
+while those older clients remain supported. A bridge release, when required,
+must copy the verified `latest.json` and continue pointing to the signed asset
+in the current repository; it must not bypass signature or hash verification.
 
-La estrategia para cada nueva versión es:
+## LEGACY COMPATIBILITY — installed v1.0.0 profile and local data
 
-1. Publicar la versión firmada y sus artefactos en `CacaPlay/clear-download-manager`.
-2. Copiar el `latest.json` de esa release a una release puente de la misma
-   versión en `CacaPlay/cacatools-download-manager-releases`. El catálogo sigue
-   apuntando al artefacto firmado del repositorio principal.
-3. Comprobar ambos endpoints, la firma y la descarga antes de dar por terminada
-   la migración.
+The production Tauri identifier remains
+`lat.cacaplay.cacatools.downloadmanager`. Tauri uses this stable identifier for
+the existing application data directory and default WebView2 profile; changing
+it would create a separate profile and could make existing settings and local
+data appear missing during an in-place update.
 
-No se cambia la clave de firma. El release puente solo permite que las
-instalaciones antiguas descubran la actualización; no requiere recompilar el
-instalador antiguo. Las instalaciones 0.95.3 y posteriores actualizan desde el
-repositorio principal.
+The v1.0.0 SQLite file `cacatools.sqlite3` is moved atomically to
+`clear-download-manager.sqlite3` after the single-instance lock is held and its
+SQLite journal is checkpointed. If both names already exist, startup fails
+closed and preserves both files for recovery. The downloads folder
+`Downloads\CacaTools` is renamed to `Downloads\Clear Download Manager` only
+when the new folder does not exist; a conflict leaves both folders untouched
+and continues using the existing folder.
 
-## Feed de novedades
+The image editor migrates `cacatools-images-v3` to `cdm-images-v1` by copying
+missing records in a transaction before removing the old database. App
+`localStorage` keys are copied and verified before the old keys are removed;
+conflicting values are retained for recovery. The current configuration uses
+`CDM_*` environment variables first and accepts prior aliases only when the
+current variable is absent.
 
-Los builds nuevos leen `news.json` desde la raíz de `main` en
-`CacaPlay/clear-download-manager`. El feed se valida aparte del catálogo
-firmado del actualizador y no sustituye la comprobación de la firma de la
-actualización.
+The native messaging integration registers the canonical host
+`lat.cacaplay.cleardownloadmanager` and the v1.0.0 host
+`lat.cacaplay.cacatools.downloadmanager`. Both launch the current executable.
+The legacy host binary name and shared bridge directory
+`%LOCALAPPDATA%\CacaTools\DownloadManager\ExtensionBridge` remain so installed
+browser extensions and queued bridge requests continue to work.
 
-## Estado de esta transición — 2026-09-22
+Component catalog schema v1 serializes the origin authority as
+`cacatools-controlled`. This signed wire value and its frozen verification
+vector are preserved for compatibility; the internal Rust type uses the CDM
+name. Changing the serialized value requires a new catalog schema version and
+verification vector. Signature, key, source and component-policy checks remain
+unchanged.
 
-- La release principal 0.95.4 está publicada en
-  `https://github.com/CacaPlay/clear-download-manager/releases/tag/v0.95.4`.
-  Incluye instalador NSIS, firma Tauri, `latest.json` y `SHA256SUMS.txt`.
-- La release puente 0.95.4 está publicada en
-  `https://github.com/CacaPlay/cacatools-download-manager-releases/releases/tag/v0.95.4`.
-  Su `latest.json` es una copia byte por byte del catálogo principal y apunta
-  al instalador firmado del repositorio principal; no duplica el instalador.
-- Se comprobó que el endpoint del repo principal, el endpoint legacy y el
-  nombre público anterior `clear-download-manager-releases` entregan versión
-  0.95.4. El URL del instalador del catálogo responde HTTP 200.
-- El archivo privado histórico permanece privado como
-  `CacaPlay/cacatools-download-manager-releases-private-archive`.
-- El instalador 0.95.4 pesa 116,941,840 bytes; el anterior instalador 0.95.1
-  pesaba 114,229,164 bytes. El aumento es de 2,712,676 bytes (aprox. 2.6 MB).
-- La configuración de Tauri, el paquete Cargo y la extensión se alinean en
-  versión 0.95.4.
-- El usuario validó la extensión en Brave y confirma que funciona plenamente,
-  sin fallos y como esperaba. También considera que la auditoría de textos en
-  inglés está bastante bien.
-- El usuario no ha podido validar visualmente la barra de progreso del updater
-  porque aún no ha tenido una actualización disponible para instalar.
-- `version:check`, `check:release` (26 contratos), `check:extension`,
-  `check:extension-ui`, `build:web`, `verify:binaries` y `git diff --check`
-  pasaron en la revisión previa de 0.95.3. `check:media-e2e` no terminó con un
-  estado E2E, así que no se cuenta como aprobado ni como regresión confirmada.
-- FFmpeg/FFprobe 9.0.2 y Deno 2.9.7 quedaron preparados; aria2 sigue en 1.37.0
-  y yt-dlp en 2026.08.19. Los hashes de binarios se verificaron. El tamaño
-  empaquetado debe registrarse desde el artefacto de release.
-- Los secretos de firma Tauri están configurados en GitHub Actions. La clave
-  privada no se copia al repositorio, no se busca en el disco y no se cambia.
-- Los workflows de GitHub completaron versión/fuente, Rust, build firmado y
-  verificación de endpoint con éxito. En local pasaron `version:check`, el
-  gate `check:release` (26 contratos), extensión, i18n, build web, verificación
-  de binarios/manifiesto, `cargo check`, `cargo test --lib` (375 pasaron, 2
-  ignorados), Clippy y formato.
-- Se verificó la continuidad de los metadatos y la disponibilidad HTTP, pero
-  no se ejecutó una actualización interactiva desde una instalación 0.95.1 ni
-  desde 0.45.0. Esa última comprobación depende de una instalación Windows
-  real; no se afirma aquí como probada.
+## EXTERNAL STORE IDENTITY
+
+The assigned Microsoft Store AppUserModelId is
+`CacaPlay.CacaToolsDownloadManager_b9fexpwkvxe1m!CacaTools`. Preserve this value
+exactly in the package manifest and extension bridge because it belongs to the
+existing Store identity; it is not the product's current display name.

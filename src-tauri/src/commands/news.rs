@@ -62,7 +62,7 @@ pub(crate) async fn fetch_remote_news_feed(
         .map_err(|error| format!("No se pudo preparar el feed de novedades: {error}"))?;
     let mut request = client
         .get(NEWS_FEED_URL)
-        .header(USER_AGENT, "CacaTools-Desktop-News/0.45");
+        .header(USER_AGENT, "Clear-Download-Manager-News/0.45");
     if let Some(value) = etag.filter(|value| !value.trim().is_empty()) {
         request = request.header(IF_NONE_MATCH, value.chars().take(300).collect::<String>());
     }
@@ -129,7 +129,7 @@ pub(crate) async fn fetch_release_metadata(
         .map_err(|error| format!("No se pudo preparar metadata de release: {error}"))?;
     let response = client
         .get(format!("{RELEASE_API_BASE}{version}"))
-        .header(USER_AGENT, "CacaTools-Desktop-Updater/0.45")
+        .header(USER_AGENT, "Clear-Download-Manager-Updater/0.45")
         .send()
         .await
         .map_err(|error| format!("No se pudo consultar metadata de release: {error}"))?;

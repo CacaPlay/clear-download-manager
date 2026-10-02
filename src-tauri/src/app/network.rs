@@ -169,11 +169,11 @@ pub(crate) fn url_has_public_http_target(parsed: &Url) -> bool {
 
 fn progress_acceptance_url_allowed(parsed: &Url) -> bool {
     if cfg!(debug_assertions)
-        && std::env::var("CACATOOLS_MEDIA_E2E_ACCEPTANCE")
+        && std::env::var("CDM_MEDIA_E2E_ACCEPTANCE")
             .map(|value| value.trim() == "1")
             .unwrap_or(false)
     {
-        if let Ok(urls) = std::env::var("CACATOOLS_MEDIA_E2E_URLS") {
+        if let Ok(urls) = std::env::var("CDM_MEDIA_E2E_URLS") {
             if urls
                 .split('|')
                 .filter_map(|value| Url::parse(value.trim()).ok())
@@ -188,13 +188,13 @@ fn progress_acceptance_url_allowed(parsed: &Url) -> bool {
         }
     }
     if !cfg!(debug_assertions)
-        || std::env::var("CACATOOLS_PROGRESS_ACCEPTANCE")
+        || std::env::var("CDM_PROGRESS_ACCEPTANCE")
             .map(|value| value.trim() != "1")
             .unwrap_or(true)
     {
         return false;
     }
-    let Ok(fixture) = std::env::var("CACATOOLS_PROGRESS_ACCEPTANCE_URL") else {
+    let Ok(fixture) = std::env::var("CDM_PROGRESS_ACCEPTANCE_URL") else {
         return false;
     };
     let Ok(fixture) = Url::parse(fixture.trim()) else {

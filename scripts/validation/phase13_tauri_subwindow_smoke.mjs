@@ -6,7 +6,7 @@ import net from 'node:net';
 import { spawn, spawnSync } from 'node:child_process';
 
 const root = process.cwd();
-const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cacatools-phase13-window-'));
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-phase13-window-'));
 const server = http.createServer((request, response) => {
   if (request.method !== 'HEAD' && request.method !== 'GET') return response.writeHead(405).end();
   const body = Buffer.alloc(512 * 1024, 0x43);
@@ -45,11 +45,11 @@ async function runKind(kind) {
   const output = [];
   const environment = {
     ...process.env,
-    CACATOOLS_SUBWINDOW_ACCEPTANCE: '1',
-    CACATOOLS_SUBWINDOW_ACCEPTANCE_KIND: kind,
-    CACATOOLS_SUBWINDOW_ACCEPTANCE_URL: fixtureUrl,
-    CACATOOLS_DATA_DIR: dataDir,
-    CACATOOLS_DOWNLOADS_DIR: downloadsDir,
+    CDM_SUBWINDOW_ACCEPTANCE: '1',
+    CDM_SUBWINDOW_ACCEPTANCE_KIND: kind,
+    CDM_SUBWINDOW_ACCEPTANCE_URL: fixtureUrl,
+    CDM_DATA_DIR: dataDir,
+    CDM_DOWNLOADS_DIR: downloadsDir,
     RUST_BACKTRACE: '1'
   };
   const commandShell = process.env.ComSpec || 'cmd.exe';
@@ -61,14 +61,14 @@ async function runKind(kind) {
   // so the dev HTTP server is not a reliable signal for a native subwindow.
   // The debug-only acceptance branch emits the result after the native window
   // has been built, shown, and focused.
-  const openedPattern = new RegExp(`CACATOOLS_SUBWINDOW_ACCEPTANCE_RESULT kind=${kind} status=PASS`);
+  const openedPattern = new RegExp(`CDM_SUBWINDOW_ACCEPTANCE_RESULT kind=${kind} status=PASS`);
   while (Date.now() < deadline && child.exitCode === null) {
     if (openedPattern.test(output.join(''))) break;
     await new Promise((resolve) => setTimeout(resolve, 300));
   }
   const log = output.join('');
   const opened = openedPattern.test(log);
-  const appStarted = log.includes('target\\debug\\cacatools-desktop.exe') || log.includes('CACATOOLS_SUBWINDOW_ACCEPTANCE_RESULT');
+  const appStarted = log.includes('target\\debug\\clear-download-manager.exe') || log.includes('CDM_SUBWINDOW_ACCEPTANCE_RESULT');
   if (child.exitCode === null) {
     if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(child.pid), '/t', '/f'], { windowsHide: true });
     else child.kill('SIGTERM');

@@ -924,7 +924,7 @@ mod tests {
     #[test]
     fn final_artifact_verification_rejects_empty_html_and_wrong_size() {
         let path = std::env::temp_dir().join(format!(
-            "cacatools-http-final-artifact-{}.bin",
+            "cdm-http-final-artifact-{}.bin",
             std::process::id()
         ));
         let _ = fs::remove_file(&path);
@@ -950,10 +950,8 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("clock after epoch")
             .as_nanos();
-        let root = std::env::temp_dir().join(format!(
-            "cacatools-http-recovery-{}-{suffix}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("cdm-http-recovery-{}-{suffix}", std::process::id()));
         fs::create_dir_all(&root).expect("create test directory");
         let db_path = root.join("state.sqlite");
         let destination = root.join("android-studio-quail3-windows.exe");

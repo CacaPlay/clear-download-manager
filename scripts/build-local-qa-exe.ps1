@@ -18,7 +18,7 @@ $OutputExe = Join-Path $OutputRoot $OutputFile
 $BaselineExe = Join-Path $OutputRoot 'Clear Download Manager QA.exe'
 $BaselineHash = if (Test-Path -LiteralPath $BaselineExe) { (Get-FileHash -LiteralPath $BaselineExe -Algorithm SHA256).Hash } else { $null }
 
-$ExpectedIdentifier = 'lat.cacaplay.cacatools.downloadmanager.qa'
+$ExpectedIdentifier = 'lat.cacaplay.cleardownloadmanager.qa'
 $ExpectedEndpoint = 'http://127.0.0.1:49301/component-catalog-v1.json'
 $ExpectedKeyId = 'component-catalog-qa-20260927'
 $ExpectedFingerprint = '7910b5251d799b5160471f860db7de4bd478dea5280e5ebd7a63a1ec2a655313'
@@ -91,7 +91,7 @@ try {
   & npx.cmd --no-install tauri build --no-bundle --config src-tauri/tauri.qa.conf.json --features qa-component-manager -- --no-default-features
   if ($LASTEXITCODE -ne 0) { throw "Tauri build failed with exit code $LASTEXITCODE." }
 
-  $BuiltExe = Join-Path $TargetRoot 'release\cacatools-desktop.exe'
+  $BuiltExe = Join-Path $TargetRoot 'release\clear-download-manager.exe'
   if (-not (Test-Path -LiteralPath $BuiltExe)) { throw 'The standalone QA executable was not produced.' }
   Copy-Item -LiteralPath $BuiltExe -Destination $OutputExe -Force
   if ($BaselineHash -and (Get-FileHash -LiteralPath $BaselineExe -Algorithm SHA256).Hash -cne $BaselineHash) {

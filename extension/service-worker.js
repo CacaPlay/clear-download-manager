@@ -1,4 +1,4 @@
-import { cacaToolsNative, nativeHandshake } from './sdk/cacatools-native-client.js';
+import { cdmNative, nativeHandshake } from './sdk/cdm-native-client.js';
 import { canUseJobAction } from './sdk/compatibility.js';
 import { prepareSelection } from './sdk/selection.js';
 import { createOperationJournal, selectionFingerprint } from './sdk/operation-journal.js';
@@ -343,7 +343,7 @@ function shouldIgnoreDownload(item) {
   // Respect downloads explicitly started by another extension (for example a
   // dedicated manager) instead of racing its own native handoff.
   if (item.byExtensionId && item.byExtensionId !== chrome.runtime.id) return true;
-  if (String(item.byExtensionName || '').toLowerCase().includes('cacatools')) return true;
+  if (String(item.byExtensionName || '').toLowerCase().includes('clear download manager')) return true;
   const urls = downloadUrls(item);
   if (!urls.length || urls.some((url) => isBrowserUpdate(url, item.filename))) return true;
   if (isSmallInternalResource(item)) return true;
@@ -450,7 +450,7 @@ async function performCaptureDownload(item, options = {}) {
     // A lost response is not a rejection. Resuming here could create two transfers.
     await chrome.storage.local.set({pendingCaptureReview: {downloadId:item.id, at:Date.now()}});
     const fingerprint = await selectionFingerprint({downloadId:item.id,startTime:item.startTime,url:capture.finalUrl});
-    const response = await operationJournal.run(`capture-${fingerprint}`,fingerprint,()=>cacaToolsNative.captureDownload(capture));
+    const response = await operationJournal.run(`capture-${fingerprint}`,fingerprint,()=>cdmNative.captureDownload(capture));
     const status = String(response?.status || '').toLowerCase();
     if (response?.uncertain || status === 'temporary_failure') {
       publish({type:'CAPTURE_FALLBACK',response:{ok:false,error:'Transferencia sin confirmar. La descarga del navegador queda pausada. Revisa Clear Download Manager antes de reanudarla manualmente en el navegador.'}});
@@ -551,7 +551,7 @@ async function collectFromTab(tabId) {
     for (const wait of [0, 320, 780]) {
       if (wait) await delay(wait);
       const response = await withTimeout(
-        chrome.tabs.sendMessage(tabId, { type: 'CACATOOLS_COLLECT' }),
+        chrome.tabs.sendMessage(tabId, { type: 'CDM_COLLECT' }),
         DETECTION_RESPONSE_TIMEOUT_MS,
         `El detector no respondió en ${DETECTION_RESPONSE_TIMEOUT_MS} ms.`
       );
@@ -594,7 +594,7 @@ async function activeTab() {
 async function refreshAppStatus() {
   try {
     const bridge = await nativeHandshake();
-    const result = { ...await cacaToolsNative.status(), bridge };
+    const result = { ...await cdmNative.status(), bridge };
     await syncActionIcon(result?.state?.appearance || {});
     if (result?.state) await chrome.storage.local.set({ lastAppState: result.state });
     publish({ type: 'APP_STATE', result });
@@ -653,7 +653,7 @@ chrome.downloads.onErased.addListener((downloadId) => {
 });
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== 'cacatools-sidepanel') return;
+  if (port.name !== 'cdm-sidepanel') return;
   panelPorts.add(port);
   try {
     const sourceTabId = Number(new URL(port.sender?.url || '').searchParams.get('sourceTabId'));
@@ -714,13 +714,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   if (message?.type === 'GET_HOST_STATUS') {
-    void cacaToolsNative.ping()
+    void cdmNative.ping()
       .then((response) => sendResponse({ ok: response?.ok === true, error:response?.error, response }))
       .catch((error) => sendResponse({ ok: false, error: String(error) }));
     return true;
   }
   if (message?.type === 'OPEN_APP') {
-    void cacaToolsNative.open()
+    void cdmNative.open()
       .then((response) => sendResponse({ ok: response?.ok === true, error:response?.error, response }))
       .catch((error) => sendResponse({ ok: false, error: String(error) }));
     return true;
@@ -839,13 +839,13 @@ if (chrome.runtime.onUpdateAvailable?.addListener) {
 }
 
 async function ensurePlayerAppReady() {
-  const current = await cacaToolsNative.status();
+  const current = await cdmNative.status();
   if (current?.appRunning === true) return;
-  const opened = await cacaToolsNative.open();
+  const opened = await cdmNative.open();
   if (opened?.ok !== true) throw new Error(opened?.error || 'No se pudo abrir Clear Download Manager para reproducir.');
   for (let attempt = 0; attempt < 10; attempt += 1) {
     await delay(200);
-    const status = await cacaToolsNative.status();
+    const status = await cdmNative.status();
     if (status?.appRunning === true) return;
   }
   throw new Error('Clear Download Manager todavía está iniciando. Vuelve a pulsar Reproducir cuando la app esté disponible.');
@@ -854,13 +854,13 @@ async function ensurePlayerAppReady() {
 export async function dispatchJobAction(message) {
   if (message.action === 'play') await ensurePlayerAppReady();
   const bridge = await nativeHandshake({force:true});
-  const result = await cacaToolsNative.status();
+  const result = await cdmNative.status();
   const job = result?.state?.jobs?.find(j=>Number(j.id)===Number(message.jobId));
   const fresh = result?.appRunning === true && Date.now()-Number(result?.state?.updatedAt||0) < 15000;
   if (!canUseJobAction(bridge,message.action,job,fresh)) throw new Error('La acción no está disponible con este puente o estado. Abre Clear Download Manager para realizarla.');
-  if (message.action === 'play') return cacaToolsNative.openPlayer(message.jobId);
-  if (message.action === 'open') return cacaToolsNative.openJob(message.jobId);
-  return cacaToolsNative.jobAction(message.jobId,message.action,{confirmed:message.confirmed === true});
+  if (message.action === 'play') return cdmNative.openPlayer(message.jobId);
+  if (message.action === 'open') return cdmNative.openJob(message.jobId);
+  return cdmNative.jobAction(message.jobId,message.action,{confirmed:message.confirmed === true});
 }
 
 export async function sendSelectionToApp(items, preferences = {}) {
@@ -900,7 +900,7 @@ export async function sendSelectionToApp(items, preferences = {}) {
   };
   metadata.idempotencyKey = metadata.commandId;
   const fingerprint = await selectionFingerprint({items:safeItems.map(i=>[i.type,i.mediaUrl]),format:metadata.preferredFormat,quality:metadata.preferredQuality,windowMode:metadata.windowMode,manualPlaylist:metadata.manualPlaylist,playlistTitle:metadata.playlistTitle,filename:metadata.filename});
-  const result = await operationJournal.run(metadata.commandId,fingerprint,()=>cacaToolsNative.enqueue(source,metadata),{allowUncertainRetry:preferences.allowUncertainRetry === true});
+  const result = await operationJournal.run(metadata.commandId,fingerprint,()=>cdmNative.enqueue(source,metadata),{allowUncertainRetry:preferences.allowUncertainRetry === true});
   if (result?.ok === true) void refreshAppStatus();
   return result;
 }

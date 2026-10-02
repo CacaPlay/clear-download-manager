@@ -27,7 +27,7 @@ globalThis.chrome = {
       // one-shape `{ok:true}` mock could never prove host identity or protocol
       // compatibility and only masked stale handshake assertions.
       const response = message.action === 'ping'
-        ? { ok: true, host: 'lat.cacaplay.cacatools.downloadmanager', protocolVersion: 1, hostVersion: '0.45.4', desktopAppVersion: '0.95.4' }
+        ? { ok: true, host: 'lat.cacaplay.cleardownloadmanager', protocolVersion: 1, hostVersion: '0.45.4', desktopAppVersion: '0.95.4' }
         : message.action === 'capabilities'
           ? { ok: true, protocolVersion: 1, actions: ['ping', 'capabilities', 'enqueue', 'analyze', 'browser_download_capture', 'open_app', 'activate_app', 'open_job', 'open_player', 'list_jobs', 'job_action', 'set_job_options', 'get_status'], sourceTypes: ['video', 'audio', 'playlist', 'direct_file', 'generic_url'] }
           : message.action === 'get_status'

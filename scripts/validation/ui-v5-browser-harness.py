@@ -15,8 +15,8 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
 REFERENCE = Path(os.environ.get(
-    "CACATOOLS_UI_V5_REFERENCE",
-    ROOT / "docs" / "ui-reference" / "CacaTools-UI-v5",
+    "CDM_UI_V5_REFERENCE",
+    ROOT / "docs" / "ui-reference" / "Clear Download Manager-UI-v5",
 )).expanduser().resolve()
 OUT: Path | None = None
 
@@ -138,10 +138,10 @@ def main():
     global OUT
     if not REFERENCE.is_dir():
         raise SystemExit(
-            "UI V5 reference is unavailable. Set CACATOOLS_UI_V5_REFERENCE to an "
-            "existing reference directory or restore docs/ui-reference/CacaTools-UI-v5."
+            "UI V5 reference is unavailable. Set CDM_UI_V5_REFERENCE to an "
+            "existing reference directory or restore docs/ui-reference/Clear Download Manager-UI-v5."
         )
-    output_override = os.environ.get("CACATOOLS_UI_V5_OUTPUT")
+    output_override = os.environ.get("CDM_UI_V5_OUTPUT")
     if output_override:
         OUT = Path(output_override).expanduser().resolve()
         if OUT.exists():
@@ -158,7 +158,7 @@ def main():
             for theme, accent in (("dark", "#59d37b"), ("light", "#4d9dff")):
               for kind in ("multimedia", "playlist", "http"):
                 context = browser.new_context(viewport={"width": 1320, "height": 900}, device_scale_factor=1)
-                context.add_init_script(f"localStorage.setItem('ct-ui-theme', '{theme}'); localStorage.setItem('ct-ui-accent', '{accent}'); localStorage.setItem('cacatools.desktop.appearance.metrics.v1', JSON.stringify({{interfaceRatio: 1}}));")
+                context.add_init_script(f"localStorage.setItem('ct-ui-theme', '{theme}'); localStorage.setItem('ct-ui-accent', '{accent}'); localStorage.setItem('cdm.desktop.appearance.metrics.v1', JSON.stringify({{interfaceRatio: 1}}));")
                 ref_page = context.new_page()
                 prod_page = context.new_page()
                 ref_page.goto(reference_url(reference_port, kind), wait_until="networkidle")

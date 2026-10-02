@@ -39,7 +39,7 @@ def source_gate() -> list[str]:
         failures.append("El indicador legacy de prioridad sigue en el markup")
     if "settingsEditingIsActive" not in main or ".settings-workspace input" not in main:
         failures.append("El boundary de edición de Settings no protege inputs activos")
-    if "__cacatoolsRequestDownloadManagerRender" not in main:
+    if "__cdmRequestDownloadManagerRender" not in main:
         failures.append("Falta el boundary de refresh determinista para el gate de Settings")
     if "la beta final incluirá yt-dlp" in lib.lower():
         failures.append("Quedó copy obsoleto de beta en el fallback del resolver")
@@ -60,7 +60,7 @@ def resource_gate(artifact: Path | None) -> list[dict[str, object]]:
     results: list[dict[str, object]] = []
     safe_env = os.environ.copy()
     safe_env["PATH"] = ""
-    for key in ("CACATOOLS_YTDLP", "CACATOOLS_FFMPEG", "CACATOOLS_FFPROBE", "CACATOOLS_DENO", "CACATOOLS_ARIA2C"):
+    for key in ("CDM_YTDLP", "CDM_FFMPEG", "CDM_FFPROBE", "CDM_DENO", "CDM_ARIA2C"):
         safe_env.pop(key, None)
     for name, filename in checks.items():
         path = bin_dir / filename
@@ -98,7 +98,7 @@ def browser_gate() -> dict[str, object]:
             page = browser.new_page(viewport={"width": 1180, "height": 780}, reduced_motion="reduce")
             page.on("pageerror", lambda error: errors.append(str(error)))
             page.goto(f"http://127.0.0.1:{server.server_address[1]}/?preview=1&view=downloads", wait_until="domcontentloaded", timeout=15_000)
-            page.wait_for_function("typeof window.__cacatoolsRequestDownloadManagerRender === 'function'")
+            page.wait_for_function("typeof window.__cdmRequestDownloadManagerRender === 'function'")
             page.locator('[data-dm-open-settings]').first.click()
             page.locator('[data-settings-category="downloads"]').click()
             page.locator('#bandwidth-limit-select').select_option('custom')
@@ -111,7 +111,7 @@ def browser_gate() -> dict[str, object]:
                   input.value = '7';
                   input.dispatchEvent(new Event('input', { bubbles: true }));
                   const before = input;
-                  for (let i = 0; i < 6; i += 1) window.__cacatoolsRequestDownloadManagerRender({ force: true });
+                  for (let i = 0; i < 6; i += 1) window.__cdmRequestDownloadManagerRender({ force: true });
                   const after = document.getElementById('bandwidth-custom-value');
                   const protectedState = {
                     sameNode: before === after,
@@ -121,7 +121,7 @@ def browser_gate() -> dict[str, object]:
                     visible: Boolean(after && after.offsetParent)
                   };
                   document.body.focus();
-                  window.__cacatoolsRequestDownloadManagerRender({ force: true });
+                  window.__cdmRequestDownloadManagerRender({ force: true });
                   return {
                     ...protectedState,
                     restoredValue: document.getElementById('bandwidth-custom-value')?.value || '',

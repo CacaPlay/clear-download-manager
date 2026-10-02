@@ -27,7 +27,7 @@ jobs:
           $match = [regex]::Match($script, '\$YtDlpVersion\s*=\s*"(?<version>[^"]+)"')
           if (-not $match.Success) { throw 'No se pudo leer YtDlpVersion desde prepare-windows-binaries.ps1.' }
           $pinned = $match.Groups['version'].Value
-          $latest = Invoke-RestMethod -Uri 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest' -Headers @{ 'User-Agent' = 'CacaTools-yt-dlp-update-check'; 'Accept' = 'application/vnd.github+json' }
+          $latest = Invoke-RestMethod -Uri 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest' -Headers @{ 'User-Agent' = 'CDM-yt-dlp-update-check'; 'Accept' = 'application/vnd.github+json' }
           $latestVersion = [string]$latest.tag_name
           Write-Host "Pinned yt-dlp: $pinned"
           Write-Host "Latest yt-dlp: $latestVersion"

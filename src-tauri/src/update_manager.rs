@@ -250,7 +250,7 @@ pub async fn install_app_update(
                 });
                 let bytes_per_second = update_download_rate(downloaded_bytes, started_at.elapsed());
                 let _ = progress_app.emit(
-                    "cacatools-app-update-progress",
+                    "cdm-app-update-progress",
                     json!({
                         "downloadedBytes": downloaded_bytes,
                         "contentLength": content_length,
@@ -262,7 +262,7 @@ pub async fn install_app_update(
             },
             move || {
                 let _ = finish_app.emit(
-                    "cacatools-app-update-progress",
+                    "cdm-app-update-progress",
                     json!({ "phase": "install", "percent": 100.0 }),
                 );
             },

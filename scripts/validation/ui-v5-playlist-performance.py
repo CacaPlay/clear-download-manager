@@ -122,7 +122,7 @@ def main():
             context = browser.new_context(viewport={"width": 1320, "height": 900}, device_scale_factor=1)
             context.add_init_script(
                 "localStorage.setItem('ct-ui-theme','dark'); localStorage.setItem('ct-ui-accent','#59d37b'); "
-                "localStorage.setItem('cacatools.desktop.appearance.metrics.v1', JSON.stringify({interfaceRatio: 1}));"
+                "localStorage.setItem('cdm.desktop.appearance.metrics.v1', JSON.stringify({interfaceRatio: 1}));"
             )
             page = context.new_page()
             for count in (45, 120):

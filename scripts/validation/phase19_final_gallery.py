@@ -51,7 +51,7 @@ def main() -> int:
         raise SystemExit("Faltan capturas Phase 19:\n" + "\n".join(missing))
     canvas = Image.new("RGB", (CANVAS_WIDTH, CANVAS_HEIGHT), (6, 10, 15))
     draw = ImageDraw.Draw(canvas)
-    draw.text((MARGIN, 34), "CacaTools Download Manager · Fase 19", font=font(42, True), fill=(242, 246, 250))
+    draw.text((MARGIN, 34), "Clear Download Manager · Fase 19", font=font(42, True), fill=(242, 246, 250))
     draw.text((MARGIN, 88), "Zen predeterminado, escala 120 %, espacios integrados y flujos de descarga unificados.", font=font(22), fill=(148, 160, 176))
     for index, (path, caption) in enumerate(CASES):
         row, column = divmod(index, COLUMNS)

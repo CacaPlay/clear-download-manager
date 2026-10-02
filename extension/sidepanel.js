@@ -4,7 +4,7 @@ import {appendDetectedLink,youtubeSelection} from './sdk/panel-features.js';
 import { DEFAULT_ACCENT, brandAssetPath, effectiveAccent, iconAccentForAppearance, iconVariantForColor, accentPresentation, progressPalette, relativeLuminance as appearanceRelativeLuminance, contrastRatio as appearanceContrastRatio } from './sdk/appearance.js';
 import { applyI18n, loadLocale, saveLocale, translate } from './i18n.js';
 
-const port = chrome.runtime.connect({ name: 'cacatools-sidepanel' });
+const port = chrome.runtime.connect({ name: 'cdm-sidepanel' });
 const $ = (selector) => document.querySelector(selector);
 let extensionLocale = loadLocale();
 let extensionLocaleApplying = false;

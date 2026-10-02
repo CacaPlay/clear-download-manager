@@ -26,9 +26,11 @@ const MAX_OUTPUT_BYTES: usize = 1024 * 1024;
 const MAX_STATE_BYTES: usize = 768 * 1024;
 const CAPTURE_RESPONSE_TIMEOUT_MS: u64 = 3_000;
 #[cfg(not(feature = "qa-component-manager"))]
-const HOST_NAME: &str = "lat.cacaplay.cacatools.downloadmanager";
+const HOST_NAME: &str = "lat.cacaplay.cleardownloadmanager";
 #[cfg(feature = "qa-component-manager")]
-const HOST_NAME: &str = "lat.cacaplay.cacatools.downloadmanager.qa";
+const HOST_NAME: &str = "lat.cacaplay.cleardownloadmanager.qa";
+#[cfg(not(feature = "qa-component-manager"))]
+const LEGACY_HOST_NAME: &str = "lat.cacaplay.cacatools.downloadmanager";
 const PUBLISHED_CHROMIUM_EXTENSION_ID: &str = "aonppfnabjnicjjeoofkfjofolfibggp";
 const STORE_APP_USER_MODEL_ID: &str = "CacaPlay.CacaToolsDownloadManager_b9fexpwkvxe1m!CacaTools";
 const WINDOWS_STARTUP_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
@@ -73,6 +75,20 @@ fn default_browsers() -> Vec<String> {
         "brave".to_string(),
         "chromium".to_string(),
     ]
+}
+
+fn native_host_specs() -> Vec<(&'static str, &'static str)> {
+    #[cfg(feature = "qa-component-manager")]
+    {
+        vec![(HOST_NAME, "clear-download-manager-native-host.exe")]
+    }
+    #[cfg(not(feature = "qa-component-manager"))]
+    {
+        vec![
+            (HOST_NAME, "clear-download-manager-native-host.exe"),
+            (LEGACY_HOST_NAME, "cacatools-native-host.exe"),
+        ]
+    }
 }
 
 fn extension_config() -> ExtensionBridgeConfig {
@@ -139,7 +155,7 @@ fn startup_command_line() -> Result<String, String> {
     Ok(format!("\"{escaped}\" --background-startup"))
 }
 
-/// Returns whether CacaTools is registered to start silently with Windows.
+/// Returns whether CDM is registered to start silently with Windows.
 /// The setting is deliberately kept in the per-user Run key so no elevation
 /// or service is required and uninstallers can remove it safely.
 pub fn startup_status() -> Value {
@@ -258,7 +274,7 @@ fn stage_store_native_host(source: &PathBuf) -> Result<PathBuf, String> {
     fs::create_dir_all(&stage_directory).map_err(|error| error.to_string())?;
     let file_name = source
         .file_name()
-        .unwrap_or_else(|| std::ffi::OsStr::new("cacatools-native-host.exe"));
+        .unwrap_or_else(|| std::ffi::OsStr::new("clear-download-manager-native-host.exe"));
     let target = stage_directory.join(file_name);
 
     if target.is_file() {
@@ -326,71 +342,49 @@ fn write_store_launch_config(
 }
 
 #[cfg(windows)]
-fn ensure_extension_host_registration() -> Result<bool, String> {
-    let config = extension_config();
-    let marker_path = registration_marker_path();
-    if !config.enabled {
-        let _ = fs::remove_file(marker_path);
-        return Ok(false);
+fn find_native_host_executable(file_name: &str, allow_override: bool) -> Option<PathBuf> {
+    if allow_override {
+        if let Some(path) = env::var_os("CDM_NATIVE_HOST").map(PathBuf::from) {
+            if path.is_file() {
+                return Some(path);
+            }
+        }
     }
-    let _ = fs::remove_file(&marker_path);
+    let current_exe = env::current_exe().ok()?;
+    let parent = current_exe.parent()?;
+    [
+        parent.join("resources").join("extension").join(file_name),
+        parent.join(file_name),
+    ]
+    .into_iter()
+    .find(|candidate| candidate.is_file())
+}
 
-    let chromium_ids = clean_chromium_extension_ids(&config);
-    let firefox_ids = clean_firefox_extension_ids(&config);
-    if chromium_ids.is_empty() && firefox_ids.is_empty() {
-        return Err(
-            "La integración de extensión está habilitada, pero no tiene IDs válidos".to_string(),
-        );
-    }
+#[cfg(windows)]
+struct NativeHostRegistrationState<'a> {
+    registered_browsers: &'a mut Vec<String>,
+    registration_errors: &'a mut Vec<String>,
+}
 
-    let host_directory = bridge_root().join("hosts");
-    fs::create_dir_all(&host_directory).map_err(|error| error.to_string())?;
-    let executable = env::var_os("CACATOOLS_NATIVE_HOST")
-        .map(PathBuf::from)
-        .filter(|path| path.is_file())
-        .or_else(|| {
-            env::current_exe().ok().and_then(|path| {
-                let file_name = if cfg!(windows) {
-                    "cacatools-native-host.exe"
-                } else {
-                    "cacatools-native-host"
-                };
-                let parent = path.parent()?;
-                [
-                    parent.join("resources").join("extension").join(file_name),
-                    parent.join(file_name),
-                ]
-                .into_iter()
-                .find(|candidate| candidate.is_file())
-            })
-        })
-        .or_else(|| env::current_exe().ok())
-        .ok_or_else(|| "No se pudo localizar el host nativo de CacaTools".to_string())?;
-    let executable = if is_windows_apps_path(&executable) {
-        let staged = stage_store_native_host(&executable)?;
-        let configured_id = config
-            .store_app_user_model_id
-            .as_deref()
-            .filter(|value| valid_store_app_user_model_id(value.trim()))
-            .map(str::trim)
-            .unwrap_or(STORE_APP_USER_MODEL_ID);
-        write_store_launch_config(&staged, configured_id)?;
-        staged
-    } else {
-        executable
-    };
+#[cfg(windows)]
+fn register_native_host(
+    host_directory: &std::path::Path,
+    host_name: &str,
+    executable: &std::path::Path,
+    config: &ExtensionBridgeConfig,
+    chromium_ids: &[String],
+    firefox_ids: &[String],
+    state: &mut NativeHostRegistrationState<'_>,
+) -> Result<(), String> {
     let executable_text = executable.to_string_lossy().into_owned();
-    let mut registered_browsers = Vec::new();
-    let mut registration_errors = Vec::new();
-
     if !chromium_ids.is_empty() {
-        let manifest_path = host_directory.join(format!("{HOST_NAME}.chromium.json"));
+        let manifest_path = host_directory.join(format!("{host_name}.chromium.json"));
         let allowed_origins = chromium_ids
             .iter()
             .map(|id| format!("chrome-extension://{id}/"))
             .collect::<Vec<_>>();
         let manifest = json!({
-            "name": HOST_NAME,
+            "name": host_name,
             "description": "Puente local para Clear Download Manager",
             "path": executable_text.clone(),
             "type": "stdio",
@@ -420,20 +414,24 @@ fn ensure_extension_host_registration() -> Result<bool, String> {
                 .iter()
                 .any(|value| value.eq_ignore_ascii_case(browser))
             {
-                match add_registry_manifest(&format!(r"{root}\{HOST_NAME}"), &manifest_text) {
-                    Ok(()) => registered_browsers.push(browser.to_string()),
-                    Err(error) => registration_errors.push(format!("{browser}: {error}")),
+                match add_registry_manifest(&format!(r"{root}\{host_name}"), &manifest_text) {
+                    Ok(()) => state
+                        .registered_browsers
+                        .push(format!("{host_name}:{browser}")),
+                    Err(error) => state
+                        .registration_errors
+                        .push(format!("{host_name}/{browser}: {error}")),
                 }
             }
         }
     }
 
     if !firefox_ids.is_empty() {
-        let manifest_path = host_directory.join(format!("{HOST_NAME}.firefox.json"));
+        let manifest_path = host_directory.join(format!("{host_name}.firefox.json"));
         let manifest = json!({
-            "name": HOST_NAME,
+            "name": host_name,
             "description": "Puente local para Clear Download Manager",
-            "path": executable_text.clone(),
+            "path": executable_text,
             "type": "stdio",
             "allowed_extensions": firefox_ids
         });
@@ -444,18 +442,98 @@ fn ensure_extension_host_registration() -> Result<bool, String> {
         .map_err(|error| error.to_string())?;
         let manifest_text = manifest_path.to_string_lossy().into_owned();
         match add_registry_manifest(
-            &format!(r"HKCU\Software\Mozilla\NativeMessagingHosts\{HOST_NAME}"),
+            &format!(r"HKCU\Software\Mozilla\NativeMessagingHosts\{host_name}"),
             &manifest_text,
         ) {
-            Ok(()) => registered_browsers.push("firefox".to_string()),
-            Err(error) => registration_errors.push(format!("firefox: {error}")),
+            Ok(()) => state
+                .registered_browsers
+                .push(format!("{host_name}:firefox")),
+            Err(error) => state
+                .registration_errors
+                .push(format!("{host_name}/firefox: {error}")),
         }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn ensure_extension_host_registration() -> Result<bool, String> {
+    let config = extension_config();
+    let marker_path = registration_marker_path();
+    if !config.enabled {
+        let _ = fs::remove_file(marker_path);
+        return Ok(false);
+    }
+    let _ = fs::remove_file(&marker_path);
+
+    let chromium_ids = clean_chromium_extension_ids(&config);
+    let firefox_ids = clean_firefox_extension_ids(&config);
+    if chromium_ids.is_empty() && firefox_ids.is_empty() {
+        return Err(
+            "La integración de extensión está habilitada, pero no tiene IDs válidos".into(),
+        );
+    }
+
+    let host_directory = bridge_root().join("hosts");
+    fs::create_dir_all(&host_directory).map_err(|error| error.to_string())?;
+    let configured_id = config
+        .store_app_user_model_id
+        .as_deref()
+        .filter(|value| valid_store_app_user_model_id(value.trim()))
+        .map(str::trim)
+        .unwrap_or(STORE_APP_USER_MODEL_ID);
+    let mut registered_browsers = Vec::new();
+    let mut registered_hosts = Vec::new();
+    let mut registration_errors = Vec::new();
+    let mut canonical_executable = None;
+
+    for (host_name, file_name) in native_host_specs() {
+        let allow_override = host_name == HOST_NAME;
+        let Some(source) = find_native_host_executable(file_name, allow_override) else {
+            registration_errors.push(format!("{host_name}: no se encontró {file_name}"));
+            continue;
+        };
+        let executable = if is_windows_apps_path(&source) {
+            let staged = stage_store_native_host(&source)?;
+            write_store_launch_config(&staged, configured_id)?;
+            staged
+        } else {
+            source
+        };
+        let old_count = registered_browsers.len();
+        let mut registration_state = NativeHostRegistrationState {
+            registered_browsers: &mut registered_browsers,
+            registration_errors: &mut registration_errors,
+        };
+        register_native_host(
+            &host_directory,
+            host_name,
+            &executable,
+            &config,
+            &chromium_ids,
+            &firefox_ids,
+            &mut registration_state,
+        )?;
+        if registered_browsers.len() > old_count {
+            registered_hosts.push(host_name);
+            if host_name == HOST_NAME {
+                canonical_executable = Some(executable.to_string_lossy().into_owned());
+            }
+        }
+    }
+
+    if !registration_errors.is_empty() {
+        return Err(registration_errors.join("; "));
+    }
+    if registered_hosts.len() != native_host_specs().len() || canonical_executable.is_none() {
+        return Err("No se pudieron registrar todos los hosts de extensión requeridos".into());
     }
 
     let marker = json!({
         "hostName": HOST_NAME,
+        "hostNames": registered_hosts,
         "protocolVersion": BRIDGE_PROTOCOL_VERSION,
-        "executable": executable_text,
+        "executable": canonical_executable,
         "registeredBrowsers": registered_browsers,
         "registrationErrors": registration_errors,
         "registeredAt": unix_timestamp_secs()
@@ -612,7 +690,7 @@ pub fn initialize_app_bridge() -> Result<(), String> {
     fs::create_dir_all(inbox_dir()).map_err(|error| error.to_string())?;
     let _ = ensure_extension_host_registration();
     if APP_LOCK.get().is_none() && !claim_primary_app_instance()? {
-        return Err("CacaTools ya está ejecutándose".to_string());
+        return Err("Clear Download Manager ya está ejecutándose".to_string());
     }
     Ok(())
 }
@@ -647,7 +725,7 @@ fn ensure_app_running(background: bool) -> Result<bool, String> {
     }
     command
         .spawn()
-        .map_err(|error| format!("No se pudo abrir CacaTools: {error}"))?;
+        .map_err(|error| format!("No se pudo abrir Clear Download Manager: {error}"))?;
     Ok(true)
 }
 
@@ -713,7 +791,7 @@ fn wait_for_capture_response(request_id: &str) -> Value {
                 "ok": false,
                 "status": "temporary_failure",
                 "requestId": request_id,
-                "error": "CacaTools no confirmó la captura a tiempo"
+                "error": "Clear Download Manager no confirmó la captura a tiempo"
             });
         }
         std::thread::sleep(std::time::Duration::from_millis(50));
@@ -1044,6 +1122,23 @@ pub fn write_capture_response(request_id: &str, response: &Value) -> Result<(), 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn registers_canonical_host_and_v1_legacy_alias_separately() {
+        let specs = native_host_specs();
+        assert_eq!(specs[0].0, HOST_NAME);
+        assert_eq!(specs[0].1, "clear-download-manager-native-host.exe");
+        #[cfg(not(feature = "qa-component-manager"))]
+        {
+            assert_eq!(specs.len(), 2);
+            assert_eq!(specs[1].0, LEGACY_HOST_NAME);
+            assert_eq!(specs[1].1, "cacatools-native-host.exe");
+            assert_ne!(specs[0].0, specs[1].0);
+            assert_ne!(specs[0].1, specs[1].1);
+        }
+        #[cfg(feature = "qa-component-manager")]
+        assert_eq!(specs.len(), 1);
+    }
 
     #[test]
     fn published_chromium_id_is_always_first_and_deduplicated() {

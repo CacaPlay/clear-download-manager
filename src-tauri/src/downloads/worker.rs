@@ -904,7 +904,7 @@ mod destination_reservation_tests {
             .expect("clock")
             .as_nanos();
         let directory = std::env::temp_dir().join(format!(
-            "cacatools-http-reservation-{}-{stamp}",
+            "cdm-http-reservation-{}-{stamp}",
             std::process::id()
         ));
         fs::create_dir_all(&directory).expect("temporary directory");
@@ -931,7 +931,7 @@ mod destination_reservation_tests {
             .expect("clock")
             .as_nanos();
         let root = std::env::temp_dir().join(format!(
-            "cacatools-http-finalization-{}-{stamp}",
+            "cdm-http-finalization-{}-{stamp}",
             std::process::id()
         ));
         fs::create_dir_all(&root).expect("create test directory");
@@ -1006,7 +1006,7 @@ mod destination_reservation_tests {
             .expect("clock")
             .as_nanos();
         let root = std::env::temp_dir().join(format!(
-            "cacatools-http-worker-complete-part-{}-{stamp}",
+            "cdm-http-worker-complete-part-{}-{stamp}",
             std::process::id()
         ));
         fs::create_dir_all(&root).expect("create test directory");

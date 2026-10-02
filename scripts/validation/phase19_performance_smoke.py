@@ -81,7 +81,7 @@ const jobs = Array.from({ length: 1000 }, (_, index) => {
     category: categories[index % categories.length],
     origin: index % 5 === 0 ? 'yt-dlp' : 'HTTP',
     source_url: `https://downloads.example.test/files/${number}`,
-    destination: `C:\\Downloads\\CacaTools\\archivo-${number}`,
+    destination: `C:\\Downloads\\Clear Download Manager\\archivo-${number}`,
     updated_at: new Date(Date.UTC(2026, 6, 31, 16, 0, index % 60)).toISOString(),
     active_connections: running ? 8 : 0,
     max_connections: running ? 16 : 0
@@ -94,13 +94,13 @@ const phase17Context = {
     if (command === 'search_media_by_title') {
       await new Promise((resolve) => setTimeout(resolve, 650));
       const query = String(args?.query || '');
-      return [{ source_url: 'https://www.youtube.com/watch?v=remote', title: `${query} — resultado remoto`, creator: 'CacaTools', duration_label: '3:14', thumbnail: '', similarity: 96 }];
+      return [{ source_url: 'https://www.youtube.com/watch?v=remote', title: `${query} — resultado remoto`, creator: 'Clear Download Manager', duration_label: '3:14', thumbnail: '', similarity: 96 }];
     }
     return null;
   },
   runtimeStatus: { mode: 'local', aria2_available: true, media_available: true },
   mediaRuntimeStatus: { yt_dlp: 'yt-dlp.exe', ffmpeg: 'ffmpeg.exe', ffprobe: 'ffprobe.exe' },
-  downloadDirectory: 'C:\\Downloads\\CacaTools',
+  downloadDirectory: 'C:\\Downloads\\Clear Download Manager',
   schedules: [],
   onNewDownload: () => {},
   onAnalyzeSource: async () => {},

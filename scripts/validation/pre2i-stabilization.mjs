@@ -62,7 +62,7 @@ check('La ventana de preparacion no muestra la nota secundaria obsoleta', !subwi
 check('Los tamanos de formato quedan identificados como aproximados', subwindow.includes('`${label} · aprox. ${size}`'));
 check('Las extensiones largas se acotan sin alterar EXE PDF DOCX o ZIP', unified.includes('function compactExtensionLabel') && unified.includes("extension.length <= 5 ? extension") && dmBaseCss.includes('max-width:calc(100% - .32rem)'));
 
-check('Player consume la autoridad de apariencia v2 y el evento compartido', player.includes("from '../modules/appearance/sync.js") && player.includes("invoke('get_appearance_settings')") && player.includes("event.key === 'cacatools.desktop.appearance.v2'"));
+check('Player consume la autoridad de apariencia v2 y el evento compartido', player.includes("from '../modules/appearance/sync.js") && player.includes("invoke('get_appearance_settings')") && player.includes("event.key === 'cdm.desktop.appearance.v2'"));
 check('Player no oculta controles mientras el usuario los apunta o enfoca', player.includes("playerControls?.matches(':hover') || playerControls?.contains(document.activeElement)"));
 check('Fullscreen evita reentrada y difiere una sola captura acotada', player.includes('if (fullscreenTransitionPending) return;') && player.includes('scheduleFullscreenBackdropCapture()') && player.includes('Math.min(width, 720)') && !player.includes('if (entering) captureFullscreenBackdrop();'));
 

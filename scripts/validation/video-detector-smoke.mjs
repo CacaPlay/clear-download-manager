@@ -38,7 +38,7 @@ function runFixture(fixture) {
   context.globalThis = context;
   context.window = context;
   vm.runInNewContext(source, context, { filename: 'extension/content/detector.js' });
-  return { ...context.__cacatoolsCollectDetections(), sent };
+  return { ...context.__cdmCollectDetections(), sent };
 }
 
 const emptyMeta = {

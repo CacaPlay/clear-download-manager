@@ -204,11 +204,11 @@ pub(crate) async fn player_media_snapshot(
     }
     .to_string();
     let message = if playable {
-        "Se reproducirá el archivo local final validado por CacaTools.".to_string()
+        "Se reproducirá el archivo local final validado por Clear Download Manager.".to_string()
     } else if status == "completed" {
         "El registro está completado, pero el archivo final ya no existe dentro de su carpeta de descarga.".to_string()
     } else {
-        "CacaTools no reproduce archivos .part, fragmentos incompletos ni vídeo y audio separados. El reproductor se habilitará cuando exista un archivo final seguro.".to_string()
+        "Clear Download Manager no reproduce archivos .part, fragmentos incompletos ni vídeo y audio separados. El reproductor se habilitará cuando exista un archivo final seguro.".to_string()
     };
     if let Some(path) = playable_path.as_deref() {
         app.asset_protocol_scope()
@@ -318,7 +318,7 @@ pub(crate) async fn open_online_media_player(url: String, app: AppHandle) -> Res
     .map_err(|error| format!("No se pudo preparar el reproductor: {error}"))??;
     if parsed
         .query_pairs()
-        .any(|(key, value)| key == "cacatools_preview" && value == "embedded")
+        .any(|(key, value)| key == "cdm_preview" && value == "embedded")
     {
         // The preparation window owns the official YouTube IFrame preview.
         return Ok(());
@@ -330,7 +330,7 @@ pub(crate) async fn open_online_media_player(url: String, app: AppHandle) -> Res
     let operations = app.state::<LocalState>().preparation_operations.clone();
     begin_window_operation(&operations, "player");
 
-    // Online playback always starts in the internal CacaTools player. The UI
+    // Online playback always starts in the internal CDM player. The UI
     // may offer an explicit external action only after the provider explains
     // that embedding is unavailable.
     let query = online_player_query(&validated);
@@ -417,7 +417,7 @@ pub(crate) async fn open_media_player(job_id: i64, app: AppHandle) -> Result<(),
             window.show().map_err(|error| error.to_string())?;
             window.set_focus().map_err(|error| error.to_string())?;
             window
-                .eval(format!("window.cacatoolsPlayerLoadJob?.({job_id});"))
+                .eval(format!("window.cdmPlayerLoadJob?.({job_id});"))
                 .map_err(|error| error.to_string())
         })
         .await;
@@ -441,7 +441,7 @@ pub(crate) async fn open_playlist_media_player(
             window.show().map_err(|error| error.to_string())?;
             window.set_focus().map_err(|error| error.to_string())?;
             window
-                .eval(format!("window.cacatoolsPlayerLoadPlaylist?.({batch_id});"))
+                .eval(format!("window.cdmPlayerLoadPlaylist?.({batch_id});"))
                 .map_err(|error| error.to_string())
         })
         .await;

@@ -18,7 +18,7 @@ whose source has not yet been verified.
 ## Names, marks and artwork
 
 The project source license does not grant rights to use the Clear Download
-Manager, CacaPlay or CacaTools names, logos or other project branding as a
+Manager or CDM names, CacaPlay name, logos or other project branding as a
 product name or endorsement. These names, marks, logos and artwork are reserved
 and outside GPL absent a separate grant. The asset provenance gate checks
 permission to distribute these assets; it does not require the Clear brand to

@@ -81,10 +81,10 @@ function Get-NativeVersion {
 & (Join-Path $PSScriptRoot "check-windows-toolchain.ps1")
 if (-not $?) { throw "Windows toolchain validation failed." }
 
-Write-Host "== Clean build CacaTools Download Manager $Version ($BuildId) ==" -ForegroundColor Cyan
+Write-Host "== Clean build Clear Download Manager $Version ($BuildId) ==" -ForegroundColor Cyan
 Remove-Item $Output -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item $BundleRoot -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $Root "src-tauri\target\release\cacatools.exe") -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $Root "src-tauri\target\release\clear-download-manager.exe") -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $Output -Force | Out-Null
 
 if (Test-Path (Join-Path $Root "package-lock.json")) {
@@ -141,21 +141,31 @@ Invoke-Native "npm.cmd" @("run", "prepare:third-party-notices")
 # older protocol/app implementation.
 $NativeHostProject = Join-Path $Root "extension\native-host"
 $NativeHostTargetRoot = Join-Path ([IO.Path]::GetDirectoryName($TauriTargetRoot)) (([IO.Path]::GetFileName($TauriTargetRoot)) + "-native-host")
-$NativeHostArtifact = Join-Path $NativeHostTargetRoot "release\cacatools-native-host.exe"
-$NativeHostResource = Join-Path $Root "src-tauri\resources\extension\cacatools-native-host.exe"
+$NativeHostArtifact = Join-Path $NativeHostTargetRoot "release\clear-download-manager-native-host.exe"
+$NativeHostResource = Join-Path $Root "src-tauri\resources\extension\clear-download-manager-native-host.exe"
+$LegacyNativeHostResource = Join-Path $Root "src-tauri\resources\extension\cacatools-native-host.exe"
 Push-Location $NativeHostProject
 $PreviousCargoTargetDirectory = $env:CARGO_TARGET_DIR
 try {
   $env:CARGO_TARGET_DIR = $NativeHostTargetRoot
   Invoke-Native "cargo.exe" @("build", "--release", "--locked")
+  if (-not (Test-Path -LiteralPath $NativeHostArtifact)) {
+    throw "The canonical native host build did not create $NativeHostArtifact."
+  }
+  Copy-Item -LiteralPath $NativeHostArtifact -Destination $NativeHostResource -Force
+  Invoke-Native "cargo.exe" @("build", "--release", "--locked", "--features", "legacy-host-name")
+  if (-not (Test-Path -LiteralPath $NativeHostArtifact)) {
+    throw "The legacy native host build did not create $NativeHostArtifact."
+  }
+  Copy-Item -LiteralPath $NativeHostArtifact -Destination $LegacyNativeHostResource -Force
 } finally {
   $env:CARGO_TARGET_DIR = $PreviousCargoTargetDirectory
   Pop-Location
 }
-if (-not (Test-Path -LiteralPath $NativeHostArtifact)) {
-  throw "The native messaging host build completed without creating $NativeHostArtifact."
+if (-not (Test-Path -LiteralPath $NativeHostResource) -or -not (Test-Path -LiteralPath $LegacyNativeHostResource)) {
+  throw "The native host build did not create both canonical and v1 compatibility binaries."
 }
-Copy-Item -LiteralPath $NativeHostArtifact -Destination $NativeHostResource -Force
+Invoke-Native "node.exe" @("scripts/validation/native-host-handshake.mjs", $NativeHostResource, $LegacyNativeHostResource)
 Write-Host "OK: rebuilt and bundled Native Messaging host from extension/native-host." -ForegroundColor Green
 
 $ExtensionZip = Join-Path $Root ("Clear-Download-Manager-Chrome-Extension-{0}.zip" -f $ExtensionVersion)
@@ -187,10 +197,7 @@ Invoke-Native "npx.cmd" @("--no-install", "tauri", "build", "--bundles", $Bundle
 & (Join-Path $PSScriptRoot "report-windows-size.ps1")
 if ($LASTEXITCODE -ne 0 -or -not $?) { throw "The Windows size report could not be generated." }
 
-$RawExecutable = Join-Path $TauriTargetRoot "release\cacatools-desktop.exe"
-if (-not (Test-Path $RawExecutable)) {
-  $RawExecutable = Join-Path $TauriTargetRoot "release\cacatools.exe"
-}
+$RawExecutable = Join-Path $TauriTargetRoot "release\clear-download-manager.exe"
 if (Test-Path $RawExecutable) {
   # A cold first launch can spend several seconds initializing WebView2 and
   # registering the optional native extension host before SQLite is created.

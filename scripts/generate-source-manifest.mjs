@@ -31,7 +31,8 @@ const excludedFiles = new Set([
   'MANIFEST.sha256',
   'package-lock.json',
   'src-tauri/Cargo.lock',
-  // Produced by build-store-msix.ps1 from extension/native-host.
+  // Produced from extension/native-host for Windows packaging.
+  'src-tauri/resources/extension/clear-download-manager-native-host.exe',
   'src-tauri/resources/extension/cacatools-native-host.exe',
   'src-tauri/resources/licenses/ARIA2-COPYING.txt',
   'src-tauri/resources/licenses/ARIA2-OPENSSL-LICENSE.txt',

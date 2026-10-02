@@ -131,7 +131,7 @@ try:
     if not aria2.is_file() or not yt_dlp.is_file():
         raise RuntimeError("Los binarios empaquetados aria2c/yt-dlp no están disponibles")
 
-    with tempfile.TemporaryDirectory(prefix="cacatools-bandwidth-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="cdm-bandwidth-") as temporary:
         temp = Path(temporary)
         results = [
             run_engine(

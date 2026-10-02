@@ -411,11 +411,11 @@ pub(crate) fn update_media_progress(
         return false;
     }
     let parsed = line
-        .strip_prefix("CACATOOLS_PROGRESS:")
+        .strip_prefix("CDM_PROGRESS:")
         .and_then(|payload| serde_json::from_str::<Value>(payload).ok())
         .map(|progress| tracker.update_from_json(&progress))
         .or_else(|| {
-            line.strip_prefix("CACATOOLS_PROGRESS|").map(|payload| {
+            line.strip_prefix("CDM_PROGRESS|").map(|payload| {
                 let values = payload.split('|').collect::<Vec<_>>();
                 let downloaded_bytes = values
                     .get(3)

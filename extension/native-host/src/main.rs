@@ -10,7 +10,12 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+// Keep the v1.0.0 manifest name as a separately built alias so installed
+// extensions can continue to reach the upgraded application.
+#[cfg(feature = "legacy-host-name")]
 const HOST_NAME: &str = "lat.cacaplay.cacatools.downloadmanager";
+#[cfg(not(feature = "legacy-host-name"))]
+const HOST_NAME: &str = "lat.cacaplay.cleardownloadmanager";
 const MAX_MESSAGE: usize = 4 * 1024 * 1024;
 const MAX_STATE_BYTES: usize = 768 * 1024;
 // Cold-starting the desktop app can take longer than the old 2.85 s window.
@@ -19,7 +24,16 @@ const MAX_STATE_BYTES: usize = 768 * 1024;
 const CAPTURE_RESPONSE_TIMEOUT_MS: u64 = 7_000;
 static REQUEST_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
+fn app_executable_override(
+    cdm: Option<std::ffi::OsString>,
+    legacy: Option<std::ffi::OsString>,
+) -> Option<PathBuf> {
+    cdm.or(legacy).map(PathBuf::from)
+}
+
 fn bridge_root() -> PathBuf {
+    // Keep the v1.0.0 bridge state location so installed extensions and
+    // in-flight requests continue to share the same inbox after upgrading.
     env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(env::temp_dir)
@@ -136,29 +150,25 @@ fn launch_app(background: bool) -> Result<bool, String> {
             })?;
         return Ok(true);
     }
-    let executable = env::var_os("CACATOOLS_APP_EXE")
-        .map(PathBuf::from)
-        .or_else(|| {
-            env::current_exe().ok().and_then(|path| {
-                let mut candidates = Vec::new();
-                if let Some(dir) = path.parent() {
-                    candidates.push(dir.join("Clear Download Manager.exe"));
-                    candidates.push(dir.join("CacaTools Download Manager.exe"));
-                    candidates.push(dir.join("cacatools-desktop.exe"));
-                    candidates.push(dir.join("cacatools.exe"));
-                    if let Some(resources) = dir.parent() {
-                        if let Some(root) = resources.parent() {
-                            candidates.push(root.join("Clear Download Manager.exe"));
-                            candidates.push(root.join("CacaTools Download Manager.exe"));
-                            candidates.push(root.join("cacatools-desktop.exe"));
-                            candidates.push(root.join("cacatools.exe"));
+    let executable =
+        app_executable_override(env::var_os("CDM_APP_EXE"), env::var_os("CACATOOLS_APP_EXE"))
+            .or_else(|| {
+                env::current_exe().ok().and_then(|path| {
+                    let mut candidates = Vec::new();
+                    if let Some(dir) = path.parent() {
+                        candidates.push(dir.join("clear-download-manager.exe"));
+                        candidates.push(dir.join("Clear Download Manager.exe"));
+                        if let Some(resources) = dir.parent() {
+                            if let Some(root) = resources.parent() {
+                                candidates.push(root.join("clear-download-manager.exe"));
+                                candidates.push(root.join("Clear Download Manager.exe"));
+                            }
                         }
                     }
-                }
-                candidates.into_iter().find(|candidate| candidate.is_file())
+                    candidates.into_iter().find(|candidate| candidate.is_file())
+                })
             })
-        })
-        .ok_or_else(|| "Clear Download Manager no está instalado".to_string())?;
+            .ok_or_else(|| "Clear Download Manager no está instalado".to_string())?;
     if !executable.is_file() {
         return Err("No se encontró Clear Download Manager.exe".into());
     }
@@ -233,6 +243,37 @@ fn write_activation_request(origin: &str) -> Result<String, String> {
     .map_err(|error| error.to_string())?;
     fs::rename(temporary, &final_path).map_err(|error| error.to_string())?;
     Ok(id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{app_executable_override, HOST_NAME};
+    use std::{ffi::OsString, path::PathBuf};
+
+    #[test]
+    fn binary_uses_its_registered_native_host_identity() {
+        let expected = if cfg!(feature = "legacy-host-name") {
+            "lat.cacaplay.cacatools.downloadmanager"
+        } else {
+            "lat.cacaplay.cleardownloadmanager"
+        };
+        assert_eq!(HOST_NAME, expected);
+    }
+
+    #[test]
+    fn canonical_app_path_override_precedes_legacy_alias() {
+        assert_eq!(
+            app_executable_override(
+                Some(OsString::from("current.exe")),
+                Some(OsString::from("legacy.exe")),
+            ),
+            Some(PathBuf::from("current.exe"))
+        );
+        assert_eq!(
+            app_executable_override(None, Some(OsString::from("legacy.exe"))),
+            Some(PathBuf::from("legacy.exe"))
+        );
+    }
 }
 
 fn enqueue(action: &str, payload: &Value, origin: &str) -> Result<Value, String> {

@@ -18,7 +18,7 @@ const required = [
   'src-tauri/resources/licenses/README.txt', 'src-tauri/resources/updater/updater-config.json',
   'src-tauri/resources/extension/extension-config.json', 'evidence/official-public-key.json',
   'extension/README.md', 'extension/manifest.json', 'extension/app-compat.json', 'extension/service-worker.js', 'extension/sidepanel.html', 'extension/sidepanel.js', 'extension/sidepanel.css', 'extension/thumbnail-service.js', 'extension/content/detector.js', 'extension/icons/icon16.png', 'extension/icons/icon32.png', 'extension/icons/icon48.png', 'extension/icons/icon128.png', 'extension/native-host/Cargo.toml', 'extension/native-host/Cargo.lock', 'extension/native-host/src/main.rs', 'extension/native-host/chromium-host.template.json', 'extension/native-host/firefox-host.template.json',
-  'extension/sdk/cacatools-native-client.js', 'extension/sdk/manifest-v3.example.json', 'extension/sdk/service-worker.example.js',
+  'extension/sdk/cdm-native-client.js', 'extension/sdk/manifest-v3.example.json', 'extension/sdk/service-worker.example.js',
   'scripts/build.mjs', 'scripts/generate-source-manifest.mjs', 'scripts/verify-binaries.mjs',
   'scripts/validation/source-manifest-scope.mjs',
   'scripts/prepare-windows-binaries.ps1', 'scripts/prepare-safe-lean-ffmpeg.ps1', 'scripts/rust-gate-windows.ps1',
@@ -61,7 +61,7 @@ const read = (file) => file === 'app-ui/main.js' ? readFrontendSource('.js') : f
 const appUiJsFiles = fs.readdirSync('app-ui', { recursive: true }).filter((file) => file.endsWith('.js')).map((file) => `app-ui/${file}`);
 const jsFiles = [
   ...appUiJsFiles, 'app-ui/player/player.js', 'scripts/build.mjs', 'scripts/generate-source-manifest.mjs', 'scripts/validation/store-edition.mjs', 'scripts/validation/native-host-handshake.mjs', 'scripts/validation/assets-brand-minimization.mjs',
-  'scripts/verify-binaries.mjs', 'extension/sdk/cacatools-native-client.js',
+  'scripts/verify-binaries.mjs', 'extension/sdk/cdm-native-client.js',
   'extension/sdk/service-worker.example.js', 'extension/service-worker.js', 'extension/sidepanel.js', 'extension/thumbnail-service.js', 'extension/content/detector.js', 'scripts/version-check.mjs', 'scripts/validation/phase19_ui_static.mjs', 'scripts/validation/phase20_ui_static.mjs', 'scripts/validation/phase20_icon_audit.mjs', 'scripts/validation/phase20_live_fixture.mjs',
   'scripts/validation/phase19_render_fixture.mjs', 'scripts/validation/phase19_dialog_fixture.mjs', 'scripts/validation/phase24_2_phase1_download_progress.mjs', 'scripts/validation/phase24_2_phase2_settings_search_sizes.mjs', 'scripts/validation/phase24_2_settings_fixture.mjs', 'scripts/validation/phase24_2_phase3_player_audio.mjs', 'scripts/validation/phase24_2_phase3_final_closure.mjs', 'scripts/validation/phase24_2_phase4_final.mjs', 'scripts/validation/phase24_2_player_preview_online.mjs', 'scripts/validation/phase24_2_new_phase2_playlist_player_performance.mjs', 'scripts/validation/phase24_2_new_phase3_color_picker_performance.mjs', 'scripts/validation/phase25_0_evidence_hotfix.mjs', 'scripts/validation/phase25_1_beta_polish.mjs', 'scripts/validation/phase25_0_evidence_fixture.mjs', 'scripts/validation/browser-capture-smoke.mjs', 'scripts/validation/video-detector-smoke.mjs', 'scripts/validation/extension-sync-smoke.mjs', 'scripts/validation/progress-acceptance-runtime.mjs', 'scripts/validation/phase30_ytdlp_stabilization.mjs', 'scripts/validation/phase24_1_baseline_audit.mjs', 'scripts/validation/phase24_1_window_lifecycle.mjs', 'scripts/validation/phase24_1_settings_extension.mjs', 'scripts/validation/phase24_1_visual_system_extension.mjs', 'scripts/validation/phase24_1_hotfix3_ui_stability.mjs', 'scripts/validation/phase24_1_hotfix5_harmony.mjs',
   ...required.filter((file) => file.startsWith('app-ui/download-manager/') && file.endsWith('.js'))
@@ -119,8 +119,8 @@ for (const [source, token, label] of [
   [windowsScripts, buildIdPrefix, `build Windows CDM ${version}`]
 ]) if (!source.includes(token)) fail(`Falta ${label}: ${token}`);
 
-if (!windowsHook.includes('NSIS_HOOK_POSTINSTALL') || !windowsHook.includes('NSIS_HOOK_POSTUNINSTALL') || !windowsHook.includes('cacatools-desktop.exe')) {
-  fail('El instalador NSIS debe registrar y retirar el inicio minimizado de CacaTools');
+if (!windowsHook.includes('NSIS_HOOK_POSTINSTALL') || !windowsHook.includes('NSIS_HOOK_POSTUNINSTALL') || !windowsHook.includes('clear-download-manager.exe')) {
+  fail('El instalador NSIS debe registrar y retirar el inicio minimizado de CDM');
 }
 
 const explicitNonTruncatingLocks = (bridge.match(/\.truncate\(false\)/g) || []).length;

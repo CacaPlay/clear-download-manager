@@ -12,6 +12,8 @@ param(
   [switch]$SkipKeyGeneration
 )
 
+# Keep the existing local key-file path to avoid rotating or losing access to
+# the v1.0.0 signing key during this identity cleanup.
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $TauriConfigPath = Join-Path $Root 'src-tauri\tauri.conf.json'
@@ -105,7 +107,7 @@ Write-Host 'IMPORTANTE: guarda la clave privada y su contrasena fuera del proyec
 Write-Host 'Antes de compilar una version publicable ejecuta en la misma consola:'
 Write-Host "  `$env:TAURI_SIGNING_PRIVATE_KEY='$PrivateKeyPath'"
 Write-Host "  `$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD='<tu-contrasena-si-la-usaste>'"
-Write-Host 'Luego ejecuta COMPILAR_CACATOOLS_WINDOWS.cmd.'
+Write-Host 'Luego sigue docs/BUILD-AND-PACKAGING.md para compilar el paquete.'
 
 Write-Host ''
 Write-Host 'Actualizando el manifiesto oficial porque la configuración de producción cambió conscientemente...' -ForegroundColor Cyan

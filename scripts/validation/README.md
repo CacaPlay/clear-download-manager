@@ -1,8 +1,8 @@
 # Validation / Tooling
 
-Esta página describe el sistema de validación existente en CacaTools Desktop
-0.45.0. Documenta propósito y estado del tooling; no constituye una garantía
-de que todos los gates hayan pasado en cada máquina o ejecución.
+Esta página describe el sistema de validación existente en Clear Download
+Manager 1.0.0. Documenta el propósito y estado del tooling; no garantiza que
+todos los gates hayan pasado en cada máquina o ejecución.
 
 ## Estados
 

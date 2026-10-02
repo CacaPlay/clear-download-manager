@@ -33,7 +33,7 @@ pub(crate) enum ProgressEngineMode {
 
 impl ProgressEngineMode {
     pub(crate) fn from_environment() -> Self {
-        match std::env::var("CACATOOLS_PROGRESS_ENGINE")
+        match std::env::var("CDM_PROGRESS_ENGINE")
             .unwrap_or_default()
             .trim()
             .to_ascii_lowercase()
@@ -144,7 +144,7 @@ pub(crate) fn initialize(app: AppHandle, db_path: PathBuf) {
     }
     let _ = PERSISTENCE_WORKER.get_or_init(|| {
         thread::Builder::new()
-            .name("cacatools-progress-v2-persistence".into())
+            .name("cdm-progress-v2-persistence".into())
             .spawn(|| loop {
                 thread::sleep(PERSIST_INTERVAL);
                 let _ = flush_persistence(false);

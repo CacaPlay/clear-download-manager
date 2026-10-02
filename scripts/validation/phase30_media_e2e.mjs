@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 
 const root = process.cwd();
-const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cacatools-media-e2e-'));
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-media-e2e-'));
 const fixtureRoot = path.join(tempRoot, 'fixtures');
 const dataDir = path.join(tempRoot, 'data');
 const downloadsDir = path.join(tempRoot, 'downloads');
@@ -67,14 +67,14 @@ const urls = [
 ];
 const environment = {
   ...process.env,
-  CACATOOLS_MEDIA_E2E_ACCEPTANCE: '1',
-  CACATOOLS_MEDIA_E2E_URLS: urls.join('|'),
-  CACATOOLS_MEDIA_E2E_DURATIONS: '2|2|2',
-  CACATOOLS_MEDIA_E2E_REPORT: reportPath,
-  CACATOOLS_PROGRESS_ACCEPTANCE: '1',
-  CACATOOLS_PROGRESS_ACCEPTANCE_URL: urls[0],
-  CACATOOLS_DATA_DIR: dataDir,
-  CACATOOLS_DOWNLOADS_DIR: downloadsDir,
+  CDM_MEDIA_E2E_ACCEPTANCE: '1',
+  CDM_MEDIA_E2E_URLS: urls.join('|'),
+  CDM_MEDIA_E2E_DURATIONS: '2|2|2',
+  CDM_MEDIA_E2E_REPORT: reportPath,
+  CDM_PROGRESS_ACCEPTANCE: '1',
+  CDM_PROGRESS_ACCEPTANCE_URL: urls[0],
+  CDM_DATA_DIR: dataDir,
+  CDM_DOWNLOADS_DIR: downloadsDir,
   RUST_BACKTRACE: '1'
 };
 const shell = process.env.ComSpec || 'cmd.exe';
@@ -106,7 +106,7 @@ let report = null;
 let nextItemObserved = false;
 let ffmpegStageObserved = false;
 while (Date.now() < deadline) {
-  const snapshotProcess = spawnSync('python', ['-c', snapshotCode, path.join(dataDir, 'cacatools.sqlite3')], { encoding: 'utf8' });
+  const snapshotProcess = spawnSync('python', ['-c', snapshotCode, path.join(dataDir, 'clear-download-manager.sqlite3')], { encoding: 'utf8' });
   let snapshot = null;
   try { snapshot = JSON.parse(snapshotProcess.stdout || 'null'); } catch { snapshot = null; }
   if (snapshot?.status === 'OK') {

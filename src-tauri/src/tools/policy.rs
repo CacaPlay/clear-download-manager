@@ -6,7 +6,10 @@ pub(crate) const TOOLS_OVERLAY_STORE_POLICY: &str = "UNVERIFIED";
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) enum SourceAuthority {
-    CacatoolsControlled,
+    // Catalog schema v1 signs this exact wire identifier; changing it would
+    // invalidate the frozen v1 envelopes. Keep the internal type canonical.
+    #[serde(rename = "cacatools-controlled")]
+    CdmControlled,
     YtDlpOfficial,
     DenoOfficial,
     FfmpegProvider,
@@ -113,5 +116,16 @@ mod tests {
             UpdateEligibility::BundledOnly
         );
         assert_eq!(TOOLS_OVERLAY_STORE_POLICY, "UNVERIFIED");
+    }
+
+    #[test]
+    fn source_authority_keeps_the_frozen_v1_wire_identifier() {
+        let wire_value: SourceAuthority = serde_json::from_str("\"cacatools-controlled\"")
+            .expect("frozen v1 authority remains readable");
+        assert_eq!(wire_value, SourceAuthority::CdmControlled);
+        assert_eq!(
+            serde_json::to_string(&wire_value).unwrap(),
+            "\"cacatools-controlled\""
+        );
     }
 }

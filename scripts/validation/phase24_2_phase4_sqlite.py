@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SQLite and progress-write evidence for CacaTools Fase 11.3."""
+"""SQLite and progress-write evidence for Clear Download Manager Fase 11.3."""
 from __future__ import annotations
 
 import json

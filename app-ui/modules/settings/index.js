@@ -169,7 +169,7 @@ function iconColorSettings(appearance) {
 /* Advanced controls keep their expanded state for the current session only. */
 function appearancePage() {
   const appearance = appState.appearance || {};
-  const visual = window.__cacatoolsVisualDiagnostics || visualDiagnosticsSnapshot();
+  const visual = window.__cdmVisualDiagnostics || visualDiagnosticsSnapshot();
   const loadedThumbs = Array.isArray(visual.thumbnails) ? visual.thumbnails.filter((item) => item.cacheState === 'loaded').length : 0;
   const thumbCount = Array.isArray(visual.thumbnails) ? visual.thumbnails.length : 0;
   const scale = displayedScalePercent(appearance.scale);
@@ -257,7 +257,7 @@ function componentsPage() {
 }
 
 function updatesPage() {
-  const visual = window.__cacatoolsVisualDiagnostics || visualDiagnosticsSnapshot();
+  const visual = window.__cdmVisualDiagnostics || visualDiagnosticsSnapshot();
   const runtime = appState.runtimeStatus || {};
   const media = appState.mediaRuntimeStatus || {};
   const compactVersion = (version) => {

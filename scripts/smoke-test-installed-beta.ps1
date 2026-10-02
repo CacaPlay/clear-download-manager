@@ -1,30 +1,30 @@
 param(
-  [string]$Executable = "$env:LOCALAPPDATA\CacaTools\CacaTools.exe",
+  [string]$Executable = "$env:LOCALAPPDATA\Programs\Clear Download Manager\clear-download-manager.exe",
   [int]$Seconds = 8
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 if (-not (Test-Path $Executable)) {
-  throw "CacaTools.exe was not found at: $Executable"
+  throw "clear-download-manager.exe was not found at: $Executable"
 }
 if ($Seconds -lt 4) { $Seconds = 4 }
 
 $Executable = (Resolve-Path $Executable).Path
-$SmokeRoot = Join-Path $env:TEMP ("cacatools-startup-smoke-" + [Guid]::NewGuid().ToString("N"))
+$SmokeRoot = Join-Path $env:TEMP ("cdm-startup-smoke-" + [Guid]::NewGuid().ToString("N"))
 $SmokeAppData = Join-Path $SmokeRoot "AppData\Roaming"
 $SmokeLocalAppData = Join-Path $SmokeRoot "AppData\Local"
-$SmokeDataDir = Join-Path $SmokeRoot "CacaToolsData"
+$SmokeDataDir = Join-Path $SmokeRoot "CDMData"
 $SmokeDownloadsDir = Join-Path $SmokeRoot "Downloads"
-$ExpectedDatabase = Join-Path $SmokeDataDir "cacatools.sqlite3"
+$ExpectedDatabase = Join-Path $SmokeDataDir "clear-download-manager.sqlite3"
 $SmokeStdOut = Join-Path $SmokeRoot "stdout.txt"
 $SmokeStdErr = Join-Path $SmokeRoot "stderr.txt"
 New-Item -ItemType Directory -Path $SmokeAppData, $SmokeLocalAppData -Force | Out-Null
 
 $PreviousAppData = $env:APPDATA
 $PreviousLocalAppData = $env:LOCALAPPDATA
-$PreviousCacaToolsDataDir = [Environment]::GetEnvironmentVariable("CACATOOLS_DATA_DIR", "Process")
-$PreviousCacaToolsDownloadsDir = [Environment]::GetEnvironmentVariable("CACATOOLS_DOWNLOADS_DIR", "Process")
+$PreviousCdmDataDir = [Environment]::GetEnvironmentVariable("CDM_DATA_DIR", "Process")
+$PreviousCdmDownloadsDir = [Environment]::GetEnvironmentVariable("CDM_DOWNLOADS_DIR", "Process")
 $PreviousRustBacktrace = [Environment]::GetEnvironmentVariable("RUST_BACKTRACE", "Process")
 $Process = $null
 try {
@@ -33,8 +33,8 @@ try {
   # that the smoke test cannot reopen the user's real queue or downloads.
   $env:APPDATA = $SmokeAppData
   $env:LOCALAPPDATA = $SmokeLocalAppData
-  $env:CACATOOLS_DATA_DIR = $SmokeDataDir
-  $env:CACATOOLS_DOWNLOADS_DIR = $SmokeDownloadsDir
+  $env:CDM_DATA_DIR = $SmokeDataDir
+  $env:CDM_DOWNLOADS_DIR = $SmokeDownloadsDir
   $env:RUST_BACKTRACE = "1"
   $Process = Start-Process -FilePath $Executable -PassThru `
     -RedirectStandardOutput $SmokeStdOut `
@@ -47,10 +47,10 @@ try {
   Write-Host "OK: exact executable path verified: $LaunchedPath"
   $env:APPDATA = $PreviousAppData
   $env:LOCALAPPDATA = $PreviousLocalAppData
-  if ($null -eq $PreviousCacaToolsDataDir) { Remove-Item Env:CACATOOLS_DATA_DIR -ErrorAction SilentlyContinue }
-  else { $env:CACATOOLS_DATA_DIR = $PreviousCacaToolsDataDir }
-  if ($null -eq $PreviousCacaToolsDownloadsDir) { Remove-Item Env:CACATOOLS_DOWNLOADS_DIR -ErrorAction SilentlyContinue }
-  else { $env:CACATOOLS_DOWNLOADS_DIR = $PreviousCacaToolsDownloadsDir }
+  if ($null -eq $PreviousCdmDataDir) { Remove-Item Env:CDM_DATA_DIR -ErrorAction SilentlyContinue }
+  else { $env:CDM_DATA_DIR = $PreviousCdmDataDir }
+  if ($null -eq $PreviousCdmDownloadsDir) { Remove-Item Env:CDM_DOWNLOADS_DIR -ErrorAction SilentlyContinue }
+  else { $env:CDM_DOWNLOADS_DIR = $PreviousCdmDownloadsDir }
   if ($null -eq $PreviousRustBacktrace) { Remove-Item Env:RUST_BACKTRACE -ErrorAction SilentlyContinue }
   else { $env:RUST_BACKTRACE = $PreviousRustBacktrace }
 
@@ -65,34 +65,34 @@ try {
       if (Test-Path $SmokeStdOut) { $CrashDetails += (Get-Content -LiteralPath $SmokeStdOut -Raw -ErrorAction SilentlyContinue).Trim() }
       $CrashText = ($CrashDetails | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join [Environment]::NewLine
       if (-not [string]::IsNullOrWhiteSpace($CrashText)) {
-        throw "CacaTools exited during the isolated smoke test with code $($Process.ExitCode).`n$CrashText"
+        throw "Clear Download Manager exited during the isolated smoke test with code $($Process.ExitCode).`n$CrashText"
       }
-      throw "CacaTools exited during the isolated smoke test with code $($Process.ExitCode)."
+      throw "Clear Download Manager exited during the isolated smoke test with code $($Process.ExitCode)."
     }
     if ($Process.MainWindowHandle -ne 0) { $HasWindow = $true }
   }
 
   if (-not $HasWindow) {
-    throw "CacaTools remained running but did not create a visible main window during the smoke test."
+    throw "Clear Download Manager remained running but did not create a visible main window during the smoke test."
   }
 
   if (-not (Test-Path $ExpectedDatabase -PathType Leaf)) {
-    throw "CacaTools opened a window but did not create its isolated SQLite database."
+    throw "Clear Download Manager opened a window but did not create its isolated SQLite database."
   }
   if (-not (Test-Path $SmokeDownloadsDir -PathType Container)) {
-    throw "CacaTools opened a window but did not initialize its isolated downloads directory."
+    throw "Clear Download Manager opened a window but did not initialize its isolated downloads directory."
   }
 
-  Write-Host "OK: isolated CacaTools window is running. PID $($Process.Id); memory $([math]::Round($Process.WorkingSet64 / 1MB, 1)) MB"
+  Write-Host "OK: isolated Clear Download Manager window is running. PID $($Process.Id); memory $([math]::Round($Process.WorkingSet64 / 1MB, 1)) MB"
   Write-Host "OK: isolated SQLite database and downloads directory initialized in a disposable test root."
 }
 finally {
   $env:APPDATA = $PreviousAppData
   $env:LOCALAPPDATA = $PreviousLocalAppData
-  if ($null -eq $PreviousCacaToolsDataDir) { Remove-Item Env:CACATOOLS_DATA_DIR -ErrorAction SilentlyContinue }
-  else { $env:CACATOOLS_DATA_DIR = $PreviousCacaToolsDataDir }
-  if ($null -eq $PreviousCacaToolsDownloadsDir) { Remove-Item Env:CACATOOLS_DOWNLOADS_DIR -ErrorAction SilentlyContinue }
-  else { $env:CACATOOLS_DOWNLOADS_DIR = $PreviousCacaToolsDownloadsDir }
+  if ($null -eq $PreviousCdmDataDir) { Remove-Item Env:CDM_DATA_DIR -ErrorAction SilentlyContinue }
+  else { $env:CDM_DATA_DIR = $PreviousCdmDataDir }
+  if ($null -eq $PreviousCdmDownloadsDir) { Remove-Item Env:CDM_DOWNLOADS_DIR -ErrorAction SilentlyContinue }
+  else { $env:CDM_DOWNLOADS_DIR = $PreviousCdmDownloadsDir }
   if ($null -eq $PreviousRustBacktrace) { Remove-Item Env:RUST_BACKTRACE -ErrorAction SilentlyContinue }
   else { $env:RUST_BACKTRACE = $PreviousRustBacktrace }
   if ($Process -and -not $Process.HasExited) {

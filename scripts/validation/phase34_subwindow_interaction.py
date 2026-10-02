@@ -30,7 +30,7 @@ def main() -> None:
             context.add_init_script(
                 "localStorage.setItem('ct-ui-theme','dark');"
                 "localStorage.setItem('ct-ui-accent','#59d37b');"
-                "localStorage.setItem('cacatools.desktop.appearance.metrics.v1',"
+                "localStorage.setItem('cdm.desktop.appearance.metrics.v1',"
                 "JSON.stringify({interfaceRatio: 1}));"
             )
             page = context.new_page()

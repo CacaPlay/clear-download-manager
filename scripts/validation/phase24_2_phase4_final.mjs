@@ -33,7 +33,7 @@ const phase3Closure = json('docs/tests/phase24-2-phase3-final-closure.json');
 const phase3ClosureVisual = json('docs/tests/phase24-2-phase3-closure-visual.json');
 
 const checks = [
-  ['La aplicación usa la versión Beta 0.25.1 en npm, Tauri, Rust y UI', packageJson.version === '0.25.1' && tauri.version === '0.25.1' && cargo.includes('version = "0.25.1"') && cargoLock.includes('name = "cacatools-desktop"\nversion = "0.25.1"') && main.includes("const APP_VERSION = '0.25.1'") && dmUnified.includes('Beta 0.25.1')],
+  ['La aplicación usa la versión Beta 0.25.1 en npm, Tauri, Rust y UI', packageJson.version === '0.25.1' && tauri.version === '0.25.1' && cargo.includes('version = "0.25.1"') && cargoLock.includes('name = "clear-download-manager"\nversion = "0.25.1"') && main.includes("const APP_VERSION = '0.25.1'") && dmUnified.includes('Beta 0.25.1')],
   ['El Build ID final está sincronizado', main.includes("CDM-0.25.1-BETA-20260807") && read('scripts/build-windows-beta.ps1').includes('CDM-0.25.1-BETA-20260807')],
   ['La extensión oficial está sincronizada en 0.25.1 y compatible con la serie 0.25.x', extensionManifest.version === '0.25.1' && extensionManifest.minimumAppVersion === '0.24.1' && extensionManifest.maximumTestedAppVersion === '0.25.x' && versionCheck.includes('compareSemver(manifest.minimumAppVersion, version)')],
   ['El ID oficial de Chrome permanece fijo y los registros heredados quedan protegidos', extensionConfig.chromiumExtensionIds?.[0] === 'aonppfnabjnicjjeoofkfjofolfibggp' && rust.includes('job_uses_legacy_removed_provider') && rust.includes("ALTER TABLE playlist_items ADD COLUMN spotify_url TEXT NOT NULL DEFAULT ''")],
@@ -52,7 +52,7 @@ const checks = [
   ['La migración incluye índices para cola, historial, URL y playlists', ['idx_jobs_status_updated','idx_download_jobs_url','idx_recent_files_opened','idx_playlist_batches_status_updated','idx_playlist_items_batch_status_position','idx_playlist_items_job','idx_media_jobs_playlist_batch'].every((name) => rust.includes(name))],
   ['La cancelación conserva cierre del árbol de procesos', rust.includes('fn kill_process_tree') && rust.includes('.args(["/PID", &pid.to_string(), "/T", "/F"])') && rust.includes('fn stop_job_internal') && rust.includes('kill_process_tree(pid);')],
   ['Rust permanece en Edition 2021 y no usa let chains', cargo.includes('edition = "2021"') && !/&&\s*let\s+/.test(rust)],
-  ['No reaparecen los errores Rust y Clippy ya corregidos', !rust.includes('if path.starts_with(destination) =>') && !rust.includes('.eval(&format!("window.cacatoolsPlayerLoadJob?.') && !/&&\s*let\s+/.test(rust)],
+  ['No reaparecen los errores Rust y Clippy ya corregidos', !rust.includes('if path.starts_with(destination) =>') && !rust.includes('.eval(&format!("window.cdmPlayerLoadJob?.') && !/&&\s*let\s+/.test(rust)],
   ['Fase 11.4 limita la virtualizaci�n a historial y completadas largas', dmModel.includes('LONG_LIST_VIRTUALIZATION_POLICIES') && dmModel.includes('history: Object.freeze({ threshold: 120') && dmModel.includes('completed: Object.freeze({ threshold: 160') && dmModel.includes('if (!policy || Number(count) <= policy.threshold) return null')],
   ['Fase 11.4 monta ventanas con overscan y espaciadores medibles', dmIndex.includes('const VIRTUAL_OVERSCAN_ROWS = 8') && dmIndex.includes('function virtualListRange') && dmIndex.includes('function patchVirtualListWindow') && dmIndex.includes('data-dm-virtual-window') && dmUnified.includes('data-dm-virtual-spacer')],
   ['Fase 11.4 conserva acciones delegadas y foco en filas recicladas', dmIndex.includes('data-dm-live-replaced') && dmIndex.includes('data-dm-advanced-details') && dmIndex.includes('scroll.focus({ preventScroll: true })')],
@@ -67,7 +67,7 @@ const checks = [
   ['La medición SQLite final pasa y documenta planes e intervalos', sqlite.passed === true && sqlite.progress_persistence?.interval_ms === 250 && Object.keys(sqlite.query_plans || {}).length >= 7],
 ];
 
-checks[0] = ['Release 0.45.0 sincronizado', packageJson.version === '0.45.0' && tauri.version === '0.45.0' && cargo.includes('version = "0.45.0"') && cargoLock.includes('name = "cacatools-desktop"\nversion = "0.45.0"') && main.includes("const APP_VERSION = '0.45.0'") && dmUnified.includes('CacaTools 0.45.0')];
+checks[0] = ['Release 0.45.0 sincronizado', packageJson.version === '0.45.0' && tauri.version === '0.45.0' && cargo.includes('version = "0.45.0"') && cargoLock.includes('name = "clear-download-manager"\nversion = "0.45.0"') && main.includes("const APP_VERSION = '0.45.0'") && dmUnified.includes('Clear Download Manager 0.45.0')];
 checks[1] = ['Build ID 0.45.0 sincronizado', main.includes('CDM-0.45.0-UI-20260825') && read('scripts/build-windows-beta.ps1').includes('CDM-0.45.0-UI-20260825')];
 checks[2] = ['Extension 0.45.x sincronizada', extensionManifest.version === '0.45.0' && extensionManifest.minimumAppVersion === '0.24.1' && extensionManifest.maximumTestedAppVersion === '0.45.x' && versionCheck.includes('compareSemver(manifest.minimumAppVersion, version)')];
 const failures = checks.filter(([, pass]) => !pass).map(([name]) => name);

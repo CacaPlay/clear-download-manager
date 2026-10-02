@@ -45,7 +45,7 @@ check('Rust prueba la protección y eliminación administrada', ['managed_storag
 check('Los comandos están registrados en Tauri', ['job_storage_preview,', 'emergency_stop_job,', 'delete_download_job,'].every((token) => has(rust, token)));
 check('La interfaz muestra rutas antes de borrar', has(dialogs, 'Archivo o carpeta final') && has(dialogs, 'Temporales relacionados') && has(dialogs, 'Raíz administrada'));
 check('Eliminar almacenamiento exige confirmación explícita', has(dialogs, 'data-dm-delete-storage-ack') && has(manager, "[data-dm-delete-storage-ack]") && has(manager, 'button.disabled = !event.currentTarget.checked'));
-check('La interfaz ofrece las dos eliminaciones reales', has(dialogs, 'Solo de CacaTools') && has(dialogs, 'CacaTools y almacenamiento'));
+check('La interfaz ofrece las dos eliminaciones reales', has(dialogs, 'Solo de Clear Download Manager') && has(dialogs, 'Clear Download Manager y almacenamiento'));
 check('La interfaz invoca los comandos nuevos', has(manager, "'job_storage_preview'") && has(manager, "'emergency_stop_job'") && has(manager, "'delete_download_job'"));
 check('Completadas no muestran detención de emergencia', has(shared, "const cancellableStatuses = new Set(['running', 'queued', 'paused', 'failed'])"));
 check('Todas las tareas normales permiten eliminar registro', has(shared, 'data-dm-delete-job'));

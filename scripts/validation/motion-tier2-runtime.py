@@ -59,7 +59,7 @@ def main() -> int:
             # Return to downloads with the same functional click path.
             page.locator(".dm-zen-nav nav button").first.click()
             page.wait_for_selector(".dm-download-item")
-            page.wait_for_function("typeof window.__cacatoolsMotionStateHarness?.setJobState === 'function'")
+            page.wait_for_function("typeof window.__cdmMotionStateHarness?.setJobState === 'function'")
 
             # Button press/release gate: the pointer state must be visible on
             # the button itself, then settle without leaving a transform behind.
@@ -131,7 +131,7 @@ def main() -> int:
             page.wait_for_timeout(30)
 
             def set_state(patch: dict[str, object]) -> dict[str, object]:
-                return page.evaluate("patch => { window.__cacatoolsMotionStateHarness.setJobState(1, patch); const row = document.querySelector('.dm-download-item[data-dm-select-job=\"1\"]'); const bar = row?.querySelector('.dm-progress'); const fill = row?.querySelector('.dm-progress > i'); const sameFill = Boolean(fill && window.__cdmMotionFillNode === fill); window.__cdmMotionFillNode = fill || null; const processing = row?.querySelector('.dm-item-progress')?.classList.contains('is-processing') || false; const processingBar = Boolean(row?.querySelector('.dm-item-progress.is-processing .dm-progress-processing')); const processingSpinner = Boolean(row?.querySelector('.dm-processing-indicator')); return { rowAnimation: row ? getComputedStyle(row).animationName : 'none', rowOpacity: row ? getComputedStyle(row).opacity : '1', ratio: fill?.style.getPropertyValue('--dm-progress-ratio') || '', transform: fill ? getComputedStyle(fill).transform : 'none', visualDuration: fill?.style.getPropertyValue('--dm-progress-duration') || '', processing, processingBar, processingSpinner, barAnimation: bar ? getComputedStyle(bar).animationName : 'none', sameFill }; }", patch)
+                return page.evaluate("patch => { window.__cdmMotionStateHarness.setJobState(1, patch); const row = document.querySelector('.dm-download-item[data-dm-select-job=\"1\"]'); const bar = row?.querySelector('.dm-progress'); const fill = row?.querySelector('.dm-progress > i'); const sameFill = Boolean(fill && window.__cdmMotionFillNode === fill); window.__cdmMotionFillNode = fill || null; const processing = row?.querySelector('.dm-item-progress')?.classList.contains('is-processing') || false; const processingBar = Boolean(row?.querySelector('.dm-item-progress.is-processing .dm-progress-processing')); const processingSpinner = Boolean(row?.querySelector('.dm-processing-indicator')); return { rowAnimation: row ? getComputedStyle(row).animationName : 'none', rowOpacity: row ? getComputedStyle(row).opacity : '1', ratio: fill?.style.getPropertyValue('--dm-progress-ratio') || '', transform: fill ? getComputedStyle(fill).transform : 'none', visualDuration: fill?.style.getPropertyValue('--dm-progress-duration') || '', processing, processingBar, processingSpinner, barAnimation: bar ? getComputedStyle(bar).animationName : 'none', sameFill }; }", patch)
 
             progress = set_state({"status": "running", "stage": "Descargando", "progress": 47, "downloaded_bytes": 470000, "total_bytes": 1000000, "speed_bps": 1000000, "indeterminate": False})
             completed = set_state({"status": "completed", "stage": "Completada", "progress": 100, "downloaded_bytes": 1000000, "total_bytes": 1000000, "final_size": 1000000, "speed_bps": 0})
@@ -165,7 +165,7 @@ def main() -> int:
             # Measure the same live keyed patch path at representative
             # activity intervals. The diagnostic buffer is opt-in and has a
             # bounded sample count; it never drives rendering.
-            page.evaluate("() => { window.__CACATOOLS_MOTION_DIAGNOSTICS__ = true; window.__cdmProgressCadenceSamples = []; }")
+            page.evaluate("() => { window.__CDM_MOTION_DIAGNOSTICS__ = true; window.__cdmProgressCadenceSamples = []; }")
             cadence = []
             for wait_ms, progress_value in ((220, 51), (250, 57), (280, 64), (260, 71), (240, 78)):
                 page.wait_for_timeout(wait_ms)

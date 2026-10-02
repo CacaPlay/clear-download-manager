@@ -54,7 +54,7 @@ function File-Entry {
 
 $Entries = New-Object System.Collections.Generic.List[object]
 $Candidates = @(
-  @{ Path = (Join-Path $TauriTargetRoot 'release\cacatools-desktop.exe'); Category = 'app' },
+  @{ Path = (Join-Path $TauriTargetRoot 'release\clear-download-manager.exe'); Category = 'app' },
   @{ Path = 'src-tauri\resources\bin\aria2c.exe'; Category = 'runtime' },
   @{ Path = 'src-tauri\resources\bin\yt-dlp.exe'; Category = 'runtime' },
   @{ Path = 'src-tauri\resources\bin\ffmpeg.exe'; Category = 'runtime' },

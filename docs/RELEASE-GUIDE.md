@@ -45,8 +45,7 @@ and exact corresponding-source materials. The fixed installer URL is:
 
 `https://github.com/CacaPlay/clear-download-manager/releases/latest/download/ClearDownloadManagerSetup.exe`
 
-Older installations may use the legacy updater repository. If the release
-requires a compatibility bridge, publish a verified copy of `latest.json` in
-`CacaPlay/cacatools-download-manager-releases` and confirm its URL resolves to
-the signed asset in the main repository. Keep the historical private archive
-`CacaPlay/cacatools-download-manager-releases-private-archive` private.
+Some earlier installations use a legacy updater endpoint. See
+[`UPDATER-MIGRATION.md`](UPDATER-MIGRATION.md) for the exact compatibility
+boundary and bridge-release procedure. Current release assets remain in the
+main `clear-download-manager` repository.

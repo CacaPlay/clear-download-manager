@@ -34,7 +34,7 @@ def mock_script(theme: str, accent: str) -> str:
         'extensionCustomTheme': 'dark', 'extensionCustomAccent': '#5f73ff',
         'extensionPanels': {'downloads': False, 'links': False},
         'manualLinkCollections': [{'id': 'collection-1', 'name': 'Mi playlist', 'createdAt': 1, 'links': [
-            {'id': 'link-1', 'url': 'https://www.youtube.com/watch?v=jSOLkn7q83Y', 'title': 'La historia completa de CacaTools', 'author': 'Canal de prueba', 'thumbnail': thumbnail, 'selected': True, 'metadataResolved': True},
+            {'id': 'link-1', 'url': 'https://www.youtube.com/watch?v=jSOLkn7q83Y', 'title': 'La historia completa de Clear Download Manager', 'author': 'Canal de prueba', 'thumbnail': thumbnail, 'selected': True, 'metadataResolved': True},
             {'id': 'link-2', 'url': 'https://www.youtube.com/watch?v=v1qMvCfpNc4', 'title': 'Segundo vídeo de la playlist', 'author': 'Canal de prueba', 'thumbnail': thumbnail, 'selected': True, 'metadataResolved': True}
         ]}],
         'activeManualCollectionId': 'collection-1', 'looseManualLinks': [],

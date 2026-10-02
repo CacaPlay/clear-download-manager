@@ -72,7 +72,7 @@ if (-not $HasMsvc) { [void]$Missing.Add("Visual Studio Build Tools with Desktop 
 if ($Missing.Count -gt 0 -and -not $InstallMissing) {
   Write-Host "Missing Windows build prerequisites:" -ForegroundColor Yellow
   $Missing | ForEach-Object { Write-Host " - $_" }
-  Write-Host "Run INSTALAR_REQUISITOS_WINDOWS.cmd once, then run COMPILAR_CACATOOLS_WINDOWS.cmd." -ForegroundColor Yellow
+  Write-Host "After prerequisites are installed, follow docs/BUILD-AND-PACKAGING.md for the build command." -ForegroundColor Yellow
   exit 2
 }
 

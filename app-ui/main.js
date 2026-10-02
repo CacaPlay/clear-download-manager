@@ -1,3 +1,4 @@
+import { migrateLegacyStorageNamespace } from './modules/runtime/storage-migration.js';
 import { renderDownloadManager, bindDownloadManager, patchDownloadManagerAppearance, patchDownloadManagerLive, forceDownloadManagerAllView, clearDownloadManagerSearchState, setOptimisticJobStatus, isTransientUiOpen } from './download-manager/index.js?v=0.95.5-ui-redesign-20260930-r2';
 import { runtimeState } from './download-manager/state.js';
 import { clearFloatingLayer } from './download-manager/floating.js';
@@ -52,6 +53,8 @@ import { localizeDom } from './modules/i18n/runtime.js?v=0.95.5-ui-redesign-2026
 import { patchUpdateProgressSlots } from './download-manager/view/shared.js';
 import { createComponentDiscoveryScheduler } from './modules/updates/component-discovery.js';
 import { runThemeTransition } from './modules/motion/coordinator.js?v=0.95.5-theme-capture-20260930-r3';
+
+migrateLegacyStorageNamespace();
 
 // CDM uses its own context menus for downloads and no browser context menu on
 // empty content. Keep this at document capture phase so every main-view area
@@ -126,7 +129,7 @@ function requestDownloadManagerRender({ force = false } = {}) {
 // Deterministic browser gates use this preview-only hook to exercise the same
 // refresh boundary that the native timers call. It is never exposed in the
 // packaged runtime.
-if (previewMode) window.__cacatoolsRequestDownloadManagerRender = requestDownloadManagerRender;
+if (previewMode) window.__cdmRequestDownloadManagerRender = requestDownloadManagerRender;
 function patchCurrentDownloadManagerLive(changedJobIds = null) {
   if (!document.querySelector('.dm-host')) return false;
   return patchDownloadManagerLive({
@@ -144,7 +147,7 @@ function patchCurrentDownloadManagerLive(changedJobIds = null) {
 // patch path as native refreshes without adding a production command or state
 // authority. The harness is intentionally unavailable in packaged runtime.
 if (previewMode) {
-  window.__cacatoolsMotionStateHarness = {
+  window.__cdmMotionStateHarness = {
     setJobState(id, patch = {}) {
       const job = appState.snapshot?.jobs?.find((entry) => String(entry.id) === String(id));
       if (!job || !patch || typeof patch !== 'object') return false;
@@ -168,10 +171,10 @@ async function refreshDownloadManager({ liveOnly = false, changedJobIds = null }
   if (liveOnly && document.querySelector('.dm-host')) patchCurrentDownloadManagerLive(changedJobIds);
   else requestDownloadManagerRender();
 }
-const AUTO_UPDATE_STORAGE_KEY = 'cacatools.desktop.auto-update.v1';
-const LAST_UPDATE_CHECK_KEY = 'cacatools.desktop.update-check.v1';
+const AUTO_UPDATE_STORAGE_KEY = 'cdm.desktop.auto-update.v1';
+const LAST_UPDATE_CHECK_KEY = 'cdm.desktop.update-check.v1';
 const UPDATE_NOTIFICATION_KEY = 'clear-download-manager/update-notified-v1';
-const LEGACY_EXPERIENCE_MIGRATION_KEY = 'cacatools.experience-v1-migrated';
+const LEGACY_EXPERIENCE_MIGRATION_KEY = 'cdm.experience-v1-migrated';
 function playlistMetadata(item = {}) {
   const source = item && typeof item === 'object' ? item : {};
   return [source.creator, source.album, source.duration || source.duration_label]
@@ -277,7 +280,7 @@ const icon = (name, size = 24) => {
   const safeName = known ? resolvedName : 'file';
   if (!known && !unknownIconNames.has(requestedName)) {
     unknownIconNames.add(requestedName);
-    console.warn(`[CacaTools] Icono no registrado: ${requestedName}`);
+    console.warn(`[Clear Download Manager] Icono no registrado: ${requestedName}`);
   }
   const safeSize = Math.max(12, Math.min(96, Math.round(Number(size) || 24)));
   const cacheKey = `${safeName}:${safeSize}:${known ? 'known' : requestedName}`;
@@ -317,7 +320,7 @@ const demo = {
     { id: 3, name: 'Plan de proyecto.docx', category: 'Documento · 245 KB', opened_at: 'Ayer, 09:45', kind: 'doc' },
     { id: 4, name: 'Presupuesto 2024.xlsx', category: 'Hoja de cálculo · 118 KB', opened_at: 'Ayer, 08:15', kind: 'sheet' },
     { id: 5, name: 'lofi-chill-study-beats.mp3', category: 'Audio · 12.7 MB', opened_at: 'Ayer, 07:30', kind: 'audio' },
-    { id: 6, name: 'Manual CacaTools.pdf', category: 'PDF · 2.1 MB', opened_at: 'Lun, 20:12', kind: 'pdf' }
+    { id: 6, name: 'Manual Clear Download Manager.pdf', category: 'PDF · 2.1 MB', opened_at: 'Lun, 20:12', kind: 'pdf' }
   ]
 };
 
@@ -332,13 +335,13 @@ const emptySnapshot = {
 const previewSections = { home: 'Inicio', downloads: 'Descargas', documents: 'Documentos', images: 'Imágenes', utilities: 'Utilidades', library: 'Biblioteca', settings: 'Ajustes', currency: 'Utilidades' };
 
 
-const MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cacatools.media-download-preferences.v1';
+const MEDIA_DOWNLOAD_PREFERENCES_KEY = 'cdm.media-download-preferences.v1';
 const V1_SETTINGS_RESET_MIGRATION_KEY = 'clear-download-manager/settings-defaults-reset-v1.0.0';
 const LOCAL_APPLICATION_PREFERENCE_KEYS = [
-  'cacatools.desktop.appearance.v2',
-  'cacatools.desktop.appearance.v1',
-  'cacatools.download-manager.v2',
-  'cacatools.download-manager.v1',
+  'cdm.desktop.appearance.v2',
+  'cdm.desktop.appearance.v1',
+  'cdm.download-manager.v2',
+  'cdm.download-manager.v1',
   MEDIA_DOWNLOAD_PREFERENCES_KEY,
   'clear-download-manager/locale-v1',
   AUTO_UPDATE_STORAGE_KEY,
@@ -414,7 +417,7 @@ const appState = {
     { id: 1, job_id: 2, action: 'resume', run_at: '2026-08-01 08:30:00', repeat_daily: false, enabled: true, last_run_at: null },
     { id: 2, job_id: 1, action: 'pause', run_at: '2026-08-01 23:00:00', repeat_daily: true, enabled: true, last_run_at: null }
   ] : [],
-  downloadDirectory: previewMode ? 'C:\\Users\\Demo\\Downloads\\CacaTools' : 'Descargas\\CacaTools',
+  downloadDirectory: previewMode ? 'C:\\Users\\Demo\\Downloads\\Clear Download Manager' : 'Descargas\\Clear Download Manager',
   playlistStage: 'selection',
   playlistItems: structuredClone(demoPlaylist),
   playlistCurrentIndex: 0,
@@ -469,7 +472,7 @@ const appState = {
     resumeInterruptedDownloads: true
   },
   autoUpdateEnabled: loadAutoUpdatePreference(),
-  extensionBridgeStatus: previewMode ? { prepared: true, registered: false, hostName: 'lat.cacaplay.cacatools.downloadmanager', protocolVersion: 1 } : null,
+  extensionBridgeStatus: previewMode ? { prepared: true, registered: false, hostName: 'lat.cacaplay.cleardownloadmanager', protocolVersion: 1 } : null,
   startupStatus: previewMode ? { supported: false, enabled: false, mode: 'background' } : null,
   windowBehavior: previewMode ? { closeAction: 'tray', minimizeAction: 'taskbar' } : { closeAction: 'tray', minimizeAction: 'taskbar' },
   backgroundLaunch: false,
@@ -648,7 +651,7 @@ async function bindNativeClipboardFocus() {
   const listen = window.__TAURI__?.event?.listen;
   if (typeof listen !== 'function') return;
   try {
-    await listen('cacatools-main-focus-changed', (event) => {
+    await listen('cdm-main-focus-changed', (event) => {
       if (event?.payload?.focused !== false) clipboardFocusWatcher.notifyFocus();
     });
   } catch (error) {
@@ -665,13 +668,13 @@ function applyPreparationModalState(labels = []) {
   document.body.dataset.preparationModalCount = String(activeLabels.length);
 }
 
-window.__cacatoolsSetPreparationModalState = applyPreparationModalState;
+window.__cdmSetPreparationModalState = applyPreparationModalState;
 
 async function bindPreparationModalState() {
   const listen = window.__TAURI__?.event?.listen;
   if (typeof listen !== 'function') return;
   try {
-    await listen('cacatools-preparation-modal-state', (event) => {
+    await listen('cdm-preparation-modal-state', (event) => {
       applyPreparationModalState(event?.payload?.activeLabels);
     });
     const activeLabels = await invoke('preparation_modal_state');
@@ -686,7 +689,7 @@ async function bindAppUpdateProgress() {
   const listen = window.__TAURI__?.event?.listen;
   if (typeof listen !== 'function') return;
   try {
-    await listen('cacatools-app-update-progress', (event) => {
+    await listen('cdm-app-update-progress', (event) => {
       const payload = event?.payload && typeof event.payload === 'object' ? event.payload : {};
       appState.updaterProgress = payload;
       if (payload.phase === 'install') appState.updaterMessage = 'Verificando e instalando la actualización firmada…';
@@ -861,12 +864,12 @@ function renderFatalError(error) {
   if (!root) return;
   const message = String(error?.message || error || 'Error desconocido');
   appState.lastRenderError = message;
-  root.innerHTML = `<section class="fatal-screen"><div><h1>CacaTools encontró un error de interfaz</h1><p>${escapeHtml(message)}</p><button id="recover-interface">Recargar la interfaz</button></div></section>`;
+  root.innerHTML = `<section class="fatal-screen"><div><h1>Clear Download Manager encontró un error de interfaz</h1><p>${escapeHtml(message)}</p><button id="recover-interface">Recargar la interfaz</button></div></section>`;
   document.querySelector('#recover-interface')?.addEventListener('click', () => window.location.reload());
 }
 
 function downloadDirectoryLabel() {
-  const value = displayWindowsPath(appState.downloadDirectory || 'Descargas\\CacaTools');
+  const value = displayWindowsPath(appState.downloadDirectory || 'Descargas\\Clear Download Manager');
   if (value.length <= 54) return value;
   const segments = value.split(/[\\/]/).filter(Boolean);
   return segments.length > 2 ? `…\\${segments.slice(-2).join('\\')}` : `…${value.slice(-51)}`;
@@ -1191,7 +1194,7 @@ async function openEmbeddedYoutubePreview(url) {
   const target = document.querySelector('[data-youtube-preview-player]');
   if (!videoId || !shell || !target) return false;
   const marked = new URL(url);
-  marked.searchParams.set('cacatools_preview', 'embedded');
+  marked.searchParams.set('cdm_preview', 'embedded');
   await invoke('open_online_media_player', { url: marked.toString() });
   shell.hidden = false;
   target.replaceChildren();
@@ -1252,7 +1255,7 @@ async function checkForAppUpdate({ silent = false } = {}) {
       void persistExperienceSettings({ pendingUpdateVersion: '' });
     }
     appState.updaterMessage = update
-      ? `CacaTools ${update.version} está disponible.`
+      ? `Clear Download Manager ${update.version} está disponible.`
       : 'Estás usando la versión más reciente.';
     if (!silent) showToast(appState.updaterMessage, update ? 'success' : 'info');
     return update;
@@ -1374,7 +1377,7 @@ function documentsPageMarkup() {
 function localModuleMarkup(section) {
   const labels = { documents: 'Documentos', library: 'Biblioteca', images: 'Imágenes' };
   const label = labels[section] || 'Archivos locales';
-  return `<section class="module-page local-module-page"><header class="page-heading"><div class="page-title-wrap"><span class="page-title-icon">${icon('folder', 25)}</span><div><h1>${escapeHtml(label)}</h1><p>Contenido administrado localmente por CacaTools.</p></div></div></header></section>`;
+  return `<section class="module-page local-module-page"><header class="page-heading"><div class="page-title-wrap"><span class="page-title-icon">${icon('folder', 25)}</span><div><h1>${escapeHtml(label)}</h1><p>Contenido administrado localmente por Clear Download Manager.</p></div></div></header></section>`;
 }
 
 function libraryPageMarkup() {
@@ -1911,7 +1914,7 @@ function bindEvents() {
     event.target.disabled = true;
     try {
       appState.windowBehavior = await invoke('save_window_behavior_settings', { settings: { closeAction, minimizeAction: 'taskbar' } });
-      showToast(closeAction === 'exit' ? 'Cerrar ahora saldrá completamente' : 'Cerrar ahora enviará CacaTools a la bandeja', 'success');
+      showToast(closeAction === 'exit' ? 'Cerrar ahora saldrá completamente' : 'Cerrar ahora enviará Clear Download Manager a la bandeja', 'success');
     } catch (error) {
       event.target.value = appState.windowBehavior?.closeAction || 'tray';
       showToast(String(error), 'error');
@@ -2004,7 +2007,7 @@ function bindEvents() {
 
   const chooseDownloadDirectory = async () => {
     if (previewMode) {
-      appState.downloadDirectory = 'D:\\Descargas\\CacaTools';
+      appState.downloadDirectory = 'D:\\Descargas\\Clear Download Manager';
       render();
       return;
     }
@@ -2284,12 +2287,12 @@ function bindEvents() {
 }
 
 window.addEventListener('error', (event) => {
-  console.error('Error global de CacaTools', event.error || event.message);
+  console.error('Error global de Clear Download Manager', event.error || event.message);
   if (!document.querySelector('.dm-host')) renderFatalError(event.error || event.message);
 });
 let lastUnhandledUiError = { message: '', at: 0 };
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('Promesa rechazada en CacaTools', event.reason);
+  console.error('Promesa rechazada en Clear Download Manager', event.reason);
   const message = friendlyError(event.reason);
   const now = Date.now();
   if (message === lastUnhandledUiError.message && now - lastUnhandledUiError.at < 4000) return;
@@ -2297,8 +2300,8 @@ window.addEventListener('unhandledrejection', (event) => {
   showToast(message, 'error');
 });
 window.addEventListener('message', (event) => {
-  if (event.data?.type === 'cacatools:images:state') appState.imageEditorState = event.data;
-  if (event.data?.type === 'cacatools:theme-request' && ['dark', 'light'].includes(event.data.theme)) {
+  if (event.data?.type === 'cdm:images:state') appState.imageEditorState = event.data;
+  if (event.data?.type === 'cdm:theme-request' && ['dark', 'light'].includes(event.data.theme)) {
     appState.appearance = normalizeAppearance({ ...appState.appearance, theme: event.data.theme, appearanceRevision: APPEARANCE_REVISION });
     void applyThemeWithMotion(appState.appearance, { updateNativeIcon: false }, event.source === window ? document.activeElement : null);
     scheduleAppearancePersist(0);

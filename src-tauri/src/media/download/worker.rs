@@ -248,7 +248,7 @@ pub(crate) fn finalize_media_file(source: &Path, destination: &Path) -> Result<(
                     destination
                         .file_name()
                         .and_then(|name| name.to_str())
-                        .unwrap_or("cacatools-media")
+                        .unwrap_or("cdm-media")
                 ));
                 let _ = fs::remove_file(&temporary);
                 match fs::copy(source, &temporary)
@@ -532,9 +532,7 @@ pub(crate) fn run_media_worker_inner(
 
     let started_at = SystemTime::now();
     let destination_root = PathBuf::from(&destination_dir);
-    let work_dir = destination_root
-        .join(".cacatools-work")
-        .join(id.to_string());
+    let work_dir = destination_root.join(".cdm-work").join(id.to_string());
     fs::create_dir_all(&work_dir).map_err(|error| {
         format!("No se pudo preparar el directorio temporal multimedia: {error}")
     })?;
@@ -801,7 +799,7 @@ pub(crate) fn run_media_worker_inner(
             match progress_receiver.recv_timeout(Duration::from_millis(180)) {
                 Ok(Ok(line)) => {
                     last_output = Instant::now();
-                    if let Some(payload) = line.strip_prefix("CACATOOLS_PLAN:") {
+                    if let Some(payload) = line.strip_prefix("CDM_PLAN:") {
                         progress_tracker.apply_stream_plan(payload);
                         continue;
                     }
@@ -817,13 +815,13 @@ pub(crate) fn run_media_worker_inner(
                     {
                         last_progress_persist = Instant::now();
                     }
-                    if let Some(path) = line.strip_prefix("CACATOOLS_FILE:") {
+                    if let Some(path) = line.strip_prefix("CDM_FILE:") {
                         output_path = Some(path.trim().to_string());
                     }
-                    if let Some(value) = line.strip_prefix("CACATOOLS_MEDIA_ID:") {
+                    if let Some(value) = line.strip_prefix("CDM_MEDIA_ID:") {
                         media_id = Some(value.trim().to_string());
                     }
-                    if let Some(value) = line.strip_prefix("CACATOOLS_EXPECTED_DURATION:") {
+                    if let Some(value) = line.strip_prefix("CDM_EXPECTED_DURATION:") {
                         if let Ok(duration) = value.trim().parse::<f64>() {
                             if duration.is_finite() && duration >= 0.5 {
                                 resolved_expected_duration = Some(duration);

@@ -30,7 +30,7 @@ def static_lifecycle_failures() -> list[str]:
             failures.append(f"Falta la autoridad visual/lifecycle de {label}")
     for token in (
         "HashSet<String>",
-        "cacatools-preparation-modal-state",
+        "cdm-preparation-modal-state",
         "WindowEvent::CloseRequested",
         "WindowEvent::Destroyed",
         "restore_main_if_no_preparation",
@@ -71,11 +71,11 @@ try:
         errors: list[str] = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(f"http://127.0.0.1:{port}/?preview=1&view=downloads", wait_until="networkidle")
-        page.wait_for_function("typeof window.__cacatoolsSetPreparationModalState === 'function'")
+        page.wait_for_function("typeof window.__cdmSetPreparationModalState === 'function'")
 
         dimming = page.evaluate(
             """() => {
-              const setState = window.__cacatoolsSetPreparationModalState;
+              const setState = window.__cdmSetPreparationModalState;
               const host = document.querySelector('.dm-host');
               const rect = () => { const value = host.getBoundingClientRect(); return [value.x, value.y, value.width, value.height]; };
               const before = rect();
@@ -99,14 +99,14 @@ try:
             errors.append("El último cierre dejó overlay stale")
         if dimming["before"] != dimming["after"] or dimming["overflow"] > 1:
             errors.append("El overlay produjo layout shift u overflow")
-        page.evaluate("window.postMessage({type:'cacatools:theme-request', theme:'light'}, '*')")
+        page.evaluate("window.postMessage({type:'cdm:theme-request', theme:'light'}, '*')")
         page.wait_for_timeout(80)
-        page.evaluate("window.__cacatoolsSetPreparationModalState(['http-prep'])")
+        page.evaluate("window.__cdmSetPreparationModalState(['http-prep'])")
         page.screenshot(path=str(OUTPUT / "main-light-http-dim.png"), animations="disabled")
-        page.evaluate("window.postMessage({type:'cacatools:theme-request', theme:'dark'}, '*')")
-        page.evaluate("window.__cacatoolsSetPreparationModalState(['playlist-prep'])")
+        page.evaluate("window.postMessage({type:'cdm:theme-request', theme:'dark'}, '*')")
+        page.evaluate("window.__cdmSetPreparationModalState(['playlist-prep'])")
         page.screenshot(path=str(OUTPUT / "main-dark-playlist-dim.png"), animations="disabled")
-        page.evaluate("window.__cacatoolsSetPreparationModalState([])")
+        page.evaluate("window.__cdmSetPreparationModalState([])")
         results.append({"case": "main-dimming", "pass": not errors, "errors": errors, "metrics": dimming})
 
         colors = [svg_data("#2358a5", "A"), svg_data("#7b3fa1", "B"), svg_data("#247b55", "C")]
