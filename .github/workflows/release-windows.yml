@@ -260,12 +260,18 @@ jobs:
       - name: Assemble exact optional component packages and release evidence
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           $ytDlpSources = @(Get-ChildItem yt-dlp-source-input -File -Filter 'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz')
           if ($ytDlpSources.Count -ne 1) { throw 'Expected exactly one verified yt-dlp source archive.' }
+          $runtimeDirectory = 'src-tauri/resources/bin'
+          $requiredRuntimeFiles = @('runtime-manifest.json', 'yt-dlp.exe', 'ffmpeg.exe', 'ffprobe.exe', 'deno.exe', 'aria2c.exe')
+          foreach ($runtimeFile in $requiredRuntimeFiles) {
+            if (-not (Test-Path -LiteralPath (Join-Path $runtimeDirectory $runtimeFile) -PathType Leaf)) {
+              throw "Required runtime inventory file is missing before component packaging: $runtimeFile"
+            }
+          }
           ./scripts/assemble-component-release-assets.ps1 -ReleaseTag $env:RELEASE_TAG -Sequence ([UInt64]$env:GITHUB_RUN_NUMBER) -KeyId 'component-catalog-2026-01' -OutputDirectory 'output/component-release-assets' -YtDlpSourceArchive $ytDlpSources[0].FullName
-          if ($LASTEXITCODE -ne 0) { throw 'Assembling release component packages and catalog payload failed.' }
           ./scripts/validation/inspect-component-packages.ps1 -PackageDirectory 'output/component-release-assets' -RuntimeManifestPath 'src-tauri/resources/bin/runtime-manifest.json'
-          if ($LASTEXITCODE -ne 0) { throw 'Optional component package inspection failed.' }
       - name: Sign inline Component Manager catalog
         env:
           RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY: ${{ secrets.RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY }}
