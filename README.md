@@ -7,32 +7,58 @@
 <p align="center">Clear Download Manager (CDM) is a local Windows application for organizing HTTP/HTTPS downloads, video, audio, playlists, torrents and direct links. It is built with Tauri and Rust and includes optional Chromium browser integration.</p>
 
 <p align="center">
-  <img src="docs/assets/feature-pills/downloads-light.svg#gh-light-mode-only" height="36" alt="Downloads"><img src="docs/assets/feature-pills/downloads-dark.svg#gh-dark-mode-only" height="36" alt="Downloads">&nbsp;
-  <img src="docs/assets/feature-pills/video-audio-light.svg#gh-light-mode-only" height="36" alt="Video and audio"><img src="docs/assets/feature-pills/video-audio-dark.svg#gh-dark-mode-only" height="36" alt="Video and audio">&nbsp;
-  <img src="docs/assets/feature-pills/torrents-light.svg#gh-light-mode-only" height="36" alt="Torrents"><img src="docs/assets/feature-pills/torrents-dark.svg#gh-dark-mode-only" height="36" alt="Torrents">&nbsp;
-  <img src="docs/assets/feature-pills/direct-links-light.svg#gh-light-mode-only" height="36" alt="Direct links"><img src="docs/assets/feature-pills/direct-links-dark.svg#gh-dark-mode-only" height="36" alt="Direct links">&nbsp;
-  <img src="docs/assets/feature-pills/chromium-light.svg#gh-light-mode-only" height="36" alt="Chromium integration"><img src="docs/assets/feature-pills/chromium-dark.svg#gh-dark-mode-only" height="36" alt="Chromium integration">
+  <img src="docs/assets/feature-pills/downloads-light.svg#gh-light-mode-only" height="30" alt="Downloads"><img src="docs/assets/feature-pills/downloads-dark.svg#gh-dark-mode-only" height="30" alt="Downloads">&nbsp;
+  <img src="docs/assets/feature-pills/video-audio-light.svg#gh-light-mode-only" height="30" alt="Video and audio"><img src="docs/assets/feature-pills/video-audio-dark.svg#gh-dark-mode-only" height="30" alt="Video and audio">&nbsp;
+  <img src="docs/assets/feature-pills/torrents-light.svg#gh-light-mode-only" height="30" alt="Torrents"><img src="docs/assets/feature-pills/torrents-dark.svg#gh-dark-mode-only" height="30" alt="Torrents">&nbsp;
+  <img src="docs/assets/feature-pills/direct-links-light.svg#gh-light-mode-only" height="30" alt="Direct links"><img src="docs/assets/feature-pills/direct-links-dark.svg#gh-dark-mode-only" height="30" alt="Direct links">&nbsp;
+  <img src="docs/assets/feature-pills/chromium-light.svg#gh-light-mode-only" height="30" alt="Chromium integration"><img src="docs/assets/feature-pills/chromium-dark.svg#gh-dark-mode-only" height="30" alt="Chromium integration">
 </p>
-<p align="center"><strong>README SCREENSHOT: PENDING USER ASSET</strong></p>
 <p align="center"><img src="docs/assets/section-divider.svg?v=visual-harmony-20260915" width="100%" height="2" alt=""></p>
 
-## Download
+## Downloads
 
 Choose the option that works best for you.
 
 <p align="center">
-  <a href="https://github.com/CacaPlay/clear-download-manager/releases/latest">Download Windows installer</a>
-  &nbsp;·&nbsp;
-  <a href="https://apps.microsoft.com/detail/9NSTJ7JXM843">Microsoft Store</a>
+  <a href="https://github.com/CacaPlay/clear-download-manager/releases/download/v1.0.0/ClearDownloadManagerSetup.exe">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/download-buttons/windows-dark.png">
+      <img src="docs/assets/download-buttons/windows-light.png" width="210" alt="Download the Windows installer">
+    </picture>
+  </a>&nbsp;
+  <a href="https://apps.microsoft.com/detail/9NSTJ7JXM843?hl=es-mx&amp;gl=US&amp;ocid=pdpshare">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/download-buttons/microsoft-store-dark.png">
+      <img src="docs/assets/download-buttons/microsoft-store-light.png" width="210" alt="Get Clear Download Manager from Microsoft Store">
+    </picture>
+  </a>&nbsp;
+  <a href="https://chromewebstore.google.com/detail/clear-download-manager/aonppfnabjnicjjeoofkfjofolfibggp">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/download-buttons/chrome-web-store-dark.png">
+      <img src="docs/assets/download-buttons/chrome-web-store-light.png" width="210" alt="Get the CDM browser extension from Chrome Web Store">
+    </picture>
+  </a>
 </p>
-<p align="center"><a href="https://chromewebstore.google.com/detail/aonppfnabjnicjjeoofkfjofolfibggp">Browser extension on Chrome Web Store</a></p>
 
-The [latest Windows release](https://github.com/CacaPlay/clear-download-manager/releases/latest) includes the current installer, checksum manifest, signature and updater metadata.
+The installer button downloads the published v1.0.0 setup directly. The [latest Windows release](https://github.com/CacaPlay/clear-download-manager/releases/latest) has the current installer, checksum manifest, signature and updater metadata.
 
 ### What do I need?
 - **Install the app:** use the Windows installer or Microsoft Store.
 - **Browser integration:** install the extension from Chrome Web Store.
 - **Already have CDM:** install only the extension if you want to send content from your browser.
+
+## See CDM before you install
+
+<table>
+  <tr>
+    <td align="center"><strong>Downloads · Dark</strong><br><img src="docs/assets/screenshots/main-dark.png" width="460" alt="Clear Download Manager downloads screen in dark theme"></td>
+    <td align="center"><strong>Downloads · Light</strong><br><img src="docs/assets/screenshots/main-light.png" width="460" alt="Clear Download Manager downloads screen in light theme"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Appearance settings</strong><br><img src="docs/assets/screenshots/appearance.png" width="460" alt="Appearance settings with theme and color controls"></td>
+    <td align="center"><strong>What’s new</strong><br><img src="docs/assets/screenshots/whats-new.png" width="460" alt="What's new screen with updates and extension information"></td>
+  </tr>
+</table>
 
 ## What it does
 - Core HTTP/HTTPS downloads work without optional runtimes. Media and torrent features use optional local components that CDM can install and manage separately.
