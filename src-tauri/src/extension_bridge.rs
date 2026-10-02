@@ -361,6 +361,12 @@ fn find_native_host_executable(file_name: &str, allow_override: bool) -> Option<
 }
 
 #[cfg(windows)]
+struct NativeHostRegistrationState<'a> {
+    registered_browsers: &'a mut Vec<String>,
+    registration_errors: &'a mut Vec<String>,
+}
+
+#[cfg(windows)]
 fn register_native_host(
     host_directory: &std::path::Path,
     host_name: &str,
@@ -368,8 +374,7 @@ fn register_native_host(
     config: &ExtensionBridgeConfig,
     chromium_ids: &[String],
     firefox_ids: &[String],
-    registered_browsers: &mut Vec<String>,
-    registration_errors: &mut Vec<String>,
+    state: &mut NativeHostRegistrationState<'_>,
 ) -> Result<(), String> {
     let executable_text = executable.to_string_lossy().into_owned();
     if !chromium_ids.is_empty() {
@@ -410,10 +415,12 @@ fn register_native_host(
                 .any(|value| value.eq_ignore_ascii_case(browser))
             {
                 match add_registry_manifest(&format!(r"{root}\{host_name}"), &manifest_text) {
-                    Ok(()) => registered_browsers.push(format!("{host_name}:{browser}")),
-                    Err(error) => {
-                        registration_errors.push(format!("{host_name}/{browser}: {error}"))
-                    }
+                    Ok(()) => state
+                        .registered_browsers
+                        .push(format!("{host_name}:{browser}")),
+                    Err(error) => state
+                        .registration_errors
+                        .push(format!("{host_name}/{browser}: {error}")),
                 }
             }
         }
@@ -438,8 +445,12 @@ fn register_native_host(
             &format!(r"HKCU\Software\Mozilla\NativeMessagingHosts\{host_name}"),
             &manifest_text,
         ) {
-            Ok(()) => registered_browsers.push(format!("{host_name}:firefox")),
-            Err(error) => registration_errors.push(format!("{host_name}/firefox: {error}")),
+            Ok(()) => state
+                .registered_browsers
+                .push(format!("{host_name}:firefox")),
+            Err(error) => state
+                .registration_errors
+                .push(format!("{host_name}/firefox: {error}")),
         }
     }
     Ok(())
@@ -490,6 +501,10 @@ fn ensure_extension_host_registration() -> Result<bool, String> {
             source
         };
         let old_count = registered_browsers.len();
+        let mut registration_state = NativeHostRegistrationState {
+            registered_browsers: &mut registered_browsers,
+            registration_errors: &mut registration_errors,
+        };
         register_native_host(
             &host_directory,
             host_name,
@@ -497,8 +512,7 @@ fn ensure_extension_host_registration() -> Result<bool, String> {
             &config,
             &chromium_ids,
             &firefox_ids,
-            &mut registered_browsers,
-            &mut registration_errors,
+            &mut registration_state,
         )?;
         if registered_browsers.len() > old_count {
             registered_hosts.push(host_name);
