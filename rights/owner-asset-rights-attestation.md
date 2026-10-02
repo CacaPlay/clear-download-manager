@@ -72,3 +72,21 @@ TRADEMARKS.md.
 **Nombre del titular:** Julio Angel / CacaPlay  
 **Fecha:** 2026-09-25  
 **Aprobación explícita:** APROBADO
+
+## Autorización específica de medios del README — 2026-10-02
+
+Autorizo la distribución en el repositorio y el uso exclusivo en el README de
+los siguientes medios que proporcioné para esta tarea:
+
+- Los seis botones PNG de Windows Installer, Microsoft Store y Chrome Web Store
+  en sus variantes clara y oscura. Confirmo que diseñé estos seis archivos y
+  autorizo su distribución en `docs/assets/download-buttons/` para enlazar a
+  los destinos correspondientes.
+- Las cuatro capturas PNG de Clear Download Manager en `docs/assets/screenshots/`.
+  Autorizo las copias recortadas para retirar el escritorio que rodeaba la
+  ventana y su publicación en el README; no se altera la interfaz capturada.
+
+Esta autorización se limita a esos diez archivos y al uso documental descrito.
+No afirma titularidad ni concede una licencia general sobre las marcas de
+Google, Microsoft o Windows que aparecen en los botones, ni amplía las
+autorizaciones de los grupos A, B, C1 y C2 aprobados el 2026-09-25.

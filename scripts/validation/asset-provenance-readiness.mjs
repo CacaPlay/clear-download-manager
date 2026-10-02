@@ -94,6 +94,13 @@ for (const group of registry.groups || []) {
         for (const prefix of subgroup.pathPrefixes || []) {
           for (const file of collect(prefix.endsWith('/') ? prefix.slice(0, -1) : prefix)) subgroupAssets.add(file);
         }
+        for (const prefix of subgroup.excludePathPrefixes || []) {
+          if (prefix.endsWith('/')) {
+            for (const file of collect(prefix.slice(0, -1))) subgroupAssets.delete(file);
+          } else {
+            subgroupAssets.delete(prefix);
+          }
+        }
         if (subgroupAssets.size !== subgroup.assetCount) {
           failures.push(`${group.id}/${subgroup.id}: expected ${subgroup.assetCount} assets, found ${subgroupAssets.size}.`);
         }
@@ -118,6 +125,35 @@ for (const group of registry.groups || []) {
   }
   groupAssets.set(group.id, assets);
   groups.push({ id: group.id, status: group.status, count: assets.size, missing: group.missing || [] });
+}
+
+const documentationMediaApprovals = new Map(
+  (registry.documentationMediaApprovals || []).map((approval) => [approval.id, approval]),
+);
+for (const group of (registry.groups || []).filter((entry) => entry.category === 'OWNER_AUTHORIZED_README_MEDIA')) {
+  const approval = documentationMediaApprovals.get(group.approvalRecordId);
+  const evidencePath = path.resolve(root, approval?.evidencePath || '');
+  const evidenceIsInRoot = evidencePath.startsWith(`${root}${path.sep}`);
+  const actualEvidenceHash = evidenceIsInRoot && fs.existsSync(evidencePath)
+    ? crypto.createHash('sha256').update(fs.readFileSync(evidencePath)).digest('hex')
+    : null;
+  const groupFiles = [...new Set(group.files || [])].sort();
+  const approvedFiles = [...new Set(approval?.files || [])].sort();
+  if (!approval
+    || approval.status !== 'APPROVED'
+    || approval.scope !== 'README_ONLY'
+    || !approval.approvedAt
+    || !approval.approvedBy
+    || !evidenceIsInRoot
+    || actualEvidenceHash !== approval.evidenceSha256
+    || group.status !== 'CLEAR'
+    || group.clearanceScope !== 'DISTRIBUTION_RIGHTS_ONLY'
+    || group.assetCount !== groupFiles.length
+    || JSON.stringify(groupFiles) !== JSON.stringify(approvedFiles)
+    || groupFiles.some((file) => !file.startsWith('docs/assets/'))
+    || groupFiles.some((file) => !fs.readFileSync(path.join(root, 'README.md'), 'utf8').includes(file))) {
+    failures.push(`${group.id}: README media must have an exact, hash-verified owner authorization limited to its listed files.`);
+  }
 }
 
 const unknown = registry.unknownProvenance;
