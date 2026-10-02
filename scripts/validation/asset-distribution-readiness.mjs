@@ -4,6 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const audit = fs.readFileSync(path.join(root, 'docs/ASSET-MARKS-AUDIT.md'), 'utf8');
+const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+const registry = JSON.parse(fs.readFileSync(path.join(root, 'rights/asset-provenance.json'), 'utf8'));
+const readmeButtonGroup = registry.groups.find((group) => group.id === 'readme-download-buttons');
+const readmeButtonFiles = new Set(readmeButtonGroup?.files || []);
 const rows = [...audit.matchAll(/^\| `([^`]+)` \|.*\| (REMOVE|REPLACE_WITH_CLEAR_ASSET|KEEP_WITH_DOCUMENTED_RIGHTS|KEEP_OUT_OF_DISTRIBUTION|MANUAL_REVIEW) \|$/gm)]
   .map(([, file, action]) => ({ file, action }));
 const failures = [];
@@ -41,15 +45,26 @@ for (const { file, action } of rows) {
     continue;
   }
   if (action === 'REMOVE' && fs.existsSync(absolute)) failures.push(`${file}: still physically present with REMOVE disposition; source snapshots could include it.`);
-  if (action !== 'REMOVE') failures.push(`${file}: ${action} needs a reviewed, machine-checkable distribution disposition before release.`);
+  if (action === 'KEEP_WITH_DOCUMENTED_RIGHTS') {
+    if (!readmeButtonGroup
+      || readmeButtonGroup.status !== 'CLEAR'
+      || readmeButtonGroup.clearanceScope !== 'DISTRIBUTION_RIGHTS_ONLY'
+      || !readmeButtonFiles.has(file)) {
+      failures.push(`${file}: retained assets must appear in the approved README media provenance group.`);
+    }
+    if (!fs.existsSync(absolute)) failures.push(`${file}: approved README asset is missing.`);
+    if (!readme.includes(file)) failures.push(`${file}: retained README asset has no README consumer.`);
+  } else if (action !== 'REMOVE') {
+    failures.push(`${file}: ${action} needs a reviewed, machine-checkable distribution disposition before release.`);
+  }
 }
 
 if (failures.length) {
   console.error('REMOVED-ASSET SOURCE-DISTRIBUTION CHECK BLOCKED.');
   for (const failure of failures) console.error(`- ${failure}`);
-  console.error('This gate verifies the audited REMOVE paths/families only. It does not clear retained-image distribution rights; check:asset-provenance handles those separately.');
+  console.error('This gate verifies audited REMOVE paths and the exact retained README button group. check:asset-provenance independently verifies each distribution-rights record.');
   process.exit(1);
 }
 
-console.log('PASS: all 42 audited REMOVE paths/families are absent from the source tree.');
-console.log('Removal tally: 73 graphics and 2 Android XML support files; retained-image distribution rights remain tracked separately by check:asset-provenance.');
+console.log('PASS: audited REMOVE paths/families are absent and approved README media match their rights inventory.');
+console.log('Removal tally: 67 graphics and 2 Android XML support files; retained-image distribution rights are checked by check:asset-provenance.');

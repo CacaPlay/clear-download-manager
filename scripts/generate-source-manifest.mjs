@@ -179,7 +179,7 @@ if (checkOnly) {
     show('Faltan', missing);
     show('Modificados', changed);
     show('No registrados', unexpected);
-    console.error('No regeneres el manifiesto salvo que hayas aplicado un hotfix oficial o modificado el código conscientemente.');
+    console.error('Si el cambio es intencional, ejecuta npm.cmd run manifest:source, revisa el diff de MANIFEST.sha256 y vuelve a ejecutar npm.cmd run check:manifest. No regeneres el manifiesto para ocultar cambios ajenos o no revisados.');
     process.exit(1);
   }
 

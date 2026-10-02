@@ -163,6 +163,34 @@ test('approved owner attestation clears only retained asset distribution rights'
     ['clear-product-other-art', 31, 'CONFIRMED'],
   ]);
   assert.equal(assetRights.unknownProvenance.assetCount, 212);
+  const readmeMediaGroups = assetRights.groups.filter((group) => group.category === 'OWNER_AUTHORIZED_README_MEDIA');
+  assert.deepEqual(readmeMediaGroups.map((group) => [group.id, group.assetCount, group.status]), [
+    ['readme-download-buttons', 6, 'CLEAR'],
+    ['readme-app-screenshots', 4, 'CLEAR'],
+  ]);
+  const expectedReadmeMedia = new Map([
+    ['readme-download-buttons', [
+      'docs/assets/download-buttons/chrome-web-store-light.png',
+      'docs/assets/download-buttons/chrome-web-store-dark.png',
+      'docs/assets/download-buttons/microsoft-store-light.png',
+      'docs/assets/download-buttons/microsoft-store-dark.png',
+      'docs/assets/download-buttons/windows-light.png',
+      'docs/assets/download-buttons/windows-dark.png',
+    ]],
+    ['readme-app-screenshots', [
+      'docs/assets/screenshots/appearance.png',
+      'docs/assets/screenshots/main-dark.png',
+      'docs/assets/screenshots/main-light.png',
+      'docs/assets/screenshots/whats-new.png',
+    ]],
+  ]);
+  for (const group of readmeMediaGroups) {
+    const approval = assetRights.documentationMediaApprovals.find((item) => item.id === group.approvalRecordId);
+    assert.equal(approval.status, 'APPROVED');
+    assert.equal(approval.scope, 'README_ONLY');
+    assert.deepEqual([...approval.files].sort(), [...group.files].sort());
+    assert.deepEqual([...group.files].sort(), [...expectedReadmeMedia.get(group.id)].sort());
+  }
   const navbar = assetRights.groups.find((group) => group.id === 'clear-supplied-navigation-icons');
   assert.equal(navbar.assetCount, 8);
   assert.equal(navbar.ownerAttestationStatus, 'CONFIRMED');

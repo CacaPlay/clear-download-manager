@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-09-25",
+  "reviewedAt": "2026-10-02",
   "status": "PASS",
   "targetLicense": "GPL-3.0-or-later",
   "targetLicenseScope": "Project-authored source code; Clear marks and artwork remain separately licensed or reserved unless the rights holder grants otherwise.",
@@ -60,15 +60,24 @@
     {
       "id": "clear-product-art-distribution",
       "classification": "CLEAR",
-      "assetCount": 95,
-      "finding": "The owner explicitly approved distribution of the 95 retained file-type, news/support, player-control, and documentation artwork files on 2026-09-25. Two obsolete placeholders and five obsolete purple platform logos were removed.",
+      "assetCount": 105,
+      "finding": "The 95-file retained file-type, news/support, player-control, and documentation art group was approved on 2026-09-25. Ten current README media assets have separate, exact authorization dated 2026-10-02; two obsolete placeholders and five obsolete purple platform logos remain removed.",
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "register": "rights/asset-provenance.json"
+    },
+    {
+      "id": "readme-media-distribution",
+      "classification": "CLEAR",
+      "assetCount": 10,
+      "finding": "On 2026-10-02 the owner confirmed authorship and distribution permission for the six supplied download-button images and authorized README-only distribution of four supplied, cropped CDM screenshots.",
+      "limitation": "This exact-file README authorization does not claim ownership or grant a general license to third-party marks displayed in the buttons.",
       "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
       "register": "rights/asset-provenance.json"
     },
     {
       "id": "unknown-asset-provenance-crosscut",
       "classification": "CLEAR",
-      "finding": "The owner approved distribution rights for the 165 retained images in a grouped declaration dated 2026-09-25; the SHA-256 is verified by check:asset-provenance. This is a cross-cutting union, not an additional family.",
+      "finding": "The owner approved distribution rights for the 165 historical images in a grouped declaration dated 2026-09-25; the SHA-256 is verified by check:asset-provenance. Ten README media files have separate authorization and are outside this cross-cutting legacy union.",
       "assetCount": 165,
       "notAdditive": true,
       "register": "rights/asset-provenance.json"
@@ -76,7 +85,7 @@
     {
       "id": "removed-assets",
       "classification": "CLEAR",
-      "finding": "All 73 graphics with REMOVE dispositions are confirmed absent from the current tree; two related Android XML support files were also removed.",
+      "finding": "All 67 graphics with REMOVE dispositions are confirmed absent from the current tree; six owner-designed README buttons have a separate KEEP_WITH_DOCUMENTED_RIGHTS disposition. Two related Android XML support files were also removed.",
       "evidence": "docs/ASSET-MARKS-AUDIT.md"
     },
     {

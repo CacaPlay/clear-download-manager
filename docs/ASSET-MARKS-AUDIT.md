@@ -1,8 +1,9 @@
 # Auditoría de assets y marcas
 
-**Fecha:** 2026-09-25  
-**Alcance inicial:** 238 archivos gráficos antes de retirar 73 en total: los
-28 del inventario individual siguiente y 40 marcados después (`PNG`, `SVG`, `ICO`,
+**Base de auditoría:** 2026-09-25; **actualización de medios README:** 2026-10-02
+**Alcance inicial:** 238 archivos gráficos. La limpieza del 2026-09-25 retiró
+73 en total: los 28 del inventario individual siguiente, 40 marcados después y
+cinco logos morados obsoletos (`PNG`, `SVG`, `ICO`,
 `ICNS`, `BMP`, `WEBP`, `JPG/JPEG`, `GIF`, `AVIF` y `TIFF`); excluye los
 directorios generados `output/`, `dist/`, `dist-store/`, `extension-dist/`,
 `target/` y `node_modules/`. Los iconos SVG incluidos como código dentro de
@@ -11,29 +12,34 @@ producto y no se incluyó ni modificó.
 
 ## Inventario por grupo de procedencia
 
-El inventario retenido suma 165 imágenes (A+B+C). El titular aprobó
+La declaración del 2026-09-25 cubrió 165 imágenes históricas (A+B+C). El titular aprobó
 explícitamente la distribución agrupada de los assets el 2026-09-25; la
 declaración y su SHA-256 están registrados en rights/owner-asset-rights-attestation.md
-y rights/asset-provenance.json. La aprobación no licencia Clear bajo GPL. La
-categoría E es un cruce sobre las mismas 165 imágenes y no se suma otra vez.
+y rights/asset-provenance.json. La aprobación no licencia Clear bajo GPL. El
+2026-10-02 se autorizaron por separado seis botones diseñados por el titular y
+cuatro capturas proporcionadas por él, solo para el README. La categoría E es
+un cruce sobre las 165 imágenes históricas y no se suma otra vez.
 
 | Grupo y cantidad | Rutas | Consumidor actual | Origen probable | Evidencia existente | Licencia/acción recomendada |
 | --- | --- | --- | --- | --- | --- |
 | **A. CLEAR BRAND — 62** | app-ui/assets/brand/ (6); extension/assets/brand/ (6); extension/icons/brand/ (30); src-tauri/icons/brand/ (12); extension/icons/icon16.png, icon32.png, icon48.png, icon128.png (4); src-tauri/windows/artwork/ (2); src-tauri/windows/nsis-header.bmp y nsis-sidebar.bmp (2). | Logo/variantes en app y extensión; identidad empaquetada en la extensión y arte del instalador Windows. | Logo Clear y derivados de color/tamaño del logo. | Rutas, consumidores actuales y scripts de generación local; faltan originales completos y declaración fechada del titular. | Derechos reservados y fuera de GPL. El gate requiere **permiso de distribución** del grupo; no requiere relicenciar el logo bajo GPL. Confirmar por familia o reemplazar si no puede confirmarse. |
 | **B. GENERATED / FRAMEWORK — 8** | src-tauri/icons/ excepto src-tauri/icons/brand/: iconos Windows y Store actuales. Se retiraron las cinco variantes cuadradas con el logo morado antiguo, además de las familias Android/iOS y otros iconos heredados. | Tauri Windows usa `32x32.png`, `128x128.png`, `128x128@2x.png` e `icon.ico`; el script MSIX usa `StoreLogo.png`, `Square44x44Logo.png` y `Square150x150Logo.png`. | Variantes derivadas del arte propio según declaración del titular; Tauri/plataforma es el origen probable de algunas salidas. | Configuración Windows/MSIX y declaración del titular; el comando/versión de generación no está registrado. | Distribución separada de GPL. Se conservan los 8 iconos actuales; los cinco logos morados antiguos no tienen consumidor en la configuración actual y fueron retirados. |
-| **C. CLEAR PRODUCT ART — 95** | 70 file-type: app-ui/assets/file-types/ y extension/assets/file-types/; 4 news: app-ui/assets/news/; 2 playlist/http: app-ui/assets/playlist-logo.png y http-file-sheet.png; 2 controles: imágenes en app-ui/player/; 17 docs: docs/assets/. Los dos antiguos `favicon.svg` y `media-preview.svg` fueron retirados. | UI/extension usa tipos, novedades y apoyo; el player conserva sus controles y usa el logo Clear existente como fallback; README usa SVG de docs. | Arte de producto/documentación hecho por el titular, según su declaración. | Declaración recibida para C1 y C2; el script de preparación y las fuentes externas históricas se conservan como información técnica, no como evidencia contraria de titularidad. | Derecho de distribución separado de GPL. La declaración formal agrupada sigue pendiente; los assets de documentación marcados en verde para GitHub se conservan. |
+| **C. CLEAR PRODUCT ART — 95** | 70 file-type: app-ui/assets/file-types/ y extension/assets/file-types/; 4 news: app-ui/assets/news/; 2 playlist/http: app-ui/assets/playlist-logo.png y http-file-sheet.png; 2 controles: imágenes en app-ui/player/; 17 docs históricos: docs/assets/. Los dos antiguos `favicon.svg` y `media-preview.svg` fueron retirados. | UI/extension usa tipos, novedades y apoyo; el player conserva sus controles y usa el logo Clear existente como fallback; README usa los SVG documentales. | Arte histórico aprobado el 2026-09-25. | rights/asset-provenance.json registra el cruce histórico de 165 imágenes; los diez medios README se registran aparte. | Derecho de distribución separado de GPL. |
 | **D. THIRD PARTY KNOWN — 3 archivos de licencia/helper** | app-ui/assets/icons/lucide.js, LICENSE y NOTICE.md; el helper tiene 24 definiciones de glifo. | Ventanas de preparación/subventanas y mapas de iconos de playlist de la interfaz. | El helper está atribuido localmente a Lucide. El snapshot upstream completo no está fijado; list-music sí está cotejado exactamente con el SVG oficial fijado. | Licencia upstream ISC completa, excepción MIT/Feather y commit/SVG oficial en NOTICE. | Mantener avisos ISC y MIT aplicables. No se afirma cotejo individual de los 24 glifos; si alguno no es el upstream atribuido, requiere revisión o sustitución documentada. |
-| **E. OWNER ATTESTATION APPROVED — 165, cruce** | Unión de A+B+C, no grupo adicional. | Los mismos consumidores descritos en A, B y C. | El titular confirma autoría/propiedad o los derechos necesarios sobre arte e inputs. | Aprobación explícita del 2026-09-25 en rights/owner-asset-rights-attestation.md; SHA-256 contrastado por el gate. | Permiso de distribución aprobado solo para estos assets. Clear brand sigue fuera de GPL; PR #5 y el estado global de derechos no cambian por esta aprobación. |
+| **E. OWNER ATTESTATION APPROVED — 165, cruce histórico** | Unión histórica de A+B+C del 2026-09-25; no incluye los diez medios README aprobados por separado. | Los mismos consumidores descritos en A, B y C. | El titular confirma autoría/propiedad o los derechos necesarios sobre arte e inputs de ese grupo. | Aprobación explícita del 2026-09-25 en rights/owner-asset-rights-attestation.md; SHA-256 contrastado por el gate. | Permiso de distribución aprobado para el grupo histórico. Clear brand sigue fuera de GPL; PR #5 y el estado global de derechos no cambian por esta aprobación. |
 | **F. CUSTOM MODIFIED THIRD PARTY — 1 vector histórico, reemplazado** | El vector previo estaba en app-ui/assets/icons/lucide.js; el mapa duplicado estaba en app-ui/main.js y app-ui/download-manager/view/icons.js. | Icono de playlist/música en los mapas de UI. | Vector musical custom/suministrado sin procedencia demostrable. | Sustituido en los tres mapas por los paths oficiales list-music de Lucide, cotejados con commit 66d8f9fc394b8530377e5f6112f0b8908ba01280. | **REPLACED**. El antiguo vector ya no se conserva; los mapas usan la pieza oficial y sus avisos ISC. |
+| **G. README MEDIA — 10, autorización específica** | 6 botones en `docs/assets/download-buttons/` y 4 capturas en `docs/assets/screenshots/`. | Exclusivamente el README; no se copian al producto. | El titular confirmó que diseñó los seis botones y proporcionó las capturas de CDM. | Autorización específica del 2026-10-02, hash-verificada en `rights/asset-provenance.json`. | Uso limitado a los diez archivos listados. No se afirma titularidad ni licencia general de las marcas de terceros mostradas en los botones. |
 
-Además de los 28 assets retirados en la fase anterior, se retiraron 40 imágenes
-marcadas como obsoletas y dos archivos XML auxiliares de las familias Android.
-El total gráfico actual es **238 iniciales → 73 imágenes retiradas → 165
-retenidas**; las 73 disposiciones están completas y no hay eliminaciones
-pendientes. `check:asset-rights` valida los 28 paths originales, las familias
-marcadas con X y los cinco logos morados antiguos, además de su ausencia.
-`check:asset-provenance` pasa para las 165 imágenes retenidas con la
-declaración agrupada aprobada; el estado global GPL continúa separado.
+La limpieza original fue **238 iniciales → 73 retiradas → 165 retenidas**. El
+2026-10-02 el titular autorizó volver a distribuir seis botones diseñados por él
+en el README, y se añadieron cuatro capturas actuales de CDM: el inventario
+histórico queda en **171 retenidas y 67 retiradas**, más cuatro capturas nuevas,
+para **175 imágenes actuales**. Se retiraron dos XML auxiliares de Android.
+`check:asset-rights` exige que los 22 paths aún marcados `REMOVE` estén ausentes
+y que los seis botones tengan disposición `KEEP_WITH_DOCUMENTED_RIGHTS` en el
+grupo README exacto. `check:asset-provenance` conserva el cruce histórico de 212
+assets y valida las diez imágenes de README por separado. El estado GPL continúa
+separado.
 
 La declaración agrupada aprobada y su SHA-256 están registrados en
 rights/owner-asset-rights-attestation.md y rights/asset-provenance.json. Los
@@ -69,23 +75,25 @@ el checkout. El manifiesto fuente se regenera tras esta actualización.
 | `docs/assets/chrome-web-store.png` | Sin referencia actual; el README usa enlace de texto. | No: documentación fuera de app, Store y extensión. | Huérfano en documentación. | Marca/insignia Chrome Web Store; originalidad de la composición y fuente no verificadas. | REMOVE |
 | `docs/assets/microsoft-store.png` | Sin referencia actual; el README usa enlace de texto. | No: documentación fuera de app, Store y extensión. | Huérfano en documentación. | Marca Microsoft Store; originalidad de la composición y fuente no verificadas. | REMOVE |
 | `docs/assets/windows-11-logo.png` | Sin referencia actual. | No: documentación fuera de app, Store y extensión. | Huérfano en documentación. | Marca Windows/Microsoft; fuente desconocida. | REMOVE |
-| `docs/assets/download-buttons/chrome-web-store-light.png` | Antes enlazado desde README; el enlace ahora es texto. | No: documentación fuera de los paquetes de producto. | Insignia sin consumidor actual. | Insignia compuesta con marca Chrome; autoría de la composición y fuente no verificadas. | REMOVE |
-| `docs/assets/download-buttons/chrome-web-store-dark.png` | Antes enlazado desde README; el enlace ahora es texto. | No: documentación fuera de los paquetes de producto. | Insignia sin consumidor actual. | Insignia compuesta con marca Chrome; autoría de la composición y fuente no verificadas. | REMOVE |
-| `docs/assets/download-buttons/microsoft-store-light.png` | Antes enlazado desde README; el enlace ahora es texto. | No: documentación fuera de los paquetes de producto. | Insignia sin consumidor actual. | Insignia compuesta con marca Microsoft; autoría de la composición y fuente no verificadas. | REMOVE |
-| `docs/assets/download-buttons/microsoft-store-dark.png` | Antes enlazado desde README; el enlace ahora es texto. | No: documentación fuera de los paquetes de producto. | Insignia sin consumidor actual. | Insignia compuesta con marca Microsoft; autoría de la composición y fuente no verificadas. | REMOVE |
-| `docs/assets/download-buttons/windows-light.png` | Antes enlazado desde README; el enlace ahora es texto. | No: documentación fuera de los paquetes de producto. | Insignia sin consumidor actual. | Insignia compuesta con marca Windows; autoría de la composición y fuente no verificadas. | REMOVE |
-| `docs/assets/download-buttons/windows-dark.png` | Antes enlazado desde README; el enlace ahora es texto. | No: documentación fuera de los paquetes de producto. | Insignia sin consumidor actual. | Insignia compuesta con marca Windows; autoría de la composición y fuente no verificadas. | REMOVE |
+| `docs/assets/download-buttons/chrome-web-store-light.png` | Botón usado por README para enlazar a Chrome Web Store. | No: uso exclusivo en documentación. | Insignia diseñada y suministrada por el titular. | El titular confirmó autoría y autorizó distribuir este archivo en el README el 2026-10-02; no reclama titularidad del logo de Chrome. | KEEP_WITH_DOCUMENTED_RIGHTS |
+| `docs/assets/download-buttons/chrome-web-store-dark.png` | Botón usado por README para enlazar a Chrome Web Store. | No: uso exclusivo en documentación. | Insignia diseñada y suministrada por el titular. | El titular confirmó autoría y autorizó distribuir este archivo en el README el 2026-10-02; no reclama titularidad del logo de Chrome. | KEEP_WITH_DOCUMENTED_RIGHTS |
+| `docs/assets/download-buttons/microsoft-store-light.png` | Botón usado por README para enlazar a Microsoft Store. | No: uso exclusivo en documentación. | Insignia diseñada y suministrada por el titular. | El titular confirmó autoría y autorizó distribuir este archivo en el README el 2026-10-02; no reclama titularidad del logo de Microsoft. | KEEP_WITH_DOCUMENTED_RIGHTS |
+| `docs/assets/download-buttons/microsoft-store-dark.png` | Botón usado por README para enlazar a Microsoft Store. | No: uso exclusivo en documentación. | Insignia diseñada y suministrada por el titular. | El titular confirmó autoría y autorizó distribuir este archivo en el README el 2026-10-02; no reclama titularidad del logo de Microsoft. | KEEP_WITH_DOCUMENTED_RIGHTS |
+| `docs/assets/download-buttons/windows-light.png` | Botón usado por README para enlazar al instalador de Windows. | No: uso exclusivo en documentación. | Insignia diseñada y suministrada por el titular. | El titular confirmó autoría y autorizó distribuir este archivo en el README el 2026-10-02; no reclama titularidad de la marca Windows. | KEEP_WITH_DOCUMENTED_RIGHTS |
+| `docs/assets/download-buttons/windows-dark.png` | Botón usado por README para enlazar al instalador de Windows. | No: uso exclusivo en documentación. | Insignia diseñada y suministrada por el titular. | El titular confirmó autoría y autorizó distribuir este archivo en el README el 2026-10-02; no reclama titularidad de la marca Windows. | KEEP_WITH_DOCUMENTED_RIGHTS |
 | `docs/assets/download-cards/chrome-web-store.svg` | Ningún consumidor README/documentación/build. | No: documentación fuera de los paquetes de producto. | Tarjeta vectorial huérfana. | Diseño local aparente con marca Chrome; autoría y fuente no verificadas. | REMOVE |
 | `docs/assets/download-cards/microsoft-store.svg` | Ningún consumidor README/documentación/build. | No: documentación fuera de los paquetes de producto. | Tarjeta vectorial huérfana. | Diseño local aparente con marca Microsoft; autoría y fuente no verificadas. | REMOVE |
 | `docs/assets/download-cards/windows.svg` | Ningún consumidor README/documentación/build. | No: documentación fuera de los paquetes de producto. | Tarjeta vectorial huérfana. | Diseño local aparente con marca Windows; autoría y fuente no verificadas. | REMOVE |
 
-Las 28 rutas tienen recomendación individual `REMOVE`; la búsqueda confirmó
-que no tenían consumidores activos de producto. El titular autorizó su
-eliminación y confirmó la ejecución manual. Conteo verificado: **28 iniciales
-→ 28 eliminados → 0 pendientes**. Los 16 gráficos de proveedores/tipos estaban
-fuera del web bundle y ya no existen; los 12 gráficos de documentación también
-fueron retirados. Las rutas genéricas que sí tienen consumidores (35 iconos de
-tipo en la app y los equivalentes de extensión) permanecen intactas.
+Las 28 rutas se marcaron inicialmente `REMOVE`; el titular autorizó su retirada
+y confirmó la ejecución manual. El 2026-10-02 autorizó conservar seis botones
+que diseñó para el README, registrados como `KEEP_WITH_DOCUMENTED_RIGHTS` y
+respaldados por una autorización exacta de distribución. Resultado actual:
+**28 iniciales → 6 conservados → 22 ausentes**. Los gráficos de proveedores y
+tipos sin consumidor, los tres antiguos logos de Store/Windows y las tres
+tarjetas SVG siguen ausentes. Las rutas genéricas que sí tienen consumidores
+(35 iconos de tipo en la app y los equivalentes de extensión) permanecen
+intactas.
 
 ## Retiro de iconos/arte obsoletos marcados con X
 
@@ -160,11 +168,11 @@ marcas de Clear sean GPL.
 
 | Estado | Grupo y alcance | Pendiente exacto |
 | --- | --- | --- |
-| CLEAR | Clear brand (62), generado/framework (8) y Clear product art (95). | El titular aprobó la distribución agrupada de A, B, C1 y C2. El logo y las marcas siguen fuera de GPL. |
-| CLEAR, cruce no aditivo | 165 imágenes retenidas A+B+C; declaración aprobada y SHA-256 verificado. | No hace falta revisar 165 archivos uno por uno; la aprobación agrupada cubre las rutas registradas. |
+| CLEAR | Clear brand (62), generado/framework (8), product art histórico (95) y README media (10, separado). | El titular aprobó la distribución agrupada histórica A, B, C1 y C2; diez medios README tienen autorización específica separada. El logo y las marcas siguen fuera de GPL. |
+| CLEAR, cruce no aditivo | 165 imágenes del grupo histórico A+B+C; declaración aprobada y SHA-256 verificado. | Diez medios README quedan en grupos separados y no se suman al cruce histórico. |
 | THIRD_PARTY_COMPATIBLE | Subconjunto local Lucide con licencia upstream ISC y MIT para los iconos derivados de Feather; licencia y aviso en app-ui/assets/icons/. | Conservar licencia/aviso. El vector musical ambiguo se reemplazó por el icono oficial list-music. |
 | REPLACED | 1 vector musical histórico. | Ninguno para el vector antiguo: no permanece en los tres mapas de UI. |
-| CLEAR | 73 gráficos retirados con disposición REMOVE. | Ninguno en el árbol actual; incluye 28 retirados antes, 40 imágenes marcadas con X y cinco logos morados antiguos. Dos XML auxiliares también fueron retirados. |
+| CLEAR | 67 gráficos ausentes con disposición REMOVE; seis botones tienen retención documentada. | Incluye 22 de los 28 paths individuales, 40 imágenes marcadas con X y cinco logos morados antiguos. Dos XML auxiliares también fueron retirados. |
 
 El borrador de declaración está en rights/owner-asset-rights-attestation.md y
 no cambia el estado de ningún grupo. El registro de PR #5 queda

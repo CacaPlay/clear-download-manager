@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-09-25",
+  "reviewedAt": "2026-10-02",
   "status": "READY",
   "scope": "Distribution-rights and provenance inventory for retained visual assets. This gate does not require Clear branding or artwork to be licensed under GPL-3.0-or-later.",
   "ownerStatement": {
@@ -16,8 +16,42 @@
     ],
     "summary": "The owner explicitly approved grouped distribution rights for all retained assets on 2026-09-25, confirmed authorship/ownership or necessary rights over inputs, and kept Clear branding outside GPL.",
     "evidencePath": "rights/owner-asset-rights-attestation.md",
-    "evidenceSha256": "740f969109a2db404f1b1d588db4bb84a3dc712f347d2de689b7df804c98d0c5"
+    "evidenceSha256": "30ff1d5d2fa6efddb0c1f86d43110507f190a8fc25aac283c7ea1e8dd77da289"
   },
+  "documentationMediaApprovals": [
+    {
+      "id": "readme-download-buttons",
+      "status": "APPROVED",
+      "approvedAt": "2026-10-02",
+      "approvedBy": "Julio Angel / CacaPlay",
+      "scope": "README_ONLY",
+      "files": [
+        "docs/assets/download-buttons/chrome-web-store-light.png",
+        "docs/assets/download-buttons/chrome-web-store-dark.png",
+        "docs/assets/download-buttons/microsoft-store-light.png",
+        "docs/assets/download-buttons/microsoft-store-dark.png",
+        "docs/assets/download-buttons/windows-light.png",
+        "docs/assets/download-buttons/windows-dark.png"
+      ],
+      "evidencePath": "rights/owner-asset-rights-attestation.md",
+      "evidenceSha256": "30ff1d5d2fa6efddb0c1f86d43110507f190a8fc25aac283c7ea1e8dd77da289"
+    },
+    {
+      "id": "readme-app-screenshots",
+      "status": "APPROVED",
+      "approvedAt": "2026-10-02",
+      "approvedBy": "Julio Angel / CacaPlay",
+      "scope": "README_ONLY",
+      "files": [
+        "docs/assets/screenshots/appearance.png",
+        "docs/assets/screenshots/main-dark.png",
+        "docs/assets/screenshots/main-light.png",
+        "docs/assets/screenshots/whats-new.png"
+      ],
+      "evidencePath": "rights/owner-asset-rights-attestation.md",
+      "evidenceSha256": "30ff1d5d2fa6efddb0c1f86d43110507f190a8fc25aac283c7ea1e8dd77da289"
+    }
+  ],
   "groups": [
     {
       "id": "clear-brand-assets",
@@ -77,6 +111,10 @@
         "app-ui/player/",
         "docs/assets/"
       ],
+      "excludePathPrefixes": [
+        "docs/assets/download-buttons/",
+        "docs/assets/screenshots/"
+      ],
       "files": [
         "app-ui/assets/playlist-logo.png",
         "app-ui/assets/http-file-sheet.png"
@@ -104,6 +142,10 @@
             "app-ui/player/",
             "docs/assets/"
           ],
+          "excludePathPrefixes": [
+            "docs/assets/download-buttons/",
+            "docs/assets/screenshots/"
+          ],
           "files": [
             "app-ui/assets/playlist-logo.png",
             "app-ui/assets/http-file-sheet.png"
@@ -116,6 +158,40 @@
       "relatedGenerationScripts": [
         "scripts/prepare-file-type-assets.ps1"
       ]
+    },
+    {
+      "id": "readme-download-buttons",
+      "category": "OWNER_AUTHORIZED_README_MEDIA",
+      "status": "CLEAR",
+      "assetCount": 6,
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "licenseTreatment": "OWNER_DESIGNED_ART_AUTHORIZED_FOR_README_ONLY",
+      "approvalRecordId": "readme-download-buttons",
+      "files": [
+        "docs/assets/download-buttons/chrome-web-store-light.png",
+        "docs/assets/download-buttons/chrome-web-store-dark.png",
+        "docs/assets/download-buttons/microsoft-store-light.png",
+        "docs/assets/download-buttons/microsoft-store-dark.png",
+        "docs/assets/download-buttons/windows-light.png",
+        "docs/assets/download-buttons/windows-dark.png"
+      ],
+      "evidence": "The owner confirmed on 2026-10-02 that they designed these exact six supplied badge files and authorized their distribution solely as README links. This does not claim ownership of third-party marks appearing in the artwork."
+    },
+    {
+      "id": "readme-app-screenshots",
+      "category": "OWNER_AUTHORIZED_README_MEDIA",
+      "status": "CLEAR",
+      "assetCount": 4,
+      "clearanceScope": "DISTRIBUTION_RIGHTS_ONLY",
+      "licenseTreatment": "OWNER_SUPPLIED_SCREENSHOTS_AUTHORIZED_FOR_README_ONLY",
+      "approvalRecordId": "readme-app-screenshots",
+      "files": [
+        "docs/assets/screenshots/appearance.png",
+        "docs/assets/screenshots/main-dark.png",
+        "docs/assets/screenshots/main-light.png",
+        "docs/assets/screenshots/whats-new.png"
+      ],
+      "evidence": "The owner supplied these four genuine CDM captures and authorized cropped copies for the public README on 2026-10-02. The crop removes desktop surroundings and leaves the captured application interface intact."
     },
     {
       "id": "lucide-icons-subset",
@@ -155,8 +231,9 @@
       "id": "removed-28-assets",
       "category": "REMOVED",
       "status": "CLEAR",
+      "removedImageCount": 22,
       "files": [],
-      "evidence": "All 28 individually listed brand/documentation files have REMOVE dispositions and are confirmed absent by check:asset-rights.",
+      "evidence": "Twenty-two individually listed brand/documentation files retain REMOVE dispositions and are confirmed absent. The six owner-designed download buttons were reclassified into a separate README-only authorization group on 2026-10-02.",
       "missing": []
     },
     {
@@ -227,7 +304,7 @@
       "indispensable": "MANUAL_OWNER_REVIEW"
     }
   },
-  "removedAssetCount": 73,
+  "removedAssetCount": 67,
   "removedSupportingFileCount": 2,
   "replacedAssetCount": 1
 }

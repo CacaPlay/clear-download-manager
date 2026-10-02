@@ -49,6 +49,15 @@ const resolvedAssets = [
   'src-tauri/icons/Square142x142Logo.png',
   'src-tauri/icons/Square284x284Logo.png',
 ];
+const retainedReadmeButtons = [
+  'docs/assets/download-buttons/chrome-web-store-light.png',
+  'docs/assets/download-buttons/chrome-web-store-dark.png',
+  'docs/assets/download-buttons/microsoft-store-light.png',
+  'docs/assets/download-buttons/microsoft-store-dark.png',
+  'docs/assets/download-buttons/windows-light.png',
+  'docs/assets/download-buttons/windows-dark.png',
+];
+const retiredAssets = resolvedAssets.filter((file) => !retainedReadmeButtons.includes(file));
 const legacyMobileIconDirectories = ['src-tauri/icons/android', 'src-tauri/icons/ios'];
 const currentWindowsIcons = [
   'src-tauri/icons/32x32.png',
@@ -69,9 +78,9 @@ const checks = [
   ['La ventana de preparación usa el icono genérico local y muestra el host', !subwindow.includes('assets/platforms/') && /return \['http', host\.replace\(\/\^www\\\.\//.test(subwindow) && subwindow.includes("icon('link', 18)")],
   ['La compilación excluye los logos de servicios, los iconos obsoletos y las copias PNG con pareja WebP', build.includes("assetPath === 'platforms'") && ['file-types/docs.png', 'file-types/powerpoint.png', 'file-types/pdf.png'].every((file) => build.includes(`'${file}'`)) && build.includes("entry.name.toLowerCase().endsWith('.png')") && build.includes("from.replace(/\\.png$/i, '.webp')")],
   ['El build Windows ya no exige logos retirados del paquete web', !windowsBuild.includes('app-ui\\assets\\platforms\\') && !windowsBuild.includes('platformLogos')],
-  ['El README conserva enlaces de texto sin botones gráficos de marcas externas', !/docs\/assets\/(?:download-buttons|download-cards|chrome-web-store|microsoft-store|windows-11-logo)/.test(readme) && readme.includes('Microsoft Store') && readme.includes('Chrome Web Store')],
+  ['El README enlaza cada tienda/instalador con sus seis variantes de botón autorizadas', retainedReadmeButtons.every((file) => readme.includes(file) && fs.existsSync(file) && audit.split('\n').some((line) => line.includes(`\`${file}\``) && line.endsWith('| KEEP_WITH_DOCUMENTED_RIGHTS |'))) && readme.includes('Microsoft Store') && readme.includes('Chrome Web Store')],
   ['El aviso separa marcas de terceros de la licencia del código', notice.includes('app-ui/assets/brand/') && notice.includes('Third-party components')],
-  ['Los 40 paths de imagen retirados están inventariados y ausentes', resolvedAssets.every((file) => !fs.existsSync(file)) && resolvedAssets.every((file) => audit.includes(`\`${file}\``)) && /238 iniciales[\s\S]*73 imágenes retiradas[\s\S]*165\s+retenidas/.test(audit)],
+  ['Los assets retirados siguen ausentes y los medios del README están separados del inventario histórico', retiredAssets.every((file) => !fs.existsSync(file)) && retiredAssets.every((file) => audit.includes(`\`${file}\``)) && retainedReadmeButtons.every((file) => fs.existsSync(file)) && /238 iniciales[\s\S]*67 retiradas[\s\S]*175 imágenes actuales/.test(audit)],
   ['Las carpetas Android/iOS marcadas se retiraron completas', legacyMobileIconDirectories.every((directory) => !fs.existsSync(directory)) && legacyMobileIconDirectories.every((directory) => audit.includes(`\`${directory}/\``))],
   ['Tauri Windows y MSIX conservan sus iconos actuales sin tachar', currentWindowsIcons.every((file) => fs.existsSync(file)) && currentWindowsIcons.every((file) => tauriConfig.bundle.icon.includes(file.replace('src-tauri/', ''))) && currentStoreIcons.every((file) => fs.existsSync(`src-tauri/icons/${file}`)) && currentStoreIcons.every((file) => read('scripts/build-store-msix.ps1').includes(`'${file}'`))],
   ['La app y el player conservan el fallback usando el logo Clear', fs.existsSync(fallbackLogo) && uiFallbackSources.every(([file, source]) => read(file).includes(source) && !read(file).includes('media-preview.svg'))]
