@@ -92,7 +92,7 @@
       "icons/icon.ico"
     ],
     "copyright": "Copyright © 2026 CacaPlay",
-    "createUpdaterArtifacts": true
+    "createUpdaterArtifacts": "v1Compatible"
   },
   "plugins": {
     "updater": {

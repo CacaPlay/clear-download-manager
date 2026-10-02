@@ -63,9 +63,10 @@ if ($Clean -and (Test-Path $OutputDirectory)) { Remove-Item -Recurse -Force $Out
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 
 $SignatureFiles = Get-ChildItem -Path $BundleRoot -Recurse -File -Filter '*.sig' -ErrorAction SilentlyContinue |
+  Where-Object { $_.Name -like '*.nsis.zip.sig' -or $_.Name -like '*.msi.zip.sig' } |
   Sort-Object @{ Expression = { if ($_.Name -like '*.nsis.zip.sig') { 0 } elseif ($_.Name -like '*.msi.zip.sig') { 1 } else { 2 } } }, LastWriteTime -Descending
 if (-not $SignatureFiles) {
-  throw 'No se encontraron artefactos .sig. Compila con TAURI_SIGNING_PRIVATE_KEY y createUpdaterArtifacts habilitado.'
+  throw 'No se encontraron artefactos updater .nsis.zip.sig o .msi.zip.sig. Verifica createUpdaterArtifacts v1Compatible y la firma Tauri.'
 }
 
 $SignatureFile = $SignatureFiles | Select-Object -First 1
