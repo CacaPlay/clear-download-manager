@@ -875,3 +875,46 @@ test('source manifest canonicalizes shell-script line endings across Windows che
     fs.rmSync(temp, { recursive: true, force: true });
   }
 });
+
+test('Windows size report accepts an NSIS-only bundle and an empty installed Core directory', () => {
+  const outputRoot = path.join(repositoryRoot, 'output');
+  const outputRootExisted = fs.existsSync(outputRoot);
+  fs.mkdirSync(outputRoot, { recursive: true });
+  const reportDirectory = fs.mkdtempSync(path.join(outputRoot, '.windows-size-report-test-'));
+  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-windows-size-report-test-'));
+
+  try {
+    const targetRoot = path.join(fixtureRoot, 'cargo-target');
+    const bundleDirectory = path.join(targetRoot, 'release', 'bundle', 'nsis');
+    const installedCoreDirectory = path.join(fixtureRoot, 'installed-core');
+    const installerPath = path.join(bundleDirectory, 'clear-download-manager_1.0.0_x64-setup.exe');
+    const installerBytes = Buffer.from('NSIS installer fixture');
+    fs.mkdirSync(bundleDirectory, { recursive: true });
+    fs.mkdirSync(installedCoreDirectory, { recursive: true });
+    fs.writeFileSync(installerPath, installerBytes);
+
+    const powershell = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
+    const result = spawnSync(powershell, [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-File', path.join(repositoryRoot, 'scripts/report-windows-size.ps1'),
+      '-OutputDirectory', path.relative(repositoryRoot, reportDirectory),
+      '-InstalledCoreDirectory', installedCoreDirectory,
+    ], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+      env: { ...process.env, CARGO_TARGET_DIR: targetRoot },
+    });
+    assert.equal(result.error, undefined, `PowerShell could not start: ${result.error?.message}`);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+
+    const report = JSON.parse(fs.readFileSync(path.join(reportDirectory, 'windows-size-report.json'), 'utf8'));
+    assert.equal(report.totals.normalMsiBytes, 0);
+    assert.equal(report.totals.installedCorePayloadBytes, 0);
+    assert.equal(report.totals.normalNsisBytes, installerBytes.length);
+  } finally {
+    fs.rmSync(fixtureRoot, { recursive: true, force: true });
+    fs.rmSync(reportDirectory, { recursive: true, force: true });
+    if (!outputRootExisted && fs.readdirSync(outputRoot).length === 0) fs.rmdirSync(outputRoot);
+  }
+});

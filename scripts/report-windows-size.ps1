@@ -124,14 +124,27 @@ function Get-CategoryByteSum {
   return $Total
 }
 
+function Get-ByteSum {
+  param(
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Items,
+    [Parameter(Mandatory = $true)][string]$Property
+  )
+
+  [int64]$Total = 0
+  foreach ($Item in @($Items)) {
+    if ($null -ne $Item) { $Total += [int64]$Item.$Property }
+  }
+  return $Total
+}
+
 $RuntimeBytes = Get-CategoryByteSum -Items $EntryArray -Category 'runtime'
 $AppBytes = Get-CategoryByteSum -Items $EntryArray -Category 'app'
 $NormalInstallerBytes = Get-CategoryByteSum -Items $EntryArray -Category 'installer'
-$NormalNsisBytes = [int64](($EntryArray | Where-Object { $_.category -eq 'installer' -and $_.name -like '*.exe' } | Measure-Object -Property bytes -Sum).Sum)
-$NormalMsiBytes = [int64](($EntryArray | Where-Object { $_.category -eq 'installer' -and $_.name -like '*.msi' } | Measure-Object -Property bytes -Sum).Sum)
+$NormalNsisBytes = Get-ByteSum -Items @($EntryArray | Where-Object { $_.category -eq 'installer' -and $_.name -like '*.exe' }) -Property 'bytes'
+$NormalMsiBytes = Get-ByteSum -Items @($EntryArray | Where-Object { $_.category -eq 'installer' -and $_.name -like '*.msi' }) -Property 'bytes'
 $StoreNsisBytes = Get-CategoryByteSum -Items $EntryArray -Category 'store-nsis'
 $StoreMsiBytes = Get-CategoryByteSum -Items $EntryArray -Category 'store-msi'
-$InstalledCoreBytes = [int64](($InstalledCoreFiles | Measure-Object -Property Length -Sum).Sum)
+$InstalledCoreBytes = Get-ByteSum -Items $InstalledCoreFiles -Property 'Length'
 $OptionalRuntimeNames = @('yt-dlp.exe', 'ffmpeg.exe', 'ffprobe.exe', 'deno.exe', 'aria2c.exe')
 $UnexpectedInstalledRuntimes = @($InstalledCoreFiles | Where-Object { $OptionalRuntimeNames -contains $_.Name } | ForEach-Object { $_.FullName })
 $Report = [ordered]@{
