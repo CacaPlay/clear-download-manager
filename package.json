@@ -2,7 +2,7 @@
   "name": "clear-download-manager",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "python -m http.server 4173 --bind 127.0.0.1",
