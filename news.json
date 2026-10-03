@@ -1,6 +1,57 @@
 {
   "messages": [
     {
+      "id": "clear-download-manager-v1-0-0-news",
+      "type": "release",
+      "version": "1.0.0",
+      "platform": "windows",
+      "locale": "all",
+      "title": "Clear Download Manager 1.0.0",
+      "summary": "La versión 1.0.0 renueva las vistas de Descargas y Configuración, reduce el tamaño de la instalación principal y permite añadir Media Tools y Torrent Engine solo cuando los necesitas.",
+      "published_at": "2026-10-02T13:19:40Z",
+      "details": [
+        "Vista de Descargas más clara y rediseño de Configuración.",
+        "Media Tools y Torrent Engine son componentes opcionales que puedes instalar, actualizar, reparar o quitar por separado.",
+        "El instalador principal y el uso de almacenamiento son más ligeros; los componentes se verifican antes de instalarse.",
+        "Mejoras en el progreso y la velocidad de actualización, y un proceso de instalación y reinicio más fluido.",
+        "Ajustes de consistencia visual, fiabilidad, seguridad y distribución."
+      ],
+      "translations": {
+        "es": {
+          "title": "Clear Download Manager 1.0.0",
+          "summary": "La versión 1.0.0 renueva las vistas de Descargas y Configuración, reduce el tamaño de la instalación principal y permite añadir Media Tools y Torrent Engine solo cuando los necesitas.",
+          "details": [
+            "Vista de Descargas más clara y rediseño de Configuración.",
+            "Media Tools y Torrent Engine son componentes opcionales que puedes instalar, actualizar, reparar o quitar por separado.",
+            "El instalador principal y el uso de almacenamiento son más ligeros; los componentes se verifican antes de instalarse.",
+            "Mejoras en el progreso y la velocidad de actualización, y un proceso de instalación y reinicio más fluido.",
+            "Ajustes de consistencia visual, fiabilidad, seguridad y distribución."
+          ],
+          "actionLabel": "Ver release"
+        },
+        "en": {
+          "title": "Clear Download Manager 1.0.0",
+          "summary": "Version 1.0.0 refreshes Downloads and Settings, reduces the main installation size, and lets you add Media Tools and Torrent Engine only when you need them.",
+          "details": [
+            "A clearer Downloads view and redesigned Settings.",
+            "Media Tools and Torrent Engine are optional components you can install, update, repair, or remove independently.",
+            "The main installer and storage footprint are smaller; components are verified before installation.",
+            "Improved updater progress and speed information, with a smoother install and restart flow.",
+            "Further consistency, reliability, security, and distribution improvements."
+          ],
+          "actionLabel": "View release"
+        }
+      },
+      "priority": 100,
+      "dismissible": false,
+      "action_required": false,
+      "action": {
+        "type": "open-url",
+        "url": "https://github.com/CacaPlay/clear-download-manager/releases/tag/v1.0.0",
+        "label": "Ver release"
+      }
+    },
+    {
       "id": "clear-download-manager-v0-95-4-news",
       "type": "release",
       "version": "0.95.4",
@@ -37,7 +88,7 @@
         }
       },
       "priority": 100,
-      "dismissible": false,
+      "dismissible": true,
       "action_required": false,
       "action": {
         "type": "open-url",
