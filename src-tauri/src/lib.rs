@@ -262,6 +262,9 @@ pub(crate) fn migrate_legacy_downloads_directory(
 
     if let Some(metadata) = legacy_metadata {
         if metadata.file_type().is_symlink() {
+            if canonical.is_dir() {
+                return Ok(canonical);
+            }
             return Ok(legacy);
         }
         if !metadata.is_dir() {
@@ -272,7 +275,9 @@ pub(crate) fn migrate_legacy_downloads_directory(
         }
         if canonical_metadata.is_some() {
             if canonical.is_dir() {
-                return Ok(legacy);
+                // Keep existing legacy files in place, but route new downloads
+                // to the branded directory once it already exists.
+                return Ok(canonical);
             }
             return Err(std::io::Error::new(
                 std::io::ErrorKind::AlreadyExists,
@@ -290,6 +295,25 @@ pub(crate) fn migrate_legacy_downloads_directory(
         ));
     }
     Ok(canonical)
+}
+
+fn normalize_saved_downloads_directory(
+    saved: &std::path::Path,
+    downloads_root: &std::path::Path,
+) -> std::io::Result<(PathBuf, bool)> {
+    let legacy_default = downloads_root.join("CacaTools");
+    let normalize = |path: &std::path::Path| {
+        path.to_string_lossy()
+            .replace('/', "\\")
+            .trim_end_matches('\\')
+            .to_lowercase()
+    };
+
+    if normalize(saved) == normalize(&legacy_default) {
+        return migrate_legacy_downloads_directory(downloads_root).map(|path| (path, true));
+    }
+
+    Ok((saved.to_path_buf(), false))
 }
 
 pub(crate) fn supervised_command_output(
@@ -1157,26 +1181,35 @@ fn run_app() {
                     |row| row.get(0),
                 )
                 .optional()?;
-            let downloads_dir = saved_downloads_dir
+            let saved_downloads_path = saved_downloads_dir
                 .map(PathBuf::from)
-                .filter(|path| path.is_absolute())
-                .map(Ok)
-                .unwrap_or_else(|| {
-                    if cfg!(feature = "qa-component-manager") {
-                        Ok(data_dir.join("Downloads"))
-                    } else if let Some(path) = cdm_environment_path_override(
-                        "CDM_DOWNLOADS_DIR",
-                        "CACATOOLS_DOWNLOADS_DIR",
-                    ) {
-                        Ok(path)
-                    } else {
-                        let downloads_root = app
-                            .path()
-                            .download_dir()
-                            .unwrap_or_else(|_| data_dir.join("Downloads"));
-                        migrate_legacy_downloads_directory(&downloads_root)
-                    }
-                })?;
+                .filter(|path| path.is_absolute());
+            let (downloads_dir, update_saved_downloads_dir) =
+                if let Some(saved_path) = saved_downloads_path {
+                    let downloads_root = app
+                        .path()
+                        .download_dir()
+                        .unwrap_or_else(|_| data_dir.join("Downloads"));
+                    normalize_saved_downloads_directory(&saved_path, &downloads_root)?
+                } else if cfg!(feature = "qa-component-manager") {
+                    (data_dir.join("Downloads"), false)
+                } else if let Some(path) =
+                    cdm_environment_path_override("CDM_DOWNLOADS_DIR", "CACATOOLS_DOWNLOADS_DIR")
+                {
+                    (path, false)
+                } else {
+                    let downloads_root = app
+                        .path()
+                        .download_dir()
+                        .unwrap_or_else(|_| data_dir.join("Downloads"));
+                    (migrate_legacy_downloads_directory(&downloads_root)?, false)
+                };
+            if update_saved_downloads_dir {
+                connection.execute(
+                    "UPDATE settings SET value=?1,updated_at=CURRENT_TIMESTAMP WHERE key='downloads_dir'",
+                    params![downloads_dir.to_string_lossy().to_string()],
+                )?;
+            }
             fs::create_dir_all(&downloads_dir)?;
             let window_behavior = read_window_behavior_settings(&connection);
             let queued_ids: Vec<i64> = {
@@ -2035,7 +2068,7 @@ mod tests {
     }
 
     #[test]
-    fn leaves_both_downloads_directories_untouched_on_conflict() {
+    fn sends_new_downloads_to_branded_directory_when_both_directories_exist() {
         let directory = tempfile::tempdir().expect("temporary downloads root");
         let legacy = directory.path().join("CacaTools");
         let canonical = directory.path().join("Clear Download Manager");
@@ -2046,10 +2079,51 @@ mod tests {
 
         assert_eq!(
             migrate_legacy_downloads_directory(directory.path()).expect("safe conflict handling"),
-            legacy
+            canonical
         );
         assert_eq!(std::fs::read(legacy.join("old.bin")).unwrap(), b"old");
         assert_eq!(std::fs::read(canonical.join("new.bin")).unwrap(), b"new");
+    }
+
+    #[test]
+    fn normalizes_saved_legacy_default_download_directory() {
+        let directory = tempfile::tempdir().expect("temporary downloads root");
+        let legacy = directory.path().join("CacaTools");
+        let canonical = directory.path().join("Clear Download Manager");
+        std::fs::create_dir_all(&legacy).expect("legacy downloads directory");
+        std::fs::create_dir_all(&canonical).expect("branded downloads directory");
+        std::fs::write(legacy.join("existing.bin"), b"keep me").expect("legacy download");
+        std::fs::write(canonical.join("already-there.bin"), b"keep this too")
+            .expect("existing branded download");
+
+        let (downloads_dir, migrated) =
+            normalize_saved_downloads_directory(&legacy, directory.path())
+                .expect("saved legacy default should migrate");
+
+        assert_eq!(downloads_dir, canonical);
+        assert!(migrated);
+        assert_eq!(
+            std::fs::read(legacy.join("existing.bin")).unwrap(),
+            b"keep me"
+        );
+        assert_eq!(
+            std::fs::read(canonical.join("already-there.bin")).unwrap(),
+            b"keep this too"
+        );
+    }
+
+    #[test]
+    fn preserves_a_custom_download_directory_named_cacatools() {
+        let directory = tempfile::tempdir().expect("temporary downloads root");
+        let downloads_root = directory.path().join("Downloads");
+        let custom = directory.path().join("Custom Location").join("CacaTools");
+
+        let (downloads_dir, migrated) =
+            normalize_saved_downloads_directory(&custom, &downloads_root)
+                .expect("custom directory should remain unchanged");
+
+        assert_eq!(downloads_dir, custom);
+        assert!(!migrated);
     }
 
     #[test]

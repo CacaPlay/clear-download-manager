@@ -38,6 +38,7 @@ for (const file of ['service-worker.js', 'sidepanel.js', 'i18n.js', 'thumbnail-s
 }
 const extensionBuild = fs.readFileSync('scripts/build-extension.ps1', 'utf8');
 if (!extensionBuild.includes("'i18n.js'")) errors.push('El paquete de extensión no incluye extension/i18n.js');
+if (!extensionBuild.includes("Join-Path $Source '_locales'")) errors.push('El paquete de extensión no incluye los mensajes Chrome locales');
 const source = ['extension/service-worker.js', 'extension/sidepanel.js', 'extension/thumbnail-service.js', 'extension/content/detector.js'].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 for (const pattern of [/document\.cookie/, /authorization/i, /password/i, /__dirname/, /https?:\/\/[^'"`]+\.js/]) {
   if (pattern.test(source)) errors.push(`Patrón no permitido en la extensión: ${pattern}`);

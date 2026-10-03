@@ -1,6 +1,6 @@
 [package]
 name = "clear-download-manager"
-version = "1.0.0"
+version = "1.0.1"
 description = "Local-first Windows download manager powered by aria2c, yt-dlp, FFmpeg and SQLite"
 license = "GPL-3.0-or-later"
 authors = ["CacaPlay"]

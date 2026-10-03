@@ -1,6 +1,6 @@
 {
   "name": "lat.cacaplay.cleardownloadmanager",
-  "description": "Puente local para Clear Download Manager",
+  "description": "Clear Download Manager browser integration",
   "path": "__CDM_EXECUTABLE__",
   "type": "stdio",
   "allowed_extensions": [

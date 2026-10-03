@@ -1,0 +1,11 @@
+{
+  "extensionActionTitle": {
+    "message": "Abrir Clear Download Manager"
+  },
+  "extensionErrorTitle": {
+    "message": "Clear Download Manager no pudo completar la solicitud"
+  },
+  "sendToCdm": {
+    "message": "Enviar a Clear Download Manager"
+  }
+}

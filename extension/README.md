@@ -1,8 +1,10 @@
-# Clear Download Manager Extension 0.45.12
+# Clear Download Manager Extension 1.0.0
 
 Chromium extension for sending video, audio, playlists, images and links to
-Clear Download Manager 0.95.x. Public distribution is available from the
+Clear Download Manager 1.0.x. Public distribution is available from the
 [Chrome Web Store](https://chromewebstore.google.com/detail/aonppfnabjnicjjeoofkfjofolfibggp).
+The extension source and issue tracker are available in the
+[Clear Download Manager GitHub repository](https://github.com/CacaPlay/clear-download-manager).
 
 ## Install
 

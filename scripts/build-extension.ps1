@@ -69,6 +69,7 @@ $RuntimeFiles = @(
 )
 $RuntimeFiles += @(Get-ChildItem (Join-Path $Source 'assets') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName.Substring($Source.Length + 1) })
 $RuntimeFiles += @(Get-ChildItem (Join-Path $Source 'icons\brand') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName.Substring($Source.Length + 1) })
+$RuntimeFiles += @(Get-ChildItem (Join-Path $Source '_locales') -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName.Substring($Source.Length + 1) })
 
 if (-not $HasCustomOutput) {
   if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Recurse -Force }

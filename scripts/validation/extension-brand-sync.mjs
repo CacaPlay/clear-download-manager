@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 const read = (file) => fs.readFileSync(file, 'utf8');
 const manifest = JSON.parse(read('extension/manifest.json'));
+const englishMessages = JSON.parse(read('extension/_locales/en/messages.json'));
 const panel = read('extension/sidepanel.js');
 const html = read('extension/sidepanel.html');
 const worker = read('extension/service-worker.js');
@@ -14,7 +15,7 @@ const nativeHost = read('extension/native-host/src/main.rs');
 const expectedVariants = ['rojo', 'naranja', 'verde', 'celeste', 'azul', 'morado'];
 const expectedTypes = ['archive', 'document', 'ebook', 'package', 'torrent', 'font', 'text', 'sheet', 'code', 'image', 'disk', 'audio', 'video', 'pdf', 'presentation', 'playlist-prep', 'generic'];
 const checks = [
-  ['Manifest rebrandeado', manifest.name === 'Clear Download Manager' && manifest.action?.default_title === 'Abrir Clear Download Manager'],
+  ['Manifest rebrandeado y localized', manifest.name === 'Clear Download Manager' && manifest.default_locale === 'en' && manifest.action?.default_title === '__MSG_extensionActionTitle__' && englishMessages.extensionActionTitle?.message === 'Open Clear Download Manager'],
   ['Panel rebrandeado', html.includes('<title>Clear Download Manager</title>') && html.includes('Clear Download Manager</strong>') && html.includes('id="brand-logo"')],
   ['Icono nativo del navegador apunta a Clear Download Manager', manifest.icons?.['128'] === 'icons/icon128.png' && manifest.action?.default_icon?.['128'] === 'icons/icon128.png'],
   ['La app publica iconos y progreso completos', ['iconColorMode', 'iconColor', 'progressActive', 'progressCompleted', 'progressPaused', 'progressError', 'appearanceRevision'].every((token) => appExtension.includes(token))],

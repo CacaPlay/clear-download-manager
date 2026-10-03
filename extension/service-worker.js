@@ -12,7 +12,7 @@ async function syncActionIcon(appearance = {}) {
   const path = Object.fromEntries([16, 32, 48, 128].map((size) => [size, `icons/brand/clear-download-manager-${variant}-${size}.png`]));
   try {
     await chrome.action?.setIcon?.({ path });
-    await chrome.action?.setTitle?.({ title: 'Abrir Clear Download Manager' });
+    await chrome.action?.setTitle?.({ title: chrome.i18n.getMessage('extensionActionTitle') || 'Open Clear Download Manager' });
     lastActionIconVariant = variant;
   } catch {}
 }
@@ -29,7 +29,7 @@ function configureContextMenu() {
   if (!chrome.contextMenus) return;
   chrome.contextMenus.removeAll(()=>{
     if(chrome.runtime.lastError)return;
-    chrome.contextMenus.create({id:'send-to-cdm',title:'Enviar a Clear Download Manager',contexts:['page','link','image','video','audio'],documentUrlPatterns:['http://*/*','https://*/*']},()=>{ void chrome.runtime.lastError; });
+    chrome.contextMenus.create({id:'send-to-cdm',title:chrome.i18n.getMessage('sendToCdm') || 'Send to Clear Download Manager',contexts:['page','link','image','video','audio'],documentUrlPatterns:['http://*/*','https://*/*']},()=>{ void chrome.runtime.lastError; });
   });
 }
 if (chrome.contextMenus?.onClicked) chrome.contextMenus.onClicked.addListener((info,tab)=>{
@@ -45,7 +45,7 @@ if (chrome.contextMenus?.onClicked) chrome.contextMenus.onClicked.addListener((i
     await chrome.storage.local.set({lastContextSend:{ok:false,error:message,at:Date.now()}});
     publish({type:'CONTEXT_SEND_ERROR',message});
     await chrome.action?.setBadgeText?.({text:'!'});
-    await chrome.action?.setTitle?.({title:`Enviar a Clear Download Manager: ${message}`});
+    await chrome.action?.setTitle?.({ title: chrome.i18n.getMessage('extensionErrorTitle') || 'Clear Download Manager could not complete the request' });
   });
 });
 
