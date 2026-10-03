@@ -12,6 +12,6 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Enviar a Clear Download Manager"
+    "default_title": "Send to Clear Download Manager"
   }
 }

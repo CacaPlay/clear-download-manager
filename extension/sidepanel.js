@@ -213,6 +213,10 @@ function linkTitle(url, index = 0) {
     return segment || parsed.hostname.replace(/^www\./, '') || `Enlace ${index + 1}`;
   } catch { return `Enlace ${index + 1}`; }
 }
+function displayLinkTitle(entry) {
+  const videoId = !entry?.metadataResolved ? youtubeVideoId(entry?.url) : '';
+  return videoId ? `${t('Vídeo de YouTube')} · ${videoId}` : entry.title || t('Enlace multimedia');
+}
 function linkThumbnail(url) { const id = youtubeVideoId(url); return id ? `https://i.ytimg.com/vi/${encodeURIComponent(id)}/mqdefault.jpg` : ''; }
 function makeLink(url, index = 0) { return { id: crypto.randomUUID?.() || `${Date.now()}-${index}`, url, title: linkTitle(url, index), thumbnail: linkThumbnail(url), author: '', selected: true, addedAt: Date.now(), metadataResolved: false }; }
 async function persistLinkState() {
@@ -391,7 +395,7 @@ function renderCollections() {
   $('#clear-current-links').disabled = !links.length;
   const target = $('#manual-links-list');
   if (!links.length) { target.innerHTML = '<p class="muted">No hay enlaces en esta carpeta.</p>'; return; }
-  target.innerHTML = links.map((entry) => { const thumbnail = safeImageUrl(entry.thumbnail); const artwork = thumbnail ? `<img src="${safe(thumbnail)}" alt="" loading="lazy">` : '<span>↗</span>'; const meta = [entry.author].filter(Boolean).join(' · '); return `<div class="manual-link"><input type="checkbox" data-link-select="${safe(entry.id)}" ${entry.selected ? 'checked' : ''} aria-label="Seleccionar enlace"><span class="manual-link-thumb">${artwork}</span><div class="manual-link-copy"><strong title="${safe(entry.title)}">${safe(entry.title || 'Enlace multimedia')}</strong>${meta ? `<small title="${safe(meta)}">${safe(meta)}</small>` : ''}</div><button type="button" data-link-remove="${safe(entry.id)}" aria-label="Eliminar enlace">×</button></div>`; }).join('');
+  target.innerHTML = links.map((entry) => { const thumbnail = safeImageUrl(entry.thumbnail); const artwork = thumbnail ? `<img src="${safe(thumbnail)}" alt="" loading="lazy">` : '<span>↗</span>'; const meta = [entry.author].filter(Boolean).join(' · '); const title = displayLinkTitle(entry); return `<div class="manual-link"><input type="checkbox" data-link-select="${safe(entry.id)}" ${entry.selected ? 'checked' : ''} aria-label="Seleccionar enlace"><span class="manual-link-thumb">${artwork}</span><div class="manual-link-copy"><strong title="${safe(title)}">${safe(title)}</strong>${meta ? `<small title="${safe(meta)}">${safe(meta)}</small>` : ''}</div><button type="button" data-link-remove="${safe(entry.id)}" aria-label="Eliminar enlace">×</button></div>`; }).join('');
   target.querySelectorAll('.manual-link-thumb img').forEach((image) => image.addEventListener('error', () => { image.replaceWith(Object.assign(document.createElement('span'), { textContent: '↗' })); }, { once: true }));
   target.querySelectorAll('[data-link-select]').forEach((input) => input.addEventListener('change', async () => {
     const item = links.find((entry) => entry.id === input.dataset.linkSelect); if (item) item.selected = input.checked;
@@ -516,6 +520,10 @@ function hideDownloadMenu() {
 function showDownloadMenu(event, jobId) {
   const menu = $('#download-context-menu');
   if (!menu) return;
+  // Localize the hidden menu immediately before exposing it. This keeps its
+  // action labels in sync with the selected extension language after a locale
+  // switch or delayed panel initialization.
+  localizeExtension();
   state.contextJobId = String(jobId || '');
   const job = (Array.isArray(state.appState?.jobs) ? state.appState.jobs : []).find((item) => String(item?.id) === state.contextJobId);
   const playButton = menu.querySelector('[data-download-action="play"]');
@@ -539,7 +547,7 @@ function showDownloadMenu(event, jobId) {
   menu.querySelectorAll('[data-download-action]').forEach(button => {
     const allowed = canUseJobAction(state.bridge, button.dataset.downloadAction, job, fresh);
     button.disabled = !allowed;
-    button.title = allowed ? '' : 'No disponible con este puente o estado. Utiliza Clear Download Manager.';
+    button.title = allowed ? '' : t('No disponible con este puente o estado. Utiliza Clear Download Manager.');
   });
   menu.hidden = false;
   const width = menu.offsetWidth || 190;
@@ -574,7 +582,7 @@ async function sendItems(items, { label = 'seleccionados', manualPlaylist = fals
   const selected = items.filter((item) => item && item.selected !== false); if (!selected.length || state.busy) return;
   let allowUncertainRetry = false;
   if (state.uncertainSend) {
-    allowUncertainRetry = window.confirm('El envío anterior no se confirmó. Comprueba primero las descargas y ventanas de Clear Download Manager. ¿Ya verificaste que no se recibió y deseas reenviar?');
+    allowUncertainRetry = window.confirm(t('El envío anterior no se confirmó. Comprueba primero las descargas y ventanas de Clear Download Manager. ¿Ya verificaste que no se recibió y deseas reenviar?'));
     if (!allowUncertainRetry) return;
   }
   state.busy = true; state.notice = 'Enviando a Clear Download Manager…'; renderDetections();
@@ -589,8 +597,8 @@ async function sendItems(items, { label = 'seleccionados', manualPlaylist = fals
 }
 async function addManualLinks() {
   const urls = parseUrls($('#manual-links-input').value); if (!urls.length) { state.notice = 'Pega al menos un enlace HTTP o HTTPS válido.'; renderDetections(); return; }
-  if (!state.activeCollectionId && !state.looseLinks.length && window.confirm('¿Crear playlist? Los siguientes enlaces se añadirán automáticamente a esa carpeta.')) {
-    const name = window.prompt('Nombre de la playlist', 'Mi playlist')?.trim();
+  if (!state.activeCollectionId && !state.looseLinks.length && window.confirm(t('¿Crear playlist? Los siguientes enlaces se añadirán automáticamente a esa carpeta.'))) {
+    const name = window.prompt(t('Nombre de la playlist'), t('Mi playlist'))?.trim();
     if (name) { const collection = { id: crypto.randomUUID?.() || String(Date.now()), name: name.slice(0, 80), links: [], createdAt: Date.now() }; state.collections.push(collection); state.activeCollectionId = collection.id; }
   }
   const target = currentLinks(); const existing = new Set(target.map((entry) => entry.url)); const added = [];
@@ -607,7 +615,7 @@ async function addDetectedToCollection(index) {
   const item=state.detections[index];if(!item)return;
   let collection=currentCollection();
   if(!collection){
-    const name=window.prompt('Nombre de la playlist manual', 'Mi playlist')?.trim();if(!name)return;
+    const name=window.prompt(t('Nombre de la playlist manual'), t('Mi playlist'))?.trim();if(!name)return;
     collection={id:crypto.randomUUID(),name:name.slice(0,80),links:[],createdAt:Date.now()};
     state.collections.push(collection);state.activeCollectionId=collection.id;
   }
@@ -665,8 +673,8 @@ $('#download-context-menu').addEventListener('click', async (event) => {
   const mode = button.dataset.downloadAction;
   const jobId = state.contextJobId;
   hideDownloadMenu();
-  if (mode === 'delete_file' && !window.confirm('¿Eliminar el archivo descargado y su registro? Esta acción no se puede deshacer.')) return;
-  if (mode === 'delete_history' && !window.confirm('¿Eliminar esta descarga del historial?')) return;
+  if (mode === 'delete_file' && !window.confirm(t('¿Eliminar el archivo descargado y su registro? Esta acción no se puede deshacer.'))) return;
+  if (mode === 'delete_history' && !window.confirm(t('¿Eliminar esta descarga del historial?'))) return;
   const responsePayload = { type: 'JOB_ACTION', jobId, action: mode };
   if (mode === 'delete_file' || mode === 'delete_history') responsePayload.confirmed = true;
   const response = mode === 'play' || mode === 'open'
@@ -685,7 +693,7 @@ document.addEventListener('contextmenu', (event) => {
 });
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') hideDownloadMenu(); });
 document.querySelectorAll('[data-toggle-panel]').forEach((button) => button.addEventListener('click', async () => { const name = button.dataset.togglePanel; state.panelCollapsed[name] = !state.panelCollapsed[name]; await chrome.storage.local.set({ extensionPanels: state.panelCollapsed }); renderPanelState(); }));
-$('#new-collection').addEventListener('click', async () => { const name = window.prompt('Nombre de la nueva playlist', `Playlist ${state.collections.length + 1}`)?.trim(); if (!name) return; const collection = { id: crypto.randomUUID?.() || String(Date.now()), name: name.slice(0, 80), links: [], createdAt: Date.now() }; state.collections.push(collection); state.activeCollectionId = collection.id; await persistLinkState(); renderCollections(); });
+$('#new-collection').addEventListener('click', async () => { const name = window.prompt(t('Nombre de la nueva playlist'), `Playlist ${state.collections.length + 1}`)?.trim(); if (!name) return; const collection = { id: crypto.randomUUID?.() || String(Date.now()), name: name.slice(0, 80), links: [], createdAt: Date.now() }; state.collections.push(collection); state.activeCollectionId = collection.id; await persistLinkState(); renderCollections(); });
 $('#leave-collection').addEventListener('click', async () => { state.activeCollectionId = ''; await persistLinkState(); renderCollections(); });
 $('#collection-select').addEventListener('change', async (event) => { state.activeCollectionId = event.target.value; await persistLinkState(); renderCollections(); });
 let manualInputTimer = 0;
@@ -694,12 +702,12 @@ $('#manual-links-input').addEventListener('input', () => {
   if (!parseUrls($('#manual-links-input').value).length) return;
   manualInputTimer = window.setTimeout(() => void addManualLinks(), 260);
 });
-$('#clear-current-links').addEventListener('click', async () => { if (!window.confirm('¿Vaciar esta carpeta de enlaces?')) return; currentLinks().splice(0); await persistLinkState(); renderCollections(); });
+$('#clear-current-links').addEventListener('click', async () => { if (!window.confirm(t('¿Vaciar esta carpeta de enlaces?'))) return; currentLinks().splice(0); await persistLinkState(); renderCollections(); });
 $('#send-current-collection').addEventListener('click', () => void sendCurrentCollection());
 $('#appearance-mode').addEventListener('change', async (event) => { state.appearanceMode = event.target.value; await chrome.storage.local.set({ extensionAppearanceMode: state.appearanceMode }); applyAppearance(); });
 $('#custom-theme').addEventListener('change', async (event) => { state.customTheme = event.target.value; await chrome.storage.local.set({ extensionCustomTheme: state.customTheme }); applyAppearance(); });
 $('#custom-accent').addEventListener('input', async (event) => { state.customAccent = event.target.value; await chrome.storage.local.set({ extensionCustomAccent: state.customAccent }); applyAppearance(); });
-$('#apply-extension-update').addEventListener('click', async () => { $('#apply-extension-update').disabled = true; $('#apply-extension-update').textContent = 'Aplicando…'; await chrome.runtime.sendMessage({ type: 'APPLY_EXTENSION_UPDATE' }); });
+$('#apply-extension-update').addEventListener('click', async () => { $('#apply-extension-update').disabled = true; $('#apply-extension-update').textContent = t('Aplicando…'); await chrome.runtime.sendMessage({ type: 'APPLY_EXTENSION_UPDATE' }); });
 
 port.onMessage.addListener((message) => {
   if (message?.type === 'DETECTIONS') {

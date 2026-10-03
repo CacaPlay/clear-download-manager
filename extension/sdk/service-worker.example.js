@@ -6,7 +6,7 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
-      title: 'Descargar con Clear Download Manager',
+      title: 'Download with Clear Download Manager',
       contexts: ['link', 'video', 'audio', 'page']
     });
   });
