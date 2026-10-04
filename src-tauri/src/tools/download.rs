@@ -1190,9 +1190,9 @@ mod tests {
 
     #[test]
     fn slow_body_is_classified_as_timeout_and_partial_body_as_size_mismatch() {
-        let (url, done) = spawn_slow_response(Duration::from_millis(150), b"slow".to_vec());
+        let (url, done) = spawn_slow_response(Duration::from_secs(2), b"slow".to_vec());
         let mut config = test_config(1024);
-        config.transfer_timeout = Duration::from_millis(40);
+        config.transfer_timeout = Duration::from_millis(200);
         let client = build_client(&["127.0.0.1"], config).unwrap();
         let response = client.get(url).send().unwrap();
         let root = unique_temp_root("slow");
@@ -1209,7 +1209,7 @@ mod tests {
             result,
             Err(DownloadError::Timeout | DownloadError::Network)
         ));
-        let _ = done.recv_timeout(Duration::from_secs(1));
+        let _ = done.recv_timeout(Duration::from_secs(3));
 
         let (url, done) = spawn_response("200 OK", "", b"partial".to_vec());
         let response = build_client(&["127.0.0.1"], test_config(1024))
