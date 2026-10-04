@@ -321,6 +321,22 @@ test('release pipeline builds once, verifies the uploaded artifact, and gates pu
   assert.doesNotMatch(verify, /secrets\.RELEASE_TAURI_SIGNING_PRIVATE_KEY/);
 });
 
+test('binary verification validates components from an isolated folder inside the combined release', () => {
+  const workflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const verifyStart = workflow.indexOf('  verify-binary-release:');
+  const publishStart = workflow.indexOf('  publish:', verifyStart);
+  assert.ok(verifyStart >= 0 && publishStart > verifyStart);
+  const verify = workflow.slice(verifyStart, publishStart);
+  const componentCheckStart = verify.indexOf('- name: Verify exact component assets, source links, notices, and inline signature');
+  const componentCheckEnd = verify.indexOf('\n      - name:', componentCheckStart + 1);
+  assert.ok(componentCheckStart >= 0 && componentCheckEnd > componentCheckStart);
+  const componentCheck = verify.slice(componentCheckStart, componentCheckEnd);
+
+  assert.match(componentCheck, /output\/component-assets-verify/);
+  assert.match(componentCheck, /component-release-assets\.mjs --directory \$componentVerificationDirectory/);
+  assert.doesNotMatch(componentCheck, /component-release-assets\.mjs --directory output\/update-release/);
+});
+
 test('release preparation trusts PowerShell errors, validates native exit codes, and keeps binary verification before publish', () => {
   const workflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
   const prepareScript = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-update-release.ps1'), 'utf8');

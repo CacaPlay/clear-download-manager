@@ -340,9 +340,25 @@ jobs:
       - name: Verify exact component assets, source links, notices, and inline signature
         shell: pwsh
         run: |
-          node scripts/validation/component-release-assets.mjs --directory output/update-release
+          $componentCatalogPath = 'output/update-release/component-catalog-v1.json'
+          $componentCatalog = Get-Content -LiteralPath $componentCatalogPath -Raw | ConvertFrom-Json
+          $componentAssetNames = @('component-catalog-v1.json')
+          foreach ($component in @($componentCatalog.payload.components)) {
+            $componentAssetNames += [string]$component.assetName
+            foreach ($source in @($component.correspondingSources)) { $componentAssetNames += [string]$source.assetName }
+            foreach ($notice in @($component.licenseNotices)) { $componentAssetNames += [string]$notice.noticeFile }
+          }
+          $componentVerificationDirectory = 'output/component-assets-verify'
+          New-Item -ItemType Directory -Force -Path $componentVerificationDirectory | Out-Null
+          foreach ($assetName in ($componentAssetNames | Sort-Object -Unique)) {
+            if ($assetName -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { throw "Unsafe component asset name: $assetName" }
+            $assetPath = Join-Path 'output/update-release' $assetName
+            if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf)) { throw "Component asset is missing from the downloaded release: $assetName" }
+            Copy-Item -LiteralPath $assetPath -Destination (Join-Path $componentVerificationDirectory $assetName)
+          }
+          node scripts/validation/component-release-assets.mjs --directory $componentVerificationDirectory
           if ($LASTEXITCODE -ne 0) { throw 'The downloaded component release assets failed validation.' }
-          cargo run --manifest-path src-tauri/Cargo.toml --locked --quiet --features maintainer-tooling --example component-catalog-tool -- verify-production --input 'output/update-release/component-catalog-v1.json'
+          cargo run --manifest-path src-tauri/Cargo.toml --locked --quiet --features maintainer-tooling --example component-catalog-tool -- verify-production --input $componentCatalogPath
           if ($LASTEXITCODE -ne 0) { throw 'The downloaded catalog signature did not verify against Core production trust.' }
       - name: Prepare pinned SAFE LEAN MSYS2 toolchain
         shell: pwsh
