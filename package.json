@@ -43,6 +43,7 @@
     "prepare:third-party-notices": "node scripts/generate-third-party-notices.mjs",
     "check:licenses": "node scripts/validation/license-readiness.mjs",
     "check:component-manager": "node scripts/validation/component-manager.mjs",
+    "test:component-independent-release": "node --test scripts/validation/component-independent-release.test.mjs",
     "check:component-release-assets": "node scripts/validation/component-release-assets.mjs",
     "check:rights": "node scripts/validation/rights-readiness.mjs",
     "check:gpl-source": "node scripts/validation/gpl-source-readiness.mjs",
@@ -56,7 +57,7 @@
     "test:identity-migrations": "node --test scripts/validation/identity-migration.test.mjs scripts/validation/storage-migration.test.mjs scripts/validation/images-storage-migration.test.mjs",
     "source:archive": "node scripts/create-source-archive.mjs",
     "source:yt-dlp:fetch": "python scripts/fetch-yt-dlp-corresponding-source-inputs.py",
-    "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs",
+    "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs scripts/validation/component-independent-release.test.mjs",
     "test:app-update-progress": "node --test scripts/validation/app-update-progress.test.mjs",
     "test:yt-dlp-source-fetch": "python -m unittest scripts.validation.test_yt_dlp_source_fetch -v",
     "verify:binaries": "node scripts/verify-binaries.mjs",
@@ -158,7 +159,7 @@
     "check:subwindows": "node scripts/validation/phase34_subwindow_responsiveness.mjs",
     "check:subwindows:interaction": "python scripts/validation/phase34_subwindow_interaction.py",
     "check:pre2i-stabilization": "node scripts/validation/pre2i-stabilization.mjs && python scripts/validation/pre2i_player_interaction.py",
-    "test:optional-component-flow": "node --test scripts/validation/optional-component-install.test.mjs scripts/validation/app-complements-navigation.test.mjs",
+    "test:optional-component-flow": "node --test scripts/validation/optional-component-install.test.mjs scripts/validation/app-complements-navigation.test.mjs scripts/validation/component-install-command-async.test.mjs",
     "test:ui-v1.0.0": "node --test scripts/validation/ui-v1.0.0-assets.test.mjs scripts/validation/ui-v1.0.0-theme-motion.test.mjs scripts/validation/update-discovery.test.mjs scripts/validation/update-notice.test.mjs scripts/validation/v1-settings-reset.test.mjs"
   },
   "devDependencies": {

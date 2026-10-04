@@ -19,6 +19,74 @@ const downloadDirectoryLabel = (...args) => contextValue('downloadDirectoryLabel
 const locale = () => contextValue('locale', () => 'system')();
 const tr = (key, ...args) => contextValue('translate', (name) => name)(key, ...args);
 
+function formatComponentBytes(value) {
+  if (!Number.isSafeInteger(value) || value < 0) return '';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let amount = value;
+  let unit = 0;
+  while (amount >= 1000 && unit < units.length - 1) { amount /= 1000; unit += 1; }
+  return `${amount.toFixed(unit ? 1 : 0)} ${units[unit]}`;
+}
+
+export function patchComponentDownloadProgress(root, componentId, operation = {}) {
+  const id = String(componentId || '');
+  if (!['media-tools', 'torrent-engine'].includes(id)) return false;
+  const row = root?.querySelector?.(`[data-component-row="${id}"]`);
+  const progress = row?.querySelector?.(`[data-component-progress="${id}"]`);
+  const metrics = row?.querySelector?.(`[data-component-metrics="${id}"]`);
+  const status = row?.querySelector?.(`[data-component-status="${id}"]`);
+  const phaseLabel = row?.querySelector?.(`[data-component-phase="${id}"]`);
+  const error = row?.querySelector?.(`[data-component-error="${id}"]`);
+  const cancelButton = row?.querySelector?.('[data-component-action="cancel"]');
+  const installButton = row?.querySelector?.('[data-component-action="install"]');
+  const verifyButton = row?.querySelector?.('[data-component-action="verify"]');
+  const removeButton = row?.querySelector?.('[data-component-action="remove"]');
+  if (!progress || !metrics || !status || !phaseLabel) return false;
+
+  const phase = String(operation.phase || '');
+  const phaseLabels = {
+    preparing: 'Preparando descarga',
+    download: 'Descargando',
+    verify: 'Verificando integridad',
+    install: 'Preparando instalación',
+    activate: 'Activando componente',
+    done: 'Instalado',
+    error: 'No se pudo completar',
+    cancelled: 'Descarga cancelada'
+  };
+  const active = ['preparing', 'download', 'verify', 'install', 'activate'].includes(phase);
+  const installed = phase === 'done' || ['installed', 'corrupted'].includes(row.dataset?.componentState);
+  phaseLabel.textContent = phaseLabels[phase] || 'Status unavailable';
+  status.dataset.statusTone = phase === 'done' || (!active && installed) ? 'ok'
+    : phase === 'error' ? 'error'
+      : phase === 'cancelled' ? 'warn' : 'info';
+  progress.hidden = !active;
+  metrics.hidden = phase !== 'download';
+  if (error) {
+    error.textContent = String(operation.error || 'Error de instalación');
+    error.hidden = phase !== 'error';
+  }
+  if (cancelButton) cancelButton.hidden = phase !== 'download';
+  if (installButton) installButton.hidden = active || installed;
+  if (verifyButton) verifyButton.hidden = !installed;
+  if (removeButton) {
+    removeButton.hidden = !installed;
+    removeButton.disabled = active;
+  }
+
+  const ratio = Number.isFinite(operation.progressRatio) && operation.progressRatio >= 0 && operation.progressRatio <= 1
+    ? Math.round(operation.progressRatio * 100) : null;
+  if (ratio === null) progress.removeAttribute?.('value');
+  else progress.value = ratio;
+
+  const downloaded = formatComponentBytes(operation.bytesDownloaded);
+  const total = formatComponentBytes(operation.totalBytes);
+  const speed = Number.isFinite(operation.bytesPerSecond) && operation.bytesPerSecond > 0
+    ? ` · ${formatComponentBytes(Math.round(operation.bytesPerSecond))}/s` : '';
+  metrics.textContent = `${downloaded || '—'}${total ? ` / ${total}` : ''}${ratio === null ? '' : ` · ${ratio}%`}${speed}`;
+  return true;
+}
+
 export function configureSettings(context = {}) {
   settingsContext = context;
   appState = context.getAppState?.() || {};
@@ -43,8 +111,8 @@ export function setSettingsAdvancedOpen(value) {
 const checked = (value, expected) => value === expected ? 'checked' : '';
 const selected = (value, expected) => value === expected ? 'selected' : '';
 
-function pageIntro(title, description = '') {
-  return `<header class="settings-page-intro"><div><h2>${title}</h2>${description ? `<p>${description}</p>` : ''}</div></header>`;
+function pageIntro(title, description = '', actions = '') {
+  return `<header class="settings-page-intro"><div><h2>${title}</h2>${description ? `<p>${description}</p>` : ''}</div>${actions ? `<div class="settings-page-intro-actions">${actions}</div>` : ''}</header>`;
 }
 
 function sectionHeading(title) {
@@ -208,14 +276,6 @@ function componentManagerSection() {
     error: 'No se pudo completar',
     cancelled: 'Descarga cancelada'
   };
-  const formatBytes = (value) => {
-    if (!Number.isSafeInteger(value) || value < 0) return '';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let amount = value;
-    let unit = 0;
-    while (amount >= 1000 && unit < units.length - 1) { amount /= 1000; unit += 1; }
-    return `${amount.toFixed(unit ? 1 : 0)} ${units[unit]}`;
-  };
   const rows = ['media-tools', 'torrent-engine'].map((id) => {
     const component = components.find((item) => item.id === id) || { id, state: 'missing' };
     const operation = appState.componentOperations?.[id];
@@ -224,36 +284,35 @@ function componentManagerSection() {
     const tone = state === 'installed' ? 'ok' : state === 'installing' ? 'info' : state === 'missing' ? 'warn' : 'error';
     const version = component.version ? ` · v${escapeHtml(component.version)}` : '';
     const activeOperation = ['preparing', 'download', 'verify', 'install', 'activate'].includes(phase);
-    const installAction = activeOperation || ['installed', 'downloading', 'verifying', 'installing'].includes(state) ? '' : `<button type="button" class="settings-component-action" data-component-action="install" data-component-id="${id}">${state === 'corrupted' ? tr('Reparar') : state === 'update-available' ? tr('Actualizar') : tr('Descargar e instalar')}</button>`;
-    const verifyAction = ['installed', 'corrupted'].includes(state) ? `<button type="button" class="settings-component-action" data-component-action="verify" data-component-id="${id}">${tr('Verificar')}</button>` : '';
+    const installHidden = activeOperation || ['installed', 'downloading', 'verifying', 'installing'].includes(state);
+    const installAction = `<button type="button" class="settings-component-action" data-component-action="install" data-component-id="${id}"${installHidden ? ' hidden' : ''}>${state === 'corrupted' ? tr('Reparar') : state === 'update-available' ? tr('Actualizar') : tr('Descargar e instalar')}</button>`;
+    const verifyHidden = !['installed', 'corrupted'].includes(state);
+    const verifyAction = `<button type="button" class="settings-component-action" data-component-action="verify" data-component-id="${id}"${verifyHidden ? ' hidden' : ''}>${tr('Verificar')}</button>`;
     const reclaimable = Number.isSafeInteger(component.reclaimableBytes) && component.reclaimableBytes >= 0
       ? ` · Libera ${formatBytes(component.reclaimableBytes)}` : '';
-    const removeAction = ['installed', 'corrupted'].includes(state)
-      ? `<button type="button" class="settings-component-action" data-component-action="remove" data-component-id="${id}"${activeOperation ? ' disabled' : ''}>${tr('Quitar')}${reclaimable}</button>` : '';
+    const removeHidden = !['installed', 'corrupted'].includes(state);
+    const removeAction = `<button type="button" class="settings-component-action" data-component-action="remove" data-component-id="${id}"${removeHidden ? ' hidden' : ''}${activeOperation ? ' disabled' : ''}>${tr('Quitar')}${reclaimable}</button>`;
     const ratio = Number.isFinite(operation?.progressRatio) && operation.progressRatio >= 0 && operation.progressRatio <= 1
       ? Math.round(operation.progressRatio * 100) : null;
-    const downloaded = formatBytes(operation?.bytesDownloaded);
-    const total = formatBytes(operation?.totalBytes);
+    const downloaded = formatComponentBytes(operation?.bytesDownloaded);
+    const total = formatComponentBytes(operation?.totalBytes);
     const speed = Number.isFinite(operation?.bytesPerSecond) && operation.bytesPerSecond > 0
-      ? ` · ${formatBytes(Math.round(operation.bytesPerSecond))}/s` : '';
+      ? ` · ${formatComponentBytes(Math.round(operation.bytesPerSecond))}/s` : '';
     const phaseText = phaseLabels[phase] || stateLabels[state] || 'Status unavailable';
-    const metrics = phase === 'download' && downloaded
-      ? `<small class="settings-component-metrics">${downloaded}${total ? ` / ${total}` : ''}${ratio === null ? '' : ` · ${ratio}%`}${speed}</small>` : '';
-    const progressMarkup = activeOperation
-      ? `<progress class="settings-component-progress" max="100"${ratio === null ? '' : ` value="${ratio}"`} aria-label="${labels[id]} · ${phaseText}"></progress>${metrics}`
-      : phase === 'error' ? `<small class="settings-component-error">${escapeHtml(operation.error || 'Error de instalación')}</small>` : '';
-    const cancelAction = phase === 'download'
-      ? `<button type="button" class="settings-component-action" data-component-action="cancel" data-component-id="${id}">${tr('Cancelar')}</button>` : '';
+    const metrics = `<small class="settings-component-metrics" data-component-metrics="${id}"${phase === 'download' ? '' : ' hidden'}>${downloaded || '—'}${total ? ` / ${total}` : ''}${ratio === null ? '' : ` · ${ratio}%`}${speed}</small>`;
+    const progressMarkup = `<progress class="settings-component-progress" data-component-progress="${id}" max="100"${ratio === null ? '' : ` value="${ratio}"`}${activeOperation ? '' : ' hidden'} aria-label="Progreso de ${labels[id]}"></progress>${metrics}<small class="settings-component-error" data-component-error="${id}"${phase === 'error' ? '' : ' hidden'}>${escapeHtml(operation?.error || 'Error de instalación')}</small>`;
+    const cancelAction = `<button type="button" class="settings-component-action" data-component-action="cancel" data-component-id="${id}"${phase === 'download' ? '' : ' hidden'}>${tr('Cancelar')}</button>`;
     const available = component.availableVersion && component.availableVersion !== component.version
       ? ` · ${tr('Disponible')} v${escapeHtml(component.availableVersion)}`
       : '';
-    return `<article class="settings-component-row" data-component-row="${id}" tabindex="-1"><div><strong>${labels[id]}</strong><span data-status-tone="${tone}">${phaseText}${version}${available}</span>${progressMarkup}</div><div class="settings-inline-actions">${cancelAction}${installAction}${verifyAction}${removeAction}</div></article>`;
+    return `<article class="settings-component-row" data-component-row="${id}" data-component-state="${state}"><div><strong>${labels[id]}</strong><span data-component-status="${id}" data-status-tone="${tone}"><span data-component-phase="${id}">${phaseText}</span>${version}${available}</span>${progressMarkup}</div><div class="settings-inline-actions">${cancelAction}${installAction}${verifyAction}${removeAction}</div></article>`;
   }).join('');
-  return `<section class="settings-section settings-section-components"><button type="button" class="settings-component-action" data-component-catalog-check>${tr('Buscar actualizaciones')}</button>${rows}</section>`;
+  return `<section class="settings-section settings-section-components">${rows}</section>`;
 }
 
 function componentsPage() {
-  return `<div class="settings-page settings-page-components">${pageIntro(tr('Complementos'), tr('Gestiona los componentes opcionales de Clear.'))}${componentManagerSection()}</div>`;
+  const refreshButton = `<button type="button" class="settings-component-action settings-component-catalog-check" data-component-catalog-check>${tr('Buscar actualizaciones')}</button>`;
+  return `<div class="settings-page settings-page-components">${pageIntro(tr('Complementos'), tr('Gestiona los componentes opcionales de Clear.'), refreshButton)}${componentManagerSection()}</div>`;
 }
 
 function updatesPage() {

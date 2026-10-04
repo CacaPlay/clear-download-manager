@@ -86,7 +86,10 @@ fn native_host_specs() -> Vec<(&'static str, &'static str)> {
     {
         vec![
             (HOST_NAME, "clear-download-manager-native-host.exe"),
-            (LEGACY_HOST_NAME, "cacatools-native-host.exe"),
+            (
+                LEGACY_HOST_NAME,
+                "clear-download-manager-legacy-native-host.exe",
+            ),
         ]
     }
 }
@@ -653,12 +656,12 @@ fn unix_timestamp_secs() -> u64 {
         .unwrap_or(0)
 }
 
-#[cfg(feature = "qa-component-manager")]
+#[cfg(all(feature = "qa-component-manager", not(feature = "qa-extension-bridge")))]
 pub fn claim_primary_app_instance() -> Result<bool, String> {
     Ok(true)
 }
 
-#[cfg(not(feature = "qa-component-manager"))]
+#[cfg(any(not(feature = "qa-component-manager"), feature = "qa-extension-bridge"))]
 pub fn claim_primary_app_instance() -> Result<bool, String> {
     fs::create_dir_all(inbox_dir()).map_err(|error| error.to_string())?;
     let lock = OpenOptions::new()
@@ -680,12 +683,12 @@ pub fn claim_primary_app_instance() -> Result<bool, String> {
     }
 }
 
-#[cfg(feature = "qa-component-manager")]
+#[cfg(all(feature = "qa-component-manager", not(feature = "qa-extension-bridge")))]
 pub fn initialize_app_bridge() -> Result<(), String> {
     Ok(())
 }
 
-#[cfg(not(feature = "qa-component-manager"))]
+#[cfg(any(not(feature = "qa-component-manager"), feature = "qa-extension-bridge"))]
 pub fn initialize_app_bridge() -> Result<(), String> {
     fs::create_dir_all(inbox_dir()).map_err(|error| error.to_string())?;
     let _ = ensure_extension_host_registration();
@@ -1132,7 +1135,7 @@ mod tests {
         {
             assert_eq!(specs.len(), 2);
             assert_eq!(specs[1].0, LEGACY_HOST_NAME);
-            assert_eq!(specs[1].1, "cacatools-native-host.exe");
+            assert_eq!(specs[1].1, "clear-download-manager-legacy-native-host.exe");
             assert_ne!(specs[0].0, specs[1].0);
             assert_ne!(specs[0].1, specs[1].1);
         }

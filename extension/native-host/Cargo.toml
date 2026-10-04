@@ -6,6 +6,7 @@ edition = "2021"
 
 [features]
 legacy-host-name = []
+qa-host-name = []
 
 [dependencies]
 fs2 = "0.4"

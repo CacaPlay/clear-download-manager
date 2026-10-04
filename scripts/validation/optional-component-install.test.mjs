@@ -329,14 +329,25 @@ test('inline Cancel only clears the invitation and never closes the main surface
   assert.doesNotMatch(dismiss, /activeSection|preparation_window_action|window\.close/);
 });
 
-test('main Component Manager focuses the requested component and starts its existing install action', async () => {
+test('main Component Manager opens the requested component without focusing its row and starts install', async () => {
   const main = await readFile(path.join(repositoryRoot, 'app-ui/main.js'), 'utf8');
   const settings = await readFile(path.join(repositoryRoot, 'app-ui/modules/settings/index.js'), 'utf8');
   assert.match(main, /component-manager-install-request/);
   assert.match(main, /settingsCategory\s*=\s*['"]components['"]/);
   assert.match(main, /data-component-action=['"]install['"]/);
   assert.match(main, /\.click\(\)/);
-  assert.match(settings, /data-component-row="\$\{id\}" tabindex="-1"/);
+  assert.match(main, /row\.scrollIntoView\?\./);
+  assert.doesNotMatch(main, /row\.focus\(/);
+  assert.match(settings, /data-component-row="\$\{id\}"/);
+  assert.doesNotMatch(settings, /data-component-row="\$\{id\}" tabindex=/);
+});
+
+test('component progress events patch the current page without full-screen renders', async () => {
+  const main = await readFile(path.join(repositoryRoot, 'app-ui/main.js'), 'utf8');
+  const handler = main.match(/async function bindComponentDownloadProgress\(\)[\s\S]*?\n\}/)?.[0] || '';
+
+  assert.match(handler, /patchComponentDownloadProgress/);
+  assert.doesNotMatch(handler, /render\(|componentProgressRenderTimer|setTimeout\(/);
 });
 
 test('subwindow consumes the current component progress payload without legacy percent fields', async () => {
@@ -516,11 +527,17 @@ test('video title search uses capability-aware inline installation instead of by
   assert.doesNotMatch(source, /context\.invoke\?\.\(\s*['"]search_media_by_title_page['"]/);
 });
 
-test('extension background media download foregrounds for consent, installs, retries analysis, then queues', async () => {
+test('extension media download routes missing MediaTools to Settings without a progress toast or duplicate install', async () => {
   const calls = [];
+  const events = [];
+  const toasts = [];
+  let progressListenerCount = 0;
   const originalConfirm = globalThis.confirm;
-  const restoreWindow = withBrowser({ window: { setTimeout: (callback) => globalThis.setTimeout(callback, 0) } });
-  let installed = false;
+  const restoreWindow = withBrowser({ window: {
+    setTimeout: (callback) => globalThis.setTimeout(callback, 0),
+    dispatchEvent: event => events.push(event),
+    __TAURI__: { event: { listen: async () => { progressListenerCount += 1; return () => {}; } } }
+  } });
   let confirmations = 0;
   globalThis.confirm = async message => {
     confirmations += 1;
@@ -528,26 +545,29 @@ test('extension background media download foregrounds for consent, installs, ret
     return true;
   };
   configureExtension({
+    showToast: (...args) => toasts.push(args),
     invoke: async (command, args) => {
       calls.push([command, args]);
       if (command === 'inspect_download_url') return { kind: 'generic_url', requires_media_resolver: true, normalized_url: 'https://example.test/video' };
       if (command === 'component_prompt_info') return promptInfo('media-tools', 'media-extraction');
-      if (command === 'install_component_from_catalog') { installed = true; return; }
-      if (command === 'analyze_media_url_with_session' && !installed) throw mediaMissing;
       if (command === 'analyze_media_url_with_session') return { title: 'Sample video', items: [] };
-      if (command === 'queue_media_download_secure') return 'queued';
+      if (command === 'queue_media_download_secure') throw mediaMissing;
       return undefined;
     }
   });
   try {
-    const result = await queueExtensionSourceInBackground('https://example.test/video');
-    assert.equal(result, 'queued');
+    await queueExtensionSourceInBackground('https://example.test/video');
     assert.equal(confirmations, 1);
     assert.deepEqual(calls.map(([command]) => command), [
-      'inspect_download_url', 'analyze_media_url_with_session', 'component_prompt_info', 'wake_main_window', 'wake_main_window',
-      'install_component_from_catalog', 'analyze_media_url_with_session', 'queue_media_download_secure'
+      'inspect_download_url', 'analyze_media_url_with_session', 'queue_media_download_secure',
+      'component_prompt_info', 'wake_main_window', 'wake_main_window'
     ]);
-    assert.deepEqual(calls[5][1], { id: 'media-tools' });
+    assert.equal(calls.some(([command]) => command === 'install_component_from_catalog'), false);
+    assert.equal(progressListenerCount, 0);
+    assert.deepEqual(toasts, []);
+    assert.equal(events.length, 1);
+    assert.equal(events[0].type, 'cdm:component-manager-install-request');
+    assert.deepEqual(events[0].detail, { componentId: 'media-tools' });
   } finally {
     configureExtension({});
     globalThis.confirm = originalConfirm;

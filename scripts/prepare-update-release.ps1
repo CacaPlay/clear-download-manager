@@ -85,14 +85,6 @@ if ($SetupInstaller) {
   $SetupAssetName = ConvertTo-ReleaseAssetName $SetupInstaller.Name
   $VersionedSetupPath = Join-Path $OutputDirectory $SetupAssetName
   Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $VersionedSetupPath -Force
-  if ([IO.Path]::GetExtension($SetupInstaller.Name) -ieq '.exe') {
-    $StableInstallerName = 'ClearDownloadManagerSetup.exe'
-    $StableInstallerPath = Join-Path $OutputDirectory $StableInstallerName
-    Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $StableInstallerPath -Force
-    $VersionedHash = (Get-FileHash -LiteralPath $VersionedSetupPath -Algorithm SHA256).Hash
-    $StableHash = (Get-FileHash -LiteralPath $StableInstallerPath -Algorithm SHA256).Hash
-    if ($StableHash -cne $VersionedHash) { throw 'The fixed-name installer alias differs from the versioned NSIS installer.' }
-  }
 }
 
 $EncodedName = [Uri]::EscapeDataString($ArtifactAssetName).Replace('%2F', '/')
@@ -109,24 +101,6 @@ $Latest = [ordered]@{
   }
 }
 Write-Utf8NoBom -Path (Join-Path $OutputDirectory 'latest.json') -Content (($Latest | ConvertTo-Json -Depth 10) + [Environment]::NewLine)
-
-$Checklist = @"
-PUBLICACION DE CLEAR DOWNLOAD MANAGER $Version
-
-1. Crea una Release en GitHub con la etiqueta: $Tag
-2. Sube SIN RENOMBRAR:
-   - $ArtifactAssetName
-   - $SignatureAssetName
-   - latest.json
-$(if ($SetupInstaller -and $SetupAssetName -ne $ArtifactAssetName) { "   - $SetupAssetName (instalacion manual)" })
-$(if ($StableInstallerName) { "   - $StableInstallerName (enlace estable: https://github.com/$($UpdaterConfig.repository)/releases/latest/download/$StableInstallerName)" })
-3. Publica la Release, no la dejes como Draft.
-4. Comprueba esta direccion:
-   https://github.com/$($UpdaterConfig.repository)/releases/latest/download/latest.json
-
-La clave privada NO se sube a GitHub ni se incluye en esta carpeta.
-"@
-Write-Utf8NoBom -Path (Join-Path $OutputDirectory 'LEEME_PARA_SUBIR.txt') -Content $Checklist
 
 Write-Host "OK: publicacion preparada en $OutputDirectory" -ForegroundColor Green
 Write-Host "Artefacto de actualizacion: $ArtifactAssetName"

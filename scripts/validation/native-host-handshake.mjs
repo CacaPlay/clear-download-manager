@@ -17,7 +17,7 @@ const frames = messages.map((message) => {
 });
 for (const executable of executables) {
   assert.ok(fs.existsSync(executable), `No existe el host nativo: ${executable}`);
-  const expectedHost = path.basename(executable).toLowerCase() === 'cacatools-native-host.exe'
+  const expectedHost = path.basename(executable).toLowerCase() === 'clear-download-manager-legacy-native-host.exe'
     ? 'lat.cacaplay.cacatools.downloadmanager'
     : 'lat.cacaplay.cleardownloadmanager';
   const temporaryLocalAppData = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-native-host-smoke-'));

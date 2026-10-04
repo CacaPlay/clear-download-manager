@@ -12,9 +12,11 @@ use std::{
 
 // Keep the v1.0.0 manifest name as a separately built alias so installed
 // extensions can continue to reach the upgraded application.
-#[cfg(feature = "legacy-host-name")]
+#[cfg(feature = "qa-host-name")]
+const HOST_NAME: &str = "lat.cacaplay.cleardownloadmanager.qa";
+#[cfg(all(not(feature = "qa-host-name"), feature = "legacy-host-name"))]
 const HOST_NAME: &str = "lat.cacaplay.cacatools.downloadmanager";
-#[cfg(not(feature = "legacy-host-name"))]
+#[cfg(all(not(feature = "qa-host-name"), not(feature = "legacy-host-name")))]
 const HOST_NAME: &str = "lat.cacaplay.cleardownloadmanager";
 const MAX_MESSAGE: usize = 4 * 1024 * 1024;
 const MAX_STATE_BYTES: usize = 768 * 1024;
@@ -32,14 +34,21 @@ fn app_executable_override(
 }
 
 fn bridge_root() -> PathBuf {
-    // Keep the v1.0.0 bridge state location so installed extensions and
-    // in-flight requests continue to share the same inbox after upgrading.
-    env::var_os("LOCALAPPDATA")
+    let root = env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
-        .unwrap_or_else(env::temp_dir)
-        .join("CacaTools")
-        .join("DownloadManager")
-        .join("ExtensionBridge")
+        .unwrap_or_else(env::temp_dir);
+    #[cfg(feature = "qa-host-name")]
+    {
+        return root.join("CDM-QA").join("ExtensionBridge");
+    }
+    #[cfg(not(feature = "qa-host-name"))]
+    {
+        // Keep the v1.0.0 bridge state location so installed extensions and
+        // in-flight requests continue to share the same inbox after upgrading.
+        root.join("CacaTools")
+            .join("DownloadManager")
+            .join("ExtensionBridge")
+    }
 }
 
 fn app_lock_path() -> PathBuf {
@@ -140,17 +149,27 @@ fn launch_app(background: bool) -> Result<bool, String> {
     if app_running() {
         return Ok(false);
     }
-    if let Some(app_user_model_id) = store_app_user_model_id() {
-        let target = format!("shell:AppsFolder\\{app_user_model_id}");
-        Command::new("explorer.exe")
-            .arg(target)
-            .spawn()
-            .map_err(|error| {
-                format!("No se pudo abrir Clear Download Manager desde Microsoft Store: {error}")
-            })?;
-        return Ok(true);
+    if !cfg!(feature = "qa-host-name") {
+        if let Some(app_user_model_id) = store_app_user_model_id() {
+            let target = format!("shell:AppsFolder\\{app_user_model_id}");
+            Command::new("explorer.exe")
+                .arg(target)
+                .spawn()
+                .map_err(|error| {
+                    format!(
+                        "No se pudo abrir Clear Download Manager desde Microsoft Store: {error}"
+                    )
+                })?;
+            return Ok(true);
+        }
     }
-    let executable =
+    let executable = if cfg!(feature = "qa-host-name") {
+        env::current_exe().ok().and_then(|path| {
+            path.parent()
+                .map(|directory| directory.join("clear-download-manager.exe"))
+                .filter(|candidate| candidate.is_file())
+        })
+    } else {
         app_executable_override(env::var_os("CDM_APP_EXE"), env::var_os("CACATOOLS_APP_EXE"))
             .or_else(|| {
                 env::current_exe().ok().and_then(|path| {
@@ -168,7 +187,8 @@ fn launch_app(background: bool) -> Result<bool, String> {
                     candidates.into_iter().find(|candidate| candidate.is_file())
                 })
             })
-            .ok_or_else(|| "Clear Download Manager no está instalado".to_string())?;
+    }
+    .ok_or_else(|| "Clear Download Manager no está instalado".to_string())?;
     if !executable.is_file() {
         return Err("No se encontró Clear Download Manager.exe".into());
     }
@@ -252,7 +272,9 @@ mod tests {
 
     #[test]
     fn binary_uses_its_registered_native_host_identity() {
-        let expected = if cfg!(feature = "legacy-host-name") {
+        let expected = if cfg!(feature = "qa-host-name") {
+            "lat.cacaplay.cleardownloadmanager.qa"
+        } else if cfg!(feature = "legacy-host-name") {
             "lat.cacaplay.cacatools.downloadmanager"
         } else {
             "lat.cacaplay.cleardownloadmanager"

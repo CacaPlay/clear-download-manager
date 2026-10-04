@@ -235,13 +235,13 @@ test('PR5 owner review records explicit approval while preserving evidence limit
   assert.equal(pr5Register.decision.GPL_RELICENSING_READINESS, 'PASS_FOR_REVIEWED_PR5_DIFF');
 });
 
-test('release preparation adds a stable installer alias from the verified versioned setup bytes', () => {
+test('release preparation publishes one versioned installer and omits operator-only upload notes', () => {
   const script = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-update-release.ps1'), 'utf8');
-  assert.match(script, /\$StableInstallerName = 'ClearDownloadManagerSetup\.exe'/);
-  assert.match(script, /Copy-Item -LiteralPath \$SetupInstaller\.FullName -Destination \$StableInstallerPath/);
-  assert.match(script, /\$StableHash -cne \$VersionedHash/);
+  assert.match(script, /Copy-Item -LiteralPath \$SetupInstaller\.FullName -Destination \$VersionedSetupPath/);
+  assert.doesNotMatch(script, /ClearDownloadManagerSetup\.exe|StableInstallerName|LEEME_PARA_SUBIR\.txt/);
   const guide = fs.readFileSync(path.join(repositoryRoot, 'docs/RELEASE-GUIDE.md'), 'utf8');
-  assert.match(guide, /releases\/latest\/download\/ClearDownloadManagerSetup\.exe/);
+  assert.doesNotMatch(guide, /ClearDownloadManagerSetup\.exe|LEEME_PARA_SUBIR\.txt/);
+  assert.match(guide, /releases\/latest(?:[\s`.]|$)/);
 });
 
 test('release pipeline builds once, verifies the uploaded artifact, and gates publication', () => {
@@ -409,6 +409,33 @@ test('release artifact checksum verifier rejects changed and unlisted files', ()
     fs.writeFileSync(path.join(temp, 'latest.json'), '{"version":"0.95.4"}\n');
     fs.writeFileSync(path.join(temp, 'unlisted.txt'), 'extra');
     assert.notEqual(invoke().status, 0);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test('release artifact checksum verifier rejects duplicate installer copies and operator upload notes', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-release-no-junk-test-'));
+  const verifier = path.join(repositoryRoot, 'scripts/validation/verify-release-artifact.mjs');
+  const setupName = 'Clear.Download.Manager_1.0.1_x64-setup.exe';
+  const aliasName = 'ClearDownloadManagerSetup.exe';
+  const notesName = 'LEEME_PARA_SUBIR.txt';
+  const writeChecksums = (names) => {
+    const lines = names.map((name) => `${crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, name))).digest('hex')}  ${name}`);
+    fs.writeFileSync(path.join(temp, 'SHA256SUMS.txt'), `${lines.join('\n')}\n`);
+  };
+  const invoke = () => spawnSync(process.execPath, [verifier, '--directory', temp], { encoding: 'utf8', windowsHide: true });
+
+  try {
+    fs.writeFileSync(path.join(temp, setupName), 'same installer bytes');
+    fs.writeFileSync(path.join(temp, aliasName), 'same installer bytes');
+    writeChecksums([setupName, aliasName]);
+    assert.notEqual(invoke().status, 0, 'duplicate executable bytes must be rejected even when checksummed');
+
+    fs.rmSync(path.join(temp, aliasName));
+    fs.writeFileSync(path.join(temp, notesName), 'operator instructions');
+    writeChecksums([setupName, notesName]);
+    assert.notEqual(invoke().status, 0, 'operator-only upload instructions must be rejected even when checksummed');
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
@@ -917,10 +944,16 @@ test('release workflow retries an existing immutable tag from main without inher
 
 test('component release assembly removes only its generated package stage in finally', () => {
   const assembly = fs.readFileSync(path.join(repositoryRoot, 'scripts/assemble-component-release-assets.ps1'), 'utf8');
+  const localPackager = fs.readFileSync(path.join(repositoryRoot, 'scripts/package-local-components.ps1'), 'utf8');
+  const releasePackager = fs.readFileSync(path.join(repositoryRoot, 'scripts/package-release-components.ps1'), 'utf8');
   assert.match(assembly, /\$packageOutput\s*=\s*Join-Path\s+\$env:TEMP\s+\("cdm-component-package-stage-/);
-  assert.match(assembly, /try\s*\{[\s\S]*?\$packageBuild\s*=/);
+  assert.match(assembly, /try\s*\{[\s\S]*?\$packageBuild\s*=.*-MediaToolsVersion\s+\$MediaToolsVersion\s+-TorrentEngineVersion\s+\$TorrentEngineVersion/);
   assert.match(assembly, /finally\s*\{[\s\S]*?Remove-Item\s+-LiteralPath\s+\$stagePath\s+-Recurse\s+-Force/);
   assert.match(assembly, /\$stageName\s+-match\s+'\^cdm-component-package-stage-\[0-9a-f\]\{32\}\$'/);
+  assert.match(localPackager, /version\s*=\s*\$Version/);
+  assert.match(localPackager, /\$MediaToolsVersion\s*=\s*'1\.0\.0'/);
+  assert.match(localPackager, /\$TorrentEngineVersion\s*=\s*'1\.0\.0'/);
+  assert.match(releasePackager, /-MediaToolsVersion\s+\$MediaToolsVersion\s+-TorrentEngineVersion\s+\$TorrentEngineVersion/);
   const finallyBody = assembly.slice(assembly.lastIndexOf('} finally {'));
   assert.doesNotMatch(finallyBody, /Remove-Item[^\r\n]*\$output\b/);
 });

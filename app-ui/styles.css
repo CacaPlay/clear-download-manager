@@ -9,6 +9,6 @@
 @import url('./styles/05-overrides.css');
 @import url('./styles/06-legacy-order.css');
 @import url('./styles/03-components.css?v=0.95.5-ui-redesign-20260930-r2');
-@import url('./download-manager/styles.css?v=0.95.5-ui-redesign-20260930-r2');
+@import url('./download-manager/styles.css?v=1.0.1-motion-polish-20261004-r4');
 @import url('./styles/motion-tier1.css');
-@import url('./styles/motion-tier2.css?v=0.95.5-theme-capture-20260930-r3');
+@import url('./styles/motion-tier2.css?v=1.0.1-motion-pass-20261004-r1');

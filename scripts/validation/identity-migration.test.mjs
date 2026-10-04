@@ -47,7 +47,7 @@ test("the extension registers a canonical native host and a separate v1 compatib
   expectMatch(compatibility, /lat\.cacaplay\.cleardownloadmanager/, "new host is not canonical");
   expectMatch(bridge, /LEGACY_HOST_NAME/, "bridge does not register the old host alias");
   expectMatch(bridge, /clear-download-manager-native-host/, "bridge does not resolve the new host executable");
-  expectMatch(bridge, /cacatools-native-host/, "bridge does not resolve the legacy host executable");
+  expectMatch(bridge, /clear-download-manager-legacy-native-host/, "bridge does not resolve the legacy host executable under a clean filename");
   expectMatch(hostCargo, /legacy-host-name/, "native-host crate has no legacy-name build feature");
   expectMatch(hostMain, /lat\.cacaplay\.cleardownloadmanager/, "host handshake does not identify the new host");
   expectMatch(hostMain, /CDM_APP_EXE/, "host app-path override is not canonical");
@@ -60,7 +60,7 @@ test("Windows repair and uninstall keep both host registrations coherent", () =>
   expectMatch(registration, /lat\.cacaplay\.cleardownloadmanager/, "repair omits the canonical host");
   expectMatch(registration, /lat\.cacaplay\.cacatools\.downloadmanager/, "repair omits the v1 host alias");
   expectMatch(registration, /clear-download-manager-native-host\.exe/, "repair omits the canonical host binary");
-  expectMatch(registration, /cacatools-native-host\.exe/, "repair omits the compatibility host binary");
+  expectMatch(registration, /clear-download-manager-legacy-native-host\.exe/, "repair omits the compatibility host binary under a clean filename");
   expectMatch(installer, /clear-download-manager\.exe.*--background/, "startup registry does not point to the renamed executable");
   for (const browser of ["Google\\Chrome", "Microsoft\\Edge", "BraveSoftware\\Brave-Browser", "Chromium", "Mozilla"]) {
     assert.ok(installer.includes(`Software\\${browser}\\NativeMessagingHosts\\lat.cacaplay.cleardownloadmanager`), `uninstall omits the canonical ${browser} host`);

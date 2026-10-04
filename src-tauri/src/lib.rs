@@ -316,6 +316,10 @@ fn normalize_saved_downloads_directory(
     Ok((saved.to_path_buf(), false))
 }
 
+fn default_downloads_directory(downloads_root: &std::path::Path) -> std::io::Result<PathBuf> {
+    migrate_legacy_downloads_directory(downloads_root)
+}
+
 pub(crate) fn supervised_command_output(
     command: &mut Command,
     external_processes: &ExternalProcessRegistry,
@@ -1202,7 +1206,7 @@ fn run_app() {
                         .path()
                         .download_dir()
                         .unwrap_or_else(|_| data_dir.join("Downloads"));
-                    (migrate_legacy_downloads_directory(&downloads_root)?, false)
+                    (default_downloads_directory(&downloads_root)?, false)
                 };
             if update_saved_downloads_dir {
                 connection.execute(
@@ -2068,6 +2072,25 @@ mod tests {
     }
 
     #[test]
+    fn default_downloads_directory_uses_branded_folder_and_migrates_legacy() {
+        let directory = tempfile::tempdir().expect("temporary downloads root");
+        let legacy = directory.path().join("CacaTools");
+        let branded = directory.path().join("Clear Download Manager");
+        std::fs::create_dir_all(&legacy).expect("legacy downloads directory");
+        std::fs::write(legacy.join("existing.bin"), b"keep me").expect("legacy download");
+
+        assert_eq!(
+            default_downloads_directory(directory.path())
+                .expect("GitHub default downloads directory"),
+            branded
+        );
+        assert_eq!(
+            std::fs::read(branded.join("existing.bin")).unwrap(),
+            b"keep me"
+        );
+    }
+
+    #[test]
     fn sends_new_downloads_to_branded_directory_when_both_directories_exist() {
         let directory = tempfile::tempdir().expect("temporary downloads root");
         let legacy = directory.path().join("CacaTools");
@@ -2110,6 +2133,48 @@ mod tests {
             std::fs::read(canonical.join("already-there.bin")).unwrap(),
             b"keep this too"
         );
+    }
+
+    #[cfg(feature = "microsoft-store")]
+    #[test]
+    fn store_build_migrates_legacy_default_download_directory() {
+        let directory = tempfile::tempdir().expect("temporary downloads root");
+        let legacy = directory.path().join("CacaTools");
+        std::fs::create_dir_all(&legacy).expect("legacy downloads directory");
+        std::fs::write(legacy.join("existing.bin"), b"keep me").expect("legacy download");
+
+        let (downloads_dir, migrated) =
+            normalize_saved_downloads_directory(&legacy, directory.path())
+                .expect("Store should migrate its saved legacy default");
+
+        let branded = directory.path().join("Clear Download Manager");
+        assert_eq!(downloads_dir, branded);
+        assert!(migrated);
+        assert!(!legacy.exists());
+        assert_eq!(
+            std::fs::read(branded.join("existing.bin")).unwrap(),
+            b"keep me"
+        );
+        assert_eq!(
+            default_downloads_directory(directory.path())
+                .expect("Store default downloads directory"),
+            branded
+        );
+    }
+
+    #[cfg(feature = "microsoft-store")]
+    #[test]
+    fn store_build_preserves_saved_custom_download_directory() {
+        let directory = tempfile::tempdir().expect("temporary downloads root");
+        let downloads_root = directory.path().join("Downloads");
+        let custom = directory.path().join("Custom Location").join("CacaTools");
+
+        let (downloads_dir, migrated) =
+            normalize_saved_downloads_directory(&custom, &downloads_root)
+                .expect("custom directory should remain unchanged");
+
+        assert_eq!(downloads_dir, custom);
+        assert!(!migrated);
     }
 
     #[test]

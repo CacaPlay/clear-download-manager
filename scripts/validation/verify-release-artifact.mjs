@@ -36,6 +36,19 @@ for (const [index, line] of lines.entries()) {
 }
 if (expected.size === 0) fail(`${checksumName} contains no artifact entries.`);
 
+const operatorNotes = [...expected.keys()].filter((name) => /^LEEME(?:_|\.)/i.test(name));
+if (operatorNotes.length) fail(`operator-only upload notes are forbidden: ${operatorNotes.join(', ')}.`);
+if ([...expected.keys()].some((name) => name.toLowerCase() === 'cleardownloadmanagersetup.exe')) {
+  fail('the duplicate fixed-name installer alias is forbidden; publish only the versioned setup executable.');
+}
+const executableHashes = new Map();
+for (const [name, digest] of expected) {
+  if (!/\.exe$/i.test(name)) continue;
+  const previousName = executableHashes.get(digest);
+  if (previousName) fail(`duplicate installer executable bytes are published as both ${previousName} and ${name}.`);
+  executableHashes.set(digest, name);
+}
+
 const entries = fs.readdirSync(directory, { withFileTypes: true });
 if (entries.some((entry) => entry.isSymbolicLink() || entry.isDirectory() || !entry.isFile())) {
   fail('artifact directory must contain regular files only, with no nested directories or links.');

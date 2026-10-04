@@ -19,7 +19,7 @@ $Hosts = @(
   },
   [pscustomobject]@{
     Name = 'lat.cacaplay.cacatools.downloadmanager'
-    File = 'cacatools-native-host.exe'
+    File = 'clear-download-manager-legacy-native-host.exe'
   }
 )
 

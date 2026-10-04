@@ -143,7 +143,8 @@ $NativeHostProject = Join-Path $Root "extension\native-host"
 $NativeHostTargetRoot = Join-Path ([IO.Path]::GetDirectoryName($TauriTargetRoot)) (([IO.Path]::GetFileName($TauriTargetRoot)) + "-native-host")
 $NativeHostArtifact = Join-Path $NativeHostTargetRoot "release\clear-download-manager-native-host.exe"
 $NativeHostResource = Join-Path $Root "src-tauri\resources\extension\clear-download-manager-native-host.exe"
-$LegacyNativeHostResource = Join-Path $Root "src-tauri\resources\extension\cacatools-native-host.exe"
+$LegacyNativeHostResource = Join-Path $Root "src-tauri\resources\extension\clear-download-manager-legacy-native-host.exe"
+$ObsoleteLegacyNativeHostResource = Join-Path $Root "src-tauri\resources\extension\cacatools-native-host.exe"
 Push-Location $NativeHostProject
 $PreviousCargoTargetDirectory = $env:CARGO_TARGET_DIR
 try {
@@ -158,6 +159,9 @@ try {
     throw "The legacy native host build did not create $NativeHostArtifact."
   }
   Copy-Item -LiteralPath $NativeHostArtifact -Destination $LegacyNativeHostResource -Force
+  if (Test-Path -LiteralPath $ObsoleteLegacyNativeHostResource) {
+    Remove-Item -LiteralPath $ObsoleteLegacyNativeHostResource -Force
+  }
 } finally {
   $env:CARGO_TARGET_DIR = $PreviousCargoTargetDirectory
   Pop-Location

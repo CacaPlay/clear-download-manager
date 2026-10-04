@@ -96,16 +96,20 @@ try {
   $TargetExtensionResources = Join-Path $TauriResources 'extension'
   New-Item -ItemType Directory -Path $TargetExtensionResources -Force | Out-Null
   $CanonicalNativeHost = Join-Path $TargetExtensionResources 'clear-download-manager-native-host.exe'
-  $LegacyNativeHost = Join-Path $TargetExtensionResources 'cacatools-native-host.exe'
+  $LegacyNativeHost = Join-Path $TargetExtensionResources 'clear-download-manager-legacy-native-host.exe'
+  $ObsoleteLegacyNativeHost = Join-Path $TargetExtensionResources 'cacatools-native-host.exe'
   Copy-Item -LiteralPath $BuiltNativeHost -Destination $CanonicalNativeHost -Force
   Invoke-Native 'cargo.exe' @('build', '--release', '--locked', '--features', 'legacy-host-name', '--manifest-path', $NativeHostManifest)
   Copy-Item -LiteralPath $BuiltNativeHost -Destination $LegacyNativeHost -Force
+  if (Test-Path -LiteralPath $ObsoleteLegacyNativeHost) {
+    Remove-Item -LiteralPath $ObsoleteLegacyNativeHost -Force
+  }
 }
 finally {
   $env:CARGO_TARGET_DIR = $PreviousCargoTargetDirectory
 }
 $RuntimeHost = Join-Path $TauriResources 'extension\clear-download-manager-native-host.exe'
-$LegacyRuntimeHost = Join-Path $TauriResources 'extension\cacatools-native-host.exe'
+$LegacyRuntimeHost = Join-Path $TauriResources 'extension\clear-download-manager-legacy-native-host.exe'
 $CanonicalNativeHost = Join-Path $TauriResources 'extension\clear-download-manager-native-host.exe'
 Invoke-Native 'node.exe' @('scripts/validation/native-host-handshake.mjs', $CanonicalNativeHost, $LegacyRuntimeHost)
 $RuntimeConfig = Join-Path $TauriResources 'extension\extension-config.json'
@@ -175,7 +179,7 @@ $UnpackedResources = Join-Path $OutputRoot 'validate\resources'
 if (Test-Path -LiteralPath (Join-Path $UnpackedResources 'updater')) {
   throw 'Store package validation failed: GitHub updater resources are present in the MSIX.'
 }
-foreach ($RequiredStoreResource in @('extension\extension-config.json', 'extension\clear-download-manager-native-host.exe', 'extension\cacatools-native-host.exe')) {
+foreach ($RequiredStoreResource in @('extension\extension-config.json', 'extension\clear-download-manager-native-host.exe', 'extension\clear-download-manager-legacy-native-host.exe')) {
   if (-not (Test-Path -LiteralPath (Join-Path $UnpackedResources $RequiredStoreResource))) {
     throw "Store package validation failed: missing resources\$RequiredStoreResource."
   }

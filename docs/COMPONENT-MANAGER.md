@@ -47,8 +47,10 @@ and [MSI/EXE package requirements](https://learn.microsoft.com/en-us/windows/app
 The catalog has a strict schema, exact component identities, package names,
 version, size, SHA-256, capabilities, minimum CDM version, corresponding-source
 assets, and notice hashes. The catalog payload is verified with Ed25519 using
-the Component Manager trust root. The catalog URL and release asset route are
-fixed in Core; redirects are restricted to GitHub release hosts. Package bytes
+the Component Manager trust root. The catalog URL is an exact raw file on the
+repository's `main` branch and the catalog client rejects redirects. Package
+URLs remain immutable GitHub release assets, with redirects restricted to the
+approved GitHub release hosts. Package bytes
 are bounded, written to a temporary file, checked for exact size and SHA-256,
 then passed through the existing archive, manifest, and per-file validation
 before staging and atomic activation. A persisted sequence and signed catalog
@@ -59,11 +61,14 @@ The signed catalog uses an inline Ed25519 signature in
 `component-catalog-v1.json`; the signature covers the payload serialized with
 `serde_json::to_vec(payload)`. Component Manager has its own production trust
 domain, separate from the legacy Tool Catalog. Core embeds the production
-verification key and key ID. The current latest GitHub release does not yet
-publish `component-catalog-v1.json`, so production catalog refresh and remote
-installation are not available from that release. They become available only
-after the distributor publishes a catalog signed by the matching private key.
-Public verification keys and key IDs are not secrets and may be embedded in
+verification key and key ID. The repository stores the current signed catalog
+at `distribution/components/component-catalog-v1.json`; builds using the new
+endpoint fetch that stable file independently from the app updater's
+`latest.json`. The component-only release workflow packages immutable versioned
+assets, signs the catalog with the protected key, creates a non-latest GitHub
+release, then proposes the stable catalog update through a pull request. It
+does not publish an app release or replace `latest.json`. Public verification
+keys and key IDs are not secrets and may be embedded in
 the application and versioned in the repository. The private signing key must
 remain only in the protected `release` environment and must never be committed
 or printed in logs. Test-only keys and loopback HTTP are compiled into tests
@@ -100,23 +105,26 @@ installation tests. It is not the production distribution path. A local HTTP
 fixture exercises catalog fetch, signature verification, bounded download,
 hash validation, installation, activation, restart verification, and failed
 update rollback. Production mode rejects HTTP and accepts only the configured
-GitHub release route.
+raw catalog file; component packages still use the immutable GitHub release
+route.
 
 ## Release assets and rights gates
 
-A future component-enabled release needs all of the following, with immutable
-names and recorded SHA-256 values:
+A component-only release needs all of the following, with immutable names and
+recorded SHA-256 values:
 
-1. The offline Core installer and source archive.
-2. `component-catalog-v1.json` with its inline signature, signed by the
+1. `component-catalog-v1.json` with its inline signature, signed by the
    distributor's Component Manager key.
-3. `media-tools-1.0.0.cdmcomponent` and
-   `torrent-engine-1.0.0.cdmcomponent`, with exact corresponding-source assets.
-4. `ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz`,
+2. Versioned `media-tools-<version>.cdmcomponent` and
+   `torrent-engine-<version>.cdmcomponent` packages, with exact corresponding-source assets.
+3. `ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz`,
    `aria2-1.37.0-win64-corresponding-source.tar.xz`, and
    `yt-dlp-2026.08.19-win64-corresponding-source.tar.xz`.
-5. `YT-DLP-NOTICE.txt`, `FFMPEG-NOTICE.txt`, `DENO-NOTICE.txt`,
+4. `YT-DLP-NOTICE.txt`, `FFMPEG-NOTICE.txt`, `DENO-NOTICE.txt`,
    `ARIA2-NOTICE.txt`, license inventory, and `SHA256SUMS.txt`.
+
+The offline Core installer and its source archive belong to the separate app
+release; component updates do not rebuild or replace them.
 
 The media package links yt-dlp, FFmpeg/FFprobe, and Deno to their exact
 runtime/source/notice records. The torrent package links aria2 to its exact

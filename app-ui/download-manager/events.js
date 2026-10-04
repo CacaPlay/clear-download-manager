@@ -7,6 +7,7 @@ import { bindVirtualListScroll } from './live.js';
 import { dmIcon } from './view/icons.js';
 import { mountFloatingMenus } from './floating.js';
 import { invokeWithOptionalComponent, optionalComponentProgressLabel, requestComponentManagerInstall } from '../modules/components/optional-install.js';
+import { runDocumentTransition } from '../modules/motion/coordinator.js';
 function changeUiScale(context, delta) {
   const next = Math.max(50, Math.min(130, Math.round((runtimeState.preferences.uiScale + delta) / 5) * 5));
   if (next === runtimeState.preferences.uiScale) return;
@@ -1399,6 +1400,9 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
   });
   root.querySelectorAll('[data-dm-section]').forEach((button) => button.addEventListener('click', () => {
     const section = button.dataset.dmSection;
+    const previousSection = sectionForLayout(runtimeState.preferences);
+    const primaryRouteChanged = (previousSection === 'downloads' && section === 'news')
+      || (previousSection === 'news' && section === 'downloads');
     const patch = { section, query: '' };
     if (section === 'running') patch.filter = 'running';
     else if (section === 'completed') patch.filter = 'completed';
@@ -1408,7 +1412,8 @@ export function bindDownloadManagerEvents(context = {}, options = {}) {
     runtimeState.rowMenuJobId = null;
     if (section === 'news') context.onNewsOpened?.();
     if (context.onSection?.(section) === true) return;
-    rerenderNow();
+    if (primaryRouteChanged) void runDocumentTransition(rerenderNow);
+    else rerenderNow();
   }));
   root.querySelectorAll('[data-dm-category-jump]').forEach((button) => button.addEventListener('click', () => {
     syncPreferences({ category: button.dataset.dmCategoryJump, filter: 'all', section: 'downloads' });
