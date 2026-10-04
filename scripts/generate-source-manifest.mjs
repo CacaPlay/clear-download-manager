@@ -33,7 +33,7 @@ const excludedFiles = new Set([
   'src-tauri/Cargo.lock',
   // Produced from extension/native-host for Windows packaging.
   'src-tauri/resources/extension/clear-download-manager-native-host.exe',
-  'src-tauri/resources/extension/cacatools-native-host.exe',
+  'src-tauri/resources/extension/clear-download-manager-legacy-native-host.exe',
   'src-tauri/resources/licenses/ARIA2-COPYING.txt',
   'src-tauri/resources/licenses/ARIA2-OPENSSL-LICENSE.txt',
   'src-tauri/resources/licenses/ARIA2-NOTICE.txt',

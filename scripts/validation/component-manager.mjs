@@ -19,6 +19,7 @@ const frontend = read('app-ui/main.js');
 const settings = read('app-ui/modules/settings/index.js');
 const docs = read('docs/COMPONENT-MANAGER.md');
 const optionalInstall = read('app-ui/modules/components/optional-install.js');
+const extensionInstall = read('app-ui/modules/extension/index.js');
 const downloadActions = read('app-ui/download-manager/actions.js');
 const optionalInstallTests = read('scripts/validation/optional-component-install.test.mjs');
 
@@ -76,12 +77,14 @@ assert.ok(frontend.includes("invoke('cancel_component_install'") && settings.inc
 assert.ok(optionalInstall.includes('CDM_MISSING_CAPABILITY:') && optionalInstall.includes("invoke('component_prompt_info'"), 'Contextual prompts must route on stable capability identifiers and use verified metadata.');
 assert.ok(optionalInstallTests.includes('uninstall leaves capability absent') && optionalInstallTests.includes('installed capability bypasses contextual prompt'), 'Uninstall must be covered through absent capability and contextual reinstall routing.');
 assert.ok(frontend.includes('component-download-progress'), 'Remote component download progress must be displayed.');
+assert.ok(componentCommands.includes('pub(crate) async fn install_component_from_catalog') && componentCommands.includes('tauri::async_runtime::spawn_blocking'), 'Catalog installs must run on the blocking pool instead of the UI executor.');
+assert.ok(extensionInstall.includes('requestComponentManagerInstall(componentId)') && !/onProgress\s*:/.test(extensionInstall), 'Extension component handoff must route to Settings without progress toasts.');
 assert.ok(optionalInstall.includes('install_component_from_catalog') && optionalInstall.includes('return invoke(command, args)'), 'Missing optional components must be consent-installed and the original operation retried.');
 assert.ok(optionalInstall.includes("id: 'media-tools'") && optionalInstall.includes("id: 'torrent-engine'"), 'Only known optional component IDs may be installed from the signed catalog.');
 assert.ok(downloadActions.includes("invokeWithOptionalComponent(context.invoke, 'queue_torrent_download'") && downloadActions.includes('optional-install.js'), 'A missing Torrent Engine must be installed after consent and the torrent action retried.');
 assert.ok(optionalInstallTests.includes('declining component installation') && optionalInstallTests.includes('installation progress') && optionalInstallTests.includes('safe message'), 'Optional component consent, progress, and safe-error tests are required.');
 assert.ok(settings.includes('data-component-action') && settings.includes('component-catalog-check'), 'Settings must expose remote install and catalog refresh actions.');
 const normalizedDocs = docs.replace(/\s+/g, ' ');
-assert.ok(normalizedDocs.includes('signed catalog') && normalizedDocs.includes('binary release gate remains fail-closed') && normalizedDocs.includes('Core embeds the production verification key and key ID') && normalizedDocs.includes('does not yet publish `component-catalog-v1.json`'), 'Remote distribution, trust provisioning, and pending legal review must remain explicit.');
+assert.ok(normalizedDocs.includes('signed catalog') && normalizedDocs.includes('binary release gate remains fail-closed') && normalizedDocs.includes('Core embeds the production verification key and key ID') && normalizedDocs.includes('distribution/components/component-catalog-v1.json') && normalizedDocs.includes('component-only release workflow'), 'Remote distribution, trust provisioning, and independent component releases must remain explicit.');
 
 console.log('OK: Core package excludes optional runtimes; remote component installs require the fixed signed catalog, exact package pins, and passing source gates.');

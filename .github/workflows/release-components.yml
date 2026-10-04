@@ -1,0 +1,231 @@
+name: Release Components
+
+on:
+  workflow_dispatch:
+    inputs:
+      media_tools_version:
+        description: Semantic version for MediaTools
+        required: true
+        type: string
+      torrent_engine_version:
+        description: Semantic version for Torrent Engine
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release-components-main
+  cancel-in-progress: false
+
+jobs:
+  prepare-release:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      release_tag: ${{ steps.preflight.outputs.release_tag }}
+      catalog_sequence: ${{ steps.preflight.outputs.catalog_sequence }}
+      media_tools_version: ${{ steps.preflight.outputs.media_tools_version }}
+      torrent_engine_version: ${{ steps.preflight.outputs.torrent_engine_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # stable toolchain action
+        with:
+          toolchain: stable
+      - name: Validate main dispatch, versions, refs, and open catalog PRs
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MEDIA_TOOLS_VERSION: ${{ inputs.media_tools_version }}
+          TORRENT_ENGINE_VERSION: ${{ inputs.torrent_engine_version }}
+        shell: pwsh
+        run: ./scripts/prepare-component-release.ps1
+      - name: Verify the stable production catalog signature before deriving its next sequence
+        shell: pwsh
+        run: |
+          cargo run --locked --manifest-path src-tauri/Cargo.toml --features maintainer-tooling --example component-catalog-tool -- verify-production --input distribution/components/component-catalog-v1.json
+          if ($LASTEXITCODE -ne 0) { throw 'The stable catalog signature did not verify against Core production trust.' }
+
+  build-assets:
+    needs: prepare-release
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      COMPONENT_RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+      COMPONENT_CATALOG_SEQUENCE: ${{ needs.prepare-release.outputs.catalog_sequence }}
+      MEDIA_TOOLS_VERSION: ${{ needs.prepare-release.outputs.media_tools_version }}
+      TORRENT_ENGINE_VERSION: ${{ needs.prepare-release.outputs.torrent_engine_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # stable toolchain action
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+      - name: Install Node dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Prepare pinned Windows runtime files and notices
+        shell: pwsh
+        run: |
+          npm run prepare:windows-binaries
+          if ($LASTEXITCODE -ne 0) { throw 'Preparing pinned runtime files failed.' }
+          npm run prepare:third-party-notices
+          if ($LASTEXITCODE -ne 0) { throw 'Preparing required third-party notices failed.' }
+      - name: Fetch and verify the pinned yt-dlp corresponding-source archive
+        shell: pwsh
+        run: |
+          npm run source:yt-dlp:fetch -- --staging-directory output/yt-dlp-source-inputs
+          if ($LASTEXITCODE -ne 0) { throw 'Fetching pinned yt-dlp source inputs failed.' }
+          python scripts/assemble-yt-dlp-corresponding-source.py --staging-directory output/yt-dlp-source-inputs --output-directory output/yt-dlp-source-assets
+          if ($LASTEXITCODE -ne 0) { throw 'Assembling the pinned yt-dlp corresponding-source archive failed.' }
+          $archive = Get-Item -LiteralPath 'output/yt-dlp-source-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz' -ErrorAction Stop
+          $sha256 = (Get-FileHash -LiteralPath $archive.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($archive.Length -ne 89855212 -or $sha256 -ne '78f552ec5c4bd5c05012cc1c9c1c8eb526d301bdd3f2cbbe1bab79d507c27184') {
+            throw "yt-dlp corresponding-source archive did not match its source pin (bytes=$($archive.Length), sha256=$sha256)."
+          }
+      - name: Assemble exact versioned component packages and corresponding sources
+        shell: pwsh
+        run: |
+          ./scripts/assemble-component-release-assets.ps1 -ReleaseTag $env:COMPONENT_RELEASE_TAG -Sequence ([UInt64]$env:COMPONENT_CATALOG_SEQUENCE) -KeyId 'component-catalog-2026-01' -OutputDirectory 'output/component-release-assets' -YtDlpSourceArchive 'output/yt-dlp-source-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz' -MediaToolsVersion $env:MEDIA_TOOLS_VERSION -TorrentEngineVersion $env:TORRENT_ENGINE_VERSION
+          ./scripts/validation/inspect-component-packages.ps1 -PackageDirectory 'output/component-release-assets' -RuntimeManifestPath 'src-tauri/resources/bin/runtime-manifest.json' -MediaToolsVersion $env:MEDIA_TOOLS_VERSION -TorrentEngineVersion $env:TORRENT_ENGINE_VERSION
+      - name: Upload unsigned component assets for signing
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: component-assets-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/component-release-assets/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+  sign-catalog:
+    needs:
+      - prepare-release
+      - build-assets
+    runs-on: windows-latest
+    environment: release
+    permissions:
+      contents: read
+    env:
+      COMPONENT_RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+      MEDIA_TOOLS_VERSION: ${{ needs.prepare-release.outputs.media_tools_version }}
+      TORRENT_ENGINE_VERSION: ${{ needs.prepare-release.outputs.torrent_engine_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # stable toolchain action
+        with:
+          toolchain: stable
+      - name: Download unsigned component assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: component-assets-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/component-release-assets
+      - name: Sign the catalog with the production key
+        env:
+          RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY: ${{ secrets.RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY)) {
+            throw 'The release environment is missing RELEASE_COMPONENT_CATALOG_SIGNING_PRIVATE_KEY.'
+          }
+          cargo run --manifest-path src-tauri/Cargo.toml --locked --quiet --features maintainer-tooling --example component-catalog-tool -- sign --input 'output/component-release-assets/component-catalog-payload.json' --output 'output/component-release-assets/component-catalog-v1.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Signing the independent component catalog failed.' }
+      - name: Verify the signed catalog and complete release asset contract
+        shell: pwsh
+        run: |
+          cargo run --manifest-path src-tauri/Cargo.toml --locked --quiet --features maintainer-tooling --example component-catalog-tool -- verify-production --input 'output/component-release-assets/component-catalog-v1.json'
+          if ($LASTEXITCODE -ne 0) { throw 'The signed component catalog failed production verification.' }
+          Remove-Item -LiteralPath 'output/component-release-assets/component-catalog-payload.json' -Force
+          node scripts/validation/component-release-assets.mjs --directory output/component-release-assets --media-tools-version $env:MEDIA_TOOLS_VERSION --torrent-engine-version $env:TORRENT_ENGINE_VERSION --release-tag $env:COMPONENT_RELEASE_TAG
+          if ($LASTEXITCODE -ne 0) { throw 'The signed component release assets failed validation.' }
+      - name: Upload verified signed component assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: signed-component-assets-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/component-release-assets/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+  publish:
+    needs:
+      - prepare-release
+      - build-assets
+      - sign-catalog
+    if: ${{ needs.prepare-release.result == 'success' && needs.build-assets.result == 'success' && needs.sign-catalog.result == 'success' }}
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      COMPONENT_RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+      MEDIA_TOOLS_VERSION: ${{ needs.prepare-release.outputs.media_tools_version }}
+      TORRENT_ENGINE_VERSION: ${{ needs.prepare-release.outputs.torrent_engine_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Download signed component assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: signed-component-assets-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/component-release-assets
+      - name: Verify signed catalog and exact immutable release contents
+        shell: pwsh
+        run: |
+          node scripts/validation/component-release-assets.mjs --directory output/component-release-assets --media-tools-version $env:MEDIA_TOOLS_VERSION --torrent-engine-version $env:TORRENT_ENGINE_VERSION --release-tag $env:COMPONENT_RELEASE_TAG
+          if ($LASTEXITCODE -ne 0) { throw 'The downloaded signed component assets failed validation.' }
+          cargo run --manifest-path src-tauri/Cargo.toml --locked --quiet --features maintainer-tooling --example component-catalog-tool -- verify-production --input 'output/component-release-assets/component-catalog-v1.json'
+          if ($LASTEXITCODE -ne 0) { throw 'The downloaded catalog signature did not verify with Core production trust.' }
+      - name: Refuse to publish against a moved main
+        shell: pwsh
+        run: |
+          $remoteMain = (git ls-remote origin refs/heads/main).Split("`t")[0]
+          if ($LASTEXITCODE -ne 0 -or $remoteMain -ne $env:GITHUB_SHA) {
+            throw 'main moved during component release preparation; no release or catalog PR was published.'
+          }
+      - name: Create the immutable non-latest component release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $assets = @(Get-ChildItem -LiteralPath 'output/component-release-assets' -File | ForEach-Object FullName)
+          if ($assets.Count -lt 9) { throw 'The verified component release is missing required source, notice, package, or catalog assets.' }
+          gh release create $env:COMPONENT_RELEASE_TAG @assets --target $env:GITHUB_SHA --latest=false --title "CDM components $env:MEDIA_TOOLS_VERSION / $env:TORRENT_ENGINE_VERSION" --notes 'Signed optional component packages. This release does not update the Clear Download Manager application or its latest.json.'
+          if ($LASTEXITCODE -ne 0) { throw 'Creating the non-latest component release failed.' }
+      - name: Propose the stable catalog update through a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $branch = "component-catalog-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b $branch $env:GITHUB_SHA
+          Copy-Item -LiteralPath 'output/component-release-assets/component-catalog-v1.json' -Destination 'distribution/components/component-catalog-v1.json' -Force
+          git add -- distribution/components/component-catalog-v1.json
+          git commit -m "chore(components): update signed catalog $env:COMPONENT_RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) { throw 'Committing the signed catalog branch failed.' }
+          gh auth setup-git
+          git push origin $branch
+          if ($LASTEXITCODE -ne 0) { throw 'Pushing the catalog proposal branch failed.' }
+          gh pr create --base main --head $branch --title "Update signed component catalog $env:COMPONENT_RELEASE_TAG" --body "Publishes MediaTools $env:MEDIA_TOOLS_VERSION and Torrent Engine $env:TORRENT_ENGINE_VERSION through the signed stable catalog. The component packages are available in the non-latest component release. This PR does not change the app updater manifest or publish a CDM release."
+          if ($LASTEXITCODE -ne 0) { throw 'Opening the stable catalog pull request failed.' }

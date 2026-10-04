@@ -1,6 +1,8 @@
 param(
   [string]$OutputDirectory = 'output/component-packages',
-  [string]$RuntimeDirectory = 'src-tauri/resources/bin'
+  [string]$RuntimeDirectory = 'src-tauri/resources/bin',
+  [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$')][string]$MediaToolsVersion = '1.0.0',
+  [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$')][string]$TorrentEngineVersion = '1.0.0'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -46,7 +48,7 @@ function Get-VersionToken([string]$Value, [int]$Index) {
   return $parts[$Index]
 }
 
-function New-ComponentPackage([string]$Id, [string[]]$Capabilities, [object[]]$Artifacts) {
+function New-ComponentPackage([string]$Id, [string]$Version, [string[]]$Capabilities, [object[]]$Artifacts) {
   $files = @()
   [long]$installedBytes = 0
   foreach ($artifact in $Artifacts) {
@@ -72,13 +74,13 @@ function New-ComponentPackage([string]$Id, [string[]]$Capabilities, [object[]]$A
   $componentManifest = [ordered]@{
     schemaVersion = 1
     id = $Id
-    version = '1.0.0'
+    version = $Version
     capabilities = $Capabilities
     dependencies = @()
     files = $files
   }
   $manifestBytes = [System.Text.UTF8Encoding]::new($false).GetBytes(($componentManifest | ConvertTo-Json -Depth 8 -Compress))
-  $packagePath = Join-Path $outputRoot "$Id-1.0.0.cdmcomponent"
+  $packagePath = Join-Path $outputRoot "$Id-$Version.cdmcomponent"
   if (Test-Path -LiteralPath $packagePath) {
     throw "Refusing to overwrite an existing local package: $packagePath"
   }
@@ -114,5 +116,5 @@ $torrentArtifacts = @(
   [pscustomobject]@{ artifact='aria2'; name='aria2c.exe'; version=(Get-VersionToken (Get-Field $runtime.aria2 'version') 2); sha256=(Get-Field $runtime.aria2 'executableSha256') }
 )
 
-New-ComponentPackage 'media-tools' @('media-extraction','media-merge','media-probe','media-transcode','js-runtime') $mediaArtifacts
-New-ComponentPackage 'torrent-engine' @('bittorrent') $torrentArtifacts
+New-ComponentPackage 'media-tools' $MediaToolsVersion @('media-extraction','media-merge','media-probe','media-transcode','js-runtime') $mediaArtifacts
+New-ComponentPackage 'torrent-engine' $TorrentEngineVersion @('bittorrent') $torrentArtifacts

@@ -1,12 +1,14 @@
 param(
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
-  [string]$RuntimeDirectory = 'src-tauri/resources/bin'
+  [string]$RuntimeDirectory = 'src-tauri/resources/bin',
+  [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$')][string]$MediaToolsVersion = '1.0.0',
+  [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$')][string]$TorrentEngineVersion = '1.0.0'
 )
 
 $ErrorActionPreference = 'Stop'
 $expected = @(
-  'media-tools-1.0.0.cdmcomponent',
-  'torrent-engine-1.0.0.cdmcomponent'
+  "media-tools-$MediaToolsVersion.cdmcomponent",
+  "torrent-engine-$TorrentEngineVersion.cdmcomponent"
 )
 $out = [System.IO.Path]::GetFullPath($OutputDirectory)
 [System.IO.Directory]::CreateDirectory($out) | Out-Null
@@ -16,7 +18,7 @@ foreach ($name in $expected) {
   }
 }
 
-$results = @(& (Join-Path $PSScriptRoot 'package-local-components.ps1') -OutputDirectory $out -RuntimeDirectory $RuntimeDirectory)
+$results = @(& (Join-Path $PSScriptRoot 'package-local-components.ps1') -OutputDirectory $out -RuntimeDirectory $RuntimeDirectory -MediaToolsVersion $MediaToolsVersion -TorrentEngineVersion $TorrentEngineVersion)
 foreach ($name in $expected) {
   $matches = @(Get-ChildItem -LiteralPath $out -File -Filter $name)
   if ($matches.Count -ne 1 -or $matches[0].Length -le 0) {

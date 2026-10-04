@@ -20,7 +20,7 @@ const sourceId = [...createHash('sha256').update(Buffer.from(identity.key, 'base
 
 assert.equal(identity.id, publicId, 'La identidad oficial de la extensión debe conservarse.');
 assert.equal(sourceId, publicId, 'La clave de identidad debe derivar el mismo ID que la Store.');
-assert.equal(extension.version, packageVersion, 'La fuente de la extensión debe estar sincronizada con la app.');
+assert.match(extension.version, /^\d+\.\d+\.\d+$/, 'La extensión conserva su propio versionado semántico.');
 assert.equal(extensionConfig.chromiumExtensionIds?.[0], publicId, 'La app debe autorizar el ID oficial de Chrome.');
 assert.equal(extensionConfig.storeAppUserModelId, storeAppId, 'El host de Store debe abrir el AUMID correcto.');
 assert.ok(['chrome', 'edge', 'brave'].every((browser) => extensionConfig.browsers?.includes(browser)), 'El puente debe incluir navegadores Chromium de uso esperado.');
@@ -43,6 +43,12 @@ const cargo = read('src-tauri/Cargo.toml');
 const rustEntry = read('src-tauri/src/lib.rs');
 const storeUpdater = read('src-tauri/src/store_update_manager.rs');
 const githubUpdater = read('src-tauri/src/update_manager.rs');
+const defaultDownloadsBody = rustEntry.match(/fn default_downloads_directory\([\s\S]*?\n\}/)?.[0] ?? '';
+const normalizeDownloadsBody = rustEntry.match(/fn normalize_saved_downloads_directory\([\s\S]*?\n\}/)?.[0] ?? '';
+assert.match(defaultDownloadsBody, /\{\s*migrate_legacy_downloads_directory\(downloads_root\)\s*\}/, 'GitHub and Store builds must use the branded downloads directory with the existing migration.');
+assert.match(normalizeDownloadsBody, /if normalize\(saved\) == normalize\(&legacy_default\)[\s\S]*?migrate_legacy_downloads_directory\(downloads_root\)/, 'Both builds must migrate a saved legacy default while preserving custom download locations.');
+assert.doesNotMatch(normalizeDownloadsBody, /if cfg!\(feature = "microsoft-store"\)\s*\{\s*return Ok\(\(saved\.to_path_buf\(\), false\)\)/, 'Store must not skip the legacy default migration.');
+assert.match(rustEntry, /fn store_build_migrates_legacy_default_download_directory/, 'Store migration must preserve existing files and route downloads to the branded folder.');
 assert.match(cargo, /default\s*=\s*\["github-updater"\]/, 'La edición normal debe conservar el updater de GitHub.');
 assert.match(cargo, /github-updater\s*=\s*\["dep:tauri-plugin-updater"\]/, 'El plugin debe activarse por feature.');
 assert.match(cargo, /tauri-plugin-updater\s*=\s*\{\s*version\s*=\s*"2\.10\.1",\s*optional\s*=\s*true\s*\}/, 'El plugin updater debe ser opcional para MSIX.');
@@ -61,10 +67,12 @@ const storeBuild = read('scripts/build-store-msix.ps1');
 assert.ok(storeBuild.includes('--features\', \'microsoft-store\''), 'El empaquetador MSIX debe compilar la feature Store.');
 assert.ok(storeBuild.includes('--no-default-features'), 'El empaquetador MSIX debe excluir el feature updater de GitHub.');
 assert.ok(storeBuild.includes('Copy-Item -LiteralPath $BuiltNativeHost'), 'El MSIX debe incluir el host nativo recién construido.');
-assert.ok(storeBuild.includes('will not be overwritten') && !storeBuild.includes('Remove-Item'), 'El build Store debe preservar los paquetes existentes.');
+assert.ok(storeBuild.includes('will not be overwritten') && !/Remove-Item[^\r\n]*\$OutputRoot/.test(storeBuild), 'El build Store debe preservar los paquetes existentes y solo permitir borrar el host heredado dentro del staging runtime.');
 assert.ok(storeBuild.includes('extension-config.json') && storeBuild.includes('storeAppUserModelId'), 'El paquete final debe comprobar la configuración de extensión de Store.');
 assert.ok(!storeBuild.includes('$ExtensionZip'), 'El build de la app Store no debe depender de un ZIP de Chrome Web Store.');
 assert.ok(storeBuild.includes('native-host-handshake.mjs'), 'El empaquetador debe probar el handshake del host que acaba de compilar.');
+assert.ok(storeBuild.includes('clear-download-manager-legacy-native-host.exe'), 'El MSIX debe usar un nombre limpio para el host de compatibilidad v1.');
+assert.ok(storeBuild.includes('$ObsoleteLegacyNativeHost') && storeBuild.includes('Remove-Item -LiteralPath $ObsoleteLegacyNativeHost -Force'), 'El MSIX debe quitar el artefacto con el nombre antiguo de una salida reutilizada.');
 
 const frontend = read('app-ui/main.js');
 const settings = read('app-ui/download-manager/view/shared.js');

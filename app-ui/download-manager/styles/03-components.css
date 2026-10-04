@@ -2802,6 +2802,12 @@ html[data-motion-mode="off"] .dm-host .dm-theme-toggle-icons > .dm-nav-icon,
 html[data-motion-mode="reduced"] .dm-host .dm-theme-toggle-icons > .dm-nav-icon,
 html[data-motion-mode="system"][data-reduced-motion="true"] .dm-host .dm-theme-toggle-icons > .dm-nav-icon { transition: none !important; }
 
+/* Keep the light-theme base of the main navigation icons legible. */
+.dm-host[data-dm-theme="light"] .dm-zen-nav nav button:not(.is-active) .dm-nav-icon::before,
+.dm-host[data-dm-theme="light"] .dm-zen-nav > footer button:not(.is-active) .dm-nav-icon::before {
+  background-color: #1f2b38 !important;
+}
+
 
 /* Keep selectable navigation/filter surfaces neutral; only the compact marker
    and supplied icon accents follow the chosen interface color. */
@@ -2819,3 +2825,74 @@ html[data-motion-mode="system"][data-reduced-motion="true"] .dm-host .dm-theme-t
 .dm-host .dm-news-component-update small { color:var(--dm-muted); line-height:1.4; }
 .dm-host .dm-news-component-update > button { min-height:2.25rem; padding:.35rem .75rem; border:1px solid var(--dm-accent); border-radius:.55rem; color:var(--dm-text); background:var(--dm-surface); white-space:nowrap; }
 @media(max-width:620px) { .dm-host .dm-news-component-update { grid-template-columns:2.5rem minmax(0,1fr); } .dm-host .dm-news-component-update > button { grid-column:2; justify-self:start; } }
+
+/* Release and dismiss controls stay together at the end of each news row. */
+.dm-host .dm-news-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  justify-self: end !important;
+  align-self: center !important;
+  flex-wrap: nowrap !important;
+  gap: .45rem !important;
+  margin-top: 0 !important;
+  min-width: max-content !important;
+}
+
+/* The news actions share one fixed-width column across release, dismiss,
+   component-update and support cards. Paired actions stack vertically. */
+.dm-host { --dm-news-action-width: 7.25rem; }
+.dm-host .dm-news-actions {
+  display: grid !important;
+  grid-template-columns: var(--dm-news-action-width) !important;
+  grid-column: 4 !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  gap: .4rem !important;
+}
+.dm-host .dm-news-actions > button {
+  box-sizing: border-box !important;
+  width: var(--dm-news-action-width) !important;
+  min-width: var(--dm-news-action-width) !important;
+  max-width: var(--dm-news-action-width) !important;
+  min-height: 2.35rem !important;
+  padding: .38rem .42rem !important;
+  justify-content: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+.dm-host .dm-news-actions > button:only-child { grid-column: 1 !important; }
+.dm-host .dm-news-actions > button.dm-news-dismiss,
+.dm-host .dm-news-actions > button.dm-news-dismiss:first-child {
+  width: var(--dm-news-action-width) !important;
+  min-width: var(--dm-news-action-width) !important;
+  max-width: var(--dm-news-action-width) !important;
+  min-height: 2.35rem !important;
+  padding: .38rem .42rem !important;
+}
+.dm-host .dm-news-support > button,
+.dm-host .dm-news-component-update > button,
+.dm-host .dm-news-history-row > button {
+  box-sizing: border-box !important;
+  width: var(--dm-news-action-width) !important;
+  min-width: var(--dm-news-action-width) !important;
+  max-width: var(--dm-news-action-width) !important;
+  min-height: 2.35rem !important;
+  padding: .38rem .42rem !important;
+  justify-content: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+/* Keep the bottom utilities and the divider as one aligned group. */
+.dm-host .dm-zen-nav > footer { transform: translateY(1px) !important; }
+
+@media (max-width: 820px) {
+  .dm-host .dm-news-actions {
+    grid-column: 2 !important;
+    justify-self: end !important;
+  }
+  .dm-host .dm-news-support > button,
+  .dm-host .dm-news-component-update > button { justify-self: end !important; }
+}

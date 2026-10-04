@@ -24,7 +24,7 @@ use url::Url;
 
 #[cfg(not(feature = "qa-component-manager"))]
 pub(crate) const COMPONENT_CATALOG_ENDPOINT: &str =
-    "https://github.com/CacaPlay/clear-download-manager/releases/latest/download/component-catalog-v1.json";
+    "https://raw.githubusercontent.com/CacaPlay/clear-download-manager/main/distribution/components/component-catalog-v1.json";
 #[cfg(feature = "qa-component-manager")]
 pub(crate) const COMPONENT_CATALOG_ENDPOINT: &str =
     "http://127.0.0.1:49301/component-catalog-v1.json";
@@ -40,8 +40,9 @@ const CATALOG_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const PACKAGE_READ_TIMEOUT: Duration = Duration::from_secs(45);
 const RELEASE_HOST: &str = "github.com";
 const RELEASE_REPOSITORY_PATH: &str = "/CacaPlay/clear-download-manager/releases/download/";
+const CATALOG_HOST: &str = "raw.githubusercontent.com";
 const CATALOG_PATH: &str =
-    "/CacaPlay/clear-download-manager/releases/latest/download/component-catalog-v1.json";
+    "/CacaPlay/clear-download-manager/main/distribution/components/component-catalog-v1.json";
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -264,11 +265,16 @@ fn redirect_policy(allow_loopback_http: bool) -> Policy {
     })
 }
 
-fn build_catalog_client(allow_loopback_http: bool) -> Result<Client, reqwest::Error> {
+fn build_catalog_client(_allow_loopback_http: bool) -> Result<Client, reqwest::Error> {
+    #[cfg(feature = "qa-component-manager")]
+    let catalog_redirect_policy = redirect_policy(_allow_loopback_http);
+    #[cfg(not(feature = "qa-component-manager"))]
+    let catalog_redirect_policy = Policy::none();
+
     Client::builder()
         .connect_timeout(CONNECT_TIMEOUT)
         .timeout(CATALOG_REQUEST_TIMEOUT)
-        .redirect(redirect_policy(allow_loopback_http))
+        .redirect(catalog_redirect_policy)
         .build()
 }
 
@@ -856,7 +862,7 @@ fn catalog_url_allowed(url: &str, allow_loopback: bool) -> bool {
     #[cfg(not(feature = "qa-component-manager"))]
     {
         let official = parsed.scheme() == "https"
-            && parsed.host_str() == Some(RELEASE_HOST)
+            && parsed.host_str() == Some(CATALOG_HOST)
             && parsed.port().is_none()
             && parsed.path() == CATALOG_PATH;
         let test_loopback = allow_loopback
@@ -1083,6 +1089,10 @@ mod tests {
     fn catalog_endpoint_is_fixed_and_test_http_is_loopback_only() {
         #[cfg(not(feature = "qa-component-manager"))]
         {
+            assert_eq!(
+                COMPONENT_CATALOG_ENDPOINT,
+                "https://raw.githubusercontent.com/CacaPlay/clear-download-manager/main/distribution/components/component-catalog-v1.json"
+            );
             assert!(catalog_url_allowed(COMPONENT_CATALOG_ENDPOINT, false));
             assert!(!catalog_url_allowed(
                 "https://example.net/component-catalog-v1.json",
@@ -1101,6 +1111,28 @@ mod tests {
                 true
             ));
         }
+    }
+
+    #[cfg(not(feature = "qa-component-manager"))]
+    #[test]
+    fn production_catalog_url_is_exact_raw_main_file_and_not_a_package_redirect() {
+        let expected = "https://raw.githubusercontent.com/CacaPlay/clear-download-manager/main/distribution/components/component-catalog-v1.json";
+        assert!(catalog_url_allowed(expected, false));
+        for invalid in [
+            "https://raw.githubusercontent.com/CacaPlay/clear-download-manager/main/distribution/components/component-catalog-v1.json?download=1",
+            "https://raw.githubusercontent.com/CacaPlay/clear-download-manager/main/distribution/components/component-catalog-v1.json#catalog",
+            "https://raw.githubusercontent.com.evil.invalid/CacaPlay/clear-download-manager/main/distribution/components/component-catalog-v1.json",
+            "https://raw.githubusercontent.com/CacaPlay/clear-download-manager/main/distribution/components/other.json",
+            "https://github.com/CacaPlay/clear-download-manager/releases/latest/download/component-catalog-v1.json",
+        ] {
+            assert!(!catalog_url_allowed(invalid, false), "unexpectedly accepted {invalid}");
+        }
+        assert!(!package_url_allowed(
+            expected,
+            "components-1-1",
+            "media-tools-1.0.0.cdmcomponent",
+            false,
+        ));
     }
 
     #[cfg(feature = "qa-component-manager")]

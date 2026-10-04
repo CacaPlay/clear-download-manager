@@ -6,6 +6,9 @@
   --settings-elevated: #101923;
   --settings-divider: #1a2631;
   --settings-border: color-mix(in srgb, var(--settings-divider) 86%, transparent);
+  --settings-nav-item-ink: #fff;
+  --settings-nav-active-surface: #102a3b;
+  --ui-icon-neutral: #fff;
   display: flex;
   min-width: 0;
   min-height: 0;
@@ -22,6 +25,9 @@
   --settings-elevated: #ffffff;
   --settings-divider: #d7dfe7;
   --settings-border: color-mix(in srgb, var(--settings-divider) 88%, transparent);
+  --settings-nav-item-ink: #1f2b38;
+  --settings-nav-active-surface: #e8f4fb;
+  --ui-icon-neutral: #1f2b38;
 }
 
 .settings-workspace-frame {
@@ -99,7 +105,7 @@
   min-height: 44px;
   border: 1px solid transparent;
   border-radius: 9px;
-  color: var(--text-secondary);
+  color: var(--settings-nav-item-ink);
   background: transparent;
   transition: background-color .16s ease, color .16s ease, border-color .16s ease;
 }
@@ -120,9 +126,9 @@
 .settings-nav-icon {
   display: inline-grid;
   place-items: center;
-  flex: 0 0 21px;
-  width: 21px;
-  height: 21px;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   color: var(--accent);
 }
 .settings-nav-icon::before,
@@ -154,23 +160,23 @@
 .settings-advanced-toggle svg { flex: 0 0 auto; }
 
 .settings-category-button:hover {
-  color: var(--text-primary);
+  color: var(--settings-nav-item-ink);
   background: color-mix(in srgb, var(--accent) 6%, var(--settings-elevated));
 }
 
 .settings-category-button.is-active {
-  color: var(--accent-detail, var(--accent));
-  border-color: color-mix(in srgb, var(--accent) 26%, var(--settings-border));
-  background: color-mix(in srgb, var(--accent) 4%, var(--settings-elevated));
+  color: var(--settings-nav-item-ink);
+  border-color: transparent;
+  background: var(--settings-nav-active-surface);
 }
 
 .settings-category-button.is-active::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 10px;
-  bottom: 10px;
-  width: 2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
   border-radius: 999px;
   background: var(--accent);
 }
@@ -252,6 +258,8 @@
   max-width: 100%;
 }
 
+.settings-page-intro-actions { display: flex; align-items: center; flex: 0 0 auto; }
+
 .settings-reset-all-section {
   margin-top: 18px;
   border-color: color-mix(in srgb, var(--warning, #e3a635) 38%, var(--settings-border));
@@ -304,6 +312,7 @@
   margin: 0;
   color: var(--text-primary);
   font-size: 1.25rem;
+  font-weight: 700;
   line-height: 1.2;
 }
 .settings-section-heading.is-text-only { gap: 0; color: var(--text-primary); }
@@ -344,7 +353,7 @@
   font-size: 1rem;
 }
 
-.settings-control b,
+.settings-control b { font-weight: 400; }
 .settings-progress-color-row b { font-weight: 650; }
 
 .settings-control select,
@@ -493,9 +502,9 @@
 /* A selected preference keeps the same neutral surface as its siblings;
    the accent appears on its outline and the navigation marker only. */
 #app .settings-workspace .settings-category-button.is-active {
-  color: var(--text-secondary) !important;
-  border-color: var(--accent) !important;
-  background: var(--settings-elevated) !important;
+  color: var(--settings-nav-item-ink) !important;
+  border-color: transparent !important;
+  background: var(--settings-nav-active-surface) !important;
 }
 #app .settings-workspace .settings-choice-options label:has(input:checked) {
   color: var(--text-secondary) !important;
@@ -658,7 +667,7 @@ input[type="range"]:active::-moz-range-thumb { width: 18px; height: 18px; }
 .settings-tool-repo { min-height:34px; display:inline-flex; align-items:center; gap:7px; padding:0 10px; border:1px solid var(--settings-border); border-radius:8px; color:var(--text-secondary); background:var(--settings-elevated); cursor:pointer; }
 .settings-tool-repo:hover,.settings-tool-repo:focus-visible { border-color:var(--accent-detail,var(--accent)); color:var(--text-primary); outline:0; }
 .settings-component-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 0; border-top:1px solid var(--settings-divider); }
-.settings-component-row:focus { outline:2px solid color-mix(in srgb,var(--accent) 42%,var(--border-default)); outline-offset:3px; border-radius:var(--radius-control,8px); }
+.settings-component-row [hidden] { display:none !important; }
 .settings-component-row>div:first-child { display:grid; gap:5px; }
 .settings-component-row>div:first-child>strong { color:var(--text-primary); font-size:.9rem; }
 .settings-component-row>div:first-child>span { color:var(--text-secondary); font-size:.82rem; }
@@ -798,6 +807,6 @@ input[type="range"]:active::-moz-range-thumb { width: 18px; height: 18px; }
 .settings-runtime-status[data-status-tone="info"]::before { background: var(--accent); }
 .settings-runtime-status[data-status-tone="neutral"] { color: var(--text-secondary); }
 .settings-section-visual > .copy-visual-diagnostics { display: inline-flex; width: auto; justify-content: flex-start; justify-self: start; margin-top: 10px; }
-.settings-component-catalog-check { margin-block: 4px 8px; }
+.settings-component-catalog-check { margin: 0; }
 
 .settings-experience-toggle > input[type="checkbox"] { accent-color: var(--accent); }

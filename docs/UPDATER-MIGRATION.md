@@ -44,9 +44,11 @@ current variable is absent.
 The native messaging integration registers the canonical host
 `lat.cacaplay.cleardownloadmanager` and the v1.0.0 host
 `lat.cacaplay.cacatools.downloadmanager`. Both launch the current executable.
-The legacy host binary name and shared bridge directory
-`%LOCALAPPDATA%\CacaTools\DownloadManager\ExtensionBridge` remain so installed
-browser extensions and queued bridge requests continue to work.
+The v1 compatibility host keeps its registered protocol ID but ships as
+`clear-download-manager-legacy-native-host.exe`. The shared bridge directory
+`%LOCALAPPDATA%\CacaTools\DownloadManager\ExtensionBridge` remains an internal
+compatibility path so installed browser extensions and queued bridge requests
+continue to work.
 
 Component catalog schema v1 serializes the origin authority as
 `cacatools-controlled`. This signed wire value and its frozen verification

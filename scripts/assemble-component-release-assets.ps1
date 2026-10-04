@@ -4,7 +4,9 @@ param(
   [Parameter(Mandatory = $true)][string]$KeyId,
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
   [Parameter(Mandatory = $true)][string]$YtDlpSourceArchive,
-  [string]$RuntimeDirectory = 'src-tauri/resources/bin'
+  [string]$RuntimeDirectory = 'src-tauri/resources/bin',
+  [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$')][string]$MediaToolsVersion = '1.0.0',
+  [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$')][string]$TorrentEngineVersion = '1.0.0'
 )
 
 Set-StrictMode -Version Latest
@@ -17,7 +19,7 @@ $sourceManifestPath = Join-Path $root 'third-party-source/corresponding-source.j
 $licenseRoot = Join-Path $root 'src-tauri/resources/licenses'
 $catalogPayloadPath = Join-Path $output 'component-catalog-payload.json'
 
-if ($Sequence -eq 0 -or $ReleaseTag -notmatch '^[A-Za-z0-9._+-]{1,64}$' -or
+if ($Sequence -eq 0 -or $ReleaseTag -notmatch '^(v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?|components-[0-9]{1,20}-[0-9]{1,8})$' -or
     $KeyId -notmatch '^[A-Za-z0-9._+-]{1,64}$') {
   throw 'Release tag, positive sequence, and key ID must be safe catalog tokens.'
 }
@@ -63,15 +65,16 @@ $sourceManifest = Get-Content -LiteralPath $sourceManifestPath -Raw | ConvertFro
 $packageOutput = Join-Path $env:TEMP ("cdm-component-package-stage-{0}" -f [guid]::NewGuid().ToString('N'))
 try {
   [System.IO.Directory]::CreateDirectory($packageOutput) | Out-Null
-$packageBuild = @(& (Join-Path $PSScriptRoot 'package-release-components.ps1') -OutputDirectory $packageOutput -RuntimeDirectory $runtimeRoot)
+  $packageBuild = @(& (Join-Path $PSScriptRoot 'package-release-components.ps1') -OutputDirectory $packageOutput -RuntimeDirectory $runtimeRoot -MediaToolsVersion $MediaToolsVersion -TorrentEngineVersion $TorrentEngineVersion)
 if ($packageBuild.Count -ne 2) { throw 'Expected exact media-tools and torrent-engine package build results.' }
 
 $packageRecords = @{}
-foreach ($name in @('media-tools-1.0.0.cdmcomponent','torrent-engine-1.0.0.cdmcomponent')) {
+foreach ($name in @("media-tools-$MediaToolsVersion.cdmcomponent", "torrent-engine-$TorrentEngineVersion.cdmcomponent")) {
   $file = Get-ExactFile $packageOutput $name
   $manifest = Get-PackageManifest $file.FullName
   $expectedId = if ($name.StartsWith('media-tools-')) { 'media-tools' } else { 'torrent-engine' }
-  if ($manifest.id -ne $expectedId -or $manifest.version -ne '1.0.0') { throw "Package identity/version mismatch: $name" }
+  $expectedVersion = if ($expectedId -eq 'media-tools') { $MediaToolsVersion } else { $TorrentEngineVersion }
+  if ($manifest.id -ne $expectedId -or $manifest.version -ne $expectedVersion) { throw "Package identity/version mismatch: $name" }
   $packageRecords[$expectedId] = [pscustomobject]@{
     id = $manifest.id
     version = $manifest.version

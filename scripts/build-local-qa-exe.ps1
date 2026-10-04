@@ -1,4 +1,7 @@
-param([string]$OutputFile = 'Clear Download Manager QA v1.0.0.exe')
+param(
+  [string]$OutputFile = 'Clear Download Manager QA v1.0.0.exe',
+  [switch]$EnableV1ExtensionBridge
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -40,6 +43,10 @@ if ($CargoText -notmatch '(?m)^qa-component-manager\s*=\s*\[\]\s*$') {
 if ($CargoText -match '(?ms)^default\s*=\s*\[[^\]]*qa-component-manager') {
   throw 'QA build rejected: the QA feature must never be enabled by default.'
 }
+if ($EnableV1ExtensionBridge -and $CargoText -notmatch '(?m)^qa-extension-bridge\s*=\s*\["qa-component-manager"\]\s*$') {
+  throw 'QA build rejected: the opt-in V1 extension bridge feature is missing or no longer isolated.'
+}
+$QaFeatures = if ($EnableV1ExtensionBridge) { 'qa-component-manager,qa-extension-bridge' } else { 'qa-component-manager' }
 if ($CargoText -notmatch 'github-updater\s*=\s*\["dep:tauri-plugin-updater"\]') {
   throw 'QA build rejected: production updater feature wiring changed; review the isolation plan.'
 }
@@ -83,22 +90,36 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE." }
   }
 
-  & cargo.exe test --manifest-path src-tauri/Cargo.toml --no-default-features --features qa-component-manager --lib qa_
+  & cargo.exe test --manifest-path src-tauri/Cargo.toml --no-default-features --features $QaFeatures --lib qa_
   if ($LASTEXITCODE -ne 0) { throw "QA isolation tests failed with exit code $LASTEXITCODE." }
-  & cargo.exe test --manifest-path src-tauri/Cargo.toml --no-default-features --features qa-component-manager --lib prepared_qa_catalog_signature_is_valid_when_catalog_path_is_supplied
+  & cargo.exe test --manifest-path src-tauri/Cargo.toml --no-default-features --features $QaFeatures --lib prepared_qa_catalog_signature_is_valid_when_catalog_path_is_supplied
   if ($LASTEXITCODE -ne 0) { throw "The prepared QA catalog signature test failed with exit code $LASTEXITCODE." }
 
-  & npx.cmd --no-install tauri build --no-bundle --config src-tauri/tauri.qa.conf.json --features qa-component-manager -- --no-default-features
+  & npx.cmd --no-install tauri build --no-bundle --config src-tauri/tauri.qa.conf.json --features $QaFeatures -- --no-default-features
   if ($LASTEXITCODE -ne 0) { throw "Tauri build failed with exit code $LASTEXITCODE." }
 
   $BuiltExe = Join-Path $TargetRoot 'release\clear-download-manager.exe'
   if (-not (Test-Path -LiteralPath $BuiltExe)) { throw 'The standalone QA executable was not produced.' }
-  Copy-Item -LiteralPath $BuiltExe -Destination $OutputExe -Force
+  try {
+    Copy-Item -LiteralPath $BuiltExe -Destination $OutputExe -Force
+  } catch {
+    $Timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $OutputBaseName = [IO.Path]::GetFileNameWithoutExtension($OutputFile)
+    $FallbackFileName = "$OutputBaseName - $Timestamp.exe"
+    $Suffix = 1
+    while (Test-Path -LiteralPath (Join-Path $OutputRoot $FallbackFileName)) {
+      $FallbackFileName = "$OutputBaseName - $Timestamp-$Suffix.exe"
+      $Suffix++
+    }
+    $OutputExe = Join-Path $OutputRoot $FallbackFileName
+    Copy-Item -LiteralPath $BuiltExe -Destination $OutputExe
+  }
   if ($BaselineHash -and (Get-FileHash -LiteralPath $BaselineExe -Algorithm SHA256).Hash -cne $BaselineHash) {
     throw 'The approved baseline executable changed during the QA build.'
   }
   $ArtifactHash = (Get-FileHash -LiteralPath $OutputExe -Algorithm SHA256).Hash.ToLowerInvariant()
   $Artifact = Get-Item -LiteralPath $OutputExe
+  $ExtensionBridgeStatus = if ($EnableV1ExtensionBridge) { 'V1 QA bridge enabled' } else { 'Disabled' }
   [pscustomobject]@{
     Path = $OutputExe
     Bytes = $Artifact.Length
@@ -107,6 +128,7 @@ try {
     ComponentCatalogEndpoint = $ExpectedEndpoint
     CatalogKeyId = $ExpectedKeyId
     CatalogKeyFingerprint = $Fingerprint
+    ExtensionBridge = $ExtensionBridgeStatus
     Updater = 'Disabled in this local components/UI QA executable'
   } | Format-List
 }

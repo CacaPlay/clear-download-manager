@@ -6,10 +6,23 @@ import path from 'node:path';
 const args = process.argv.slice(2);
 const dirIndex = args.indexOf('--directory');
 const directory = dirIndex >= 0 ? path.resolve(args[dirIndex + 1] || '') : '';
+const option = (name) => {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : undefined;
+};
+const mediaToolsVersion = option('--media-tools-version') || '1.0.0';
+const torrentEngineVersion = option('--torrent-engine-version') || '1.0.0';
+const expectedReleaseTag = option('--release-tag');
+const semverPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+const releaseTagPattern = /^(?:v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?|components-[0-9]{1,20}-[0-9]{1,8})$/;
+if (!semverPattern.test(mediaToolsVersion) || !semverPattern.test(torrentEngineVersion)) {
+  console.error('COMPONENT RELEASE ASSETS FAIL: component versions must be semantic versions.');
+  process.exit(1);
+}
 const required = [
   'component-catalog-v1.json',
-  'media-tools-1.0.0.cdmcomponent',
-  'torrent-engine-1.0.0.cdmcomponent',
+  `media-tools-${mediaToolsVersion}.cdmcomponent`,
+  `torrent-engine-${torrentEngineVersion}.cdmcomponent`,
   'ffmpeg-9.0.2-safe-lean-win64-corresponding-source.tar.xz',
   'aria2-1.37.0-win64-corresponding-source.tar.xz',
   'yt-dlp-2026.08.19-win64-corresponding-source.tar.xz',
@@ -33,12 +46,9 @@ for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
   if (!entry.isFile() || entry.isSymbolicLink()) fail(`release asset must be a regular flat file: ${entry.name}`);
   files.set(entry.name, path.join(directory, entry.name));
 }
+const unexpected = [...files.keys()].filter((name) => !required.includes(name));
+if (unexpected.length) fail(`unexpected release assets are not allowed: ${unexpected.join(', ')}.`);
 for (const name of required) if (!files.has(name)) fail(`required exact release asset is missing: ${name}`);
-for (const name of files.keys()) {
-  if (name === 'component-catalog-payload.json' || name === 'component-catalog-v1.json.sig') {
-    fail(`temporary or detached-signature asset is forbidden: ${name}`);
-  }
-}
 
 const catalog = JSON.parse(fs.readFileSync(files.get('component-catalog-v1.json'), 'utf8'));
 const payload = catalog.payload;
@@ -62,7 +72,11 @@ const expectedNotices = {
   deno: ['MIT', 'DENO-NOTICE.txt'],
   aria2: ['GPL-2.0-or-later', 'ARIA2-NOTICE.txt'],
 };
-const assetUrl = (name) => `https://github.com/CacaPlay/clear-download-manager/releases/download/${payload.components[0].releaseTag}/${name}`;
+const releaseTag = payload.components[0]?.releaseTag;
+if (!releaseTagPattern.test(releaseTag || '') || (expectedReleaseTag && releaseTag !== expectedReleaseTag)) {
+  fail('component release tag is invalid or does not match the requested immutable tag.');
+}
+const assetUrl = (name) => `https://github.com/CacaPlay/clear-download-manager/releases/download/${releaseTag}/${name}`;
 function inspectAsset(name, bytes, sha256) {
   const file = files.get(name);
   const actual = fs.readFileSync(file);
@@ -72,9 +86,12 @@ function inspectAsset(name, bytes, sha256) {
 
 const components = new Map(payload.components.map((component) => [component.id, component]));
 if (components.size !== 2 || !components.has('media-tools') || !components.has('torrent-engine')) fail('component IDs must be exactly media-tools and torrent-engine.');
-for (const [id, name] of [['media-tools', 'media-tools-1.0.0.cdmcomponent'], ['torrent-engine', 'torrent-engine-1.0.0.cdmcomponent']]) {
+for (const [id, version, name] of [
+  ['media-tools', mediaToolsVersion, `media-tools-${mediaToolsVersion}.cdmcomponent`],
+  ['torrent-engine', torrentEngineVersion, `torrent-engine-${torrentEngineVersion}.cdmcomponent`]
+]) {
   const component = components.get(id);
-  if (component.version !== '1.0.0' || component.assetName !== name || component.packageUrl !== assetUrl(name)) fail(`${id} package identity or URL does not match the exact release asset.`);
+  if (component.version !== version || component.releaseTag !== releaseTag || component.assetName !== name || component.packageUrl !== assetUrl(name)) fail(`${id} package identity or URL does not match the exact release asset.`);
   inspectAsset(name, component.packageBytes, component.packageSha256);
   const seenSources = new Set();
   for (const source of component.correspondingSources || []) {

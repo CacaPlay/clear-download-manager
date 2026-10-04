@@ -10,7 +10,7 @@ import {
   applyBrandIconVariant, iconVariantForColor
 } from './modules/appearance/index.js?v=0.95.5-ui-redesign-20260930-r2';
 import { bindAppearanceSync } from './modules/appearance/sync.js?v=0.95.0-verify-appearance';
-import { configureSettings, settingsMarkup, setSettingsAdvancedOpen, syncAccentPresetSelection } from './modules/settings/index.js?v=0.95.5-ui-redesign-20260930-r2';
+import { configureSettings, settingsMarkup, setSettingsAdvancedOpen, syncAccentPresetSelection, patchComponentDownloadProgress } from './modules/settings/index.js?v=0.95.5-ui-redesign-20260930-r2';
 import {
   configureMedia, mediaSizeLabel, outputModeIsAudio, preferredVideoFormat, preferredFormatForOutput
 } from './modules/media/index.js';
@@ -73,7 +73,6 @@ const initialLocale = loadLocale();
 const BUILD_ID = 'CDM-1.0.1-20261003-release-candidate';
 let deferredDownloadManagerRefresh = false;
 let deferredDownloadManagerRefreshTimer = 0;
-let componentProgressRenderTimer = 0;
 let snapshotRefreshTimer = 0;
 let appUpdateCheckTimer = 0;
 let appUpdateOnlineListenerBound = false;
@@ -718,11 +717,8 @@ async function bindComponentDownloadProgress() {
       const phase = String(payload.phase || '');
       if (!['preparing', 'download', 'verify', 'install', 'activate', 'done', 'error', 'cancelled'].includes(phase)) return;
       appState.componentOperations = { ...(appState.componentOperations || {}), [id]: { ...payload } };
-      if (appState.activeSection !== 'Ajustes' || componentProgressRenderTimer) return;
-      componentProgressRenderTimer = window.setTimeout(() => {
-        componentProgressRenderTimer = 0;
-        if (appState.activeSection === 'Ajustes') render();
-      }, 150);
+      if (appState.activeSection !== 'Ajustes' || appState.settingsCategory !== 'components') return;
+      patchComponentDownloadProgress(document.querySelector('.settings-page-components'), id, payload);
     });
   } catch (error) {
     console.warn('No se pudo registrar el progreso de componentes.', error);
@@ -747,7 +743,6 @@ function openComponentManagerForInstall(componentId) {
       return;
     }
     row.scrollIntoView?.({ block: 'center' });
-    row.focus({ preventScroll: true });
     const installButton = row.querySelector('[data-component-action="install"]');
     if (installButton && !installButton.disabled) installButton.click();
   };
@@ -1455,8 +1450,8 @@ function downloadsPageMarkup() {
     onExtensionPromptDecision: (decision) => { if (['accepted', 'declined'].includes(decision)) { void persistExperienceSettings({ extensionPromptDecision: decision }); requestDownloadManagerRender({ force: true }); } },
     onNewsOpened: () => {
       const next = markNewsViewed(appState.experienceSettings, newsMessages());
+      appState.experienceSettings = next;
       void persistExperienceSettings({ newsReadIds: next.newsReadIds });
-      requestDownloadManagerRender({ force: true });
     },
     getClipboardPrompt: () => appState.clipboardPrompt,
     onClipboardPreviewAction: async (prompt, action, suppress) => {
@@ -2094,8 +2089,8 @@ function bindEvents() {
     onExtensionPromptDecision: (decision) => { if (['accepted', 'declined'].includes(decision)) { void persistExperienceSettings({ extensionPromptDecision: decision }); requestDownloadManagerRender({ force: true }); } },
     onNewsOpened: () => {
       const next = markNewsViewed(appState.experienceSettings, newsMessages());
+      appState.experienceSettings = next;
       void persistExperienceSettings({ newsReadIds: next.newsReadIds });
-      requestDownloadManagerRender({ force: true });
     },
     getClipboardPrompt: () => appState.clipboardPrompt,
     onClipboardPreviewAction: async (prompt, action, suppress) => {

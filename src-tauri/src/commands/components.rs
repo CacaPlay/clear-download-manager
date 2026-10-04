@@ -67,23 +67,22 @@ pub(crate) fn refresh_component_catalog(
 }
 
 #[tauri::command]
-pub(crate) fn install_component_from_catalog(
+pub(crate) async fn install_component_from_catalog(
     id: ComponentId,
     app: AppHandle,
     state: State<'_, LocalState>,
 ) -> Result<ComponentStatus, String> {
-    let result = state
-        .component_manager
-        .install_component_from_catalog(id, |progress| {
+    let manager = state.component_manager.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        manager.install_component_from_catalog(id, |progress| {
             let _ = app.emit("component-download-progress", progress);
-        });
+        })
+    })
+    .await;
+    state.refresh_component_runtime_slots();
     match result {
-        Ok(status) => {
-            state.refresh_component_runtime_slots();
-            Ok(status)
-        }
-        Err(error) => {
-            state.refresh_component_runtime_slots();
+        Ok(Ok(status)) => Ok(status),
+        Ok(Err(error)) => {
             eprintln!("[components] remote installation failed for {id}: {error}");
             Err(
                 if matches!(
@@ -98,6 +97,10 @@ pub(crate) fn install_component_from_catalog(
                     "No se pudo verificar o instalar el componente. Comprueba la conexión e inténtalo más tarde.".into()
                 },
             )
+        }
+        Err(error) => {
+            eprintln!("[components] remote installation worker failed for {id}: {error}");
+            Err("No se pudo verificar o instalar el componente. Comprueba la conexión e inténtalo más tarde.".into())
         }
     }
 }

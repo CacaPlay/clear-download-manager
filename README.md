@@ -20,7 +20,7 @@
 Choose the option that works best for you.
 
 <p align="center">
-  <a href="https://github.com/CacaPlay/clear-download-manager/releases/download/v1.0.0/ClearDownloadManagerSetup.exe">
+  <a href="https://github.com/CacaPlay/clear-download-manager/releases/latest">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="docs/assets/download-buttons/windows-dark.png">
       <img src="docs/assets/download-buttons/windows-light.png" width="210" alt="Download the Windows installer">

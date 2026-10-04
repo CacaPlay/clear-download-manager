@@ -63,6 +63,14 @@ test('QA executable builder preserves an open preview and writes a fresh artifac
   assert.match(qaBuildScript, /catch\s*\{[\s\S]*?Get-Date -Format 'yyyyMMdd-HHmmss'[\s\S]*?Copy-Item -LiteralPath \$BuiltExe -Destination \$OutputExe/);
 });
 
+test('QA V1 extension bridge is opt-in and shares the isolated QA host identity', () => {
+  assert.match(qaBuildScript, /\[switch\]\$EnableV1ExtensionBridge/);
+  assert.match(qaBuildScript, /qa-component-manager,qa-extension-bridge/);
+  assert.match(qaBuildScript, /--features \$QaFeatures/);
+  assert.match(extensionBridge, /const HOST_NAME: &str = "lat\.cacaplay\.cleardownloadmanager\.qa"/);
+  assert.match(extensionBridge, /BRIDGE_PROTOCOL_VERSION: u32 = 1/);
+});
+
 test('QA startup keeps user data, downloads, bridge, and Windows startup separate', () => {
   assert.match(startup, /if cfg!\(feature = "qa-component-manager"\)[\s\S]*?app\.path\(\)\.app_data_dir\(\)/);
   assert.match(startup, /data_dir\.join\("Downloads"\)/);

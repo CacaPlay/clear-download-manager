@@ -39,11 +39,13 @@ environment settings allow self-review, so request a separate reviewer when
 independent approval is required. See [`GITHUB-RELEASE-SETUP.md`](GITHUB-RELEASE-SETUP.md)
 for the controls and signing-secret names.
 
-After a successful workflow, verify the GitHub Release, versioned NSIS
-installer, stable installer alias, Tauri signature, `latest.json`, checksums,
-and exact corresponding-source materials. The fixed installer URL is:
+After a successful workflow, verify the GitHub Release, its single versioned
+NSIS setup installer, signed updater package, `latest.json`, checksums, and
+exact corresponding-source materials. The release must not contain duplicate
+installer copies or operator-only upload notes. The README download button
+opens the latest release page, where users can choose the versioned installer:
 
-`https://github.com/CacaPlay/clear-download-manager/releases/latest/download/ClearDownloadManagerSetup.exe`
+`https://github.com/CacaPlay/clear-download-manager/releases/latest`
 
 Some earlier installations use a legacy updater endpoint. See
 [`UPDATER-MIGRATION.md`](UPDATER-MIGRATION.md) for the exact compatibility

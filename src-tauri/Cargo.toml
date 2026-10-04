@@ -16,6 +16,7 @@ github-updater = ["dep:tauri-plugin-updater"]
 microsoft-store = []
 maintainer-tooling = []
 qa-component-manager = []
+qa-extension-bridge = ["qa-component-manager"]
 
 [[example]]
 name = "catalog-signer"
