@@ -57,7 +57,7 @@
     "test:identity-migrations": "node --test scripts/validation/identity-migration.test.mjs scripts/validation/storage-migration.test.mjs scripts/validation/images-storage-migration.test.mjs",
     "source:archive": "node scripts/create-source-archive.mjs",
     "source:yt-dlp:fetch": "python scripts/fetch-yt-dlp-corresponding-source-inputs.py",
-    "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs scripts/validation/component-independent-release.test.mjs",
+    "test:release-artifacts": "node --test scripts/validation/release-artifacts.test.mjs scripts/validation/component-independent-release.test.mjs scripts/validation/precompile-release-extension.test.mjs",
     "test:app-update-progress": "node --test scripts/validation/app-update-progress.test.mjs",
     "test:yt-dlp-source-fetch": "python -m unittest scripts.validation.test_yt_dlp_source_fetch -v",
     "verify:binaries": "node scripts/verify-binaries.mjs",

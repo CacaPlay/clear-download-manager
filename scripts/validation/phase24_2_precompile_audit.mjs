@@ -58,7 +58,7 @@ const dmStyles = read('app-ui/download-manager/styles.css');
 
 const appLockBlock = cargoPackageBlock(cargoLock, 'clear-download-manager');
 const expectedAppVersion = packageJson.version;
-const expectedExtensionVersion = '0.95.4';
+const expectedExtensionVersion = '1.0.0';
 const tauriLockBlock = cargoPackageBlock(cargoLock, 'tauri');
 const httpRangeLockBlock = cargoPackageBlock(cargoLock, 'http-range');
 

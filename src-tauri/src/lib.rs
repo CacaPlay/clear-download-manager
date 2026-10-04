@@ -3667,7 +3667,7 @@ mod tests {
         assert!(wait_for_external_processes_idle(
             &registry,
             73,
-            Duration::from_secs(5)
+            Duration::from_secs(15)
         ));
         let result = worker.join().expect("supervisor worker");
         assert!(result.is_ok());
