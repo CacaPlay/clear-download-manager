@@ -16,6 +16,7 @@ const sourceArchive = value('--source-archive') ? path.resolve(value('--source-a
 const packagePath = value('--package') ? path.resolve(value('--package')) : '';
 const inspectionRoot = value('--inspection-dir') ? path.resolve(value('--inspection-dir')) : '';
 const releaseAssetsDir = value('--release-assets-dir') ? path.resolve(value('--release-assets-dir')) : '';
+const componentAssetsDir = value('--component-assets-dir') ? path.resolve(value('--component-assets-dir')) : '';
 const componentPackagesDir = value('--component-packages-dir') ? path.resolve(value('--component-packages-dir')) : '';
 const checks = [];
 const failures = [];
@@ -99,9 +100,15 @@ if (!keyIdMatch || keyIdMatch[1] !== 'component-catalog-2026-01' || !publicKeyMa
 }
 
 if (releaseAssetsDir && fs.existsSync(releaseAssetsDir)) {
-  run('exact component release assets and inline catalog links', 'scripts/validation/component-release-assets.mjs', ['--directory', releaseAssetsDir]);
-  if (productionComponentKey) {
-    const catalogPath = path.join(releaseAssetsDir, 'component-catalog-v1.json');
+  if (!componentAssetsDir || !fs.existsSync(componentAssetsDir) || !fs.statSync(componentAssetsDir).isDirectory()) {
+    failures.push('exact component release assets: supply --component-assets-dir with the isolated component assets directory.');
+    checks.push({ label: 'exact component release assets and inline catalog links', status: 'FAIL' });
+    console.error('FAIL: exact component release assets require --component-assets-dir to point to the isolated component assets directory.');
+  } else {
+    run('exact component release assets and inline catalog links', 'scripts/validation/component-release-assets.mjs', ['--directory', componentAssetsDir]);
+  }
+  if (productionComponentKey && componentAssetsDir && fs.existsSync(componentAssetsDir) && fs.statSync(componentAssetsDir).isDirectory()) {
+    const catalogPath = path.join(componentAssetsDir, 'component-catalog-v1.json');
     const result = spawnSync('cargo', [
       'run', '--manifest-path', 'src-tauri/Cargo.toml', '--locked', '--quiet',
       '--features', 'maintainer-tooling', '--example', 'component-catalog-tool', '--',
