@@ -337,6 +337,17 @@ test('binary verification validates components from an isolated folder inside th
   assert.doesNotMatch(componentCheck, /component-release-assets\.mjs --directory output\/update-release/);
 });
 
+test('binary readiness uses the isolated component directory for asset and catalog verification', () => {
+  const workflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
+  const binaryReadiness = fs.readFileSync(path.join(repositoryRoot, 'scripts/validation/binary-release-readiness.mjs'), 'utf8');
+
+  assert.match(workflow, /--release-assets-dir output\/update-release --component-assets-dir output\/component-assets-verify/);
+  assert.match(binaryReadiness, /const componentAssetsDir = value\('--component-assets-dir'\)/);
+  assert.match(binaryReadiness, /component-release-assets\.mjs', \['--directory', componentAssetsDir\]/);
+  assert.match(binaryReadiness, /path\.join\(componentAssetsDir, 'component-catalog-v1\.json'\)/);
+  assert.doesNotMatch(binaryReadiness, /component-release-assets\.mjs', \['--directory', releaseAssetsDir\]/);
+});
+
 test('release preparation trusts PowerShell errors, validates native exit codes, and keeps binary verification before publish', () => {
   const workflow = fs.readFileSync(path.join(repositoryRoot, '.github/workflows/release-windows.yml'), 'utf8');
   const prepareScript = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-update-release.ps1'), 'utf8');
