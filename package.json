@@ -163,7 +163,7 @@
     "test:ui-v1.0.0": "node --test scripts/validation/ui-v1.0.0-assets.test.mjs scripts/validation/ui-v1.0.0-theme-motion.test.mjs scripts/validation/update-discovery.test.mjs scripts/validation/update-notice.test.mjs scripts/validation/v1-settings-reset.test.mjs"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "2.11.5",
+    "@tauri-apps/cli": "2.12.1",
     "esbuild": "0.28.1",
     "fake-indexeddb": "^6.2.5"
   }
