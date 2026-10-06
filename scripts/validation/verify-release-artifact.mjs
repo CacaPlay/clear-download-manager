@@ -38,26 +38,27 @@ if (expected.size === 0) fail(`${checksumName} contains no artifact entries.`);
 
 const operatorNotes = [...expected.keys()].filter((name) => /^LEEME(?:_|\.)/i.test(name));
 if (operatorNotes.length) fail(`operator-only upload notes are forbidden: ${operatorNotes.join(', ')}.`);
-const stableInstallerAlias = 'ClearDownloadManagerSetup.exe';
-const versionedSetupPattern = /^Clear\.Download\.Manager_\d+(?:\.\d+)*(?:-[A-Za-z0-9.-]+)?_x64-setup\.exe$/i;
-const versionedSetupNames = [...expected.keys()].filter((name) => versionedSetupPattern.test(name));
-if (!expected.has(stableInstallerAlias)) fail(`${stableInstallerAlias} is required for the stable direct-download URL.`);
-if (versionedSetupNames.length !== 1) fail('exactly one versioned Windows setup executable is required beside the stable alias.');
-if (expected.get(stableInstallerAlias) !== expected.get(versionedSetupNames[0])) {
-  fail(`${stableInstallerAlias} must contain the same bytes as ${versionedSetupNames[0]}.`);
+const stableInstallerName = 'ClearDownloadManagerSetup.exe';
+const executableNames = [...expected.keys()].filter((name) => /\.exe$/i.test(name));
+if (executableNames.length !== 1) fail('exactly one .exe installer is required in the release.');
+if (executableNames[0] !== stableInstallerName) fail('the only installer executable must be named ClearDownloadManagerSetup.exe.');
+
+const updaterZipNames = [...expected.keys()].filter((name) => /\.nsis\.zip$/i.test(name));
+const updaterSignatureNames = [...expected.keys()].filter((name) => /\.nsis\.zip\.sig$/i.test(name));
+if (updaterZipNames.length !== 1) fail('exactly one versioned NSIS updater ZIP is required.');
+if (updaterSignatureNames.length !== 1) fail('exactly one signature for the versioned NSIS updater ZIP is required.');
+if (updaterSignatureNames[0] !== updaterZipNames[0] + '.sig') fail('the NSIS updater ZIP and signature names do not match.');
+if (!expected.has('latest.json')) fail('latest.json is required for updater discovery.');
+
+let latest;
+try {
+  latest = JSON.parse(fs.readFileSync(path.join(directory, 'latest.json'), 'utf8'));
+} catch {
+  fail('latest.json is not valid JSON.');
 }
-const executableHashes = new Map();
-for (const [name, digest] of expected) {
-  if (!/\.exe$/i.test(name)) continue;
-  const previousName = executableHashes.get(digest);
-  if (previousName) {
-    const stableAlias = 'cleardownloadmanagersetup.exe';
-    const isExpectedAliasPair = (name.toLowerCase() === stableAlias && versionedSetupPattern.test(previousName))
-      || (previousName.toLowerCase() === stableAlias && versionedSetupPattern.test(name));
-    if (!isExpectedAliasPair) fail(`duplicate installer executable bytes are published as both ${previousName} and ${name}.`);
-  } else {
-    executableHashes.set(digest, name);
-  }
+const updaterUrl = latest?.platforms?.['windows-x86_64']?.url;
+if (typeof updaterUrl !== 'string' || !updaterUrl.toLowerCase().endsWith(updaterZipNames[0].toLowerCase())) {
+  fail('latest.json must continue to reference the versioned NSIS updater ZIP.');
 }
 
 const entries = fs.readdirSync(directory, { withFileTypes: true });

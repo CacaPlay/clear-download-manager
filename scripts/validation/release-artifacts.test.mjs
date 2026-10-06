@@ -235,16 +235,15 @@ test('PR5 owner review records explicit approval while preserving evidence limit
   assert.equal(pr5Register.decision.GPL_RELICENSING_READINESS, 'PASS_FOR_REVIEWED_PR5_DIFF');
 });
 
-test('release preparation publishes the versioned installer and stable direct-download alias without operator-only notes', () => {
+test('release preparation publishes one fixed-name installer and omits operator-only upload notes', () => {
   const script = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-update-release.ps1'), 'utf8');
-  assert.match(script, /Copy-Item -LiteralPath \$SetupInstaller\.FullName -Destination \$VersionedSetupPath/);
   assert.match(script, /\$StableSetupPath\s*=\s*Join-Path\s+\$OutputDirectory\s+'ClearDownloadManagerSetup\.exe'/);
   assert.match(script, /Copy-Item -LiteralPath \$SetupInstaller\.FullName -Destination \$StableSetupPath/);
-  assert.doesNotMatch(script, /LEEME_PARA_SUBIR\.txt/);
+  assert.doesNotMatch(script, /\$VersionedSetupPath|Destination \$SetupAssetName/);
   const guide = fs.readFileSync(path.join(repositoryRoot, 'docs/RELEASE-GUIDE.md'), 'utf8');
+  assert.ok(guide.replace(/\s+/g, ' ').includes('exactly one installer executable named ClearDownloadManagerSetup.exe'));
   assert.match(guide, /releases\/latest\/download\/ClearDownloadManagerSetup\.exe/);
-  assert.doesNotMatch(guide, /LEEME_PARA_SUBIR\.txt/);
-  assert.match(guide, /releases\/latest(?:[\s`.]|$)/);
+  assert.doesNotMatch(guide, /versioned NSIS setup installer/i);
 });
 
 test('release pipeline builds once, verifies the uploaded artifact, and gates publication', () => {
@@ -419,67 +418,107 @@ test('Windows updater artifacts match the signed NSIS ZIP release contract', () 
   assert.equal(tauriConfig.bundle.createUpdaterArtifacts, 'v1Compatible');
   assert.match(prepareScript, /Where-Object\s*\{[^}]*\$_.Name -like '\*\.nsis\.zip\.sig'[^}]*\$_.Name -like '\*\.msi\.zip\.sig'/s);
   assert.match(releaseWorkflow, /-Filter '\*\.nsis\.zip'/);
+  assert.match(prepareScript, /\$StableSetupPath\s*=\s*Join-Path\s+\$OutputDirectory\s+'ClearDownloadManagerSetup\.exe'/);
+  assert.doesNotMatch(prepareScript, /\$VersionedSetupPath|Destination \$SetupAssetName/);
+  assert.match(prepareScript, /url = \$DownloadUrl/);
 });
 
 test('release artifact checksum verifier rejects changed and unlisted files', () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-release-artifact-test-'));
   const verifier = path.join(repositoryRoot, 'scripts/validation/verify-release-artifact.mjs');
-  try {
-    fs.writeFileSync(path.join(temp, 'ClearDownloadManager.nsis.zip'), 'verified package bytes');
-    fs.writeFileSync(path.join(temp, 'latest.json'), '{"version":"0.95.4"}\n');
-    const setupName = 'Clear.Download.Manager_0.95.4_x64-setup.exe';
-    fs.writeFileSync(path.join(temp, setupName), 'verified installer bytes');
-    fs.writeFileSync(path.join(temp, 'ClearDownloadManagerSetup.exe'), 'verified installer bytes');
-    const names = ['ClearDownloadManager.nsis.zip', 'latest.json', setupName, 'ClearDownloadManagerSetup.exe'];
-    const checksumText = names.map((name) => `${crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, name))).digest('hex')}  ${name}`).join('\n') + '\n';
-    const checksumPath = path.join(temp, 'SHA256SUMS.txt');
-    fs.writeFileSync(checksumPath, checksumText);
-    const invoke = () => spawnSync(process.execPath, [verifier, '--directory', temp], { encoding: 'utf8', windowsHide: true });
+  const aliasName = 'ClearDownloadManagerSetup.exe';
+  const updaterName = 'Clear.Download.Manager_0.95.4_x64-setup.nsis.zip';
+  const signatureName = updaterName + '.sig';
+  const latestName = 'latest.json';
+  const names = [aliasName, updaterName, signatureName, latestName];
+  const writeChecksums = () => {
+    const checksumText = names.map((name) => crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, name))).digest('hex') + '  ' + name).join('\n') + '\n';
+    fs.writeFileSync(path.join(temp, 'SHA256SUMS.txt'), checksumText);
+  };
+  const invoke = () => spawnSync(process.execPath, [verifier, '--directory', temp], { encoding: 'utf8', windowsHide: true });
 
+  try {
+    fs.writeFileSync(path.join(temp, aliasName), 'verified installer bytes');
+    fs.writeFileSync(path.join(temp, updaterName), 'verified updater bytes');
+    fs.writeFileSync(path.join(temp, signatureName), 'valid updater signature');
+    fs.writeFileSync(path.join(temp, latestName), JSON.stringify({
+      version: '0.95.4',
+      platforms: { 'windows-x86_64': { signature: 'valid updater signature', url: 'https://example.invalid/' + updaterName } },
+    }) + '\n');
+    writeChecksums();
     assert.equal(invoke().status, 0);
-    fs.appendFileSync(path.join(temp, 'latest.json'), 'tampered');
-    assert.notEqual(invoke().status, 0);
-    fs.writeFileSync(path.join(temp, 'latest.json'), '{"version":"0.95.4"}\n');
+
+    fs.appendFileSync(path.join(temp, latestName), 'tampered');
+    writeChecksums();
+    assert.notEqual(invoke().status, 0, 'changed updater metadata must not bypass the updater URL contract');
+
+    fs.writeFileSync(path.join(temp, latestName), JSON.stringify({
+      version: '0.95.4',
+      platforms: { 'windows-x86_64': { signature: 'valid updater signature', url: 'https://example.invalid/ClearDownloadManagerSetup.exe' } },
+    }) + '\n');
+    writeChecksums();
+    assert.notEqual(invoke().status, 0, 'latest.json must continue to target the signed NSIS ZIP');
+
+    fs.writeFileSync(path.join(temp, latestName), JSON.stringify({
+      version: '0.95.4',
+      platforms: { 'windows-x86_64': { signature: 'valid updater signature', url: 'https://example.invalid/' + updaterName } },
+    }) + '\n');
     fs.writeFileSync(path.join(temp, 'unlisted.txt'), 'extra');
+    writeChecksums();
     assert.notEqual(invoke().status, 0);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
 });
 
-test('release artifact checksum verifier allows only the stable alias pair and rejects operator upload notes', () => {
-  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-release-no-junk-test-'));
+test('release artifact checksum verifier requires exactly one fixed-name EXE and the updater ZIP pair', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-release-single-installer-test-'));
   const verifier = path.join(repositoryRoot, 'scripts/validation/verify-release-artifact.mjs');
-  const setupName = 'Clear.Download.Manager_1.0.1_x64-setup.exe';
-  const aliasName = 'ClearDownloadManagerSetup.exe';
-  const unexpectedName = 'unexpected-installer.exe';
+  const installerName = 'ClearDownloadManagerSetup.exe';
+  const versionedSetupName = 'Clear.Download.Manager_1.0.1_x64-setup.exe';
+  const extraExeName = 'unexpected-installer.exe';
+  const archiveName = 'Clear.Download.Manager_1.0.1_x64-setup.nsis.zip';
+  const signatureName = archiveName + '.sig';
+  const latestName = 'latest.json';
   const notesName = 'LEEME_PARA_SUBIR.txt';
+  const baseNames = [installerName, archiveName, signatureName, latestName];
   const writeChecksums = (names) => {
-    const lines = names.map((name) => `${crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, name))).digest('hex')}  ${name}`);
-    fs.writeFileSync(path.join(temp, 'SHA256SUMS.txt'), `${lines.join('\n')}\n`);
+    const lines = names.map((name) => crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, name))).digest('hex') + '  ' + name);
+    fs.writeFileSync(path.join(temp, 'SHA256SUMS.txt'), lines.join('\n') + '\n');
   };
   const invoke = () => spawnSync(process.execPath, [verifier, '--directory', temp], { encoding: 'utf8', windowsHide: true });
 
   try {
-    fs.writeFileSync(path.join(temp, setupName), 'same installer bytes');
-    fs.writeFileSync(path.join(temp, aliasName), 'same installer bytes');
-    writeChecksums([setupName, aliasName]);
-    assert.equal(invoke().status, 0, 'the fixed-name alias must be accepted beside its versioned setup installer');
+    fs.writeFileSync(path.join(temp, installerName), 'installer bytes');
+    fs.writeFileSync(path.join(temp, archiveName), 'updater bytes');
+    fs.writeFileSync(path.join(temp, signatureName), 'updater signature');
+    fs.writeFileSync(path.join(temp, latestName), JSON.stringify({
+      version: '1.0.1',
+      platforms: { 'windows-x86_64': { signature: 'updater signature', url: 'https://example.invalid/' + archiveName } },
+    }) + '\n');
+    writeChecksums(baseNames);
+    assert.equal(invoke().status, 0, 'the sole fixed-name installer and signed updater artifacts must pass');
 
-    fs.rmSync(path.join(temp, aliasName));
-    writeChecksums([setupName]);
-    assert.notEqual(invoke().status, 0, 'the stable download alias must be required');
+    fs.writeFileSync(path.join(temp, versionedSetupName), 'versioned setup bytes');
+    writeChecksums([...baseNames, versionedSetupName]);
+    assert.notEqual(invoke().status, 0, 'a versioned setup EXE must be rejected');
 
-    fs.writeFileSync(path.join(temp, aliasName), 'same installer bytes');
-    fs.writeFileSync(path.join(temp, unexpectedName), 'same installer bytes');
-    writeChecksums([setupName, aliasName, unexpectedName]);
-    assert.notEqual(invoke().status, 0, 'additional duplicate executable bytes must still be rejected');
+    fs.rmSync(path.join(temp, versionedSetupName));
+    fs.writeFileSync(path.join(temp, extraExeName), 'second exe');
+    writeChecksums([...baseNames, extraExeName]);
+    assert.notEqual(invoke().status, 0, 'any second EXE must be rejected');
 
-    fs.rmSync(path.join(temp, unexpectedName));
-    fs.rmSync(path.join(temp, aliasName));
+    fs.rmSync(path.join(temp, extraExeName));
+    fs.rmSync(path.join(temp, installerName));
+    fs.writeFileSync(path.join(temp, versionedSetupName), 'versioned setup bytes');
+    writeChecksums([versionedSetupName, archiveName, signatureName, latestName]);
+    assert.notEqual(invoke().status, 0, 'the sole EXE must have the exact stable name');
+
+    fs.rmSync(path.join(temp, versionedSetupName));
+    fs.writeFileSync(path.join(temp, installerName), 'installer bytes');
     fs.writeFileSync(path.join(temp, notesName), 'operator instructions');
-    writeChecksums([setupName, notesName]);
-    assert.notEqual(invoke().status, 0, 'operator-only upload instructions must be rejected even when checksummed');
+    writeChecksums([...baseNames, notesName]);
+    assert.notEqual(invoke().status, 0, 'operator-only upload instructions must remain forbidden');
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }

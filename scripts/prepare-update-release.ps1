@@ -84,11 +84,10 @@ $SetupInstaller = Get-ChildItem -Path $BundleRoot -Recurse -File -Filter '*setup
 if (-not $SetupInstaller) {
   throw 'No se encontro el instalador de Windows necesario para los enlaces de descarga directa.'
 }
-$SetupAssetName = ConvertTo-ReleaseAssetName $SetupInstaller.Name
-$VersionedSetupPath = Join-Path $OutputDirectory $SetupAssetName
-Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $VersionedSetupPath -Force
+# Remove only a versioned setup EXE left by an earlier packaging run.
+Get-ChildItem -LiteralPath $OutputDirectory -File -Filter 'Clear.Download.Manager_*_x64-setup.exe' -ErrorAction SilentlyContinue |
+  Remove-Item -Force -ErrorAction SilentlyContinue
 
-# Keep the website download URL stable while publishing each versioned installer too.
 $StableSetupPath = Join-Path $OutputDirectory 'ClearDownloadManagerSetup.exe'
 Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $StableSetupPath -Force
 
