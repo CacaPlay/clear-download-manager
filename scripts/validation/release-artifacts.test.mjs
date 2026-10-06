@@ -427,7 +427,10 @@ test('release artifact checksum verifier rejects changed and unlisted files', ()
   try {
     fs.writeFileSync(path.join(temp, 'ClearDownloadManager.nsis.zip'), 'verified package bytes');
     fs.writeFileSync(path.join(temp, 'latest.json'), '{"version":"0.95.4"}\n');
-    const names = ['ClearDownloadManager.nsis.zip', 'latest.json'];
+    const setupName = 'Clear.Download.Manager_0.95.4_x64-setup.exe';
+    fs.writeFileSync(path.join(temp, setupName), 'verified installer bytes');
+    fs.writeFileSync(path.join(temp, 'ClearDownloadManagerSetup.exe'), 'verified installer bytes');
+    const names = ['ClearDownloadManager.nsis.zip', 'latest.json', setupName, 'ClearDownloadManagerSetup.exe'];
     const checksumText = names.map((name) => `${crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, name))).digest('hex')}  ${name}`).join('\n') + '\n';
     const checksumPath = path.join(temp, 'SHA256SUMS.txt');
     fs.writeFileSync(checksumPath, checksumText);
