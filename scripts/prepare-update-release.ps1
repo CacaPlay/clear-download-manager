@@ -81,11 +81,16 @@ Copy-Item -LiteralPath $SignatureFile.FullName -Destination (Join-Path $OutputDi
 
 $SetupInstaller = Get-ChildItem -Path $BundleRoot -Recurse -File -Filter '*setup.exe' -ErrorAction SilentlyContinue |
   Sort-Object LastWriteTime -Descending | Select-Object -First 1
-if ($SetupInstaller) {
-  $SetupAssetName = ConvertTo-ReleaseAssetName $SetupInstaller.Name
-  $VersionedSetupPath = Join-Path $OutputDirectory $SetupAssetName
-  Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $VersionedSetupPath -Force
+if (-not $SetupInstaller) {
+  throw 'No se encontro el instalador de Windows necesario para los enlaces de descarga directa.'
 }
+$SetupAssetName = ConvertTo-ReleaseAssetName $SetupInstaller.Name
+$VersionedSetupPath = Join-Path $OutputDirectory $SetupAssetName
+Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $VersionedSetupPath -Force
+
+# Keep the website download URL stable while publishing each versioned installer too.
+$StableSetupPath = Join-Path $OutputDirectory 'ClearDownloadManagerSetup.exe'
+Copy-Item -LiteralPath $SetupInstaller.FullName -Destination $StableSetupPath -Force
 
 $EncodedName = [Uri]::EscapeDataString($ArtifactAssetName).Replace('%2F', '/')
 $DownloadUrl = "https://github.com/$($UpdaterConfig.repository)/releases/download/$Tag/$EncodedName"

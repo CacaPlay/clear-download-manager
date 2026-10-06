@@ -38,15 +38,26 @@ if (expected.size === 0) fail(`${checksumName} contains no artifact entries.`);
 
 const operatorNotes = [...expected.keys()].filter((name) => /^LEEME(?:_|\.)/i.test(name));
 if (operatorNotes.length) fail(`operator-only upload notes are forbidden: ${operatorNotes.join(', ')}.`);
-if ([...expected.keys()].some((name) => name.toLowerCase() === 'cleardownloadmanagersetup.exe')) {
-  fail('the duplicate fixed-name installer alias is forbidden; publish only the versioned setup executable.');
+const stableInstallerAlias = 'ClearDownloadManagerSetup.exe';
+const versionedSetupPattern = /^Clear\.Download\.Manager_\d+(?:\.\d+)*(?:-[A-Za-z0-9.-]+)?_x64-setup\.exe$/i;
+const versionedSetupNames = [...expected.keys()].filter((name) => versionedSetupPattern.test(name));
+if (!expected.has(stableInstallerAlias)) fail(`${stableInstallerAlias} is required for the stable direct-download URL.`);
+if (versionedSetupNames.length !== 1) fail('exactly one versioned Windows setup executable is required beside the stable alias.');
+if (expected.get(stableInstallerAlias) !== expected.get(versionedSetupNames[0])) {
+  fail(`${stableInstallerAlias} must contain the same bytes as ${versionedSetupNames[0]}.`);
 }
 const executableHashes = new Map();
 for (const [name, digest] of expected) {
   if (!/\.exe$/i.test(name)) continue;
   const previousName = executableHashes.get(digest);
-  if (previousName) fail(`duplicate installer executable bytes are published as both ${previousName} and ${name}.`);
-  executableHashes.set(digest, name);
+  if (previousName) {
+    const stableAlias = 'cleardownloadmanagersetup.exe';
+    const isExpectedAliasPair = (name.toLowerCase() === stableAlias && versionedSetupPattern.test(previousName))
+      || (previousName.toLowerCase() === stableAlias && versionedSetupPattern.test(name));
+    if (!isExpectedAliasPair) fail(`duplicate installer executable bytes are published as both ${previousName} and ${name}.`);
+  } else {
+    executableHashes.set(digest, name);
+  }
 }
 
 const entries = fs.readdirSync(directory, { withFileTypes: true });

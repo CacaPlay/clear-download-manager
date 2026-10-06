@@ -235,12 +235,15 @@ test('PR5 owner review records explicit approval while preserving evidence limit
   assert.equal(pr5Register.decision.GPL_RELICENSING_READINESS, 'PASS_FOR_REVIEWED_PR5_DIFF');
 });
 
-test('release preparation publishes one versioned installer and omits operator-only upload notes', () => {
+test('release preparation publishes the versioned installer and stable direct-download alias without operator-only notes', () => {
   const script = fs.readFileSync(path.join(repositoryRoot, 'scripts/prepare-update-release.ps1'), 'utf8');
   assert.match(script, /Copy-Item -LiteralPath \$SetupInstaller\.FullName -Destination \$VersionedSetupPath/);
-  assert.doesNotMatch(script, /ClearDownloadManagerSetup\.exe|StableInstallerName|LEEME_PARA_SUBIR\.txt/);
+  assert.match(script, /\$StableSetupPath\s*=\s*Join-Path\s+\$OutputDirectory\s+'ClearDownloadManagerSetup\.exe'/);
+  assert.match(script, /Copy-Item -LiteralPath \$SetupInstaller\.FullName -Destination \$StableSetupPath/);
+  assert.doesNotMatch(script, /LEEME_PARA_SUBIR\.txt/);
   const guide = fs.readFileSync(path.join(repositoryRoot, 'docs/RELEASE-GUIDE.md'), 'utf8');
-  assert.doesNotMatch(guide, /ClearDownloadManagerSetup\.exe|LEEME_PARA_SUBIR\.txt/);
+  assert.match(guide, /releases\/latest\/download\/ClearDownloadManagerSetup\.exe/);
+  assert.doesNotMatch(guide, /LEEME_PARA_SUBIR\.txt/);
   assert.match(guide, /releases\/latest(?:[\s`.]|$)/);
 });
 
@@ -441,11 +444,12 @@ test('release artifact checksum verifier rejects changed and unlisted files', ()
   }
 });
 
-test('release artifact checksum verifier rejects duplicate installer copies and operator upload notes', () => {
+test('release artifact checksum verifier allows only the stable alias pair and rejects operator upload notes', () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdm-release-no-junk-test-'));
   const verifier = path.join(repositoryRoot, 'scripts/validation/verify-release-artifact.mjs');
   const setupName = 'Clear.Download.Manager_1.0.1_x64-setup.exe';
   const aliasName = 'ClearDownloadManagerSetup.exe';
+  const unexpectedName = 'unexpected-installer.exe';
   const notesName = 'LEEME_PARA_SUBIR.txt';
   const writeChecksums = (names) => {
     const lines = names.map((name) => `${crypto.createHash('sha256').update(fs.readFileSync(path.join(temp, name))).digest('hex')}  ${name}`);
@@ -457,8 +461,18 @@ test('release artifact checksum verifier rejects duplicate installer copies and 
     fs.writeFileSync(path.join(temp, setupName), 'same installer bytes');
     fs.writeFileSync(path.join(temp, aliasName), 'same installer bytes');
     writeChecksums([setupName, aliasName]);
-    assert.notEqual(invoke().status, 0, 'duplicate executable bytes must be rejected even when checksummed');
+    assert.equal(invoke().status, 0, 'the fixed-name alias must be accepted beside its versioned setup installer');
 
+    fs.rmSync(path.join(temp, aliasName));
+    writeChecksums([setupName]);
+    assert.notEqual(invoke().status, 0, 'the stable download alias must be required');
+
+    fs.writeFileSync(path.join(temp, aliasName), 'same installer bytes');
+    fs.writeFileSync(path.join(temp, unexpectedName), 'same installer bytes');
+    writeChecksums([setupName, aliasName, unexpectedName]);
+    assert.notEqual(invoke().status, 0, 'additional duplicate executable bytes must still be rejected');
+
+    fs.rmSync(path.join(temp, unexpectedName));
     fs.rmSync(path.join(temp, aliasName));
     fs.writeFileSync(path.join(temp, notesName), 'operator instructions');
     writeChecksums([setupName, notesName]);

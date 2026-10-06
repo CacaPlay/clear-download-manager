@@ -39,11 +39,18 @@ environment settings allow self-review, so request a separate reviewer when
 independent approval is required. See [`GITHUB-RELEASE-SETUP.md`](GITHUB-RELEASE-SETUP.md)
 for the controls and signing-secret names.
 
-After a successful workflow, verify the GitHub Release, its single versioned
-NSIS setup installer, signed updater package, `latest.json`, checksums, and
-exact corresponding-source materials. The release must not contain duplicate
-installer copies or operator-only upload notes. The README download button
-opens the latest release page, where users can choose the versioned installer:
+After a successful workflow, verify the GitHub Release, its versioned NSIS
+setup installer and fixed-name `ClearDownloadManagerSetup.exe` alias, signed
+updater package, `latest.json`, checksums, and exact corresponding-source
+materials. The stable alias must have the same SHA-256 as the versioned setup
+installer. Other duplicate executables and operator-only upload notes are not
+allowed. A website download button that should always serve the latest Windows
+installer must use this URL:
+
+`https://github.com/CacaPlay/clear-download-manager/releases/latest/download/ClearDownloadManagerSetup.exe`
+
+The README download button opens the latest release page, where users can
+choose the versioned installer:
 
 `https://github.com/CacaPlay/clear-download-manager/releases/latest`
 
