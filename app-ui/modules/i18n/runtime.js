@@ -233,7 +233,16 @@ const EXTRA_ES_TO_EN = Object.freeze({
   'No se pudo completar la operación.': 'The operation could not be completed.', 'La operación tardó demasiado.': 'The operation took too long.', 'Archivo copiado al portapapeles.': 'File copied to the clipboard.', 'Archivo listo para cortar y pegar.': 'File ready to cut and paste.',
   'Acción completada': 'Action completed', 'Ajustes guardados': 'Settings saved', 'Diagnóstico copiado': 'Diagnostics copied', 'Diagnóstico visual copiado': 'Visual diagnostics copied',
   'Integración de Windows reparada': 'Windows integration repaired', 'Estado de componentes actualizado': 'Component status updated', 'Límite de velocidad guardado': 'Speed limit saved',
+  'Introduce una velocidad entera válida': 'Enter a valid whole-number speed', 'Preferencia de descarga guardada': 'Download preference saved',
+  'Catálogo de componentes verificado': 'Component catalog verified', 'La descarga ya no se puede cancelar en esta fase.': 'The download can no longer be canceled at this stage.',
+  'Idioma guardado': 'Language saved', 'Preferencia guardada': 'Preference saved', 'Colores predeterminados restaurados': 'Default colors restored',
+  'Preferencias multimedia guardadas': 'Media preferences saved', 'El motor local no respondió. La interfaz seguirá disponible.': 'The local engine did not respond. The interface will remain available.',
+  'La preparación multimedia se abre como ventana nativa en la aplicación de escritorio.': 'Media preparation opens in a native window in the desktop app.',
+  'Pega un enlace HTTP o HTTPS válido.': 'Paste a valid HTTP or HTTPS link.', 'Descarga capturada desde el navegador.': 'Download captured from the browser.',
+  'Elige la carpeta y confirma la descarga en la ventana HTTP.': 'Choose a folder and confirm the download in the HTTP window.',
+  'Solicitud recibida desde la extensión del navegador.': 'Request received from the browser extension.',
   'No se pudo copiar el diagnóstico': 'Diagnostics could not be copied', 'No se pudo copiar el diagnóstico visual': 'Visual diagnostics could not be copied',
+  'No se pudo verificar o instalar el componente. Comprueba la conexión e inténtalo más tarde.': 'The component could not be verified or installed. Check your connection and try again later.',
   'No se pudo crear el archivo final.': 'The final file could not be created.', 'No se encontró una versión disponible para descargar.': 'No downloadable version was found.',
   'No se encontró la canción.': 'The song was not found.', 'No se pudo guardar la sesión multimedia:': 'The media session could not be saved:',
   'No se pudo guardar el archivo de cookies:': 'The cookies file could not be saved:',
@@ -335,6 +344,19 @@ export function translateRuntimeText(value, locale = 'es') {
     text = text.replace(/^(\d+) configured$/i, '$1 configurada');
   }
   return text;
+}
+
+export function localizeNotificationText(value, locale = 'es') {
+  const resolved = locale === 'en' ? 'en' : 'es';
+  const original = String(value ?? '');
+  const translated = translateRuntimeText(original, resolved);
+  if (translated !== original) return translated;
+  if (/^(?:component\b|invalid component\b|catalog\b|signing key\b|signature\b|corresponding source\b)/i.test(original.trim())) {
+    return resolved === 'en'
+      ? 'The component could not be verified or installed. Check your connection and try again later.'
+      : 'No se pudo verificar o instalar el componente. Comprueba la conexión e inténtalo más tarde.';
+  }
+  return translated;
 }
 
 export const RUNTIME_TRANSLATION_TERMS = Object.freeze(Object.keys(FULL_ES_TO_EN));

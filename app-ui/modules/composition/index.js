@@ -65,6 +65,11 @@ function activeWorkspaceMarkup() {
   }
 }
 
+function reportTransitionRenderError(error) {
+  console.error(error);
+  renderFatalError(error);
+}
+
 function renderUnsafe() {
   applyAppearance(appState.appearance);
   clearFloatingLayer();
@@ -184,9 +189,9 @@ function render() {
     const nextIndex = settingsOrder.indexOf(settingsCategory);
     const direction = nextIndex >= 0 && previousIndex >= 0 && nextIndex >= previousIndex ? 'down' : 'up';
     if (navigationChanged) {
-      void runDocumentTransition(() => renderUnsafe());
+      void runDocumentTransition(() => renderUnsafe(), { onError: reportTransitionRenderError });
     } else if (settingsCategoryChanged) {
-      void runSettingsCategoryTransition(() => renderUnsafe(), direction);
+      void runSettingsCategoryTransition(() => renderUnsafe(), direction, { onError: reportTransitionRenderError });
     } else {
       renderUnsafe();
     }

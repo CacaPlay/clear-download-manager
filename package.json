@@ -2,7 +2,7 @@
   "name": "clear-download-manager",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "python -m http.server 4173 --bind 127.0.0.1",
@@ -100,7 +100,7 @@
     "check:browser-capture": "node scripts/validation/browser-capture-smoke.mjs",
     "check:video-detector": "node scripts/validation/video-detector-smoke.mjs",
     "check:encoding": "node scripts/validation/scan-mojibake.mjs",
-    "check:i18n": "node scripts/validation/i18n-check.mjs",
+    "check:i18n": "node scripts/validation/i18n-check.mjs && node --test scripts/validation/i18n-regressions.test.mjs",
     "check:0.24.1:baseline": "node scripts/validation/phase24_1_baseline_audit.mjs",
     "check:0.24.1:window": "node scripts/validation/phase24_1_window_lifecycle.mjs",
     "check:0.24.1:process": "node scripts/validation/phase24_1_process_safety.mjs",

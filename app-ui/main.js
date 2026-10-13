@@ -48,8 +48,8 @@ import {
 import {
   configureComposition, render, bindThumbnailFallbacks, start
 } from './modules/composition/index.js?v=0.95.0-ui-theme-render-20260930-r1';
-import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, translate } from './modules/i18n/index.js?v=0.95.5-ui-redesign-20260930-r2';
-import { localizeDom } from './modules/i18n/runtime.js?v=0.95.5-ui-redesign-20260930-r2';
+import { formatLocaleDate, loadLocale, messagesFor, resolveLocale, saveLocale, setSystemLocale, translate } from './modules/i18n/index.js?v=0.95.5-ui-redesign-20260930-r2';
+import { localizeDom, localizeNotificationText } from './modules/i18n/runtime.js?v=0.95.5-ui-redesign-20260930-r2';
 import { patchUpdateProgressSlots } from './download-manager/view/shared.js';
 import { createComponentDiscoveryScheduler } from './modules/updates/component-discovery.js';
 import { runThemeTransition } from './modules/motion/coordinator.js?v=0.95.5-theme-capture-20260930-r3';
@@ -66,11 +66,11 @@ const previewView = qs.get('view') || 'home';
 const previewAccent = qs.get('accent') || '';
 const previewPreset = qs.get('preset') || '';
 configureAppearance({ previewAccent, previewPreset, getAppState: () => appState, onDownloadManagerAppearance: patchDownloadManagerAppearance });
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.0.2';
 const APP_UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 const storeManagedDistribution = document.querySelector('meta[name="cdm-distribution"]')?.content === 'microsoft-store';
 const initialLocale = loadLocale();
-const BUILD_ID = 'CDM-1.0.1-20261003-release-candidate';
+const BUILD_ID = 'CDM-1.0.2-20261013-locale-components';
 let deferredDownloadManagerRefresh = false;
 let deferredDownloadManagerRefreshTimer = 0;
 let snapshotRefreshTimer = 0;
@@ -849,7 +849,7 @@ function showToast(message, type = 'info') {
   }
   const item = document.createElement('div');
   item.className = `app-toast ${type}`;
-  item.textContent = String(message || 'Acción completada');
+  item.textContent = localizeNotificationText(message || 'Acción completada', resolveLocale(currentLocale()));
   region.append(item);
   window.setTimeout(() => item.remove(), 3600);
 }
@@ -1218,9 +1218,11 @@ function friendlyError(error) {
   if (/cancel|cancelad/i.test(raw)) return 'La descarga fue cancelada.';
   if (/metadata_incomplete|no se encontraron canciones|no se encontró la canción/i.test(raw)) return 'No se encontró la canción.';
   if (/provider_failed|download_not_allowed/i.test(raw)) return 'No se encontró una versión disponible para descargar.';
-  if (/component catalog|component package|signing key|signature|corresponding.source|component download/i.test(raw)) return 'Clear no pudo verificar el catálogo o el paquete opcional. No se activó una versión nueva.';
+  if (/component|catalog|signing key|signature|corresponding.source/i.test(raw)) {
+    return localizeNotificationText(raw, resolveLocale(currentLocale()));
+  }
   if (/archivo final|ffmpeg_unavailable|enoent|ffmpeg.*(missing|not found)|yt.?dlp.*(missing|not found)/i.test(raw)) return 'No están disponibles las herramientas multimedia necesarias. Instálalas desde Ajustes > Complementos.';
-  return raw || 'No se pudo completar la operación.';
+  return localizeNotificationText(raw, resolveLocale(currentLocale())) || 'No se pudo completar la operación.';
 }
 
 async function checkForAppUpdate({ silent = false } = {}) {
@@ -2330,6 +2332,11 @@ const startupPromise = settingsMigrationPromise.then(async (reset) => {
   if (reset) {
     settingsMigrationTriggeredReload = true;
     return;
+  }
+  if (!previewMode) {
+    const nativeSystemLanguages = await invoke('get_system_ui_languages').catch(() => []);
+    setSystemLocale(nativeSystemLanguages);
+    document.documentElement.lang = resolveLocale(currentLocale());
   }
   await start();
 });

@@ -19,6 +19,9 @@ for (const prefix of ['dist-store/', '.superpowers/']) {
     issues.push(`generated/local directory appears in MANIFEST.sha256: ${prefix}`);
   }
 }
+if (manifest.some((entry) => /^dist-[^/]+\//i.test(entry))) {
+  issues.push('generated/local dist-* directory appears in MANIFEST.sha256');
+}
 
 for (const segment of ['extension/native-host/target/']) {
   if (manifest.some((entry) => entry.startsWith(segment))) {
@@ -28,6 +31,9 @@ for (const segment of ['extension/native-host/target/']) {
 
 if (!generator.includes("/^[^/]+\\.pdf$/i")) {
   issues.push('source manifest generator must exclude root-level PDF attachments');
+}
+if (!generator.includes("/^dist(?:-|$)/i")) {
+  issues.push('source manifest generator must exclude dist build output directories');
 }
 for (const directory of ['dist-store', '.superpowers']) {
   if (!generator.includes(`'${directory}'`)) {

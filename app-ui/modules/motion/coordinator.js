@@ -40,12 +40,41 @@ function finishActiveTransition() {
   try { current.skipTransition?.(); } catch { /* WebView may reject a stale transition. */ }
 }
 
+function guardedRenderUpdate(update, onError) {
+  let attempted = false;
+  let completed = false;
+  let renderError = null;
+  let reported = false;
+  const apply = () => {
+    attempted = true;
+    try {
+      update();
+      completed = true;
+    } catch (error) {
+      renderError = error;
+      throw error;
+    }
+  };
+  const recover = (transitionError) => {
+    if (!attempted) {
+      try { apply(); } catch { /* The render error is reported below. */ }
+    }
+    if (renderError && !reported) {
+      reported = true;
+      try { onError?.(renderError); }
+      catch (handlerError) { console.error('Transition render error handler failed.', handlerError); }
+    }
+    return renderError || transitionError;
+  };
+  return { apply, recover, get completed() { return completed; } };
+}
+
 /**
  * Runs a synchronous UI update through the View Transition API when present.
  * The update is always applied, even when the API is missing, rejects or is
  * already busy.  CSS state attributes remain the fallback authority.
  */
-export function runDocumentTransition(update, { onFallback = null } = {}) {
+export function runDocumentTransition(update, { onFallback = null, onError = null } = {}) {
   if (typeof update !== 'function') return Promise.resolve({ used: false, reason: 'invalid-update' });
   if (!motionIsEnabled() || !viewTransitionsSupported()) {
     try { update(); } finally { onFallback?.(); }
@@ -53,18 +82,20 @@ export function runDocumentTransition(update, { onFallback = null } = {}) {
   }
   if (activeTransition) finishActiveTransition();
   const sequence = ++transitionSequence;
+  const guardedUpdate = guardedRenderUpdate(update, onError);
   let transition;
   try {
-    transition = document.startViewTransition(() => update());
+    transition = document.startViewTransition(() => guardedUpdate.apply());
   } catch (error) {
-    try { update(); } finally { onFallback?.(); }
-    return Promise.resolve({ used: false, reason: 'exception', error });
+    const failure = guardedUpdate.recover(error);
+    onFallback?.();
+    return Promise.resolve({ used: false, reason: 'exception', error: failure });
   }
   activeTransition = transition;
   // WebView2 can reject any of these promises when a fast rerender or test
   // fixture skips a transition.  Attach handlers to every exposed promise so
   // a visual cancellation never becomes an unhandled page error.
-  Promise.resolve(transition.updateCallbackDone).catch(() => {});
+  Promise.resolve(transition.updateCallbackDone).catch((error) => { guardedUpdate.recover(error); });
   Promise.resolve(transition.ready).catch(() => {});
   const settle = (reason) => {
     if (activeTransition === transition) activeTransition = null;
@@ -74,10 +105,11 @@ export function runDocumentTransition(update, { onFallback = null } = {}) {
     .then(() => settle('finished'))
     .catch((error) => {
       if (activeTransition === transition) activeTransition = null;
+      const failure = guardedUpdate.recover(error);
       // The DOM update already happened; a failed visual transition must not
       // roll it back or leave input blocked.
       onFallback?.();
-      return { used: false, sequence, reason: 'rejected', error };
+      return { used: false, sequence, reason: 'rejected', error: failure };
     });
 }
 
@@ -89,7 +121,7 @@ let activeSettingsTransition = null;
  * synchronous from the application's point of view; this helper only wraps
  * the already-completed render in an interruptible visual transition.
  */
-export function runSettingsCategoryTransition(update, direction = 'down') {
+export function runSettingsCategoryTransition(update, direction = 'down', { onError = null } = {}) {
   if (typeof update !== 'function') return Promise.resolve({ used: false, reason: 'invalid-update' });
   const rootNode = root();
   const app = document.querySelector('#app');
@@ -106,18 +138,20 @@ export function runSettingsCategoryTransition(update, direction = 'down') {
   }
   rootNode.dataset.settingsDirection = direction === 'up' ? 'up' : 'down';
   rootNode.dataset.settingsTransitioning = 'true';
+  const guardedUpdate = guardedRenderUpdate(update, onError);
   let transition;
   try {
-    transition = document.startViewTransition(() => update());
+    transition = document.startViewTransition(() => guardedUpdate.apply());
   } catch (error) {
-    try { update(); } finally {
+    const failure = guardedUpdate.recover(error);
+    try {
       rootNode.removeAttribute('data-settings-direction');
       rootNode.removeAttribute('data-settings-transitioning');
-    }
-    return Promise.resolve({ used: false, reason: 'exception', error });
+    } finally { app?.removeAttribute('data-settings-transitioning'); }
+    return Promise.resolve({ used: false, reason: 'exception', error: failure });
   }
   activeSettingsTransition = transition;
-  Promise.resolve(transition.updateCallbackDone).catch(() => {});
+  Promise.resolve(transition.updateCallbackDone).catch((error) => { guardedUpdate.recover(error); });
   Promise.resolve(transition.ready).catch(() => {});
   const cleanup = () => {
     if (activeSettingsTransition === transition) activeSettingsTransition = null;
@@ -127,7 +161,11 @@ export function runSettingsCategoryTransition(update, direction = 'down') {
   };
   return Promise.resolve(transition.finished)
     .then(() => { cleanup(); return { used: true, reason: 'finished' }; })
-    .catch((error) => { cleanup(); return { used: false, reason: 'rejected', error }; });
+    .catch((error) => {
+      const failure = guardedUpdate.recover(error);
+      cleanup();
+      return { used: false, reason: 'rejected', error: failure };
+    });
 }
 
 function themeOrigin(trigger) {
