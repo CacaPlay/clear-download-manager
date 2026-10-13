@@ -132,7 +132,7 @@ jobs:
           }
       - name: Upload yt-dlp corresponding-source input for package verification
         id: yt_dlp_source_artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: yt-dlp-corresponding-source-${{ github.run_id }}-${{ github.run_attempt }}
           path: output/release-assets/yt-dlp-2026.08.19-win64-corresponding-source.tar.xz
@@ -167,7 +167,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Source archive release gate failed.' }
       - name: Upload source archive input for the package job
         id: source_artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cdm-source-archive-${{ github.run_id }}-${{ github.run_attempt }}
           path: output/source-release/clear-download-manager-source.tar
@@ -306,7 +306,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'The final release artifact failed its checksum inventory.' }
       - name: Upload immutable signed release artifact
         id: release_artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cdm-release-${{ env.RELEASE_TAG }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: output/update-release/*
