@@ -211,12 +211,12 @@ jobs:
         shell: pwsh
         run: ./scripts/prepare-safe-lean-toolchain.ps1
       - name: Download the source archive produced by build-test
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           artifact-ids: ${{ needs.build-test.outputs.source_archive_artifact_id }}
           path: source-input
       - name: Download the yt-dlp corresponding-source archive produced by build-test
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           artifact-ids: ${{ needs.build-test.outputs.yt_dlp_source_artifact_id }}
           path: yt-dlp-source-input
@@ -331,7 +331,7 @@ jobs:
       - name: Install Node dependencies
         run: npm ci --no-audit --no-fund
       - name: Download exactly the package-sign artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           artifact-ids: ${{ needs.package-sign.outputs.release_artifact_id }}
           path: output/update-release
@@ -401,7 +401,7 @@ jobs:
         with:
           node-version: 22
       - name: Download the same artifact verified by verify-binary-release
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           artifact-ids: ${{ needs.package-sign.outputs.release_artifact_id }}
           path: output/update-release
