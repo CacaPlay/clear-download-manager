@@ -4,13 +4,14 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { renderZenSidebar } from '../../app-ui/download-manager/view/zen-sidebar.js';
+import { newsPanel } from '../../app-ui/download-manager/view/sections.js';
 import { configureSettings, settingsMarkup } from '../../app-ui/modules/settings/index.js';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
-function configureSettingsFor(category) {
+function configureSettingsFor(category, components = []) {
   configureSettings({
-    getAppState: () => ({ settingsCategory: category, components: [] }),
+    getAppState: () => ({ settingsCategory: category, components }),
     icon: () => '<svg aria-hidden="true"></svg>',
     escapeHtml: value => String(value ?? ''),
     translate: value => value
@@ -32,6 +33,36 @@ test('primary download navigation keeps Downloads and routes Complementos withou
   assert.doesNotMatch(nav, /Cola|Activas|Completadas/);
 });
 
+test('Store news omits the GitHub app updater but keeps external release links', () => {
+  const markup = newsPanel({
+    updaterStatus: { storeManaged: true },
+    newsMessages: [
+      { id: 'app-update:v1.0.2', type: 'update', title: 'Clear Download Manager 1.0.2', action: { type: 'open-update' } },
+      {
+        id: 'release:v1.0.2', type: 'release', title: 'Clear Download Manager 1.0.2',
+        action: { type: 'open-url', label: 'Ver release', url: 'https://github.com/CacaPlay/clear-download-manager/releases/tag/v1.0.2' }
+      }
+    ],
+    translate: (_key, fallback) => fallback
+  });
+
+  assert.doesNotMatch(markup, /data-dm-news-action="check-update"/);
+  assert.doesNotMatch(markup, /data-dm-news-action="open-update-modal"/);
+  assert.match(markup, /data-dm-news-action="open-news-url"/);
+  assert.match(markup, /Ver release/);
+  assert.match(markup, /https:\/\/github\.com\/CacaPlay\/clear-download-manager\/releases\/tag\/v1\.0\.2/);
+});
+
+test('GitHub news retains the internal app updater control', () => {
+  const markup = newsPanel({
+    updaterStatus: { storeManaged: false },
+    newsMessages: [],
+    translate: (_key, fallback) => fallback
+  });
+
+  assert.match(markup, /data-dm-news-action="check-update"/);
+});
+
 test('Complementos is a dedicated settings category containing manual component management', () => {
   configureSettingsFor('components');
   const markup = settingsMarkup();
@@ -41,6 +72,18 @@ test('Complementos is a dedicated settings category containing manual component 
   assert.match(markup, /MediaTools/);
   assert.match(markup, /Torrent Engine/);
   assert.match(markup, /data-component-action="install"/);
+});
+
+test('Complementos renders installed components with reclaimable space without crashing navigation', () => {
+  configureSettingsFor('components', [
+    { id: 'media-tools', state: 'installed', version: '1.0.0', reclaimableBytes: 1_500_000 },
+    { id: 'torrent-engine', state: 'missing' }
+  ]);
+
+  const markup = settingsMarkup();
+
+  assert.match(markup, /Libera 1\.5 MB/);
+  assert.match(markup, /data-settings-category="components"[^>]*aria-label="Complementos"/);
 });
 
 test('component catalog refresh button is in the page intro header and wraps on narrow windows', async () => {

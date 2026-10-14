@@ -13,6 +13,8 @@ import { fileURLToPath } from 'node:url';
  */
 export const releaseGateIds = [
   'version:check',
+  'check:i18n',
+  'check:store-edition',
   'check:licenses',
   'check:rights',
   'check:gpl-source',

@@ -81,7 +81,9 @@ function shouldInclude(relative, entry) {
   if (excludedPrefixes.some((prefix) => normalized.startsWith(prefix))) return false;
   if (excludedArtifactPatterns.some((pattern) => pattern.test(normalized))) return false;
   if (entry.isDirectory()) {
-    return !excludedDirectories.has(entry.name) && !/^target(?:-|$)/i.test(entry.name);
+    return !excludedDirectories.has(entry.name)
+      && !/^dist(?:-|$)/i.test(entry.name)
+      && !/^target(?:-|$)/i.test(entry.name);
   }
   return !entry.isSymbolicLink();
 }

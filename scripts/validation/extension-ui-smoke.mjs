@@ -12,7 +12,7 @@ const manifest = JSON.parse(fs.readFileSync('extension/manifest.json', 'utf8'));
 const extensionBuild = fs.readFileSync('scripts/build-extension.ps1', 'utf8');
 
 assert.equal(manifest.default_locale, 'en');
-assert.equal(manifest.version_name, '1.0.0');
+assert.equal(manifest.version_name, manifest.version);
 assert.equal(manifest.homepage_url, 'https://github.com/CacaPlay/clear-download-manager');
 assert.match(extensionBuild, /Join-Path \$Source '_locales'/, 'Extension package must include Chrome locale message files');
 for (const [source, expected] of [

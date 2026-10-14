@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { transform } from 'esbuild';
 
 const projectRoot = path.resolve();
@@ -57,6 +58,43 @@ copyDirectory('app-ui/styles', output('app-ui', 'styles'));
 copyDirectory('app-ui/player', output('app-ui', 'player'));
 copyDirectory('app-ui/assets', output('app-ui', 'assets'), 'app-ui/assets');
 
+function buildTextFiles(directory) {
+  const files = [];
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const target = path.join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...buildTextFiles(target));
+    else if (/\.(?:html|js|css)$/i.test(entry.name)) files.push(target);
+  }
+  return files;
+}
+
+const frontendTextFiles = [output('index.html'), ...buildTextFiles(output('app-ui'))]
+  .sort((left, right) => left.localeCompare(right));
+const frontendCacheKeyBuilder = createHash('sha256')
+  .update(`${packageVersion}\0${buildDistribution}\0`);
+for (const file of frontendTextFiles) {
+  frontendCacheKeyBuilder
+    .update(path.relative(outputRoot, file).replaceAll('\\', '/'))
+    .update('\0')
+    .update(fs.readFileSync(file))
+    .update('\0');
+}
+const frontendCacheKey = frontendCacheKeyBuilder.digest('hex').slice(0, 16);
+
+function rewriteLocalAssetReferences(source) {
+  const cacheBusted = (specifier) => `${specifier.replace(/\?[^?]*$/, '')}?v=${frontendCacheKey}`;
+  return source
+    .replace(/(["'])(\.\.?\/[^"']+?\.(?:m?js|css))(?:\?[^"']*)?\1/g,
+      (_match, quote, specifier) => `${quote}${cacheBusted(specifier)}${quote}`)
+    .replace(/\burl\(\s*(\.\.?\/[^)'"\s]+?\.(?:m?js|css))(?:\?[^)'"\s]*)?\s*\)/g,
+      (_match, specifier) => `url(${cacheBusted(specifier)})`);
+}
+
+for (const file of frontendTextFiles) {
+  const source = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(file, rewriteLocalAssetReferences(source));
+}
+
 async function minifyFiles(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const filePath = path.join(directory, entry.name);
@@ -73,4 +111,4 @@ async function minifyFiles(directory) {
 }
 
 await minifyFiles(output('app-ui'));
-console.log(`OK: frontend local y módulos integrados construidos en ${outputRoot}.`);
+console.log(`OK: frontend local y módulos integrados construidos en ${outputRoot} (cache ${frontendCacheKey}).`);

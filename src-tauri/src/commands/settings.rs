@@ -3,6 +3,88 @@ use rusqlite::Connection;
 use std::path::PathBuf;
 use tauri::{Emitter, Manager};
 
+fn parse_windows_ui_language_buffer(buffer: &[u16]) -> Vec<String> {
+    buffer
+        .split(|unit| *unit == 0)
+        .take_while(|language| !language.is_empty())
+        .filter_map(|language| String::from_utf16(language).ok())
+        .collect()
+}
+
+#[cfg(windows)]
+fn windows_user_preferred_ui_languages() -> Vec<String> {
+    const MUI_LANGUAGE_NAME: u32 = 0x8;
+    const MAX_LANGUAGE_BUFFER_CHARS: u32 = 4096;
+
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetUserPreferredUILanguages(
+            flags: u32,
+            language_count: *mut u32,
+            language_buffer: *mut u16,
+            buffer_chars: *mut u32,
+        ) -> i32;
+    }
+
+    let mut language_count = 0_u32;
+    let mut buffer_chars = 0_u32;
+    // Windows returns the required buffer length on this sizing call. The
+    // actual result is checked below after allocating exactly that many units.
+    let _ = unsafe {
+        GetUserPreferredUILanguages(
+            MUI_LANGUAGE_NAME,
+            &mut language_count,
+            std::ptr::null_mut(),
+            &mut buffer_chars,
+        )
+    };
+    if buffer_chars == 0 || buffer_chars > MAX_LANGUAGE_BUFFER_CHARS {
+        return Vec::new();
+    }
+
+    let mut buffer = vec![0_u16; buffer_chars as usize];
+    let mut returned_chars = buffer_chars;
+    let succeeded = unsafe {
+        GetUserPreferredUILanguages(
+            MUI_LANGUAGE_NAME,
+            &mut language_count,
+            buffer.as_mut_ptr(),
+            &mut returned_chars,
+        )
+    };
+    if succeeded == 0 || returned_chars as usize > buffer.len() {
+        return Vec::new();
+    }
+    buffer.truncate(returned_chars as usize);
+    parse_windows_ui_language_buffer(&buffer)
+}
+
+#[tauri::command]
+pub(crate) fn get_system_ui_languages() -> Vec<String> {
+    #[cfg(windows)]
+    {
+        windows_user_preferred_ui_languages()
+    }
+    #[cfg(not(windows))]
+    {
+        Vec::new()
+    }
+}
+
+#[cfg(test)]
+mod system_ui_language_tests {
+    use super::parse_windows_ui_language_buffer;
+
+    #[test]
+    fn parses_the_ordered_windows_language_multistring() {
+        let buffer: Vec<u16> = "en-US\0es-MX\0\0".encode_utf16().collect();
+        assert_eq!(
+            parse_windows_ui_language_buffer(&buffer),
+            vec!["en-US", "es-MX"]
+        );
+    }
+}
+
 const APPLICATION_PREFERENCE_SETTING_KEYS: &[&str] = &[
     "appearance_v2",
     "appearance_v1",

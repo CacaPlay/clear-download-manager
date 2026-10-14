@@ -1492,6 +1492,7 @@ fn run_app() {
             commands::system::hide_main_window,
             commands::settings::window_behavior_settings,
             commands::settings::save_window_behavior_settings,
+            commands::settings::get_system_ui_languages,
             commands::settings::get_experience_settings,
             commands::settings::save_experience_settings,
             commands::settings::get_bandwidth_settings,

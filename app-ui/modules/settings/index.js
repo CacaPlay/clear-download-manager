@@ -289,7 +289,7 @@ function componentManagerSection() {
     const verifyHidden = !['installed', 'corrupted'].includes(state);
     const verifyAction = `<button type="button" class="settings-component-action" data-component-action="verify" data-component-id="${id}"${verifyHidden ? ' hidden' : ''}>${tr('Verificar')}</button>`;
     const reclaimable = Number.isSafeInteger(component.reclaimableBytes) && component.reclaimableBytes >= 0
-      ? ` · Libera ${formatBytes(component.reclaimableBytes)}` : '';
+      ? ` · Libera ${formatComponentBytes(component.reclaimableBytes)}` : '';
     const removeHidden = !['installed', 'corrupted'].includes(state);
     const removeAction = `<button type="button" class="settings-component-action" data-component-action="remove" data-component-id="${id}"${removeHidden ? ' hidden' : ''}${activeOperation ? ' disabled' : ''}>${tr('Quitar')}${reclaimable}</button>`;
     const ratio = Number.isFinite(operation?.progressRatio) && operation.progressRatio >= 0 && operation.progressRatio <= 1

@@ -1,5 +1,7 @@
 const LOCALE_KEY = 'clear-download-manager/locale-v1';
+const SYSTEM_LOCALE_KEY = 'clear-download-manager/system-locale-v1';
 export const SUPPORTED_LOCALES = Object.freeze(['system', 'es', 'en']);
+let nativeSystemLocale = '';
 
 const MESSAGES = Object.freeze({
   es: {
@@ -69,15 +71,35 @@ export function normalizeLocale(value) {
   return SUPPORTED_LOCALES.includes(locale) ? locale : 'system';
 }
 
+export function localeFromLanguageTags(values) {
+  const candidates = (Array.isArray(values) ? values : [values])
+    .map((value) => String(value || '').trim().toLowerCase());
+  const preferred = candidates.find((value) => /^(?:es|en)(?:[-_]|$)/.test(value));
+  return preferred?.startsWith('es') ? 'es' : preferred?.startsWith('en') ? 'en' : '';
+}
+
+export function setSystemLocale(values) {
+  const candidates = (Array.isArray(values) ? values : [values])
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter(Boolean);
+  const resolved = localeFromLanguageTags(candidates) || (candidates.length ? 'en' : '');
+  nativeSystemLocale = resolved;
+  try {
+    if (resolved) localStorage.setItem(SYSTEM_LOCALE_KEY, resolved);
+    else localStorage.removeItem(SYSTEM_LOCALE_KEY);
+  } catch {}
+  return resolved;
+}
+
 export function detectSystemLocale() {
   try {
+    if (nativeSystemLocale) return nativeSystemLocale;
+    const native = localStorage.getItem(SYSTEM_LOCALE_KEY);
+    if (native === 'es' || native === 'en') return native;
     const candidates = Array.isArray(navigator.languages) && navigator.languages.length
       ? navigator.languages
       : [navigator.language];
-    const preferred = candidates
-      .map((value) => String(value || '').toLowerCase())
-      .find((value) => /^(?:es|en)(?:[-_]|$)/.test(value));
-    return preferred?.startsWith('es') ? 'es' : 'en';
+    return localeFromLanguageTags(candidates) || 'en';
   } catch { return 'en'; }
 }
 
